@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { Button, FormField, InlineAlert, Input, ModalLayout } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 
 function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
@@ -18,6 +20,13 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(
+    { name: formData.name, email: formData.email, password, confirmPassword },
+    { confirmer: confirm },
+  );
+  const handleSafeClose = guardClose(onClose);
 
   // Si email pré-rempli (lien direct), vérifier s'il est autorisé
   useEffect(() => {
@@ -89,6 +98,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
     try {
       await api.register(formData.email, formData.name, password);
       await api.login(formData.email, password);
+      resetDirty();
       onSuccess?.();
       onClose();
       window.location.reload();
@@ -102,215 +112,221 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   // ===== ÉTAPE 1 : FORMULAIRE DE DEMANDE =====
   if (step === 'request') {
     return (
-      <ModalLayout
-        open
-        onClose={onClose}
-        title="Demande d'accès"
-        icon={<Mail size={20} />}
-        size="md"
-        className="access-request-modal"
-        footer={
-          <>
-            <Button variant="ghost" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" type="submit" form="ar-request-form" disabled={loading}>
-              <Send size={18} />
-              {loading ? 'Vérification...' : 'Continuer'}
-            </Button>
-          </>
-        }
-      >
-        <div className="access-request-content">
-          <p className="access-request-description">
-            Renseignez votre nom et adresse email pour accéder à l'application. Si votre email a
-            déjà été autorisé, vous pourrez créer votre mot de passe immédiatement.
-          </p>
+      <>
+        <ModalLayout
+          open
+          onClose={handleSafeClose}
+          title="Demande d'accès"
+          icon={<Mail size={20} />}
+          size="md"
+          className="access-request-modal"
+          footer={
+            <>
+              <Button variant="ghost" onClick={handleSafeClose}>
+                Annuler
+              </Button>
+              <Button variant="primary" type="submit" form="ar-request-form" disabled={loading}>
+                <Send size={18} />
+                {loading ? 'Vérification...' : 'Continuer'}
+              </Button>
+            </>
+          }
+        >
+          <div className="access-request-content">
+            <p className="access-request-description">
+              Renseignez votre nom et adresse email pour accéder à l'application. Si votre email a
+              déjà été autorisé, vous pourrez créer votre mot de passe immédiatement.
+            </p>
 
-          {error && <InlineAlert>{error}</InlineAlert>}
+            {error && <InlineAlert>{error}</InlineAlert>}
 
-          <form id="ar-request-form" onSubmit={handleSubmitRequest}>
-            <FormField
-              className="form-group"
-              label={
-                <>
-                  <User size={18} /> Nom complet
-                </>
-              }
-              htmlFor="ar-name"
-              required
-            >
-              <Input
-                type="text"
-                id="ar-name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
+            <form id="ar-request-form" onSubmit={handleSubmitRequest}>
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <User size={18} /> Nom complet
+                  </>
+                }
+                htmlFor="ar-name"
                 required
-                placeholder="Votre nom et prénom"
-                autoComplete="name"
-                maxLength={100}
-              />
-            </FormField>
+              >
+                <Input
+                  type="text"
+                  id="ar-name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Votre nom et prénom"
+                  autoComplete="name"
+                  maxLength={100}
+                />
+              </FormField>
 
-            <FormField
-              className="form-group"
-              label={
-                <>
-                  <Mail size={18} /> Adresse email
-                </>
-              }
-              htmlFor="ar-email"
-              required
-            >
-              <Input
-                type="email"
-                id="ar-email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <Mail size={18} /> Adresse email
+                  </>
+                }
+                htmlFor="ar-email"
                 required
-                placeholder="votre.email@example.com"
-                autoComplete="email"
-                maxLength={254}
-              />
-            </FormField>
-          </form>
-        </div>
-      </ModalLayout>
+              >
+                <Input
+                  type="email"
+                  id="ar-email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="votre.email@example.com"
+                  autoComplete="email"
+                  maxLength={254}
+                />
+              </FormField>
+            </form>
+          </div>
+        </ModalLayout>
+        {ConfirmDialogRenderer}
+      </>
     );
   }
 
   // ===== ÉTAPE 2A : CRÉATION DE MOT DE PASSE (email autorisé) =====
   if (step === 'create-password') {
     return (
-      <ModalLayout
-        open
-        onClose={onClose}
-        title="Créer votre compte"
-        icon={<CheckCircle size={20} />}
-        size="md"
-        className="access-request-modal"
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setStep('request')}>
-              <ArrowLeft size={18} />
-              Retour
-            </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              form="ar-create-form"
-              disabled={loading || password.length < 10}
-            >
-              <CheckCircle size={18} />
-              {loading ? 'Création...' : 'Créer mon compte'}
-            </Button>
-          </>
-        }
-      >
-        <div className="access-request-content">
-          <div className="success-banner">
-            <CheckCircle size={24} />
-            <div>
-              <strong>Email autorisé !</strong>
-              <p>
-                Votre adresse <strong>{formData.email}</strong> est autorisée. Définissez votre mot
-                de passe pour finaliser votre inscription.
-              </p>
+      <>
+        <ModalLayout
+          open
+          onClose={handleSafeClose}
+          title="Créer votre compte"
+          icon={<CheckCircle size={20} />}
+          size="md"
+          className="access-request-modal"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setStep('request')}>
+                <ArrowLeft size={18} />
+                Retour
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                form="ar-create-form"
+                disabled={loading || password.length < 10}
+              >
+                <CheckCircle size={18} />
+                {loading ? 'Création...' : 'Créer mon compte'}
+              </Button>
+            </>
+          }
+        >
+          <div className="access-request-content">
+            <div className="success-banner">
+              <CheckCircle size={24} />
+              <div>
+                <strong>Email autorisé !</strong>
+                <p>
+                  Votre adresse <strong>{formData.email}</strong> est autorisée. Définissez votre
+                  mot de passe pour finaliser votre inscription.
+                </p>
+              </div>
             </div>
+
+            {error && <InlineAlert>{error}</InlineAlert>}
+
+            <form id="ar-create-form" onSubmit={handleCreateAccount}>
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <User size={18} /> Nom complet
+                  </>
+                }
+                htmlFor="ar-create-name"
+                required
+              >
+                <Input
+                  type="text"
+                  id="ar-create-name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Votre nom et prénom"
+                  autoComplete="name"
+                  maxLength={100}
+                />
+              </FormField>
+
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <Mail size={18} /> Email
+                  </>
+                }
+              >
+                <Input type="email" value={formData.email} disabled className="input-disabled" />
+              </FormField>
+
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <Lock size={18} /> Mot de passe
+                  </>
+                }
+                htmlFor="ar-password"
+                required
+              >
+                <Input
+                  type="password"
+                  id="ar-password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError('');
+                  }}
+                  required
+                  placeholder="Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial"
+                  minLength={10}
+                  autoFocus
+                  autoComplete="new-password"
+                />
+              </FormField>
+
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <Lock size={18} /> Confirmer le mot de passe
+                  </>
+                }
+                htmlFor="ar-confirm-password"
+                required
+              >
+                <Input
+                  type="password"
+                  id="ar-confirm-password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setError('');
+                  }}
+                  required
+                  placeholder="Retapez votre mot de passe"
+                  minLength={10}
+                  autoComplete="new-password"
+                />
+              </FormField>
+            </form>
           </div>
-
-          {error && <InlineAlert>{error}</InlineAlert>}
-
-          <form id="ar-create-form" onSubmit={handleCreateAccount}>
-            <FormField
-              className="form-group"
-              label={
-                <>
-                  <User size={18} /> Nom complet
-                </>
-              }
-              htmlFor="ar-create-name"
-              required
-            >
-              <Input
-                type="text"
-                id="ar-create-name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                placeholder="Votre nom et prénom"
-                autoComplete="name"
-                maxLength={100}
-              />
-            </FormField>
-
-            <FormField
-              className="form-group"
-              label={
-                <>
-                  <Mail size={18} /> Email
-                </>
-              }
-            >
-              <Input type="email" value={formData.email} disabled className="input-disabled" />
-            </FormField>
-
-            <FormField
-              className="form-group"
-              label={
-                <>
-                  <Lock size={18} /> Mot de passe
-                </>
-              }
-              htmlFor="ar-password"
-              required
-            >
-              <Input
-                type="password"
-                id="ar-password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError('');
-                }}
-                required
-                placeholder="Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial"
-                minLength={10}
-                autoFocus
-                autoComplete="new-password"
-              />
-            </FormField>
-
-            <FormField
-              className="form-group"
-              label={
-                <>
-                  <Lock size={18} /> Confirmer le mot de passe
-                </>
-              }
-              htmlFor="ar-confirm-password"
-              required
-            >
-              <Input
-                type="password"
-                id="ar-confirm-password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  setError('');
-                }}
-                required
-                placeholder="Retapez votre mot de passe"
-                minLength={10}
-                autoComplete="new-password"
-              />
-            </FormField>
-          </form>
-        </div>
-      </ModalLayout>
+        </ModalLayout>
+        {ConfirmDialogRenderer}
+      </>
     );
   }
 

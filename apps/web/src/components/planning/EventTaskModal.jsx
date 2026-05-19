@@ -19,6 +19,8 @@ import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } fro
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../../utils/affaireConstants';
 import api from '../../utils/api';
@@ -115,6 +117,7 @@ const getVisibleSteps = () => TASK_STEPS;
 function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }) {
   // Suppression du scroll lock manuel : géré par l'isolation des portails
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -227,6 +230,9 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     [steps, visibleSteps],
   );
 
+  const { resetDirty, guardClose } = useDirtyForm(steps, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
+
   // Déterminer la section en fonction du type de step + affaire
   const getSectionForStep = (stepKey) => {
     if (stepKey === 'preparation') {
@@ -321,6 +327,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       );
       // Passer la date de la première tâche pour naviguer automatiquement
       const firstTaskDate = tasksToCreate[0]?.date || null;
+      resetDirty();
       onSave?.(firstTaskDate);
       onClose();
     } catch (err) {
@@ -338,6 +345,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       await api.deleteTasksBySource(event.id);
       refreshBus.publish('planning');
       toast.success('Tâches supprimées');
+      resetDirty();
       onDelete?.();
       onClose();
     } catch (err) {
@@ -349,166 +357,169 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
 
   // ModalManager : <Modal> gère seul le portail #emag-modal-root et le z-index.
   return (
-    <Modal open onClose={onClose} size="lg" className="etm-modal no-drag-resize">
-      <ModalHeader icon={<Calendar size={18} />} onClose={onClose}>
-        <span className="etm-header-title">Définir les tâches</span>
-        <span className="etm-event-title">{eventInfo.summary}</span>
-      </ModalHeader>
+    <>
+      <Modal open onClose={handleSafeClose} size="lg" className="etm-modal no-drag-resize">
+        <ModalHeader icon={<Calendar size={18} />} onClose={handleSafeClose}>
+          <span className="etm-header-title">Définir les tâches</span>
+          <span className="etm-event-title">{eventInfo.summary}</span>
+        </ModalHeader>
 
-      <ModalBody>
-        <div className="etm-event-summary">
-          {eventInfo.affaireNum && (
-            <AffaireBadge numero={eventInfo.affaireNum} type={eventInfo.affaireType} showIcon />
-          )}
-          {eventInfo.startTime && (
-            <span className="etm-badge time">
-              <Clock size={12} /> {eventInfo.startTime}
-              {eventInfo.endTime ? ` → ${eventInfo.endTime}` : ''}
-            </span>
-          )}
-          {eventInfo.location && (
-            <span className="etm-badge location">
-              <MapPin size={12} /> {eventInfo.location}
-            </span>
-          )}
-        </div>
+        <ModalBody>
+          <div className="etm-event-summary">
+            {eventInfo.affaireNum && (
+              <AffaireBadge numero={eventInfo.affaireNum} type={eventInfo.affaireType} showIcon />
+            )}
+            {eventInfo.startTime && (
+              <span className="etm-badge time">
+                <Clock size={12} /> {eventInfo.startTime}
+                {eventInfo.endTime ? ` → ${eventInfo.endTime}` : ''}
+              </span>
+            )}
+            {eventInfo.location && (
+              <span className="etm-badge location">
+                <MapPin size={12} /> {eventInfo.location}
+              </span>
+            )}
+          </div>
 
-        {/* Steps */}
-        <div className="etm-steps">
-          {visibleSteps.map((step) => {
-            const s = steps[step.key];
-            const Icon = step.icon;
-            return (
-              <div key={step.key} className={`etm-step ${s.enabled ? 'enabled' : ''}`}>
-                <div
-                  className="etm-step-header"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => toggleStep(step.key)}
-                >
+          {/* Steps */}
+          <div className="etm-steps">
+            {visibleSteps.map((step) => {
+              const s = steps[step.key];
+              const Icon = step.icon;
+              return (
+                <div key={step.key} className={`etm-step ${s.enabled ? 'enabled' : ''}`}>
                   <div
-                    className={`etm-step-check ${s.enabled ? 'checked' : ''}`}
-                    style={s.enabled ? { background: step.color } : {}}
+                    className="etm-step-header"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => toggleStep(step.key)}
                   >
-                    {s.enabled && <Check size={12} />}
+                    <div
+                      className={`etm-step-check ${s.enabled ? 'checked' : ''}`}
+                      style={s.enabled ? { background: step.color } : {}}
+                    >
+                      {s.enabled && <Check size={12} />}
+                    </div>
+                    <Icon size={16} style={{ color: step.color }} />
+                    <span className="etm-step-label">
+                      {step.emoji} {step.label}
+                    </span>
                   </div>
-                  <Icon size={16} style={{ color: step.color }} />
-                  <span className="etm-step-label">
-                    {step.emoji} {step.label}
-                  </span>
-                </div>
 
-                {s.enabled && (
-                  <div className="etm-step-fields">
-                    <div className="etm-field">
-                      <label>Date</label>
-                      <input
-                        type="date"
-                        value={s.date}
-                        onChange={(e) => updateStep(step.key, 'date', e.target.value)}
-                      />
-                    </div>
-                    <div className="etm-field">
-                      <label>Période</label>
-                      <Select
-                        value={s.period}
-                        onChange={(e) => updateStep(step.key, 'period', e.target.value)}
-                      >
-                        <option value="AM">Matin (AM)</option>
-                        <option value="PM">Après-midi (PM)</option>
-                      </Select>
-                    </div>
-                    <div className="etm-field">
-                      <label>Heure début</label>
-                      <input
-                        type="time"
-                        value={s.time}
-                        onChange={(e) => updateStep(step.key, 'time', e.target.value)}
-                      />
-                    </div>
-                    <div className="etm-field">
-                      <label>Heure fin</label>
-                      <input
-                        type="time"
-                        value={s.endTime}
-                        onChange={(e) => updateStep(step.key, 'endTime', e.target.value)}
-                      />
-                    </div>
-                    <div className="etm-field full">
-                      <label>Notes</label>
-                      <Input
-                        type="text"
-                        placeholder="Notes..."
-                        value={s.notes}
-                        onChange={(e) => updateStep(step.key, 'notes', e.target.value)}
-                      />
-                    </div>
-                    {step.defaultSection === 'courses' && (
-                      <div className="etm-field full">
-                        <label>
-                          <MapPin size={12} /> Lieu
-                        </label>
-                        <div className="etm-location-row">
-                          <Input
-                            type="text"
-                            placeholder="Adresse ou lieu…"
-                            value={s.locationAddress}
-                            onChange={(e) =>
-                              updateStep(step.key, 'locationAddress', e.target.value)
-                            }
-                          />
-                          {s.locationAddress?.trim() && (
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.locationAddress.trim())}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="etm-maps-link"
-                              title="Ouvrir dans Google Maps"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MapPin size={14} />
-                            </a>
-                          )}
-                        </div>
+                  {s.enabled && (
+                    <div className="etm-step-fields">
+                      <div className="etm-field">
+                        <label>Date</label>
+                        <input
+                          type="date"
+                          value={s.date}
+                          onChange={(e) => updateStep(step.key, 'date', e.target.value)}
+                        />
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </ModalBody>
+                      <div className="etm-field">
+                        <label>Période</label>
+                        <Select
+                          value={s.period}
+                          onChange={(e) => updateStep(step.key, 'period', e.target.value)}
+                        >
+                          <option value="AM">Matin (AM)</option>
+                          <option value="PM">Après-midi (PM)</option>
+                        </Select>
+                      </div>
+                      <div className="etm-field">
+                        <label>Heure début</label>
+                        <input
+                          type="time"
+                          value={s.time}
+                          onChange={(e) => updateStep(step.key, 'time', e.target.value)}
+                        />
+                      </div>
+                      <div className="etm-field">
+                        <label>Heure fin</label>
+                        <input
+                          type="time"
+                          value={s.endTime}
+                          onChange={(e) => updateStep(step.key, 'endTime', e.target.value)}
+                        />
+                      </div>
+                      <div className="etm-field full">
+                        <label>Notes</label>
+                        <Input
+                          type="text"
+                          placeholder="Notes..."
+                          value={s.notes}
+                          onChange={(e) => updateStep(step.key, 'notes', e.target.value)}
+                        />
+                      </div>
+                      {step.defaultSection === 'courses' && (
+                        <div className="etm-field full">
+                          <label>
+                            <MapPin size={12} /> Lieu
+                          </label>
+                          <div className="etm-location-row">
+                            <Input
+                              type="text"
+                              placeholder="Adresse ou lieu…"
+                              value={s.locationAddress}
+                              onChange={(e) =>
+                                updateStep(step.key, 'locationAddress', e.target.value)
+                              }
+                            />
+                            {s.locationAddress?.trim() && (
+                              <a
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.locationAddress.trim())}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="etm-maps-link"
+                                title="Ouvrir dans Google Maps"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <MapPin size={14} />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </ModalBody>
 
-      <ModalFooter className="etm-footer">
-        {hasExistingTasks && (
-          <Button
-            variant="ghost"
-            className="etm-btn danger"
-            onClick={handleDeleteAll}
-            disabled={deleting}
-          >
-            {deleting ? <Loader size={14} className="spin" /> : <AlertCircle size={14} />}
-            Supprimer les tâches
-          </Button>
-        )}
-        <div className="etm-footer-right">
-          <Button variant="ghost" className="etm-btn secondary" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button
-            variant="ghost"
-            className="etm-btn primary"
-            onClick={handleSave}
-            disabled={saving || enabledSteps.length === 0}
-          >
-            {saving ? <Loader size={14} className="spin" /> : <Check size={14} />}
-            {hasExistingTasks ? 'Mettre à jour' : 'Créer'} {enabledSteps.length} tâche
-            {enabledSteps.length > 1 ? 's' : ''}
-          </Button>
-        </div>
-      </ModalFooter>
-    </Modal>
+        <ModalFooter className="etm-footer">
+          {hasExistingTasks && (
+            <Button
+              variant="ghost"
+              className="etm-btn danger"
+              onClick={handleDeleteAll}
+              disabled={deleting}
+            >
+              {deleting ? <Loader size={14} className="spin" /> : <AlertCircle size={14} />}
+              Supprimer les tâches
+            </Button>
+          )}
+          <div className="etm-footer-right">
+            <Button variant="ghost" className="etm-btn secondary" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button
+              variant="ghost"
+              className="etm-btn primary"
+              onClick={handleSave}
+              disabled={saving || enabledSteps.length === 0}
+            >
+              {saving ? <Loader size={14} className="spin" /> : <Check size={14} />}
+              {hasExistingTasks ? 'Mettre à jour' : 'Créer'} {enabledSteps.length} tâche
+              {enabledSteps.length > 1 ? 's' : ''}
+            </Button>
+          </div>
+        </ModalFooter>
+      </Modal>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

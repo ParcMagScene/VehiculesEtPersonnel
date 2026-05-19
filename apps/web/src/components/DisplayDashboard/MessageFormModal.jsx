@@ -4,11 +4,14 @@ import { memo, useCallback, useEffect, useState } from 'react';
 
 import { Button, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 
 function MessageFormModal({ message, onSave, onClose }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [form, setForm] = useState({
@@ -19,6 +22,9 @@ function MessageFormModal({ message, onSave, onClose }) {
     dateStart: '',
     dateEnd: '',
   });
+
+  const { guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   useEffect(() => {
     if (message) {
@@ -72,80 +78,86 @@ function MessageFormModal({ message, onSave, onClose }) {
   }, [form, message, toast, onSave]);
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={message ? 'Modifier le message' : 'Nouveau message'}
-      icon={<MessageSquare size={18} />}
-      size="md"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" onClick={handleSave} disabled={saving}>
-            <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </Button>
-        </>
-      }
-    >
-      <FormField className="form-group" label="Titre" required>
-        <Input
-          type="text"
-          value={form.title}
-          onChange={(e) => handleChange('title', e.target.value)}
-          placeholder="Ex: Bienvenue au spectacle"
-          autoFocus
-        />
-      </FormField>
-      <FormField className="form-group" label="Contenu">
-        <Textarea
-          value={form.body}
-          onChange={(e) => handleChange('body', e.target.value)}
-          rows={4}
-          placeholder="Texte du message…"
-        />
-      </FormField>
-      <div className="form-row">
-        <FormField className="form-group" label="Priorité">
-          <Select value={form.priority} onChange={(e) => handleChange('priority', e.target.value)}>
-            <option value="low">Basse</option>
-            <option value="normal">Normale</option>
-            <option value="high">Haute</option>
-            <option value="urgent">Urgente</option>
-          </Select>
-        </FormField>
-        <FormField className="form-group" label="Template">
-          <Select
-            value={form.templateId}
-            onChange={(e) => handleChange('templateId', e.target.value)}
-          >
-            <option value="">— Par défaut —</option>
-            {templates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </Select>
-        </FormField>
-      </div>
-      <div className="form-row">
-        <FormField className="form-group" label="Date début">
-          <input
-            type="date"
-            value={form.dateStart}
-            onChange={(e) => handleChange('dateStart', e.target.value)}
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={message ? 'Modifier le message' : 'Nouveau message'}
+        icon={<MessageSquare size={18} />}
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleSave} disabled={saving}>
+              <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+            </Button>
+          </>
+        }
+      >
+        <FormField className="form-group" label="Titre" required>
+          <Input
+            type="text"
+            value={form.title}
+            onChange={(e) => handleChange('title', e.target.value)}
+            placeholder="Ex: Bienvenue au spectacle"
+            autoFocus
           />
         </FormField>
-        <FormField className="form-group" label="Date fin">
-          <input
-            type="date"
-            value={form.dateEnd}
-            onChange={(e) => handleChange('dateEnd', e.target.value)}
+        <FormField className="form-group" label="Contenu">
+          <Textarea
+            value={form.body}
+            onChange={(e) => handleChange('body', e.target.value)}
+            rows={4}
+            placeholder="Texte du message…"
           />
         </FormField>
-      </div>
-    </ModalLayout>
+        <div className="form-row">
+          <FormField className="form-group" label="Priorité">
+            <Select
+              value={form.priority}
+              onChange={(e) => handleChange('priority', e.target.value)}
+            >
+              <option value="low">Basse</option>
+              <option value="normal">Normale</option>
+              <option value="high">Haute</option>
+              <option value="urgent">Urgente</option>
+            </Select>
+          </FormField>
+          <FormField className="form-group" label="Template">
+            <Select
+              value={form.templateId}
+              onChange={(e) => handleChange('templateId', e.target.value)}
+            >
+              <option value="">— Par défaut —</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        </div>
+        <div className="form-row">
+          <FormField className="form-group" label="Date début">
+            <input
+              type="date"
+              value={form.dateStart}
+              onChange={(e) => handleChange('dateStart', e.target.value)}
+            />
+          </FormField>
+          <FormField className="form-group" label="Date fin">
+            <input
+              type="date"
+              value={form.dateEnd}
+              onChange={(e) => handleChange('dateEnd', e.target.value)}
+            />
+          </FormField>
+        </div>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

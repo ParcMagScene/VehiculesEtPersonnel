@@ -8,7 +8,6 @@ import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'rea
 import {
   Button,
   Checkbox,
-  Dialog,
   FormField,
   Input,
   Modal,
@@ -23,6 +22,7 @@ import {
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
 import { useAutocomplete } from '../../hooks/useAutocomplete';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -111,11 +111,20 @@ const ReservationModal = ({
     isTournee: reservation?.isTournee || false, // Nouvelle option Tournée
   });
 
-  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const { isDirty } = useDirtyForm(formData);
 
   // Fermeture sécurisée avec avertissement si modifications
   const handleSafeClose = () => {
+    const triggerWarning = () =>
+      confirm({
+        title: 'Modifications non enregistrées',
+        message: 'Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?',
+        variant: 'warning',
+        confirmLabel: 'Ne pas enregistrer',
+        cancelLabel: "Continuer l'édition",
+        onConfirm: onClose,
+      });
     // En mode création, vérifier si des champs ont été remplis
     if (!isEdit) {
       const hasContent =
@@ -126,11 +135,11 @@ const ReservationModal = ({
         formData.notes ||
         formData.affaires.length > 0;
       if (hasContent) {
-        setShowUnsavedWarning(true);
+        triggerWarning();
         return;
       }
     } else if (isDirty) {
-      setShowUnsavedWarning(true);
+      triggerWarning();
       return;
     }
     onClose();
@@ -2131,21 +2140,7 @@ const ReservationModal = ({
         />
       )}
 
-      <Dialog
-        open={showUnsavedWarning}
-        onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => {
-          setShowUnsavedWarning(false);
-          onClose();
-        }}
-        title="Modifications non enregistrées"
-        variant="warning"
-        confirmLabel="Ne pas enregistrer"
-        cancelLabel="Continuer l'édition"
-        confirmVariant="danger"
-      >
-        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
-      </Dialog>
+      {ConfirmDialogRenderer}
     </Modal>
   );
 };

@@ -3,7 +3,7 @@ import './InterventionModal.css';
 import { AlertTriangle, CheckCircle, Clock, Save } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, Dialog, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
+import { Button, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -15,7 +15,6 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
   const isAdmin = currentUser?.isAdmin === true;
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
-  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [formData, setFormData] = useState({
     date: intervention?.date || '',
     type: intervention?.type || '',
@@ -26,15 +25,8 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
     technicalControlType: intervention?.technicalControlType || null,
   });
 
-  const { isDirty } = useDirtyForm(formData);
-
-  const handleSafeClose = () => {
-    if (isDirty) {
-      setShowUnsavedWarning(true);
-      return;
-    }
-    onClose();
-  };
+  const { guardClose } = useDirtyForm(formData, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   const dateInputRef = useRef(null);
 
@@ -403,21 +395,6 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
         </form>
       </ModalLayout>
       {ConfirmDialogRenderer}
-      <Dialog
-        open={showUnsavedWarning}
-        onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => {
-          setShowUnsavedWarning(false);
-          onClose();
-        }}
-        title="Modifications non enregistrées"
-        variant="warning"
-        confirmLabel="Ne pas enregistrer"
-        cancelLabel="Continuer l'édition"
-        confirmVariant="danger"
-      >
-        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
-      </Dialog>
     </>
   );
 };

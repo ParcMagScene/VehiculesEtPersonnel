@@ -1,25 +1,19 @@
 import './VehicleMaintenanceModal.css';
 
 import { Calendar, Gauge, Plus, Save, Trash2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import {
-  Button,
-  Dialog,
-  FormField,
-  Input,
-  Modal,
-  ModalBody,
-  ModalHeader,
-  Select,
-} from '@/design-system';
+import { Button, FormField, Input, Modal, ModalBody, ModalHeader, Select } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import { formatDateSimple } from '../../utils/formatUtils';
 
 const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [kilometrage, setKilometrage] = useState(vehicle?.kilometrage || 0);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -31,24 +25,10 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
     : [];
 
   const [controles, setControles] = useState(initialControles);
-  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  const initialKmRef = useRef(vehicle?.kilometrage || 0);
-  const initialControlesRef = useRef(JSON.stringify(initialControles));
 
-  const hasChanges = () => {
-    return (
-      String(kilometrage) !== String(initialKmRef.current) ||
-      JSON.stringify(controles) !== initialControlesRef.current
-    );
-  };
-
-  const handleSafeClose = () => {
-    if (hasChanges()) {
-      setShowUnsavedWarning(true);
-      return;
-    }
-    onClose();
-  };
+  const formSnapshot = useMemo(() => ({ kilometrage, controles }), [kilometrage, controles]);
+  const { guardClose } = useDirtyForm(formSnapshot, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
   const [newControle, setNewControle] = useState({
     type: '',
     date: '',
@@ -484,21 +464,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
         </form>
       </ModalBody>
 
-      <Dialog
-        open={showUnsavedWarning}
-        onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => {
-          setShowUnsavedWarning(false);
-          onClose();
-        }}
-        title="Modifications non enregistrées"
-        variant="warning"
-        confirmLabel="Ne pas enregistrer"
-        cancelLabel="Continuer l'édition"
-        confirmVariant="danger"
-      >
-        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
-      </Dialog>
+      {ConfirmDialogRenderer}
     </Modal>
   );
 };

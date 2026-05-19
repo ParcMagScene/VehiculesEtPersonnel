@@ -2,7 +2,7 @@
 // ControlEditorModal.jsx — Créer / éditer un contrôle planifié
 // ═══════════════════════════════════════════════════════════════
 import { Pencil } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   Button,
@@ -16,6 +16,8 @@ import {
   Textarea,
 } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import { todayIso } from './utils';
@@ -28,6 +30,7 @@ export default function ControlEditorModal({
   onSaved,
 }) {
   const isEdit = !!control;
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [types, setTypes] = useState([]);
   const [users, setUsers] = useState([]);
   const [typeId, setTypeId] = useState(control?.control_type_id || '');
@@ -38,6 +41,13 @@ export default function ControlEditorModal({
   const [notes, setNotes] = useState(control?.notes || '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+
+  const formSnapshot = useMemo(
+    () => ({ typeId, periodicity, nextDue, lastDone, assignedTo, notes }),
+    [typeId, periodicity, nextDue, lastDone, assignedTo, notes],
+  );
+  const { guardClose } = useDirtyForm(formSnapshot, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   useEffect(() => {
     (async () => {
@@ -94,7 +104,7 @@ export default function ControlEditorModal({
   };
 
   return (
-    <Modal open onClose={onClose} size="md">
+    <Modal open onClose={handleSafeClose} size="md">
       <ModalHeader>
         <Pencil size={18} style={{ marginRight: 8 }} />
         {isEdit ? 'Modifier le contrôle' : 'Nouveau contrôle planifié'}
@@ -144,13 +154,14 @@ export default function ControlEditorModal({
         )}
       </ModalBody>
       <ModalFooter>
-        <Button variant="ghost" onClick={onClose} disabled={busy}>
+        <Button variant="ghost" onClick={handleSafeClose} disabled={busy}>
           Annuler
         </Button>
         <Button variant="primary" onClick={submit} disabled={busy || !typeId || !nextDue}>
           {busy ? 'Enregistrement…' : 'Enregistrer'}
         </Button>
       </ModalFooter>
+      {ConfirmDialogRenderer}
     </Modal>
   );
 }

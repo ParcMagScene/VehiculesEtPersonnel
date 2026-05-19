@@ -34,6 +34,7 @@ import { Button, InlineAlert, SectionHeader, Table, Tooltip } from '@/design-sys
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 
 // ═══════════════════════════════════════
@@ -172,6 +173,9 @@ const ReportsPanel = ({ _currentUser }) => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Auto-refresh quand des commandes changent ailleurs
+  useRefreshSubscription('orders', loadData);
 
   // ═══════════════════════════════════════
   // Fleet Report

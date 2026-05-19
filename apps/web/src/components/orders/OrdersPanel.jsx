@@ -30,9 +30,11 @@ import { Button, Checkbox, SearchBar, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency } from '../../utils/formatUtils';
+import { refreshBus } from '../../utils/refresh-bus';
 import { OrderFormModal, QuoteFormModal } from './OrderFormModals';
 import { ORDER_STATUS, QUOTE_STATUS, REQUEST_STATUS } from './ordersConstants';
 import { OrderDetailDialog, QuoteDetailDialog, RequestDetailDialog } from './OrdersDialogs';
@@ -206,6 +208,9 @@ function OrdersPanel({ currentUser, isMobile }) {
     };
   }, [loadData]);
 
+  // Auto-refresh quand des commandes/fournisseurs/demandes changent ailleurs
+  useRefreshSubscription('orders', loadData);
+
   // Scroll en tête de liste après création d'un fournisseur
   useEffect(() => {
     if (!newSupplierId) return;
@@ -218,6 +223,7 @@ function OrdersPanel({ currentUser, isMobile }) {
     try {
       if (editingOrder) await api.updateOrder(editingOrder.id, data);
       else await api.createOrder(data);
+      refreshBus.publish('orders');
       setShowOrderForm(false);
       setEditingOrder(null);
       loadData();
@@ -232,6 +238,7 @@ function OrdersPanel({ currentUser, isMobile }) {
       onConfirm: async () => {
         try {
           await api.deleteOrder(order.id);
+          refreshBus.publish('orders');
           setSelectedOrder(null);
           loadData();
         } catch (error) {
@@ -271,6 +278,7 @@ function OrdersPanel({ currentUser, isMobile }) {
     try {
       if (editingQuote) await api.updateQuote(editingQuote.id, data);
       else await api.createQuote(data);
+      refreshBus.publish('orders');
       setShowQuoteForm(false);
       setEditingQuote(null);
       loadData();
@@ -285,6 +293,7 @@ function OrdersPanel({ currentUser, isMobile }) {
       onConfirm: async () => {
         try {
           await api.deleteQuote(quote.id);
+          refreshBus.publish('orders');
           setSelectedQuote(null);
           loadData();
         } catch (error) {
@@ -325,6 +334,7 @@ function OrdersPanel({ currentUser, isMobile }) {
       onConfirm: async () => {
         try {
           await api.convertQuoteToOrder(quote.id);
+          refreshBus.publish('orders');
           setSelectedQuote(null);
           loadData();
         } catch (error) {
@@ -340,6 +350,7 @@ function OrdersPanel({ currentUser, isMobile }) {
       const saved = editingSupplier
         ? await api.updateSupplier(editingSupplier.id, data)
         : await api.createSupplier(data);
+      refreshBus.publish('orders');
       if (!editingSupplier && saved?.id) {
         // Mise à jour optimiste immédiate + flag persistant après loadData()
         setSuppliersWithOrders((prev) => [
@@ -377,6 +388,7 @@ function OrdersPanel({ currentUser, isMobile }) {
       onConfirm: async () => {
         try {
           await api.deleteSupplier(supplier.id);
+          refreshBus.publish('orders');
           loadData();
         } catch (error) {
           toast.error('Erreur: ' + error.message);
@@ -399,6 +411,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           count > 1 ? `Demande créée (${count} références)` : 'Demande créée avec succès',
         );
       }
+      refreshBus.publish('orders');
       setShowRequestModal(false);
       loadData();
     } catch (error) {
@@ -425,6 +438,7 @@ function OrdersPanel({ currentUser, isMobile }) {
       if (result.action === STATUS.APPROVED)
         toast.success(`Demande approuvée → commande ${result.order?.orderRef || ''}`);
       else toast.success('Demande refusée');
+      refreshBus.publish('orders');
       loadData();
     } catch (error) {
       toast.error('Erreur: ' + error.message);
@@ -450,6 +464,7 @@ function OrdersPanel({ currentUser, isMobile }) {
       }
       setApprovingRequest(null);
       setDispatchPrefill(null);
+      refreshBus.publish('orders');
       loadData();
     } catch (error) {
       toast.error('Erreur: ' + error.message);
@@ -542,6 +557,7 @@ function OrdersPanel({ currentUser, isMobile }) {
       onConfirm: async () => {
         try {
           await api.deleteMaterialRequest(request.id);
+          refreshBus.publish('orders');
           loadData();
         } catch (error) {
           toast.error('Erreur: ' + error.message);
@@ -982,6 +998,7 @@ function OrdersPanel({ currentUser, isMobile }) {
               onStatusChange={async (newStatus) => {
                 try {
                   await api.updateOrder(selectedOrder.id, { status: newStatus });
+                  refreshBus.publish('orders');
                   const full = await api.getOrderById(selectedOrder.id);
                   setSelectedOrder(full);
                   loadData();
@@ -1051,6 +1068,7 @@ function OrdersPanel({ currentUser, isMobile }) {
           onStatusChange={async (newStatus) => {
             try {
               await api.updateOrder(dialogOrder.id, { status: newStatus });
+              refreshBus.publish('orders');
               const full = await api.getOrderById(dialogOrder.id);
               setDialogOrder(full);
               loadData();

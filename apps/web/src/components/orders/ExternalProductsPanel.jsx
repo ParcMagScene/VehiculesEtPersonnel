@@ -26,6 +26,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import logger from '../../utils/logger';
+import { refreshBus } from '../../utils/refresh-bus';
 
 const fmt = (v) =>
   v != null
@@ -458,6 +459,7 @@ export function ExternalProductsPanel({ currentUser }) {
         await api.createExternalProduct(form);
         toast.success('Produit créé');
       }
+      refreshBus.publish('orders');
       setShowProductForm(false);
       setEditProduct(null);
       load();
@@ -479,6 +481,7 @@ export function ExternalProductsPanel({ currentUser }) {
     try {
       await api.deleteExternalProduct(product.id);
       toast.success('Produit supprimé');
+      refreshBus.publish('orders');
       if (selected?.id === product.id) setSelected(null);
       load();
     } catch (e) {
@@ -497,6 +500,7 @@ export function ExternalProductsPanel({ currentUser }) {
         await api.addExternalProductSupplier({ ...form, product_id: selected.id });
         toast.success('Fournisseur ajouté');
       }
+      refreshBus.publish('orders');
       setShowSupplierForm(false);
       setEditSupplier(null);
       // Refresh la comparaison
@@ -522,6 +526,7 @@ export function ExternalProductsPanel({ currentUser }) {
     try {
       await api.deleteExternalProductSupplier(entry.id);
       toast.success('Fournisseur retiré');
+      refreshBus.publish('orders');
       if (selected) {
         const data = await api.compareExternalProduct(selected.id);
         setCompareData(data);

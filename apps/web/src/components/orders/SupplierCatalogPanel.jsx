@@ -41,6 +41,7 @@ import api from '../../utils/api';
 import { AVAILABLE_PARSERS, parseCatalog } from '../../utils/catalogParsers';
 import { formatDateTime } from '../../utils/formatUtils';
 import { extractPDFMeta } from '../../utils/pdfParser';
+import { refreshBus } from '../../utils/refresh-bus';
 import CatalogSettingsPanel from './CatalogSettingsPanel';
 
 const PAGE_SIZE = 50;
@@ -153,6 +154,7 @@ export function SupplierCatalogPanel({ currentUser }) {
         try {
           await api.deleteSupplierArticle(id);
           toast.success('Article supprimé');
+          refreshBus.publish('orders');
           loadArticles();
         } catch {
           toast.error('Erreur suppression');

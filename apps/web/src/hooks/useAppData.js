@@ -392,18 +392,37 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
     }
   }, []);
 
+  // Rechargement personnes (clé 'persons' du bus — mutations dans PersonnelPanel / UserManagement).
+  const loadPersons = useCallback(async () => {
+    try {
+      const data = await api.getPersons();
+      setPersons(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Erreur lors du rechargement des personnes:', error);
+    }
+  }, []);
+
   // Abonnement au bus d'invalidation cross-module.
   useEffect(() => {
     if (!isAuthenticated || isAuthLoading) return undefined;
     const unsubVehicles = refreshBus.subscribe('vehicles', loadVehicles);
     const unsubMaintenances = refreshBus.subscribe('maintenances', loadMaintenances);
     const unsubReservations = refreshBus.subscribe('reservations', loadReservations);
+    const unsubPersons = refreshBus.subscribe('persons', loadPersons);
     return () => {
       unsubVehicles();
       unsubMaintenances();
       unsubReservations();
+      unsubPersons();
     };
-  }, [isAuthenticated, isAuthLoading, loadVehicles, loadMaintenances, loadReservations]);
+  }, [
+    isAuthenticated,
+    isAuthLoading,
+    loadVehicles,
+    loadMaintenances,
+    loadReservations,
+    loadPersons,
+  ]);
 
   const handleMaintenanceSave = useCallback(
     async (maintenance) => {

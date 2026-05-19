@@ -66,6 +66,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
 import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
 import LeavesTab from '../leaves/LeavesTab';
@@ -234,6 +235,7 @@ const PersonnelPanel = ({
         const created = await api.createPerson(payload);
         setPersons((prev) => [...prev, created]);
       }
+      refreshBus.publish('persons');
       resetEditForm();
     } catch (err) {
       toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
@@ -732,6 +734,7 @@ const PersonsTab = ({
         const created = await api.createPerson(payload);
         setPersons((prev) => [...prev, created]);
       }
+      refreshBus.publish('persons');
       setShowFormModal(false);
       setEditingPerson(null);
     } catch (err) {
@@ -749,6 +752,7 @@ const PersonsTab = ({
         onConfirm: async () => {
           try {
             await api.deletePerson(id);
+            refreshBus.publish('persons');
             setPersons((prev) => prev.filter((p) => p.id !== id));
             if (selectedPerson?.id === id) setSelectedPerson(null);
           } catch (err) {

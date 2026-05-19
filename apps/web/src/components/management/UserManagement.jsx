@@ -37,6 +37,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
+import { refreshBus } from '../../utils/refresh-bus';
 import ProfileEditModal from '../auth/ProfileEditModal';
 
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
@@ -879,6 +880,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           onConfirm={async (personData) => {
             try {
               await api.createPerson(personData);
+              refreshBus.publish('persons');
               setPersonModal(null);
               loadData(true);
             } catch (err) {

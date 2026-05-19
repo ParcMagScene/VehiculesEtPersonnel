@@ -881,6 +881,7 @@ function AnnuairePanel({ currentUser }) {
           onSuccess={() => {
             setDataVersion((v) => v + 1);
             loadStats();
+            refreshBus.publish('annuaire');
           }}
           toast={toast}
         />
@@ -892,6 +893,7 @@ function AnnuairePanel({ currentUser }) {
           onLinked={(count) => {
             toast.success(`${count} entité(s) liée(s) à un lieu`);
             setDataVersion((v) => v + 1);
+            refreshBus.publish('annuaire');
           }}
         />
       )}
@@ -901,6 +903,7 @@ function AnnuairePanel({ currentUser }) {
           onLinked={(count) => {
             toast.success(`${count} liaison(s) entité créées`);
             setDataVersion((v) => v + 1);
+            refreshBus.publish('annuaire');
           }}
         />
       )}
@@ -910,6 +913,7 @@ function AnnuairePanel({ currentUser }) {
           onLinked={(count) => {
             toast.success(`${count} contact(s) lié(s) à une entité`);
             setDataVersion((v) => v + 1);
+            refreshBus.publish('annuaire');
           }}
         />
       )}
@@ -1247,6 +1251,7 @@ function DetailView({
       setShowLinkSearch(false);
       setLinkSearch('');
       setLinkResults([]);
+      refreshBus.publish('annuaire');
       toast?.success(`${contact.first_name || ''} ${contact.last_name} lié avec succès`);
     } catch {
       toast?.error('Erreur lors de la liaison');

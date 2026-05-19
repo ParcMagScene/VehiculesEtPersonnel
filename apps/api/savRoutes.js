@@ -509,7 +509,8 @@ export function setupSavRoutes(app, authenticateToken, requireAdmin) {
         }
       });
       txn();
-      res.json({ success: true });
+      const saved = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
+      res.json({ success: true, ...(saved || {}) });
     } catch (e) {
       logger.error('SAV ticket patch error:', e);
       res.status(500).json({ success: false, error: 'Erreur serveur' });

@@ -555,7 +555,8 @@ export function setupVehicleRoutes(
         invalidateEntity('reservations');
         invalidateEntity('affaires');
 
-        res.json({ success: true });
+        const saved = db.prepare('SELECT * FROM reservations WHERE id = ?').get(req.params.id);
+        res.json({ success: true, ...(saved || {}) });
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -830,7 +831,10 @@ export function setupVehicleRoutes(
         req.user.name,
       );
 
-      res.json({ success: true });
+      const saved = db
+        .prepare('SELECT * FROM reservation_requests WHERE id = ?')
+        .get(req.params.id);
+      res.json({ success: true, ...(saved || {}) });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -872,7 +876,10 @@ export function setupVehicleRoutes(
         req.user.name,
       );
 
-      res.json({ success: true });
+      const saved = db
+        .prepare('SELECT * FROM reservation_requests WHERE id = ?')
+        .get(req.params.id);
+      res.json({ success: true, ...(saved || {}) });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1236,7 +1243,8 @@ export function setupVehicleRoutes(
       }
 
       invalidateEntity('maintenances');
-      res.json({ success: true });
+      const saved = db.prepare('SELECT * FROM maintenances WHERE id = ?').get(req.params.id);
+      res.json({ success: true, ...(saved || {}) });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

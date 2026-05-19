@@ -138,7 +138,10 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
         'UPDATE equipment_categories SET name = ?, icon = ?, color = ?, description = ?, parent_id = ?, level = ? WHERE id = ?',
       ).run(name, icon, color, description, parent_id || null, level || 'category', req.params.id);
       equipmentTreeCache.clear();
-      res.json({ success: true });
+      const saved = db
+        .prepare('SELECT * FROM equipment_categories WHERE id = ?')
+        .get(req.params.id);
+      res.json({ success: true, ...(saved || {}) });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -538,7 +541,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
 
         addToHistory('equipment', req.params.id, 'update', req.body, req.user.id, req.user.name);
 
-        res.json({ success: true });
+        const saved = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
+        res.json({ success: true, ...(saved || {}) });
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -571,7 +575,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         }
 
         addToHistory('equipment', req.params.id, 'update', { photo }, req.user.id, req.user.name);
-        res.json({ success: true });
+        const saved = db.prepare('SELECT * FROM equipment WHERE id = ?').get(req.params.id);
+        res.json({ success: true, ...(saved || {}) });
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1314,7 +1319,10 @@ export function setupEquipmentAssignmentsRoutes(app, authenticateToken) {
           ).run(assignment.equipment_id);
         }
 
-        res.json({ success: true });
+        const saved = db
+          .prepare('SELECT * FROM equipment_assignments WHERE id = ?')
+          .get(req.params.id);
+        res.json({ success: true, ...(saved || {}) });
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1607,7 +1615,8 @@ export function setupSavTicketsRoutes(
         // Recalculer le statut de l'équipement (maintenance ↔ available/in_use)
         refreshEquipmentStatus(oldTicket.equipment_id);
 
-        res.json({ success: true });
+        const saved = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
+        res.json({ success: true, ...(saved || {}) });
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
@@ -1715,7 +1724,8 @@ export function setupSavTicketsRoutes(
         db.prepare(
           'UPDATE sav_tickets SET equipment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         ).run(equipment_id, req.params.id);
-        res.json({ success: true });
+        const saved = db.prepare('SELECT * FROM sav_tickets WHERE id = ?').get(req.params.id);
+        res.json({ success: true, ...(saved || {}) });
       } catch (error) {
         logger.error(error);
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });

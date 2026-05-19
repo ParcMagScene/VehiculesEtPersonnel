@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 
 import { Spinner } from '@/design-system';
 
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 
 const STATUS_OPTIONS = [
@@ -29,6 +30,9 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
   const [statusLabels, setStatusLabels] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [busTick, setBusTick] = useState(0);
+
+  useRefreshSubscription('sav', () => setBusTick((t) => t + 1));
 
   useEffect(() => {
     let cancelled = false;
@@ -54,7 +58,7 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
     return () => {
       cancelled = true;
     };
-  }, [statuses, q, refreshKey]);
+  }, [statuses, q, refreshKey, busTick]);
 
   const toggleStatus = (s) => {
     setStatuses((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));

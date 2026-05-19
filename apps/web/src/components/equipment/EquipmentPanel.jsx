@@ -40,6 +40,7 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import SavImportModal from '../sav/SAVManagerModal';
 import DepotMap from '../vehicles/DepotMap';
 import DepotMapFocused from '../vehicles/DepotMapFocused';
@@ -587,6 +588,7 @@ const EquipmentPanel = ({
                     onConfirm: async () => {
                       try {
                         await api.deleteSavTicket(id);
+                        refreshBus.publish('sav');
                         loadData();
                       } catch (err) {
                         toast.error('Erreur: ' + err.message);
@@ -649,6 +651,7 @@ const EquipmentPanel = ({
                   try {
                     await api.deleteSavTicket(id);
                     setSelectedTicket(null);
+                    refreshBus.publish('sav');
                     loadData();
                   } catch (err) {
                     toast.error('Erreur: ' + err.message);
@@ -722,6 +725,7 @@ const EquipmentPanel = ({
               try {
                 await api.deleteSavTicket(id);
                 setDialogTicket(null);
+                refreshBus.publish('sav');
                 loadData();
               } catch (err) {
                 toast.error('Erreur: ' + err.message);
@@ -777,6 +781,7 @@ const EquipmentPanel = ({
             } else {
               await api.createSavRequest(data);
             }
+            refreshBus.publish('sav');
             setShowMobileSavRequest(false);
             loadData();
           }}

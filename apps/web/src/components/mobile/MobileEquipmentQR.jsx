@@ -18,6 +18,7 @@ import { EQUIPMENT_STATUS, STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import MobileControlsScreen from './MobileControlsScreen';
 
 // ═══ ÉCRAN QR — PAGE D'ATTERRISSAGE APRÈS SCAN QR CODE ═══
@@ -98,6 +99,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
         type: 'panne',
         priority: 'medium',
       });
+      refreshBus.publish('sav');
       setSubmitSuccess('Signalement envoyé !');
       setDefautForm({ title: '', description: '' });
       setTimeout(() => {
@@ -123,6 +125,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           type: savForm.type,
           priority: savForm.priority,
         });
+        refreshBus.publish('sav');
         setSubmitSuccess('Ticket SAV créé !');
       } else {
         await api.createSavRequest({
@@ -132,6 +135,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           type: savForm.type,
           priority: savForm.priority,
         });
+        refreshBus.publish('sav');
         setSubmitSuccess('Demande SAV créée !');
       }
       setSavForm({ title: '', description: '', type: 'panne', priority: 'medium' });

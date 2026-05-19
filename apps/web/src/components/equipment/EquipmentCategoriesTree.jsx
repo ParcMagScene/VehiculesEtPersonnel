@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Button, Input, Tooltip } from '@/design-system';
 
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 const EquipmentCategoriesTree = ({
   families,
@@ -53,6 +54,7 @@ const EquipmentCategoriesTree = ({
         parent_id: pid(item) || null,
         level: item.level,
       });
+      refreshBus.publish('equipment');
       cancelEdit();
       if (onRefresh) onRefresh();
     } catch (err) {

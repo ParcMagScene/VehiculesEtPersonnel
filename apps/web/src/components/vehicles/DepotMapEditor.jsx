@@ -29,6 +29,7 @@ import { Button, Input, Modal, ModalBody, ModalHeader, Select, Tooltip } from '@
 import { STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 const HANDLE_SIZE = 8;
 const SNAP_GRID = 5;
@@ -766,6 +767,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
     setSaveMsg(null);
     try {
       const result = await api.updateEquipmentDepotZones(zonesData, depotId);
+      refreshBus.publish('equipment');
       setDirty(false);
       setSaveMsg({
         type: 'success',

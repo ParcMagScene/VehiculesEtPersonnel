@@ -47,6 +47,7 @@ import {
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { useToast } from '../../hooks/useToast';
@@ -1241,6 +1242,7 @@ function ItemFormModal({
   onClose,
 }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showMap, setShowMap] = useState(false);
   const [mapDepotIdx, setMapDepotIdx] = useState(0);
   const [form, setForm] = useState({
@@ -1260,12 +1262,15 @@ function ItemFormModal({
     supplier_id: item?.supplier_id || '',
     notes: item?.notes || '',
   });
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.warning('Le nom est requis');
+    resetDirty();
     onSave({
       ...form,
       unit_price: Number(form.unit_price) || 0,
@@ -1278,230 +1283,233 @@ function ItemFormModal({
   };
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={item ? "Modifier l'article" : 'Nouvel article'}
-      size="lg"
-      className="stock-modal"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" form="stock-item-form">
-            <Check size={16} /> {item ? 'Enregistrer' : 'Créer'}
-          </Button>
-        </>
-      }
-    >
-      <form id="stock-item-form" onSubmit={handleSubmit} className="stock-modal-form">
-        <div className="stock-form-row">
-          <div className="stock-form-field">
-            <label htmlFor="stock-reference">Référence</label>
-            <Input
-              id="stock-reference"
-              type="text"
-              value={form.reference}
-              onChange={(e) => handleChange('reference', e.target.value)}
-              placeholder="Auto-généré si vide"
-            />
-          </div>
-          <div className="stock-form-field full">
-            <label htmlFor="stock-nom">Nom *</label>
-            <Input
-              id="stock-nom"
-              type="text"
-              value={form.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              required
-            />
-          </div>
-        </div>
-        <div className="stock-form-field">
-          <label htmlFor="stock-description">Description</label>
-          <Textarea
-            id="stock-description"
-            value={form.description}
-            onChange={(e) => handleChange('description', e.target.value)}
-            rows={2}
-          />
-        </div>
-        <div className="stock-form-row">
-          <div className="stock-form-field">
-            <label htmlFor="stock-categorie">Catégorie</label>
-            <EntityCombobox
-              id="stock-categorie"
-              value={form.category_id}
-              onChange={(val) => handleChange('category_id', val)}
-              options={categories.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
-              placeholder="— Aucune —"
-            />
-          </div>
-          <div className="stock-form-field">
-            <label htmlFor="stock-unite">Unité</label>
-            <Select
-              id="stock-unite"
-              value={form.unit}
-              onChange={(e) => handleChange('unit', e.target.value)}
-            >
-              {UNITS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="stock-form-field">
-            <label htmlFor="stock-fournisseur">Fournisseur</label>
-            <EntityCombobox
-              id="stock-fournisseur"
-              value={form.supplier_id}
-              onChange={(val) => handleChange('supplier_id', val)}
-              options={suppliers}
-              placeholder="— Aucun —"
-            />
-          </div>
-        </div>
-        <div className="stock-form-row">
-          <div className="stock-form-field">
-            <label htmlFor="stock-p-u-achat">P.U. Achat (€)</label>
-            <Input
-              id="stock-p-u-achat"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.unit_price}
-              onChange={(e) => handleChange('unit_price', e.target.value)}
-            />
-          </div>
-          <div className="stock-form-field">
-            <label htmlFor="stock-p-u-vente">P.U. Vente (€)</label>
-            <Input
-              id="stock-p-u-vente"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.sell_price}
-              onChange={(e) => handleChange('sell_price', e.target.value)}
-            />
-          </div>
-          <div className="stock-form-field">
-            <label htmlFor="stock-quantite">Quantité</label>
-            <Input
-              id="stock-quantite"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.quantity}
-              onChange={(e) => handleChange('quantity', e.target.value)}
-            />
-          </div>
-          <div className="stock-form-field">
-            <label htmlFor="stock-seuil-alerte">Seuil alerte</label>
-            <Input
-              id="stock-seuil-alerte"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.min_quantity}
-              onChange={(e) => handleChange('min_quantity', e.target.value)}
-            />
-          </div>
-        </div>
-        {depotZones || allDepotZones ? (
-          <div className="stock-form-field stock-form-full">
-            <LocationSelector
-              zones={depotZones}
-              depots={allDepotZones}
-              value={{
-                location_depot: form.location_depot,
-                location_zone: form.location_zone,
-                location_floor: form.location_floor,
-              }}
-              onChange={(loc) =>
-                setForm((f) => ({
-                  ...f,
-                  location_depot: loc.location_depot || '',
-                  location_zone: loc.location_zone || '',
-                  location_floor: loc.location_floor || '',
-                }))
-              }
-            />
-            <Button
-              variant="ghost"
-              type="button"
-              className="stock-form-map-toggle"
-              onClick={() => setShowMap(!showMap)}
-              aria-pressed={showMap}
-            >
-              <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={item ? "Modifier l'article" : 'Nouvel article'}
+        size="lg"
+        className="stock-modal"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
             </Button>
-            {showMap &&
-              (() => {
-                const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
-                const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
-                if (!currentDepotData) return null;
-                return (
-                  <div className="stock-form-map-container">
-                    {depotsList.length > 1 && (
-                      <div className="stock-form-map-tabs">
-                        {depotsList.map((d, i) => (
-                          <Button
-                            variant="ghost"
-                            key={d.id || i}
-                            type="button"
-                            className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`}
-                            onClick={() => setMapDepotIdx(i)}
-                          >
-                            {d.name || `Dépôt ${d.id || i + 1}`}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                    <DepotMap
-                      zones={currentDepotData}
-                      selectedZone={form.location_zone}
-                      onZoneSelect={(zoneId) => {
-                        if (!zoneId) return;
-                        const zoneObj = currentDepotData.zones?.find((z) => z.id === zoneId);
-                        setForm((f) => ({
-                          ...f,
-                          location_depot: currentDepotData.id || currentDepotData.depotId || '',
-                          location_zone: zoneId,
-                          location_floor: zoneObj?.floor || '',
-                        }));
-                      }}
-                      onZoneFilter={() => {}}
-                      compact
-                    />
-                  </div>
-                );
-              })()}
+            <Button variant="primary" type="submit" form="stock-item-form">
+              <Check size={16} /> {item ? 'Enregistrer' : 'Créer'}
+            </Button>
+          </>
+        }
+      >
+        <form id="stock-item-form" onSubmit={handleSubmit} className="stock-modal-form">
+          <div className="stock-form-row">
+            <div className="stock-form-field">
+              <label htmlFor="stock-reference">Référence</label>
+              <Input
+                id="stock-reference"
+                type="text"
+                value={form.reference}
+                onChange={(e) => handleChange('reference', e.target.value)}
+                placeholder="Auto-généré si vide"
+              />
+            </div>
+            <div className="stock-form-field full">
+              <label htmlFor="stock-nom">Nom *</label>
+              <Input
+                id="stock-nom"
+                type="text"
+                value={form.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                required
+              />
+            </div>
           </div>
-        ) : (
           <div className="stock-form-field">
-            <label htmlFor="stock-emplacement">Emplacement</label>
-            <Input
-              id="stock-emplacement"
-              type="text"
-              value={form.location}
-              onChange={(e) => handleChange('location', e.target.value)}
-              placeholder="ex: Étagère A3, Atelier B..."
+            <label htmlFor="stock-description">Description</label>
+            <Textarea
+              id="stock-description"
+              value={form.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              rows={2}
             />
           </div>
-        )}
-        <div className="stock-form-field">
-          <label htmlFor="stock-notes">Notes</label>
-          <Textarea
-            id="stock-notes"
-            value={form.notes}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            rows={2}
-          />
-        </div>
-      </form>
-    </ModalLayout>
+          <div className="stock-form-row">
+            <div className="stock-form-field">
+              <label htmlFor="stock-categorie">Catégorie</label>
+              <EntityCombobox
+                id="stock-categorie"
+                value={form.category_id}
+                onChange={(val) => handleChange('category_id', val)}
+                options={categories.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
+                placeholder="— Aucune —"
+              />
+            </div>
+            <div className="stock-form-field">
+              <label htmlFor="stock-unite">Unité</label>
+              <Select
+                id="stock-unite"
+                value={form.unit}
+                onChange={(e) => handleChange('unit', e.target.value)}
+              >
+                {UNITS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="stock-form-field">
+              <label htmlFor="stock-fournisseur">Fournisseur</label>
+              <EntityCombobox
+                id="stock-fournisseur"
+                value={form.supplier_id}
+                onChange={(val) => handleChange('supplier_id', val)}
+                options={suppliers}
+                placeholder="— Aucun —"
+              />
+            </div>
+          </div>
+          <div className="stock-form-row">
+            <div className="stock-form-field">
+              <label htmlFor="stock-p-u-achat">P.U. Achat (€)</label>
+              <Input
+                id="stock-p-u-achat"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.unit_price}
+                onChange={(e) => handleChange('unit_price', e.target.value)}
+              />
+            </div>
+            <div className="stock-form-field">
+              <label htmlFor="stock-p-u-vente">P.U. Vente (€)</label>
+              <Input
+                id="stock-p-u-vente"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.sell_price}
+                onChange={(e) => handleChange('sell_price', e.target.value)}
+              />
+            </div>
+            <div className="stock-form-field">
+              <label htmlFor="stock-quantite">Quantité</label>
+              <Input
+                id="stock-quantite"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.quantity}
+                onChange={(e) => handleChange('quantity', e.target.value)}
+              />
+            </div>
+            <div className="stock-form-field">
+              <label htmlFor="stock-seuil-alerte">Seuil alerte</label>
+              <Input
+                id="stock-seuil-alerte"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.min_quantity}
+                onChange={(e) => handleChange('min_quantity', e.target.value)}
+              />
+            </div>
+          </div>
+          {depotZones || allDepotZones ? (
+            <div className="stock-form-field stock-form-full">
+              <LocationSelector
+                zones={depotZones}
+                depots={allDepotZones}
+                value={{
+                  location_depot: form.location_depot,
+                  location_zone: form.location_zone,
+                  location_floor: form.location_floor,
+                }}
+                onChange={(loc) =>
+                  setForm((f) => ({
+                    ...f,
+                    location_depot: loc.location_depot || '',
+                    location_zone: loc.location_zone || '',
+                    location_floor: loc.location_floor || '',
+                  }))
+                }
+              />
+              <Button
+                variant="ghost"
+                type="button"
+                className="stock-form-map-toggle"
+                onClick={() => setShowMap(!showMap)}
+                aria-pressed={showMap}
+              >
+                <Map size={14} /> {showMap ? 'Masquer le plan' : 'Choisir sur le plan'}
+              </Button>
+              {showMap &&
+                (() => {
+                  const depotsList = allDepotZones?.depots || (depotZones ? [depotZones] : []);
+                  const currentDepotData = depotsList[mapDepotIdx] || depotsList[0];
+                  if (!currentDepotData) return null;
+                  return (
+                    <div className="stock-form-map-container">
+                      {depotsList.length > 1 && (
+                        <div className="stock-form-map-tabs">
+                          {depotsList.map((d, i) => (
+                            <Button
+                              variant="ghost"
+                              key={d.id || i}
+                              type="button"
+                              className={`stock-form-map-tab${i === mapDepotIdx ? ' active' : ''}`}
+                              onClick={() => setMapDepotIdx(i)}
+                            >
+                              {d.name || `Dépôt ${d.id || i + 1}`}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                      <DepotMap
+                        zones={currentDepotData}
+                        selectedZone={form.location_zone}
+                        onZoneSelect={(zoneId) => {
+                          if (!zoneId) return;
+                          const zoneObj = currentDepotData.zones?.find((z) => z.id === zoneId);
+                          setForm((f) => ({
+                            ...f,
+                            location_depot: currentDepotData.id || currentDepotData.depotId || '',
+                            location_zone: zoneId,
+                            location_floor: zoneObj?.floor || '',
+                          }));
+                        }}
+                        onZoneFilter={() => {}}
+                        compact
+                      />
+                    </div>
+                  );
+                })()}
+            </div>
+          ) : (
+            <div className="stock-form-field">
+              <label htmlFor="stock-emplacement">Emplacement</label>
+              <Input
+                id="stock-emplacement"
+                type="text"
+                value={form.location}
+                onChange={(e) => handleChange('location', e.target.value)}
+                placeholder="ex: Étagère A3, Atelier B..."
+              />
+            </div>
+          )}
+          <div className="stock-form-field">
+            <label htmlFor="stock-notes">Notes</label>
+            <Textarea
+              id="stock-notes"
+              value={form.notes}
+              onChange={(e) => handleChange('notes', e.target.value)}
+              rows={2}
+            />
+          </div>
+        </form>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 
@@ -1510,6 +1518,7 @@ function ItemFormModal({
 // ═══════════════════════════════════════════════════════════════
 function CategoryFormModal({ category, categories, onSave, onClose }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [form, setForm] = useState({
     name: category?.name || '',
     description: category?.description || '',
@@ -1517,96 +1526,102 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
     color: category?.color || CATEGORY_COLORS[0],
     icon: category?.icon || '📦',
   });
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   const parentOptions = categories.filter((c) => c.id !== category?.id);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.warning('Le nom est requis');
+    resetDirty();
     onSave({ ...form, parent_id: form.parent_id || null });
   };
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={category ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
-      size="sm"
-      className="stock-modal stock-modal-sm"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" form="category-form">
-            <Check size={16} /> {category ? 'Enregistrer' : 'Créer'}
-          </Button>
-        </>
-      }
-    >
-      <form id="category-form" onSubmit={handleSubmit} className="stock-modal-form">
-        <div className="stock-form-field">
-          <label htmlFor="stock-nom-2">Nom *</label>
-          <Input
-            id="stock-nom-2"
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            required
-          />
-        </div>
-        <div className="stock-form-field">
-          <label htmlFor="stock-description-2">Description</label>
-          <Input
-            id="stock-description-2"
-            type="text"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          />
-        </div>
-        <div className="stock-form-field">
-          <label htmlFor="stock-parent">Parent</label>
-          <EntityCombobox
-            id="stock-parent"
-            value={form.parent_id}
-            onChange={(val) => setForm((f) => ({ ...f, parent_id: val }))}
-            options={parentOptions.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
-            placeholder="— Aucun (racine) —"
-          />
-        </div>
-        <div className="stock-form-field">
-          <span className="stock-form-group-label">Icône</span>
-          <div className="stock-icon-picker">
-            {CATEGORY_ICONS.map((icon) => (
-              <Button
-                variant="ghost"
-                key={icon}
-                type="button"
-                className={`icon-pick ${form.icon === icon ? 'active' : ''}`}
-                onClick={() => setForm((f) => ({ ...f, icon }))}
-              >
-                {icon}
-              </Button>
-            ))}
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={category ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+        size="sm"
+        className="stock-modal stock-modal-sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" form="category-form">
+              <Check size={16} /> {category ? 'Enregistrer' : 'Créer'}
+            </Button>
+          </>
+        }
+      >
+        <form id="category-form" onSubmit={handleSubmit} className="stock-modal-form">
+          <div className="stock-form-field">
+            <label htmlFor="stock-nom-2">Nom *</label>
+            <Input
+              id="stock-nom-2"
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              required
+            />
           </div>
-        </div>
-        <div className="stock-form-field">
-          <span className="stock-form-group-label">Couleur</span>
-          <div className="stock-color-picker">
-            {CATEGORY_COLORS.map((color) => (
-              <Button
-                variant="ghost"
-                key={color}
-                type="button"
-                className={`color-pick ${form.color === color ? 'active' : ''}`}
-                style={{ background: color }}
-                onClick={() => setForm((f) => ({ ...f, color }))}
-              />
-            ))}
+          <div className="stock-form-field">
+            <label htmlFor="stock-description-2">Description</label>
+            <Input
+              id="stock-description-2"
+              type="text"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
           </div>
-        </div>
-      </form>
-    </ModalLayout>
+          <div className="stock-form-field">
+            <label htmlFor="stock-parent">Parent</label>
+            <EntityCombobox
+              id="stock-parent"
+              value={form.parent_id}
+              onChange={(val) => setForm((f) => ({ ...f, parent_id: val }))}
+              options={parentOptions.map((c) => ({ id: c.id, name: `${c.icon} ${c.name}` }))}
+              placeholder="— Aucun (racine) —"
+            />
+          </div>
+          <div className="stock-form-field">
+            <span className="stock-form-group-label">Icône</span>
+            <div className="stock-icon-picker">
+              {CATEGORY_ICONS.map((icon) => (
+                <Button
+                  variant="ghost"
+                  key={icon}
+                  type="button"
+                  className={`icon-pick ${form.icon === icon ? 'active' : ''}`}
+                  onClick={() => setForm((f) => ({ ...f, icon }))}
+                >
+                  {icon}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="stock-form-field">
+            <span className="stock-form-group-label">Couleur</span>
+            <div className="stock-color-picker">
+              {CATEGORY_COLORS.map((color) => (
+                <Button
+                  variant="ghost"
+                  key={color}
+                  type="button"
+                  className={`color-pick ${form.color === color ? 'active' : ''}`}
+                  style={{ background: color }}
+                  onClick={() => setForm((f) => ({ ...f, color }))}
+                />
+              ))}
+            </div>
+          </div>
+        </form>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 
@@ -1615,6 +1630,7 @@ function CategoryFormModal({ category, categories, onSave, onClose }) {
 // ═══════════════════════════════════════════════════════════════
 function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [form, setForm] = useState({
     stock_item_id: preselectedItem?.id || '',
     type: 'in',
@@ -1622,6 +1638,8 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
     reason: '',
     reference: '',
   });
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   const selectedItem = items.find((i) => i.id === Number(form.stock_item_id));
 
@@ -1629,6 +1647,7 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
     e.preventDefault();
     if (!form.stock_item_id || !form.quantity)
       return toast.warning('Article et quantité sont requis');
+    resetDirty();
     onSave({
       ...form,
       stock_item_id: Number(form.stock_item_id),
@@ -1637,112 +1656,115 @@ function MovementFormModal({ items, preselectedItem, onSave, onClose }) {
   };
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title="Nouveau mouvement"
-      size="sm"
-      className="stock-modal stock-modal-sm"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" form="movement-form">
-            <Check size={16} /> Valider
-          </Button>
-        </>
-      }
-    >
-      <form id="movement-form" onSubmit={handleSubmit} className="stock-modal-form">
-        <div className="stock-form-field">
-          <label htmlFor="stock-article">Article *</label>
-          <Select
-            id="stock-article"
-            value={form.stock_item_id}
-            onChange={(e) => setForm((f) => ({ ...f, stock_item_id: e.target.value }))}
-            required
-          >
-            <option value="">— Sélectionner —</option>
-            {items.map((item) => (
-              <option key={item.id} value={item.id}>
-                [{item.reference}] {item.name} (stock: {item.quantity} {item.unit})
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="stock-form-field">
-          <span className="stock-form-group-label">Type de mouvement</span>
-          <div className="stock-movement-types">
-            {Object.entries(MOVEMENT_TYPES).map(([key, mt]) => (
-              <Button
-                variant="ghost"
-                key={key}
-                type="button"
-                className={`movement-type-btn ${form.type === key ? 'active' : ''}`}
-                style={{ '--mt-color': mt.color }}
-                onClick={() => setForm((f) => ({ ...f, type: key }))}
-              >
-                {mt.icon} {mt.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-        <div className="stock-form-row">
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title="Nouveau mouvement"
+        size="sm"
+        className="stock-modal stock-modal-sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" form="movement-form">
+              <Check size={16} /> Valider
+            </Button>
+          </>
+        }
+      >
+        <form id="movement-form" onSubmit={handleSubmit} className="stock-modal-form">
           <div className="stock-form-field">
-            <label htmlFor="stock-quantite-2">Quantité *</label>
-            <Input
-              id="stock-quantite-2"
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={form.quantity}
-              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+            <label htmlFor="stock-article">Article *</label>
+            <Select
+              id="stock-article"
+              value={form.stock_item_id}
+              onChange={(e) => setForm((f) => ({ ...f, stock_item_id: e.target.value }))}
               required
+            >
+              <option value="">— Sélectionner —</option>
+              {items.map((item) => (
+                <option key={item.id} value={item.id}>
+                  [{item.reference}] {item.name} (stock: {item.quantity} {item.unit})
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="stock-form-field">
+            <span className="stock-form-group-label">Type de mouvement</span>
+            <div className="stock-movement-types">
+              {Object.entries(MOVEMENT_TYPES).map(([key, mt]) => (
+                <Button
+                  variant="ghost"
+                  key={key}
+                  type="button"
+                  className={`movement-type-btn ${form.type === key ? 'active' : ''}`}
+                  style={{ '--mt-color': mt.color }}
+                  onClick={() => setForm((f) => ({ ...f, type: key }))}
+                >
+                  {mt.icon} {mt.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="stock-form-row">
+            <div className="stock-form-field">
+              <label htmlFor="stock-quantite-2">Quantité *</label>
+              <Input
+                id="stock-quantite-2"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={form.quantity}
+                onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+                required
+              />
+            </div>
+            {selectedItem && (
+              <div className="stock-form-field">
+                <span className="stock-form-group-label">Stock actuel</span>
+                <div className="stock-current-qty">
+                  {selectedItem.quantity} {selectedItem.unit}
+                  {form.quantity && (
+                    <span className="stock-preview-qty">
+                      →{' '}
+                      {form.type === 'in' || form.type === 'return'
+                        ? selectedItem.quantity + Number(form.quantity)
+                        : form.type === 'out'
+                          ? Math.max(0, selectedItem.quantity - Number(form.quantity))
+                          : Number(form.quantity)}{' '}
+                      {selectedItem.unit}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="stock-form-field">
+            <label htmlFor="stock-motif-raison">Motif / Raison</label>
+            <Input
+              id="stock-motif-raison"
+              type="text"
+              value={form.reason}
+              onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+              placeholder="ex: Livraison fournisseur, Prêt chantier, Inventaire..."
             />
           </div>
-          {selectedItem && (
-            <div className="stock-form-field">
-              <span className="stock-form-group-label">Stock actuel</span>
-              <div className="stock-current-qty">
-                {selectedItem.quantity} {selectedItem.unit}
-                {form.quantity && (
-                  <span className="stock-preview-qty">
-                    →{' '}
-                    {form.type === 'in' || form.type === 'return'
-                      ? selectedItem.quantity + Number(form.quantity)
-                      : form.type === 'out'
-                        ? Math.max(0, selectedItem.quantity - Number(form.quantity))
-                        : Number(form.quantity)}{' '}
-                    {selectedItem.unit}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="stock-form-field">
-          <label htmlFor="stock-motif-raison">Motif / Raison</label>
-          <Input
-            id="stock-motif-raison"
-            type="text"
-            value={form.reason}
-            onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-            placeholder="ex: Livraison fournisseur, Prêt chantier, Inventaire..."
-          />
-        </div>
-        <div className="stock-form-field">
-          <label htmlFor="stock-reference-bl-facture">Référence (BL, facture...)</label>
-          <Input
-            id="stock-reference-bl-facture"
-            type="text"
-            value={form.reference}
-            onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
-            placeholder="ex: BL-2024-0045"
-          />
-        </div>
-      </form>
-    </ModalLayout>
+          <div className="stock-form-field">
+            <label htmlFor="stock-reference-bl-facture">Référence (BL, facture...)</label>
+            <Input
+              id="stock-reference-bl-facture"
+              type="text"
+              value={form.reference}
+              onChange={(e) => setForm((f) => ({ ...f, reference: e.target.value }))}
+              placeholder="ex: BL-2024-0045"
+            />
+          </div>
+        </form>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

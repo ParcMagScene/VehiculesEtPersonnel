@@ -167,7 +167,7 @@ Bus `display` : le parent `DisplayDashboardPanel` s'abonne et incrémente `refre
 | [components/DisplayDashboard/LocationIconsTab.jsx](../../apps/web/src/components/DisplayDashboard/LocationIconsTab.jsx)           | Publish après upload/delete GIF + save règles d'icônes.                      |
 | [components/DisplayDashboard/SneakyTab.jsx](../../apps/web/src/components/DisplayDashboard/SneakyTab.jsx)                         | Publish après upload/delete photo furtive.                                  |
 
-> _Note_ : `MessagesTab` / `PlaylistsTab` / `MediaTab` / `ScreensTab` / `TemplatesTab` / `LogsTab` existent mais ne sont plus rendus par `DisplayDashboardPanel` (legacy non câblé). Aucun fix appliqué ; à désactiver/archiver lors d'un futur nettoyage.
+> _Note_ : `MessagesTab` / `PlaylistsTab` / `MediaTab` / `ScreensTab` / `TemplatesTab` / `LogsTab` (legacy non câblé) ont été **supprimés** dans la foulée — code mort, aucun import en `src/` ni dans les tests. Historique préservé via `git log -- apps/web/src/components/DisplayDashboard/`.
 
 ### 6.6 Module **Video** (P2 traité)
 

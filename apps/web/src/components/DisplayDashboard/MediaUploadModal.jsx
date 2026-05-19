@@ -4,6 +4,8 @@ import { memo, useCallback, useRef, useState } from 'react';
 
 import { Button, FormField, Input, ModalLayout } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 
@@ -26,6 +28,13 @@ function MediaUploadModal({ onSave, onClose }) {
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [tags, setTags] = useState('');
+
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(
+    { fileName: file?.name || '', tags },
+    { confirmer: confirm },
+  );
+  const handleSafeClose = guardClose(onClose);
 
   const handleFileSelect = useCallback(
     (e) => {
@@ -89,6 +98,7 @@ function MediaUploadModal({ onSave, onClose }) {
         );
       }
       await api.uploadDisplayMedia(formData);
+      resetDirty();
       onSave();
     } catch (err) {
       toast.error(err.message || 'Erreur upload');
@@ -98,78 +108,81 @@ function MediaUploadModal({ onSave, onClose }) {
   }, [file, tags, toast, onSave]);
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title="Upload média"
-      icon={<Upload size={18} />}
-      size="md"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" onClick={handleUpload} disabled={uploading || !file}>
-            {uploading ? (
-              <>
-                <Loader size={14} className="spin" /> Upload en cours…
-              </>
-            ) : (
-              <>
-                <Upload size={14} /> Uploader
-              </>
-            )}
-          </Button>
-        </>
-      }
-    >
-      {/* Zone de drop */}
-      <div
-        className="media-drop-zone"
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-        onClick={() => fileInputRef.current?.click()}
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title="Upload média"
+        icon={<Upload size={18} />}
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleUpload} disabled={uploading || !file}>
+              {uploading ? (
+                <>
+                  <Loader size={14} className="spin" /> Upload en cours…
+                </>
+              ) : (
+                <>
+                  <Upload size={14} /> Uploader
+                </>
+              )}
+            </Button>
+          </>
+        }
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPTED_TYPES}
-          onChange={handleFileSelect}
-          className="display-file-input-hidden"
-        />
-        {file ? (
-          <div className="drop-zone-preview">
-            {preview ? (
-              <img src={preview} alt="Aperçu" loading="lazy" className="drop-preview-img" />
-            ) : (
-              <Film size={48} />
-            )}
-            <div className="drop-file-info">
-              <span className="drop-filename">{file.name}</span>
-              <span className="drop-filesize">{formatFileSize(file.size)}</span>
+        {/* Zone de drop */}
+        <div
+          className="media-drop-zone"
+          onDrop={handleDrop}
+          onDragOver={(e) => e.preventDefault()}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_TYPES}
+            onChange={handleFileSelect}
+            className="display-file-input-hidden"
+          />
+          {file ? (
+            <div className="drop-zone-preview">
+              {preview ? (
+                <img src={preview} alt="Aperçu" loading="lazy" className="drop-preview-img" />
+              ) : (
+                <Film size={48} />
+              )}
+              <div className="drop-file-info">
+                <span className="drop-filename">{file.name}</span>
+                <span className="drop-filesize">{formatFileSize(file.size)}</span>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="drop-zone-empty">
-            <Image size={48} strokeWidth={1} />
-            <p>Glissez un fichier ici ou cliquez pour sélectionner</p>
-            <span className="drop-hint">
-              Images (JPEG, PNG, GIF, WebP, SVG) — Vidéos (MP4, WebM, OGG) — Max 50 Mo
-            </span>
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="drop-zone-empty">
+              <Image size={48} strokeWidth={1} />
+              <p>Glissez un fichier ici ou cliquez pour sélectionner</p>
+              <span className="drop-hint">
+                Images (JPEG, PNG, GIF, WebP, SVG) — Vidéos (MP4, WebM, OGG) — Max 50 Mo
+              </span>
+            </div>
+          )}
+        </div>
 
-      {/* Tags */}
-      <FormField className="form-group media-upload-tags" label="Tags (séparés par des virgules)">
-        <Input
-          type="text"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="Ex: logo, corporate, vidéo promo"
-        />
-      </FormField>
-    </ModalLayout>
+        {/* Tags */}
+        <FormField className="form-group media-upload-tags" label="Tags (séparés par des virgules)">
+          <Input
+            type="text"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="Ex: logo, corporate, vidéo promo"
+          />
+        </FormField>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

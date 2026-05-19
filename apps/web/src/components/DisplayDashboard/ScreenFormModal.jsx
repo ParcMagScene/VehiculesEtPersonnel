@@ -4,11 +4,14 @@ import { memo, useCallback, useEffect, useState } from 'react';
 
 import { Button, FormField, Input, ModalLayout, Select } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 
 function ScreenFormModal({ screen, onSave, onClose }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [saving, setSaving] = useState(false);
   const [playlists, setPlaylists] = useState([]);
   const [form, setForm] = useState({
@@ -18,6 +21,8 @@ function ScreenFormModal({ screen, onSave, onClose }) {
     orientation: 'landscape',
     playlistId: '',
   });
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   useEffect(() => {
     if (screen) {
@@ -61,6 +66,7 @@ function ScreenFormModal({ screen, onSave, onClose }) {
       } else {
         await api.createDisplayScreen(data);
       }
+      resetDirty();
       onSave();
     } catch (err) {
       toast.error(err.message || 'Erreur enregistrement');
@@ -70,76 +76,79 @@ function ScreenFormModal({ screen, onSave, onClose }) {
   }, [form, screen, toast, onSave]);
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={screen ? "Modifier l'\u00e9cran" : 'Nouvel \u00e9cran'}
-      icon={<Monitor size={18} />}
-      size="md"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" onClick={handleSave} disabled={saving}>
-            <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </Button>
-        </>
-      }
-    >
-      <FormField className="form-group" label="Nom" required>
-        <Input
-          type="text"
-          value={form.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="Ex: Écran Hall d'entrée"
-          autoFocus
-        />
-      </FormField>
-      <FormField className="form-group" label="Emplacement">
-        <Input
-          type="text"
-          value={form.location}
-          onChange={(e) => handleChange('location', e.target.value)}
-          placeholder="Ex: Hall principal"
-        />
-      </FormField>
-      <div className="form-row">
-        <FormField className="form-group" label="Résolution">
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={screen ? "Modifier l'écran" : 'Nouvel écran'}
+        icon={<Monitor size={18} />}
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleSave} disabled={saving}>
+              <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+            </Button>
+          </>
+        }
+      >
+        <FormField className="form-group" label="Nom" required>
+          <Input
+            type="text"
+            value={form.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+            placeholder="Ex: Écran Hall d'entrée"
+            autoFocus
+          />
+        </FormField>
+        <FormField className="form-group" label="Emplacement">
+          <Input
+            type="text"
+            value={form.location}
+            onChange={(e) => handleChange('location', e.target.value)}
+            placeholder="Ex: Hall principal"
+          />
+        </FormField>
+        <div className="form-row">
+          <FormField className="form-group" label="Résolution">
+            <Select
+              value={form.resolution}
+              onChange={(e) => handleChange('resolution', e.target.value)}
+            >
+              <option value="1920x1080">1920×1080 (Full HD)</option>
+              <option value="3840x2160">3840×2160 (4K)</option>
+              <option value="1280x720">1280×720 (HD)</option>
+              <option value="1080x1920">1080×1920 (Full HD portrait)</option>
+            </Select>
+          </FormField>
+          <FormField className="form-group" label="Orientation">
+            <Select
+              value={form.orientation}
+              onChange={(e) => handleChange('orientation', e.target.value)}
+            >
+              <option value="landscape">Paysage</option>
+              <option value="portrait">Portrait</option>
+            </Select>
+          </FormField>
+        </div>
+        <FormField className="form-group" label="Playlist assignée">
           <Select
-            value={form.resolution}
-            onChange={(e) => handleChange('resolution', e.target.value)}
+            value={form.playlistId}
+            onChange={(e) => handleChange('playlistId', e.target.value)}
           >
-            <option value="1920x1080">1920×1080 (Full HD)</option>
-            <option value="3840x2160">3840×2160 (4K)</option>
-            <option value="1280x720">1280×720 (HD)</option>
-            <option value="1080x1920">1080×1920 (Full HD portrait)</option>
+            <option value="">— Aucune —</option>
+            {playlists.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
           </Select>
         </FormField>
-        <FormField className="form-group" label="Orientation">
-          <Select
-            value={form.orientation}
-            onChange={(e) => handleChange('orientation', e.target.value)}
-          >
-            <option value="landscape">Paysage</option>
-            <option value="portrait">Portrait</option>
-          </Select>
-        </FormField>
-      </div>
-      <FormField className="form-group" label="Playlist assignée">
-        <Select
-          value={form.playlistId}
-          onChange={(e) => handleChange('playlistId', e.target.value)}
-        >
-          <option value="">— Aucune —</option>
-          {playlists.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
-      </FormField>
-    </ModalLayout>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

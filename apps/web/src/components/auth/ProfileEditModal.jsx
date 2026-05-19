@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Avatar, Button, InlineAlert, Input, ModalLayout } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 
 // targetUser: si fourni (mode admin), on édite cet utilisateur via les endpoints admin
@@ -22,6 +23,9 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState(null);
   const fileInputRef = useRef(null);
+
+  const { resetDirty, guardClose } = useDirtyForm({ name }, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   // ─── PIN state (uniquement en mode propre, pas admin)
   const [hasPin, setHasPin] = useState(false);
@@ -58,6 +62,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
         body: JSON.stringify({ name: name.trim() }),
       });
       onUserUpdate(result.user);
+      resetDirty();
     } catch (err) {
       setError(err.message || 'Erreur lors de la mise à jour');
     } finally {
@@ -178,14 +183,14 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
   return (
     <ModalLayout
       open
-      onClose={onClose}
+      onClose={handleSafeClose}
       size="sm"
       title={isAdminMode ? `Modifier ${editedUser.name}` : 'Mon profil'}
       icon={<User size={20} />}
       className="profile-edit-modal"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={handleSafeClose}>
             Fermer
           </Button>
           {activeTab === 'profile' && (

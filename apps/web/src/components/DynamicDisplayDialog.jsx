@@ -16,6 +16,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, FormField, Input, ModalLayout, Textarea } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../constants/colors';
+import { useConfirmDialog } from '../hooks/useConfirmDialog';
+import { useDirtyForm } from '../hooks/useDirtyForm';
 import { useToast } from '../hooks/useToast';
 import api from '../utils/api';
 import AddressAutocomplete from './AddressAutocomplete';
@@ -40,6 +42,7 @@ const EVENT_CATEGORIES = {
 // ═══ Composant Principal ═══
 function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, onClose }) {
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [saving, setSaving] = useState(false);
   const [affaireSearch, setAffaireSearch] = useState(defaultAffaireId || '');
   const [affaireSuggestions, setAffaireSuggestions] = useState([]);
@@ -61,6 +64,9 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
     location: '',
   });
   const [locationCoords, setLocationCoords] = useState(null);
+
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   // Init from existing event
   useEffect(() => {
@@ -161,6 +167,7 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
         await api.createDisplayEvent(payload);
         toast.success('Événement créé');
       }
+      resetDirty();
       onSave?.();
       onClose();
     } catch (err) {
@@ -171,234 +178,239 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
   };
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      size="lg"
-      title={isEdit ? "Modifier l'événement" : "Nouvel événement d'affichage"}
-      icon={<Monitor size={20} />}
-      className="display-dialog"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" onClick={handleSave} disabled={saving}>
-            <Save size={15} />
-            {saving ? 'Enregistrement...' : isEdit ? 'Modifier' : 'Créer'}
-          </Button>
-        </>
-      }
-    >
-      {/* Body */}
-      <div className="dialog-body">
-        {/* Type */}
-        <FormField
-          className="form-group"
-          label="Type d'événement"
-          required
-          style={{ marginBottom: 16 }}
-        >
-          <div className="type-selector">
-            {Object.entries(EVENT_TYPES).map(([key, info]) => (
-              <span
-                key={key}
-                className={`type-chip ${form.type === key ? 'selected' : ''}`}
-                style={form.type === key ? { background: info.color, borderColor: info.color } : {}}
-                onClick={() => updateField('type', key)}
-              >
-                {info.emoji} {info.label}
-              </span>
-            ))}
-          </div>
-        </FormField>
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        size="lg"
+        title={isEdit ? "Modifier l'événement" : "Nouvel événement d'affichage"}
+        icon={<Monitor size={20} />}
+        className="display-dialog"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" onClick={handleSave} disabled={saving}>
+              <Save size={15} />
+              {saving ? 'Enregistrement...' : isEdit ? 'Modifier' : 'Créer'}
+            </Button>
+          </>
+        }
+      >
+        {/* Body */}
+        <div className="dialog-body">
+          {/* Type */}
+          <FormField
+            className="form-group"
+            label="Type d'événement"
+            required
+            style={{ marginBottom: 16 }}
+          >
+            <div className="type-selector">
+              {Object.entries(EVENT_TYPES).map(([key, info]) => (
+                <span
+                  key={key}
+                  className={`type-chip ${form.type === key ? 'selected' : ''}`}
+                  style={
+                    form.type === key ? { background: info.color, borderColor: info.color } : {}
+                  }
+                  onClick={() => updateField('type', key)}
+                >
+                  {info.emoji} {info.label}
+                </span>
+              ))}
+            </div>
+          </FormField>
 
-        {/* Catégorie */}
-        <FormField className="form-group" label="Catégorie" style={{ marginBottom: 16 }}>
-          <div className="category-selector">
-            {Object.entries(EVENT_CATEGORIES).map(([key, info]) => (
-              <span
-                key={key}
-                className={`cat-pill ${form.category === key ? 'selected' : ''}`}
-                style={
-                  form.category === key ? { background: info.color, borderColor: info.color } : {}
+          {/* Catégorie */}
+          <FormField className="form-group" label="Catégorie" style={{ marginBottom: 16 }}>
+            <div className="category-selector">
+              {Object.entries(EVENT_CATEGORIES).map(([key, info]) => (
+                <span
+                  key={key}
+                  className={`cat-pill ${form.category === key ? 'selected' : ''}`}
+                  style={
+                    form.category === key ? { background: info.color, borderColor: info.color } : {}
+                  }
+                  onClick={() => updateField('category', key)}
+                >
+                  {info.label}
+                </span>
+              ))}
+            </div>
+          </FormField>
+
+          {/* Affaire + Client */}
+          <div className="form-row">
+            <div ref={suggRef} className="form-group affaire-autocomplete">
+              <FormField
+                label={
+                  <>
+                    <Briefcase size={12} /> Affaire
+                  </>
                 }
-                onClick={() => updateField('category', key)}
               >
-                {info.label}
-              </span>
-            ))}
-          </div>
-        </FormField>
-
-        {/* Affaire + Client */}
-        <div className="form-row">
-          <div ref={suggRef} className="form-group affaire-autocomplete">
+                <Input
+                  type="text"
+                  value={affaireSearch}
+                  onChange={(e) => handleAffaireInput(e.target.value)}
+                  placeholder="AF32844..."
+                  onFocus={() => affaireSuggestions.length > 0 && setShowSuggestions(true)}
+                />
+                {showSuggestions && affaireSuggestions.length > 0 && (
+                  <div className="affaire-suggestions">
+                    {affaireSuggestions.map((aff) => (
+                      <div
+                        key={aff.id || aff.affaireNumber}
+                        className="affaire-suggestion"
+                        onClick={() => handleSelectAffaire(aff)}
+                      >
+                        <span className="affaire-id">{aff.affaireNumber || aff.id}</span>
+                        <span className="affaire-name">
+                          {aff.client || aff.clientName || ''}{' '}
+                          {aff.lieu || aff.location ? `— ${aff.lieu || aff.location}` : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </FormField>
+            </div>
             <FormField
+              className="form-group"
               label={
                 <>
-                  <Briefcase size={12} /> Affaire
+                  <User size={12} /> Client
                 </>
               }
             >
               <Input
                 type="text"
-                value={affaireSearch}
-                onChange={(e) => handleAffaireInput(e.target.value)}
-                placeholder="AF32844..."
-                onFocus={() => affaireSuggestions.length > 0 && setShowSuggestions(true)}
+                value={form.client}
+                onChange={(e) => updateField('client', e.target.value)}
+                placeholder="Nom du client"
               />
-              {showSuggestions && affaireSuggestions.length > 0 && (
-                <div className="affaire-suggestions">
-                  {affaireSuggestions.map((aff) => (
-                    <div
-                      key={aff.id || aff.affaireNumber}
-                      className="affaire-suggestion"
-                      onClick={() => handleSelectAffaire(aff)}
-                    >
-                      <span className="affaire-id">{aff.affaireNumber || aff.id}</span>
-                      <span className="affaire-name">
-                        {aff.client || aff.clientName || ''}{' '}
-                        {aff.lieu || aff.location ? `— ${aff.lieu || aff.location}` : ''}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </FormField>
           </div>
-          <FormField
-            className="form-group"
-            label={
-              <>
-                <User size={12} /> Client
-              </>
-            }
-          >
-            <Input
-              type="text"
-              value={form.client}
-              onChange={(e) => updateField('client', e.target.value)}
-              placeholder="Nom du client"
-            />
-          </FormField>
-        </div>
 
-        {/* Date + Période */}
-        <div className="form-row">
-          <FormField
-            className="form-group"
-            label={
-              <>
-                <Calendar size={12} /> Date
-              </>
-            }
-            required
-          >
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => updateField('date', e.target.value)}
-            />
-          </FormField>
-          <FormField
-            className="form-group"
-            label={
-              <>
-                <Clock size={12} /> Heure (optionnel)
-              </>
-            }
-          >
-            <input
-              type="time"
-              value={form.time}
-              onChange={(e) => updateField('time', e.target.value)}
-            />
-          </FormField>
-        </div>
-
-        {/* Période Matin/Après-midi */}
-        <FormField className="form-group" label="Période" style={{ marginBottom: 16 }}>
-          <div className="period-toggle">
-            <Button
-              variant="ghost"
-              type="button"
-              className={`period-btn ${form.period === 'AM' ? 'selected' : ''}`}
-              onClick={() => updateField('period', 'AM')}
+          {/* Date + Période */}
+          <div className="form-row">
+            <FormField
+              className="form-group"
+              label={
+                <>
+                  <Calendar size={12} /> Date
+                </>
+              }
+              required
             >
-              🌅 Matin
-            </Button>
-            <Button
-              variant="ghost"
-              type="button"
-              className={`period-btn ${form.period === 'PM' ? 'selected' : ''}`}
-              onClick={() => updateField('period', 'PM')}
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => updateField('date', e.target.value)}
+              />
+            </FormField>
+            <FormField
+              className="form-group"
+              label={
+                <>
+                  <Clock size={12} /> Heure (optionnel)
+                </>
+              }
             >
-              ☀️ Après-midi
-            </Button>
+              <input
+                type="time"
+                value={form.time}
+                onChange={(e) => updateField('time', e.target.value)}
+              />
+            </FormField>
           </div>
-        </FormField>
 
-        {/* Lieu */}
-        <FormField
-          className="form-group"
-          label={
-            <>
-              <MapPin size={12} /> Lieu
-            </>
-          }
-          style={{ marginBottom: 16 }}
-        >
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <AddressAutocomplete
-              value={form.location}
-              onChange={(v) => updateField('location', v)}
-              placeholder="Dépôt Locmat, salle des fêtes..."
-              onPlaceSelect={(place) => {
-                if (place?.geometry?.location) {
-                  setLocationCoords({
-                    lat: place.geometry.location.lat(),
-                    lng: place.geometry.location.lng(),
-                  });
-                }
-              }}
-            />
-            {(locationCoords || form.location) && (
-              <a
-                href={
-                  locationCoords
-                    ? `https://www.google.com/maps/search/?api=1&query=${locationCoords.lat},${locationCoords.lng}`
-                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.location)}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Ouvrir dans Google Maps"
-                style={{ color: 'var(--theme-primary)', flexShrink: 0 }}
+          {/* Période Matin/Après-midi */}
+          <FormField className="form-group" label="Période" style={{ marginBottom: 16 }}>
+            <div className="period-toggle">
+              <Button
+                variant="ghost"
+                type="button"
+                className={`period-btn ${form.period === 'AM' ? 'selected' : ''}`}
+                onClick={() => updateField('period', 'AM')}
               >
-                <ExternalLink size={16} />
-              </a>
-            )}
-          </div>
-        </FormField>
+                🌅 Matin
+              </Button>
+              <Button
+                variant="ghost"
+                type="button"
+                className={`period-btn ${form.period === 'PM' ? 'selected' : ''}`}
+                onClick={() => updateField('period', 'PM')}
+              >
+                ☀️ Après-midi
+              </Button>
+            </div>
+          </FormField>
 
-        {/* Commentaire */}
-        <FormField
-          className="form-group"
-          label={
-            <>
-              <MessageSquare size={12} /> Commentaire
-            </>
-          }
-        >
-          <Textarea
-            value={form.comment}
-            onChange={(e) => updateField('comment', e.target.value)}
-            placeholder="Détails supplémentaires..."
-            rows={3}
-          />
-        </FormField>
-      </div>
-    </ModalLayout>
+          {/* Lieu */}
+          <FormField
+            className="form-group"
+            label={
+              <>
+                <MapPin size={12} /> Lieu
+              </>
+            }
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <AddressAutocomplete
+                value={form.location}
+                onChange={(v) => updateField('location', v)}
+                placeholder="Dépôt Locmat, salle des fêtes..."
+                onPlaceSelect={(place) => {
+                  if (place?.geometry?.location) {
+                    setLocationCoords({
+                      lat: place.geometry.location.lat(),
+                      lng: place.geometry.location.lng(),
+                    });
+                  }
+                }}
+              />
+              {(locationCoords || form.location) && (
+                <a
+                  href={
+                    locationCoords
+                      ? `https://www.google.com/maps/search/?api=1&query=${locationCoords.lat},${locationCoords.lng}`
+                      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.location)}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Ouvrir dans Google Maps"
+                  style={{ color: 'var(--theme-primary)', flexShrink: 0 }}
+                >
+                  <ExternalLink size={16} />
+                </a>
+              )}
+            </div>
+          </FormField>
+
+          {/* Commentaire */}
+          <FormField
+            className="form-group"
+            label={
+              <>
+                <MessageSquare size={12} /> Commentaire
+              </>
+            }
+          >
+            <Textarea
+              value={form.comment}
+              onChange={(e) => updateField('comment', e.target.value)}
+              placeholder="Détails supplémentaires..."
+              rows={3}
+            />
+          </FormField>
+        </div>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

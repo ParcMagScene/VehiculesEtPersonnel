@@ -1982,6 +1982,13 @@ function ImportStockModal({ onDone, onClose }) {
   const [importMode, setImportMode] = useState('upsert'); // upsert | insert_only
   const [_result, setResult] = useState(null);
 
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(
+    { fileName: file?.name || '', pasteText, parsedCount: parsedItems.length, importMode },
+    { confirmer: confirm },
+  );
+  const handleSafeClose = guardClose(onClose);
+
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
     if (f) {
@@ -2040,6 +2047,7 @@ function ImportStockModal({ onDone, onClose }) {
         `Import terminé : ${res.inserted} créés, ${res.updated} mis à jour, ${res.skipped} ignorés`,
       );
       refreshBus.publish('stock');
+      resetDirty();
       onDone();
     } catch (e) {
       setError('Erreur import: ' + (e.message || 'erreur serveur'));
@@ -2067,208 +2075,213 @@ function ImportStockModal({ onDone, onClose }) {
   );
 
   return (
-    <ModalLayout
-      open
-      onClose={step !== 'importing' ? onClose : undefined}
-      title={
-        <>
-          <Upload size={20} /> Importer un inventaire
-        </>
-      }
-      size="lg"
-      className="stock-modal stock-modal-lg"
-      footer={
-        step === 'select' ? (
+    <>
+      <ModalLayout
+        open
+        onClose={step !== 'importing' ? handleSafeClose : undefined}
+        title={
           <>
-            <Button variant="ghost" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" onClick={handleParse} disabled={!file && !pasteText.trim()}>
-              <Search size={16} /> Analyser
-            </Button>
+            <Upload size={20} /> Importer un inventaire
           </>
-        ) : step === 'preview' ? (
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setStep('select');
-                setParsedItems([]);
-              }}
-            >
-              ← Retour
-            </Button>
-            <Button variant="primary" onClick={handleImport}>
-              <Upload size={16} /> Importer {parsedItems.length} articles
-            </Button>
-          </>
-        ) : null
-      }
-    >
-      <div className="stock-modal-body u-overflow-auto" style={{ maxHeight: '70vh' }}>
-        {error && <InlineAlert>{error}</InlineAlert>}
+        }
+        size="lg"
+        className="stock-modal stock-modal-lg"
+        footer={
+          step === 'select' ? (
+            <>
+              <Button variant="ghost" onClick={handleSafeClose}>
+                Annuler
+              </Button>
+              <Button variant="primary" onClick={handleParse} disabled={!file && !pasteText.trim()}>
+                <Search size={16} /> Analyser
+              </Button>
+            </>
+          ) : step === 'preview' ? (
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setStep('select');
+                  setParsedItems([]);
+                }}
+              >
+                ← Retour
+              </Button>
+              <Button variant="primary" onClick={handleImport}>
+                <Upload size={16} /> Importer {parsedItems.length} articles
+              </Button>
+            </>
+          ) : null
+        }
+      >
+        <div className="stock-modal-body u-overflow-auto" style={{ maxHeight: '70vh' }}>
+          {error && <InlineAlert>{error}</InlineAlert>}
 
-        {/* STEP: SELECT */}
-        {step === 'select' && (
-          <>
-            <p className="stock-import-hint">
-              Importez un <strong>PDF</strong> (Rapport d'Inventaire) ou un <strong>CSV</strong>{' '}
-              (colonnes&nbsp;: Référence, Nom, Description, Catégorie, Emplacement, Quantité,
-              Valeur).
-            </p>
+          {/* STEP: SELECT */}
+          {step === 'select' && (
+            <>
+              <p className="stock-import-hint">
+                Importez un <strong>PDF</strong> (Rapport d'Inventaire) ou un <strong>CSV</strong>{' '}
+                (colonnes&nbsp;: Référence, Nom, Description, Catégorie, Emplacement, Quantité,
+                Valeur).
+              </p>
 
-            <div className="stock-form-field">
-              <label htmlFor="stock-import-file">Fichier PDF ou CSV</label>
-              <input
-                id="stock-import-file"
-                type="file"
-                accept=".pdf,.csv,.tsv,.txt"
-                onChange={handleFileChange}
-              />
-              {file && (
-                <small>
-                  {file.name} — {(file.size / 1024).toFixed(1)} Ko
-                </small>
-              )}
-            </div>
-
-            {!isPDF && (
               <div className="stock-form-field">
-                <label htmlFor="stock-ou-coller-les-donnees-csv">Ou coller les données (CSV)</label>
-                <Textarea
-                  id="stock-ou-coller-les-donnees-csv"
-                  rows={8}
-                  value={pasteText}
-                  onChange={(e) => {
-                    setPasteText(e.target.value);
-                    setFile(null);
-                  }}
-                  aria-label="Coller les données CSV"
-                  placeholder={
-                    'Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17'
-                  }
-                  style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                <label htmlFor="stock-import-file">Fichier PDF ou CSV</label>
+                <input
+                  id="stock-import-file"
+                  type="file"
+                  accept=".pdf,.csv,.tsv,.txt"
+                  onChange={handleFileChange}
                 />
+                {file && (
+                  <small>
+                    {file.name} — {(file.size / 1024).toFixed(1)} Ko
+                  </small>
+                )}
               </div>
-            )}
 
-            <div className="stock-form-field">
-              <span className="stock-form-group-label">Mode d'import</span>
-              <div className="u-flex u-gap-3">
-                <label className="u-flex-center u-gap-1 u-cursor-pointer">
-                  <input
-                    type="radio"
-                    name="importMode"
-                    value="upsert"
-                    checked={importMode === 'upsert'}
-                    onChange={() => setImportMode('upsert')}
+              {!isPDF && (
+                <div className="stock-form-field">
+                  <label htmlFor="stock-ou-coller-les-donnees-csv">
+                    Ou coller les données (CSV)
+                  </label>
+                  <Textarea
+                    id="stock-ou-coller-les-donnees-csv"
+                    rows={8}
+                    value={pasteText}
+                    onChange={(e) => {
+                      setPasteText(e.target.value);
+                      setFile(null);
+                    }}
+                    aria-label="Coller les données CSV"
+                    placeholder={
+                      'Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17'
+                    }
+                    style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
                   />
-                  Créer + mettre à jour
-                </label>
-                <label className="u-flex-center u-gap-1 u-cursor-pointer">
-                  <input
-                    type="radio"
-                    name="importMode"
-                    value="insert_only"
-                    checked={importMode === 'insert_only'}
-                    onChange={() => setImportMode('insert_only')}
-                  />
-                  Créer uniquement (ignorer les existants)
-                </label>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* STEP: PREVIEW */}
-        {step === 'preview' && parsedItems.length > 0 && (
-          <>
-            <div className="stock-import-stats">
-              <div className="stock-import-stat">
-                <strong>{parsedItems.length}</strong>
-                <span>articles</span>
-              </div>
-              <div className="stock-import-stat">
-                <strong>{totalQty.toLocaleString('fr-FR')}</strong>
-                <span>quantité totale</span>
-              </div>
-              <div className="stock-import-stat">
-                <strong>
-                  {totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
-                </strong>
-                <span>valeur estimée</span>
-              </div>
-              <div className="stock-import-stat">
-                <strong>{catCounts.length}</strong>
-                <span>catégories</span>
-              </div>
-            </div>
-
-            {/* Catégories détectées */}
-            <div className="stock-import-cats">
-              <h4>Catégories détectées :</h4>
-              <div className="stock-import-cat-list">
-                {catCounts.map(([cat, count]) => (
-                  <span key={cat} className="stock-import-cat-badge">
-                    {cat} <em>({count})</em>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Aperçu */}
-            <div className="stock-import-preview">
-              <Table className="stock-table">
-                <thead>
-                  <tr>
-                    <th>Réf.</th>
-                    <th>Nom</th>
-                    <th>Catégorie</th>
-                    <th>Emplacement</th>
-                    <th className="u-text-right">Qté</th>
-                    <th className="u-text-right">Valeur unit.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsedItems.slice(0, 30).map((item, i) => (
-                    <tr key={i}>
-                      <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                        {item.reference || '—'}
-                      </td>
-                      <td>{item.name}</td>
-                      <td>{item.category_name || '—'}</td>
-                      <td>{item.location || '—'}</td>
-                      <td className="u-text-right">{item.quantity}</td>
-                      <td className="u-text-right">
-                        {item.unit_price
-                          ? item.unit_price.toLocaleString('fr-FR', {
-                              style: 'currency',
-                              currency: 'EUR',
-                            })
-                          : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-              {parsedItems.length > 30 && (
-                <p className="stock-import-hint u-text-center u-mt-2">
-                  …et {parsedItems.length - 30} autres articles
-                </p>
+                </div>
               )}
-            </div>
-          </>
-        )}
 
-        {/* STEP: IMPORTING */}
-        {step === 'importing' && (
-          <div className="stock-import-loading">
-            <Spinner size="lg" />
-            <p>Import de {parsedItems.length} articles en cours…</p>
-          </div>
-        )}
-      </div>
-    </ModalLayout>
+              <div className="stock-form-field">
+                <span className="stock-form-group-label">Mode d'import</span>
+                <div className="u-flex u-gap-3">
+                  <label className="u-flex-center u-gap-1 u-cursor-pointer">
+                    <input
+                      type="radio"
+                      name="importMode"
+                      value="upsert"
+                      checked={importMode === 'upsert'}
+                      onChange={() => setImportMode('upsert')}
+                    />
+                    Créer + mettre à jour
+                  </label>
+                  <label className="u-flex-center u-gap-1 u-cursor-pointer">
+                    <input
+                      type="radio"
+                      name="importMode"
+                      value="insert_only"
+                      checked={importMode === 'insert_only'}
+                      onChange={() => setImportMode('insert_only')}
+                    />
+                    Créer uniquement (ignorer les existants)
+                  </label>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* STEP: PREVIEW */}
+          {step === 'preview' && parsedItems.length > 0 && (
+            <>
+              <div className="stock-import-stats">
+                <div className="stock-import-stat">
+                  <strong>{parsedItems.length}</strong>
+                  <span>articles</span>
+                </div>
+                <div className="stock-import-stat">
+                  <strong>{totalQty.toLocaleString('fr-FR')}</strong>
+                  <span>quantité totale</span>
+                </div>
+                <div className="stock-import-stat">
+                  <strong>
+                    {totalValue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                  </strong>
+                  <span>valeur estimée</span>
+                </div>
+                <div className="stock-import-stat">
+                  <strong>{catCounts.length}</strong>
+                  <span>catégories</span>
+                </div>
+              </div>
+
+              {/* Catégories détectées */}
+              <div className="stock-import-cats">
+                <h4>Catégories détectées :</h4>
+                <div className="stock-import-cat-list">
+                  {catCounts.map(([cat, count]) => (
+                    <span key={cat} className="stock-import-cat-badge">
+                      {cat} <em>({count})</em>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Aperçu */}
+              <div className="stock-import-preview">
+                <Table className="stock-table">
+                  <thead>
+                    <tr>
+                      <th>Réf.</th>
+                      <th>Nom</th>
+                      <th>Catégorie</th>
+                      <th>Emplacement</th>
+                      <th className="u-text-right">Qté</th>
+                      <th className="u-text-right">Valeur unit.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsedItems.slice(0, 30).map((item, i) => (
+                      <tr key={i}>
+                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                          {item.reference || '—'}
+                        </td>
+                        <td>{item.name}</td>
+                        <td>{item.category_name || '—'}</td>
+                        <td>{item.location || '—'}</td>
+                        <td className="u-text-right">{item.quantity}</td>
+                        <td className="u-text-right">
+                          {item.unit_price
+                            ? item.unit_price.toLocaleString('fr-FR', {
+                                style: 'currency',
+                                currency: 'EUR',
+                              })
+                            : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+                {parsedItems.length > 30 && (
+                  <p className="stock-import-hint u-text-center u-mt-2">
+                    …et {parsedItems.length - 30} autres articles
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* STEP: IMPORTING */}
+          {step === 'importing' && (
+            <div className="stock-import-loading">
+              <Spinner size="lg" />
+              <p>Import de {parsedItems.length} articles en cours…</p>
+            </div>
+          )}
+        </div>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

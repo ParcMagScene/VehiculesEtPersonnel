@@ -42,6 +42,7 @@ import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import { AFFAIRE_STATUS_MAP } from '../../utils/affaireWorkflow';
 import api from '../../utils/api';
 import { capitalizeText } from '../../utils/dateUtils';
+import { loadFromIndexedDB, saveToIndexedDB, STORES } from '../../utils/indexedDB';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import AffaireDashboard from './AffaireDashboard';
@@ -140,15 +141,29 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   const [isDragging, setIsDragging] = useState(false);
 
   // Charger les affaires depuis l'API (DB serveur + auto-détection réservations)
+  // Sprint 1 audit state : remplit le store IDB 'affaires' (offline fallback)
+  // et fait un fallback IDB silencieux si l'API échoue.
   const loadDbAffaires = useCallback(async () => {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const data = await api.getAffaires();
-        setDbAffaires(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setDbAffaires(list);
+        saveToIndexedDB(STORES.affaires, list);
         return;
       } catch (err) {
         if (attempt === 1) {
           console.error('Erreur chargement affaires DB:', err);
+          // Fallback IDB : on sert la dernière version connue plutôt qu'une liste vide.
+          try {
+            const cached = await loadFromIndexedDB(STORES.affaires);
+            if (Array.isArray(cached) && cached.length > 0) {
+              setDbAffaires(cached);
+              return;
+            }
+          } catch (idbErr) {
+            console.warn('Fallback IDB affaires indisponible:', idbErr);
+          }
           setDbAffaires([]);
           throw err;
         }

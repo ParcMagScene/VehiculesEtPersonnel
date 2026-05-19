@@ -124,6 +124,8 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       }
       saveToIndexedDB(STORES.garages, garages);
       saveToIndexedDB(STORES.maintenances, maintenances);
+      // Sprint 1 audit state : alimenter le store 'persons' (offline fallback).
+      saveToIndexedDB(STORES.persons, persons);
     }, 500);
     return () => clearTimeout(t);
   }, [
@@ -134,6 +136,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
     calendarConfig,
     garages,
     maintenances,
+    persons,
     isDataLoading,
   ]);
 
@@ -261,7 +264,12 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       }
 
       setReservations((prev) => [...prev, ...newReservations]);
-      if (newReservations.length > 0) refreshBus.publish('affaires');
+      if (newReservations.length > 0) {
+        // Double publication : 'reservations' = sémantique propre,
+        // 'affaires' = compat existante (panels affaires/dashboard/mobile).
+        refreshBus.publish('reservations');
+        refreshBus.publish('affaires');
+      }
       return true;
     },
     [checkOverlap, vehicles, currentUser, toast],
@@ -316,6 +324,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         logger.log('✅ Envoi API - Objet final:', finalReservation);
         await api.updateReservation(id, finalReservation);
         setReservations((prev) => prev.map((r) => (r.id === id ? finalReservation : r)));
+        refreshBus.publish('reservations');
         refreshBus.publish('affaires');
         return true;
       } catch (error) {
@@ -340,6 +349,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         const result = await api.deleteReservation(id);
         logger.log('✅ Suppression API réussie:', result);
         setReservations((prev) => prev.filter((r) => r.id !== id));
+        refreshBus.publish('reservations');
         refreshBus.publish('affaires');
         logger.log('✅ État local mis à jour');
       } catch (error) {
@@ -372,16 +382,28 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
     }
   }, []);
 
+  // Rechargement réservations (clé 'reservations' du bus, distincte d''affaires').
+  const loadReservations = useCallback(async () => {
+    try {
+      const data = await api.getReservations();
+      setReservations(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Erreur lors du rechargement des réservations:', error);
+    }
+  }, []);
+
   // Abonnement au bus d'invalidation cross-module.
   useEffect(() => {
     if (!isAuthenticated || isAuthLoading) return undefined;
     const unsubVehicles = refreshBus.subscribe('vehicles', loadVehicles);
     const unsubMaintenances = refreshBus.subscribe('maintenances', loadMaintenances);
+    const unsubReservations = refreshBus.subscribe('reservations', loadReservations);
     return () => {
       unsubVehicles();
       unsubMaintenances();
+      unsubReservations();
     };
-  }, [isAuthenticated, isAuthLoading, loadVehicles, loadMaintenances]);
+  }, [isAuthenticated, isAuthLoading, loadVehicles, loadMaintenances, loadReservations]);
 
   const handleMaintenanceSave = useCallback(
     async (maintenance) => {

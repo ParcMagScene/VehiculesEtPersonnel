@@ -1,12 +1,14 @@
 import './TripDetailsModal.css';
 
 import { ArrowDown, Clock, MapPin, Plus, Trash2, User } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-import { Button, Dialog, FormField, Input, Modal, ModalBody, ModalHeader } from '@/design-system';
+import { Button, FormField, Input, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import api from '../../utils/api';
@@ -73,18 +75,11 @@ const TripDetailsModal = ({
   const [pausesWithValidatedLocation, setPausesWithValidatedLocation] = useState(new Set());
   const [isCalculating, setIsCalculating] = useState(false);
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
-  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  const initialFormDataRef = useRef(JSON.stringify(formData));
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { isDirty, guardClose } = useDirtyForm(formData, { confirmer: confirm });
   // [Sprint D] Prévient F5 / fermeture onglet pendant édition
-  useUnsavedChangesGuard(JSON.stringify(formData) !== initialFormDataRef.current);
-
-  const handleSafeClose = () => {
-    if (JSON.stringify(formData) !== initialFormDataRef.current) {
-      setShowUnsavedWarning(true);
-      return;
-    }
-    onClose();
-  };
+  useUnsavedChangesGuard(isDirty);
+  const handleSafeClose = guardClose(onClose);
   const [isSaved, setIsSaved] = useState(!!currentTripDetail);
   const [_locations, setLocations] = useState([]);
   const [allLocations, setAllLocations] = useState([]);
@@ -1557,21 +1552,7 @@ const TripDetailsModal = ({
         />
       )}
 
-      <Dialog
-        open={showUnsavedWarning}
-        onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => {
-          setShowUnsavedWarning(false);
-          onClose();
-        }}
-        title="Modifications non enregistrées"
-        variant="warning"
-        confirmLabel="Ne pas enregistrer"
-        cancelLabel="Continuer l'édition"
-        confirmVariant="danger"
-      >
-        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
-      </Dialog>
+      {ConfirmDialogRenderer}
     </Modal>
   );
 };

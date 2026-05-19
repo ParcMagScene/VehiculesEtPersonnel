@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 
 import {
   Button,
-  Dialog,
   FormField,
   InlineAlert,
   Input,
@@ -17,6 +16,8 @@ import {
 } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
@@ -40,25 +41,10 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  const initialFormDataRef = useRef(
-    JSON.stringify({
-      name: location?.name || '',
-      address: location?.address || '',
-      lat: location?.lat || null,
-      lng: location?.lng || null,
-      placeId: location?.placeId || '',
-      type: location?.type || 'Salle de spectacle',
-    }),
-  );
 
-  const handleSafeClose = () => {
-    if (JSON.stringify(formData) !== initialFormDataRef.current) {
-      setShowUnsavedWarning(true);
-      return;
-    }
-    onClose();
-  };
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { guardClose } = useDirtyForm(formData, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -632,21 +618,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
         </form>
       </ModalBody>
 
-      <Dialog
-        open={showUnsavedWarning}
-        onClose={() => setShowUnsavedWarning(false)}
-        onConfirm={() => {
-          setShowUnsavedWarning(false);
-          onClose();
-        }}
-        title="Modifications non enregistrées"
-        variant="warning"
-        confirmLabel="Ne pas enregistrer"
-        cancelLabel="Continuer l'édition"
-        confirmVariant="danger"
-      >
-        Vous avez des modifications non enregistrées. Que souhaitez-vous faire ?
-      </Dialog>
+      {ConfirmDialogRenderer}
     </Modal>
   );
 };

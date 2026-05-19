@@ -32,6 +32,8 @@ import {
   Textarea,
 } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -383,375 +385,394 @@ const LeaveRequestForm = ({
   // Obtenir l'info du type sélectionné
   const _currentTypeInfo = leaveTypes[leaveType];
 
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const formSnapshot = {
+    selectedPersonId,
+    leaveType,
+    exceptionalType,
+    startDate,
+    endDate,
+    startPeriod,
+    endPeriod,
+    comment,
+    signature,
+    justificationName,
+  };
+  const { guardClose } = useDirtyForm(formSnapshot, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
+
   return (
-    <Modal open={true} onClose={onClose} size="lg" className="lrf-modal">
-      <ModalHeader icon={<Calendar size={20} />} onClose={onClose}>
-        Demande de congé
-        <Button
-          variant="ghost"
-          type="button"
-          className="lrf-btn-info"
-          onClick={() => setShowLegalInfo(!showLegalInfo)}
-          title="Informations légales"
-        >
-          <Info size={16} />
-        </Button>
-      </ModalHeader>
+    <>
+      <Modal open={true} onClose={handleSafeClose} size="lg" className="lrf-modal">
+        <ModalHeader icon={<Calendar size={20} />} onClose={handleSafeClose}>
+          Demande de congé
+          <Button
+            variant="ghost"
+            type="button"
+            className="lrf-btn-info"
+            onClick={() => setShowLegalInfo(!showLegalInfo)}
+            title="Informations légales"
+          >
+            <Info size={16} />
+          </Button>
+        </ModalHeader>
 
-      {/* Bandeau légal */}
-      {showLegalInfo && (
-        <div className="lrf-legal-info">
-          <div className="lrf-legal-title">Références légales</div>
-          <ul>
-            <li>Code du travail — Art. L3141-1 à L3141-33 (Congés payés)</li>
-            <li>Convention collective IDCC 3252 — Spectacle vivant</li>
-            <li>Acquisition : 2,5 jours ouvrables / mois = 30 jours / an</li>
-            <li>Période de référence : 1er juin → 31 mai</li>
-            <li>Congé principal : min. 12 jours consécutifs entre mai et octobre</li>
-            <li>Date limite de pose : 28 février</li>
-            <li>Fermeture annuelle : 24 décembre → 1er janvier</li>
-            <li>Modification impossible &lt; 1 mois avant le départ</li>
-          </ul>
-        </div>
-      )}
+        {/* Bandeau légal */}
+        {showLegalInfo && (
+          <div className="lrf-legal-info">
+            <div className="lrf-legal-title">Références légales</div>
+            <ul>
+              <li>Code du travail — Art. L3141-1 à L3141-33 (Congés payés)</li>
+              <li>Convention collective IDCC 3252 — Spectacle vivant</li>
+              <li>Acquisition : 2,5 jours ouvrables / mois = 30 jours / an</li>
+              <li>Période de référence : 1er juin → 31 mai</li>
+              <li>Congé principal : min. 12 jours consécutifs entre mai et octobre</li>
+              <li>Date limite de pose : 28 février</li>
+              <li>Fermeture annuelle : 24 décembre → 1er janvier</li>
+              <li>Modification impossible &lt; 1 mois avant le départ</li>
+            </ul>
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit} className="lrf-form">
-        <ModalBody>
-          {/* Erreur globale */}
-          {error && <InlineAlert>{error}</InlineAlert>}
+        <form onSubmit={handleSubmit} className="lrf-form">
+          <ModalBody>
+            {/* Erreur globale */}
+            {error && <InlineAlert>{error}</InlineAlert>}
 
-          {/* Avertissements légaux */}
-          {warnings.length > 0 && (
-            <div className="lrf-warnings">
-              {warnings.map((w, i) => (
-                <InlineAlert key={i} variant="warning">
-                  {w}
-                </InlineAlert>
-              ))}
-            </div>
-          )}
-
-          {/* Sélection du salarié */}
-          <div className="lrf-field">
-            <label className="lrf-label">
-              <User size={14} />
-              Salarié
-            </label>
-            {isAdmin ? (
-              <Select
-                value={selectedPersonId}
-                onChange={(e) => setSelectedPersonId(e.target.value)}
-                className="lrf-select"
-                required
-              >
-                <option value="">— Sélectionner —</option>
-                {sortedPersons.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {getFavoriteDisplayName(p)}
-                  </option>
+            {/* Avertissements légaux */}
+            {warnings.length > 0 && (
+              <div className="lrf-warnings">
+                {warnings.map((w, i) => (
+                  <InlineAlert key={i} variant="warning">
+                    {w}
+                  </InlineAlert>
                 ))}
-              </Select>
-            ) : (
-              <div className="lrf-person-display">
-                {person
-                  ? `${person.firstName || person.first_name} ${person.lastName || person.last_name}`
-                  : '—'}
               </div>
             )}
-          </div>
 
-          {/* Type de congé */}
-          <div className="lrf-field">
-            <label className="lrf-label">
-              <FileText size={14} />
-              Type de congé
-            </label>
-            <div className="lrf-type-grid">
-              {Object.entries(leaveTypes).map(([key, info]) => (
-                <Button
-                  variant="ghost"
-                  key={key}
-                  type="button"
-                  className={`lrf-type-btn ${leaveType === key ? 'active' : ''}`}
-                  onClick={() => {
-                    setLeaveType(key);
-                    setExceptionalType('');
-                  }}
-                  style={{ '--type-color': info.color }}
-                >
-                  <span className="lrf-type-icon">{info.icon}</span>
-                  <span className="lrf-type-label">{info.label}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sous-type exceptionnel */}
-          {leaveType === 'exceptionnel' && (
+            {/* Sélection du salarié */}
             <div className="lrf-field">
               <label className="lrf-label">
-                <Info size={14} />
-                Motif du congé exceptionnel
+                <User size={14} />
+                Salarié
               </label>
-              <Select
-                value={exceptionalType}
-                onChange={(e) => setExceptionalType(e.target.value)}
-                className="lrf-select"
-                required
-              >
-                <option value="">— Sélectionner le motif —</option>
-                {Object.entries(exceptionalTypes).map(([key, info]) => (
-                  <option key={key} value={key}>
-                    {info.label} ({info.days} jour{info.days > 1 ? 's' : ''})
-                  </option>
-                ))}
-              </Select>
-              {exceptionalType && exceptionalTypes[exceptionalType] && (
-                <div className="lrf-exceptional-info">
-                  <CheckCircle size={12} />
-                  <span>
-                    Durée légale :{' '}
-                    <strong>
-                      {exceptionalTypes[exceptionalType].days} jour
-                      {exceptionalTypes[exceptionalType].days > 1 ? 's' : ''} ouvrable
-                      {exceptionalTypes[exceptionalType].days > 1 ? 's' : ''}
-                    </strong>
-                    {exceptionalTypes[exceptionalType].requiresJustification && (
-                      <>
-                        {' '}
-                        — <em>Justificatif obligatoire</em>
-                      </>
-                    )}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Dates */}
-          <div className="lrf-dates-row">
-            <div className="lrf-field lrf-date-field">
-              <label className="lrf-label">Date de début</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="lrf-input"
-                required
-              />
-              <div className="lrf-period-btns">
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className={`lrf-period-btn ${startPeriod === 'AM' ? 'active' : ''}`}
-                  onClick={() => setStartPeriod('AM')}
+              {isAdmin ? (
+                <Select
+                  value={selectedPersonId}
+                  onChange={(e) => setSelectedPersonId(e.target.value)}
+                  className="lrf-select"
+                  required
                 >
-                  Matin
-                </Button>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className={`lrf-period-btn ${startPeriod === 'PM' ? 'active' : ''}`}
-                  onClick={() => setStartPeriod('PM')}
-                >
-                  Après-midi
-                </Button>
-              </div>
-            </div>
-            <div className="lrf-dates-arrow">→</div>
-            <div className="lrf-field lrf-date-field">
-              <label className="lrf-label">Date de fin</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="lrf-input"
-                required
-                min={startDate}
-              />
-              <div className="lrf-period-btns">
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className={`lrf-period-btn ${endPeriod === 'AM' ? 'active' : ''}`}
-                  onClick={() => setEndPeriod('AM')}
-                >
-                  Matin
-                </Button>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className={`lrf-period-btn ${endPeriod === 'PM' ? 'active' : ''}`}
-                  onClick={() => setEndPeriod('PM')}
-                >
-                  Après-midi
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Résumé du calcul */}
-          {calculation && (
-            <div className="lrf-calculation">
-              <div className="lrf-calc-main">
-                <Calendar size={16} />
-                <span className="lrf-calc-days">{calculation.workingDays}</span>
-                <span>
-                  jour{calculation.workingDays > 1 ? 's' : ''} ouvrable
-                  {calculation.workingDays > 1 ? 's' : ''}
-                </span>
-                {calculation.fixedDuration && (
-                  <span className="lrf-calc-fixed">(durée légale fixe)</span>
-                )}
-              </div>
-
-              {calculation.holidaysInPeriod?.length > 0 && (
-                <div className="lrf-calc-holidays">
-                  <span className="lrf-calc-holidays-label">Jours fériés exclus :</span>
-                  {calculation.holidaysInPeriod.map((h, i) => (
-                    <span key={i} className="lrf-holiday-chip">
-                      {formatDateFR(h.date)} — {h.name}
-                    </span>
+                  <option value="">— Sélectionner —</option>
+                  {sortedPersons.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {getFavoriteDisplayName(p)}
+                    </option>
                   ))}
-                </div>
-              )}
-
-              {calculation.referencePeriod && (
-                <div className="lrf-calc-ref">
-                  Période de référence : {calculation.referencePeriod.label}
+                </Select>
+              ) : (
+                <div className="lrf-person-display">
+                  {person
+                    ? `${person.firstName || person.first_name} ${person.lastName || person.last_name}`
+                    : '—'}
                 </div>
               )}
             </div>
-          )}
 
-          {/* Solde de congés */}
-          {balance && leaveType === 'conge_paye' && (
-            <div className="lrf-balance">
-              <div className="lrf-balance-title">Solde de congés payés</div>
-              <div className="lrf-balance-grid">
-                <div className="lrf-balance-item">
-                  <span className="lrf-balance-value">
-                    {balance.daysEntitled ?? balance.days_entitled ?? 30}
-                  </span>
-                  <span className="lrf-balance-label">Acquis</span>
-                </div>
-                <div className="lrf-balance-item">
-                  <span className="lrf-balance-value">
-                    {balance.daysTaken ?? balance.days_taken ?? 0}
-                  </span>
-                  <span className="lrf-balance-label">Pris</span>
-                </div>
-                <div className="lrf-balance-item highlight">
-                  <span className="lrf-balance-value">
-                    {balance.remaining ??
-                      (balance.daysEntitled || balance.days_entitled || 30) -
-                        (balance.daysTaken || balance.days_taken || 0)}
-                  </span>
-                  <span className="lrf-balance-label">Restant</span>
-                </div>
-                {(balance.carryOver ?? balance.carry_over) > 0 && (
-                  <div className="lrf-balance-item carry">
-                    <span className="lrf-balance-value">
-                      +{balance.carryOver ?? balance.carry_over}
+            {/* Type de congé */}
+            <div className="lrf-field">
+              <label className="lrf-label">
+                <FileText size={14} />
+                Type de congé
+              </label>
+              <div className="lrf-type-grid">
+                {Object.entries(leaveTypes).map(([key, info]) => (
+                  <Button
+                    variant="ghost"
+                    key={key}
+                    type="button"
+                    className={`lrf-type-btn ${leaveType === key ? 'active' : ''}`}
+                    onClick={() => {
+                      setLeaveType(key);
+                      setExceptionalType('');
+                    }}
+                    style={{ '--type-color': info.color }}
+                  >
+                    <span className="lrf-type-icon">{info.icon}</span>
+                    <span className="lrf-type-label">{info.label}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sous-type exceptionnel */}
+            {leaveType === 'exceptionnel' && (
+              <div className="lrf-field">
+                <label className="lrf-label">
+                  <Info size={14} />
+                  Motif du congé exceptionnel
+                </label>
+                <Select
+                  value={exceptionalType}
+                  onChange={(e) => setExceptionalType(e.target.value)}
+                  className="lrf-select"
+                  required
+                >
+                  <option value="">— Sélectionner le motif —</option>
+                  {Object.entries(exceptionalTypes).map(([key, info]) => (
+                    <option key={key} value={key}>
+                      {info.label} ({info.days} jour{info.days > 1 ? 's' : ''})
+                    </option>
+                  ))}
+                </Select>
+                {exceptionalType && exceptionalTypes[exceptionalType] && (
+                  <div className="lrf-exceptional-info">
+                    <CheckCircle size={12} />
+                    <span>
+                      Durée légale :{' '}
+                      <strong>
+                        {exceptionalTypes[exceptionalType].days} jour
+                        {exceptionalTypes[exceptionalType].days > 1 ? 's' : ''} ouvrable
+                        {exceptionalTypes[exceptionalType].days > 1 ? 's' : ''}
+                      </strong>
+                      {exceptionalTypes[exceptionalType].requiresJustification && (
+                        <>
+                          {' '}
+                          — <em>Justificatif obligatoire</em>
+                        </>
+                      )}
                     </span>
-                    <span className="lrf-balance-label">Report</span>
                   </div>
                 )}
               </div>
-              {calculation &&
-                balance.remaining != null &&
-                calculation.workingDays > balance.remaining + (balance.carryOver || 0) && (
-                  <InlineAlert variant="warning">
-                    Solde insuffisant ({balance.remaining + (balance.carryOver || 0)} jours
-                    disponibles, {calculation.workingDays} demandés)
-                  </InlineAlert>
-                )}
-            </div>
-          )}
+            )}
 
-          {/* Commentaire */}
-          <div className="lrf-field">
-            <label className="lrf-label">Remarques (optionnel)</label>
-            <Textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              className="lrf-textarea"
-              rows={3}
-              placeholder="Précisions complémentaires..."
-            />
-          </div>
-
-          {/* Upload justificatif */}
-          {needsJustification && (
-            <div className="lrf-field">
-              <label className="lrf-label">
-                <Upload size={14} />
-                Justificatif {needsJustification ? '(obligatoire)' : '(optionnel)'}
-              </label>
-              <div className="lrf-upload-zone">
-                {justificationName ? (
-                  <div className="lrf-upload-file">
-                    <FileText size={14} />
-                    <span>{justificationName}</span>
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      onClick={() => {
-                        setJustificationFile(null);
-                        setJustificationName('');
-                      }}
-                    >
-                      <Trash2 size={12} />
-                    </Button>
-                  </div>
-                ) : (
+            {/* Dates */}
+            <div className="lrf-dates-row">
+              <div className="lrf-field lrf-date-field">
+                <label className="lrf-label">Date de début</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="lrf-input"
+                  required
+                />
+                <div className="lrf-period-btns">
                   <Button
                     variant="ghost"
                     type="button"
-                    className="lrf-upload-btn"
-                    onClick={() => fileInputRef.current?.click()}
+                    className={`lrf-period-btn ${startPeriod === 'AM' ? 'active' : ''}`}
+                    onClick={() => setStartPeriod('AM')}
                   >
-                    <Upload size={16} />
-                    <span>Choisir un fichier (PDF, image, max 5 Mo)</span>
+                    Matin
                   </Button>
-                )}
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className={`lrf-period-btn ${startPeriod === 'PM' ? 'active' : ''}`}
+                    onClick={() => setStartPeriod('PM')}
+                  >
+                    Après-midi
+                  </Button>
+                </div>
+              </div>
+              <div className="lrf-dates-arrow">→</div>
+              <div className="lrf-field lrf-date-field">
+                <label className="lrf-label">Date de fin</label>
                 <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.webp"
-                  onChange={handleFileSelect}
-                  style={{ display: 'none' }}
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="lrf-input"
+                  required
+                  min={startDate}
                 />
+                <div className="lrf-period-btns">
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className={`lrf-period-btn ${endPeriod === 'AM' ? 'active' : ''}`}
+                    onClick={() => setEndPeriod('AM')}
+                  >
+                    Matin
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className={`lrf-period-btn ${endPeriod === 'PM' ? 'active' : ''}`}
+                    onClick={() => setEndPeriod('PM')}
+                  >
+                    Après-midi
+                  </Button>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Signature électronique */}
-          <SignaturePad
-            label="Signature du salarié"
-            value={signature}
-            onSign={setSignature}
-            onClear={() => setSignature(null)}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" disabled={saving}>
-            {saving ? (
-              <>
-                <Clock size={14} /> Envoi en cours...
-              </>
-            ) : (
-              <>
-                <Send size={14} /> Soumettre la demande
-              </>
+            {/* Résumé du calcul */}
+            {calculation && (
+              <div className="lrf-calculation">
+                <div className="lrf-calc-main">
+                  <Calendar size={16} />
+                  <span className="lrf-calc-days">{calculation.workingDays}</span>
+                  <span>
+                    jour{calculation.workingDays > 1 ? 's' : ''} ouvrable
+                    {calculation.workingDays > 1 ? 's' : ''}
+                  </span>
+                  {calculation.fixedDuration && (
+                    <span className="lrf-calc-fixed">(durée légale fixe)</span>
+                  )}
+                </div>
+
+                {calculation.holidaysInPeriod?.length > 0 && (
+                  <div className="lrf-calc-holidays">
+                    <span className="lrf-calc-holidays-label">Jours fériés exclus :</span>
+                    {calculation.holidaysInPeriod.map((h, i) => (
+                      <span key={i} className="lrf-holiday-chip">
+                        {formatDateFR(h.date)} — {h.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {calculation.referencePeriod && (
+                  <div className="lrf-calc-ref">
+                    Période de référence : {calculation.referencePeriod.label}
+                  </div>
+                )}
+              </div>
             )}
-          </Button>
-        </ModalFooter>
-      </form>
-    </Modal>
+
+            {/* Solde de congés */}
+            {balance && leaveType === 'conge_paye' && (
+              <div className="lrf-balance">
+                <div className="lrf-balance-title">Solde de congés payés</div>
+                <div className="lrf-balance-grid">
+                  <div className="lrf-balance-item">
+                    <span className="lrf-balance-value">
+                      {balance.daysEntitled ?? balance.days_entitled ?? 30}
+                    </span>
+                    <span className="lrf-balance-label">Acquis</span>
+                  </div>
+                  <div className="lrf-balance-item">
+                    <span className="lrf-balance-value">
+                      {balance.daysTaken ?? balance.days_taken ?? 0}
+                    </span>
+                    <span className="lrf-balance-label">Pris</span>
+                  </div>
+                  <div className="lrf-balance-item highlight">
+                    <span className="lrf-balance-value">
+                      {balance.remaining ??
+                        (balance.daysEntitled || balance.days_entitled || 30) -
+                          (balance.daysTaken || balance.days_taken || 0)}
+                    </span>
+                    <span className="lrf-balance-label">Restant</span>
+                  </div>
+                  {(balance.carryOver ?? balance.carry_over) > 0 && (
+                    <div className="lrf-balance-item carry">
+                      <span className="lrf-balance-value">
+                        +{balance.carryOver ?? balance.carry_over}
+                      </span>
+                      <span className="lrf-balance-label">Report</span>
+                    </div>
+                  )}
+                </div>
+                {calculation &&
+                  balance.remaining != null &&
+                  calculation.workingDays > balance.remaining + (balance.carryOver || 0) && (
+                    <InlineAlert variant="warning">
+                      Solde insuffisant ({balance.remaining + (balance.carryOver || 0)} jours
+                      disponibles, {calculation.workingDays} demandés)
+                    </InlineAlert>
+                  )}
+              </div>
+            )}
+
+            {/* Commentaire */}
+            <div className="lrf-field">
+              <label className="lrf-label">Remarques (optionnel)</label>
+              <Textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="lrf-textarea"
+                rows={3}
+                placeholder="Précisions complémentaires..."
+              />
+            </div>
+
+            {/* Upload justificatif */}
+            {needsJustification && (
+              <div className="lrf-field">
+                <label className="lrf-label">
+                  <Upload size={14} />
+                  Justificatif {needsJustification ? '(obligatoire)' : '(optionnel)'}
+                </label>
+                <div className="lrf-upload-zone">
+                  {justificationName ? (
+                    <div className="lrf-upload-file">
+                      <FileText size={14} />
+                      <span>{justificationName}</span>
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        onClick={() => {
+                          setJustificationFile(null);
+                          setJustificationName('');
+                        }}
+                      >
+                        <Trash2 size={12} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      type="button"
+                      className="lrf-upload-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={16} />
+                      <span>Choisir un fichier (PDF, image, max 5 Mo)</span>
+                    </Button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Signature électronique */}
+            <SignaturePad
+              label="Signature du salarié"
+              value={signature}
+              onSign={setSignature}
+              onClear={() => setSignature(null)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" disabled={saving}>
+              {saving ? (
+                <>
+                  <Clock size={14} /> Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send size={14} /> Soumettre la demande
+                </>
+              )}
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+      {ConfirmDialogRenderer}
+    </>
   );
 };
 

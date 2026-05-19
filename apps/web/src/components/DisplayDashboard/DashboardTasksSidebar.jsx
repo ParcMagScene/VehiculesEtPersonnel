@@ -26,9 +26,11 @@ import { Accordion, Button, Tooltip } from '@/design-system';
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, PLANNING_SECTIONS, STATUS_COLORS } from '../../constants/colors';
 import { useAffairesList } from '../../hooks/useAffairesList';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 // ─── Sections (depuis colorConstants, labels courts pour sidebar) ───
 const SECTIONS = Object.fromEntries(
@@ -201,6 +203,9 @@ function DashboardTasksSidebar({ refreshKey, style }) {
     };
   }, [loadTasks, loadNowPlaying, loadSidebarConfig, refreshKey]);
 
+  // Auto-refresh quand le planning change ailleurs (TaskPlanning, EventTaskModal, mobile, etc.).
+  useRefreshSubscription('planning', loadTasks);
+
   // Refresh affaires : géré automatiquement par useAffairesList (bus 'affaires' + 'reservations').
 
   // ─── Toggle visibilité d'une tâche (afficher/masquer sur l'écran TV) ───
@@ -209,6 +214,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       try {
         await api.toggleTaskVisibility(task.id);
         loadTasks();
+        refreshBus.publish('planning');
       } catch {
         toast.error('Erreur toggle visibilité');
       }

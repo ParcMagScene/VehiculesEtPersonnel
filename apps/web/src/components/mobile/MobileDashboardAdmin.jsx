@@ -17,9 +17,11 @@ import { Button, ProgressBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import useSwipeAction from '../../hooks/useSwipeAction';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 import SwipeableRow from './SwipeableRow';
 
@@ -90,6 +92,9 @@ function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
     loadTasks();
   }, [loadEntries, loadTasks]);
 
+  // Auto-refresh tasks quand le planning change ailleurs.
+  useRefreshSubscription('planning', loadTasks);
+
   const handleRefreshAll = useCallback(() => {
     loadEntries();
     loadTasks();
@@ -133,6 +138,7 @@ function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
     try {
       await api.updateTask(task.id, { status: newStatus });
       setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)));
+      refreshBus.publish('planning');
     } catch (e) {
       console.error('Erreur mise à jour tâche:', e);
     }

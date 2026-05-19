@@ -22,6 +22,7 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPE_SECTIONS, guessAffaireType } from '../../utils/affaireConstants';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import AffaireBadge from '../AffaireBadge';
 
 // ═══ Définition des étapes opérationnelles ═══
@@ -314,6 +315,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       });
 
       await api.createTasksBatch(tasksToCreate);
+      refreshBus.publish('planning');
       toast.success(
         `${tasksToCreate.length} tâche${tasksToCreate.length > 1 ? 's' : ''} créée${tasksToCreate.length > 1 ? 's' : ''}`,
       );
@@ -334,6 +336,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
     setDeleting(true);
     try {
       await api.deleteTasksBySource(event.id);
+      refreshBus.publish('planning');
       toast.success('Tâches supprimées');
       onDelete?.();
       onClose();

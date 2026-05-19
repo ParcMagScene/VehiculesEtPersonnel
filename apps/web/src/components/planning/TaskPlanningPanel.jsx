@@ -18,10 +18,12 @@ import { Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { safeParseDate } from '../../utils/dateUtils';
 import { formatDateFr } from '../../utils/formatUtils';
+import { refreshBus } from '../../utils/refresh-bus';
 import AddTaskModal from './AddTaskModal';
 import EventTaskModal from './EventTaskModal';
 import { usePlanningModal } from './PlanningModalContext';
@@ -199,6 +201,12 @@ function TaskPlanningPanel({
     loadPersons();
   }, [loadPersons]);
 
+  // Auto-refresh quand le planning change ailleurs (modals, mobile, dashboard, autres tabs).
+  useRefreshSubscription(
+    'planning',
+    useCallback(() => loadTasks(true), [loadTasks]),
+  );
+
   const loadVehiclesAndReservations = useCallback(async () => {
     try {
       const [vehs, rezs] = await Promise.all([api.getVehicles(), api.getReservations()]);
@@ -306,6 +314,7 @@ function TaskPlanningPanel({
     try {
       if (recurringForm.id) await api.updateRecurringTask(recurringForm.id, payload);
       else await api.createRecurringTask(payload);
+      refreshBus.publish('planning');
       toast.success(recurringForm.id ? 'Tâche récurrente modifiée' : 'Tâche récurrente créée');
       setRecurringForm(null);
       loadRecurringTasks();
@@ -379,6 +388,7 @@ function TaskPlanningPanel({
         try {
           const r = await api.rolloverTasks(selectedDate);
           toast.success(`${r.rolled || 0} tâche(s) reportée(s)`);
+          refreshBus.publish('planning');
           loadTasks(true);
         } catch {
           toast.error('Erreur report');
@@ -395,6 +405,7 @@ function TaskPlanningPanel({
     try {
       const r = await api.clearCompletedTasks(selectedDate);
       toast.success(`${r.cleared || 0} tâche(s) terminée(s) effacée(s)`);
+      refreshBus.publish('planning');
       loadTasks(true);
     } catch {
       toast.error('Erreur suppression');
@@ -552,6 +563,8 @@ function TaskPlanningPanel({
     (async () => {
       try {
         await api.syncGoogleEventsToAffaires(toSync);
+        refreshBus.publish('planning');
+        refreshBus.publish('affaires');
         await loadTasks(true);
       } catch (err) {
         console.error('[TaskPlanning] Auto-sync affaires failed:', err);
@@ -677,6 +690,7 @@ function TaskPlanningPanel({
       };
       try {
         await api.updateTask(task.id, { status: next[task.status] || 'pending' });
+        refreshBus.publish('planning');
         loadTasks(true);
       } catch {
         toast.error('Erreur mise à jour');
@@ -693,6 +707,7 @@ function TaskPlanningPanel({
           try {
             await api.deleteTask(id);
             toast.success('Tâche supprimée');
+            refreshBus.publish('planning');
             loadTasks(true);
           } catch {
             toast.error('Erreur suppression');
@@ -710,6 +725,7 @@ function TaskPlanningPanel({
           try {
             await api.deleteDisplayEvent(id);
             toast.success('Événement retiré');
+            refreshBus.publish('planning');
             loadTasks(true);
           } catch {
             toast.error('Erreur suppression');
@@ -722,6 +738,7 @@ function TaskPlanningPanel({
     async (t) => {
       try {
         await api.toggleTaskVisibility(t.id);
+        refreshBus.publish('planning');
         loadTasks(true);
       } catch {
         toast.error('Erreur toggle visibilité');
@@ -733,6 +750,7 @@ function TaskPlanningPanel({
     async (ev) => {
       try {
         await api.toggleDisplayEventVisibility(ev.id);
+        refreshBus.publish('planning');
         loadTasks(true);
       } catch {
         toast.error('Erreur toggle visibilité');
@@ -744,6 +762,7 @@ function TaskPlanningPanel({
     async (ev) => {
       try {
         await api.cycleDisplayEventStatus(ev.id);
+        refreshBus.publish('planning');
         loadTasks(true);
       } catch {
         toast.error('Erreur mise à jour statut');
@@ -755,6 +774,8 @@ function TaskPlanningPanel({
     async (num) => {
       try {
         await api.cycleAffaireStatus(num);
+        refreshBus.publish('planning');
+        refreshBus.publish('affaires');
         loadTasks(true);
       } catch {
         toast.error('Erreur mise à jour statut affaire');
@@ -771,6 +792,8 @@ function TaskPlanningPanel({
           try {
             await api.hidePlanningAffaire(a.numeroAffaire);
             toast.success(`${a.numeroAffaire} retirée`);
+            refreshBus.publish('planning');
+            refreshBus.publish('affaires');
             loadTasks(true);
           } catch {
             toast.error('Erreur masquage affaire');
@@ -786,6 +809,7 @@ function TaskPlanningPanel({
         await api.updateTask(taskId, { affaire_num: num });
         setLinkingTaskId(null);
         setLinkTaskSearchQuery('');
+        refreshBus.publish('planning');
         await loadTasks(true);
         toast.success(`Tâche liée à ${num}`);
       } catch {
@@ -804,6 +828,8 @@ function TaskPlanningPanel({
         syncedAFRef.current.add(num.toUpperCase());
         setLinkingEvent(null);
         setLinkSearchQuery('');
+        refreshBus.publish('planning');
+        refreshBus.publish('affaires');
         await loadTasks(true);
         toast.success(`Événement lié à ${num}`);
       } catch {

@@ -24,6 +24,7 @@ import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import AddressAutocomplete from '../AddressAutocomplete';
 import AffaireBadge from '../AffaireBadge';
 
@@ -292,6 +293,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     setMerging(true);
     try {
       await api.mergeTasks(task.id, targetId);
+      refreshBus.publish('planning');
       toast.success('Tâches fusionnées');
       onSave?.();
       onClose();
@@ -346,6 +348,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         affaire_num: form.affaireNum || null,
         location_address: form.locationAddress || null,
       });
+      refreshBus.publish('planning');
       toast.success('Tâche mise à jour');
       onSave?.();
       onClose();

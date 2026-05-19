@@ -18,9 +18,11 @@ import { Accordion, Button, ProgressBar } from '@/design-system';
 
 import { ROLES, STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import useSwipeAction from '../../hooks/useSwipeAction';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 import SwipeableRow from './SwipeableRow';
 
@@ -103,6 +105,9 @@ function MobileTasks({ currentUser, onBack }) {
     loadTasks();
   }, [loadTasks]);
 
+  // Auto-refresh quand le planning change ailleurs (TaskPlanning, EventTaskModal, etc.).
+  useRefreshSubscription('planning', loadTasks);
+
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadTasks);
   const { getSwipeProps, swipeState, resetSwipe } = useSwipeAction();
 
@@ -112,6 +117,7 @@ function MobileTasks({ currentUser, onBack }) {
     try {
       await api.updateTask(task.id, { status: newStatus });
       setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)));
+      refreshBus.publish('planning');
     } catch (e) {
       console.error('Erreur mise à jour statut:', e);
     }

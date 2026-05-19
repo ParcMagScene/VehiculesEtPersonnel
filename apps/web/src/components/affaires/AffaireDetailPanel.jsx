@@ -59,6 +59,7 @@ import {
 import api, { getApiUrl } from '../../utils/api';
 import { capitalizeText } from '../../utils/dateUtils';
 import { formatDateSimple } from '../../utils/formatUtils';
+import { refreshBus } from '../../utils/refresh-bus';
 import AddressAutocomplete from '../AddressAutocomplete';
 import AffaireBadge from '../AffaireBadge';
 import { formatPhoneDisplay } from '../PhoneInput';
@@ -896,6 +897,7 @@ const AffaireDetailContent = ({
 
       const total = toCreate.length + toUpdate.length + toDelete.length;
       if (total > 0) {
+        refreshBus.publish('planning');
         showFeedback({
           type: 'success',
           message: `Planification mise à jour (${toCreate.length} créée${toCreate.length > 1 ? 's' : ''}, ${toUpdate.length} modifiée${toUpdate.length > 1 ? 's' : ''}, ${toDelete.length} supprimée${toDelete.length > 1 ? 's' : ''})`,

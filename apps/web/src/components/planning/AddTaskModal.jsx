@@ -11,6 +11,7 @@ import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { safeParseDate } from '../../utils/dateUtils';
+import { refreshBus } from '../../utils/refresh-bus';
 import AddressAutocomplete from '../AddressAutocomplete';
 import AffaireBadge from '../AffaireBadge';
 
@@ -294,6 +295,7 @@ export default function AddTaskModal({
         location_address: locationAddress || null,
       });
 
+      refreshBus.publish('planning');
       toast.success('Tâche ajoutée');
       onTaskCreated();
       onClose();

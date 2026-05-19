@@ -141,8 +141,6 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const [saving, setSaving] = useState(false);
   const [affaires, setAffaires] = useState([]);
   const [emagLocations, setEmagLocations] = useState([]);
-  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
-  const locationRef = useRef(null);
   const [affaireSearch, setAffaireSearch] = useState('');
   const [affaireDropdownOpen, setAffaireDropdownOpen] = useState(false);
   const affaireRef = useRef(null);
@@ -188,23 +186,6 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       });
   }, []);
 
-  // Suggestions enregistrées (objets) pour le dropdown dédié.
-  const emagLocationOptions = useMemo(() => {
-    const seen = new Set();
-    return emagLocations
-      .filter((l) => {
-        const key = (l?.address || l?.name || '').toLowerCase().trim();
-        if (!key || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((l) => ({
-        name: l.name || '',
-        address: l.address || '',
-        value: l.address || l.name,
-      }));
-  }, [emagLocations]);
-
   // Liste plate pour la priorisation dans le datalist Google (AddressAutocomplete).
   const locationSuggestions = useMemo(() => {
     const values = [];
@@ -222,29 +203,6 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     });
     return values;
   }, [emagLocations]);
-
-  const filteredEmagLocations = useMemo(() => {
-    const q = String(form?.locationAddress || '')
-      .trim()
-      .toLowerCase();
-    if (!q) return emagLocationOptions;
-    return emagLocationOptions.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emagLocationOptions, form?.locationAddress]);
-
-  // Fermer le dropdown lieux au clic extérieur
-  useEffect(() => {
-    if (!locationDropdownOpen) return;
-    const handle = (e) => {
-      if (locationRef.current && !locationRef.current.contains(e.target)) {
-        setLocationDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [locationDropdownOpen]);
 
   // Fermer le dropdown si clic extérieur
   useEffect(() => {
@@ -353,10 +311,16 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         ? capitalizedTitle.charAt(0).toUpperCase() + capitalizedTitle.slice(1)
         : task.title;
 
-      // Pour les tâches Google "courses", on préserve le préfixe opérationnel
-      // afin que le badge (Livraison/Enlèvement/Retour/Récupération) reste stable.
-      if (sourceType === 'google_event' && COURSE_SECTIONS.has(form.section)) {
-        const courseType = detectCourseType(task);
+      // Pour toutes les tâches en section "courses", on préserve (ou ré-applique)
+      // le préfixe opérationnel afin que le badge (Livraison/Enlèvement/Retour/
+      // Récupération) reste stable sur la ligne du planning, peu importe la
+      // source (manual, affaire, google_event, ical_event).
+      if (COURSE_SECTIONS.has(form.section)) {
+        // Détection du type : on regarde d'abord le titre saisi (l'utilisateur a
+        // pu réécrire avec un mot-clé), puis l'état d'origine de la tâche.
+        const courseType =
+          detectCourseType({ ...task, title: finalTitle, section: form.section }) ||
+          detectCourseType(task);
         const prefix = courseType ? COURSE_PREFIXES[courseType] : null;
         if (prefix && finalTitle) {
           const cleanedTitle = finalTitle
@@ -590,17 +554,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
 
         {/* Lieu / Adresse (affiché pour les sections courses) */}
         {COURSE_SECTIONS.has(form.section) && (
-          <div className="tem-field full tem-field-location" ref={locationRef}>
+          <div className="tem-field full tem-field-location">
             <label>
               <MapPin size={13} /> Lieu
             </label>
             <div className="tem-location-row">
               <AddressAutocomplete
                 value={form.locationAddress}
-                onChange={(value) => {
-                  update('locationAddress', value);
-                  setLocationDropdownOpen(true);
-                }}
+                onChange={(value) => update('locationAddress', value)}
                 placeholder="Adresse ou lieu de la course…"
                 className="tem-location-input"
                 prioritySuggestions={locationSuggestions}
@@ -617,37 +578,6 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                 </a>
               )}
             </div>
-            {emagLocationOptions.length > 0 && (
-              <Button
-                variant="ghost"
-                type="button"
-                className="tem-location-toggle"
-                onClick={() => setLocationDropdownOpen((v) => !v)}
-              >
-                <MapPin size={12} /> Lieux enregistrés ({emagLocationOptions.length})
-              </Button>
-            )}
-            {locationDropdownOpen && filteredEmagLocations.length > 0 && (
-              <div className="tem-location-dropdown">
-                {filteredEmagLocations.map((s, i) => (
-                  <Button
-                    variant="ghost"
-                    key={`${s.value}-${i}`}
-                    type="button"
-                    className="tem-location-option"
-                    onClick={() => {
-                      update('locationAddress', s.value);
-                      setLocationDropdownOpen(false);
-                    }}
-                  >
-                    <strong>{s.name || s.address}</strong>
-                    {s.address && s.address !== s.name && (
-                      <span className="tem-location-addr"> — {s.address}</span>
-                    )}
-                  </Button>
-                ))}
-              </div>
-            )}
           </div>
         )}
 

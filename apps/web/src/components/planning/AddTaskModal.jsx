@@ -1,16 +1,6 @@
 import './AddTaskModal.css';
 
-import {
-  Briefcase,
-  ChevronDown,
-  Clock,
-  MapPin,
-  Plus,
-  Search,
-  Truck,
-  Unlink,
-  User,
-} from 'lucide-react';
+import { Briefcase, Clock, MapPin, Plus, Search, Truck, Unlink, User } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
@@ -205,43 +195,27 @@ export default function AddTaskModal({
     );
   }, [reservations, selectedDate]);
 
-  // Location suggestions from eMag (deduplicated, name + address)
-  const locationSuggestions = useMemo(() => {
+  // Liste plate (chaînes) pour alimenter l'autocomplete d'adresse via
+  // `prioritySuggestions` (les lieux enregistrés apparaissent en haut du
+  // dropdown Google Places).
+  const locationSuggestionStrings = useMemo(() => {
+    const values = [];
     const seen = new Set();
-    return emagLocations
-      .filter((l) => {
-        const key = (l.address || l.name || '').toLowerCase().trim();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((l) => ({
-        name: l.name || '',
-        address: l.address || '',
-        value: l.address || l.name,
-      }));
+    const push = (raw) => {
+      const v = String(raw || '').trim();
+      const key = v.toLowerCase();
+      if (!v || seen.has(key)) return;
+      seen.add(key);
+      values.push(v);
+    };
+    emagLocations.forEach((loc) => {
+      push(loc?.name);
+      push(loc?.address);
+    });
+    return values;
   }, [emagLocations]);
 
-  // Location dropdown state
-  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
   const locationRef = useRef(null);
-  useEffect(() => {
-    if (!locationDropdownOpen) return;
-    const handle = (e) => {
-      if (locationRef.current && !locationRef.current.contains(e.target))
-        setLocationDropdownOpen(false);
-    };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [locationDropdownOpen]);
-
-  const filteredLocationSuggestions = useMemo(() => {
-    if (!locationAddress.trim()) return locationSuggestions;
-    const q = locationAddress.toLowerCase();
-    return locationSuggestions.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q),
-    );
-  }, [locationSuggestions, locationAddress]);
 
   // ═══ Submit ═══
   const handleSubmit = async () => {
@@ -374,7 +348,13 @@ export default function AddTaskModal({
             onChange={(e) => {
               const key = e.target.value;
               setSection(key);
-              if (key !== COURSE_SECTION) setCourseType('');
+              if (key === COURSE_SECTION) {
+                // Pré-sélection 'livraison' par défaut pour que le badge
+                // apparaisse même si l'utilisateur ne touche pas au sous-type.
+                setCourseType((prev) => prev || 'livraison');
+              } else {
+                setCourseType('');
+              }
               if (!VEHICLE_SECTIONS.has(key)) {
                 setReservationId('');
                 setVehicleId('');
@@ -395,7 +375,6 @@ export default function AddTaskModal({
           <div className="atm-field">
             <label>Type de course</label>
             <Select value={courseType} onChange={(e) => setCourseType(e.target.value)}>
-              <option value="">— Sélectionner —</option>
               {Object.entries(EVENT_TYPES).map(([key, info]) => (
                 <option key={key} value={key}>
                   {info.emoji} {info.label}
@@ -543,44 +522,11 @@ export default function AddTaskModal({
             </label>
             <AddressAutocomplete
               value={locationAddress}
-              onChange={(val) => {
-                setLocationAddress(val);
-                setLocationDropdownOpen(true);
-              }}
+              onChange={(val) => setLocationAddress(val)}
               placeholder="Adresse ou lieu de la course…"
               className="atm-location-input"
+              prioritySuggestions={locationSuggestionStrings}
             />
-            {locationSuggestions.length > 0 && (
-              <Button
-                variant="ghost"
-                type="button"
-                className="atm-location-toggle"
-                onClick={() => setLocationDropdownOpen((v) => !v)}
-              >
-                <MapPin size={12} /> Lieux enregistrés <ChevronDown size={12} />
-              </Button>
-            )}
-            {locationDropdownOpen && filteredLocationSuggestions.length > 0 && (
-              <div className="atm-location-dropdown">
-                {filteredLocationSuggestions.map((s, i) => (
-                  <Button
-                    variant="ghost"
-                    key={i}
-                    type="button"
-                    className="atm-location-option"
-                    onClick={() => {
-                      setLocationAddress(s.value);
-                      setLocationDropdownOpen(false);
-                    }}
-                  >
-                    <strong>{s.name}</strong>
-                    {s.address && s.address !== s.name && (
-                      <span className="atm-location-addr"> — {s.address}</span>
-                    )}
-                  </Button>
-                ))}
-              </div>
-            )}
           </div>
         )}
 

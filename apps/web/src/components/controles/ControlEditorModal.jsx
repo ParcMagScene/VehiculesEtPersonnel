@@ -17,6 +17,7 @@ import {
 } from '@/design-system';
 
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import { todayIso } from './utils';
 
 export default function ControlEditorModal({
@@ -82,6 +83,7 @@ export default function ControlEditorModal({
         });
       }
       if (!r?.success) throw new Error(r?.error || 'Erreur');
+      refreshBus.publish('controls');
       onSaved?.(r.data);
       onClose?.();
     } catch (e) {

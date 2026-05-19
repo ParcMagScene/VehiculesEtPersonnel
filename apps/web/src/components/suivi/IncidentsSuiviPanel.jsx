@@ -3,7 +3,9 @@ import './IncidentsSuiviPanel.css';
 import { Calendar, ClipboardList, Loader2, Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
 import EntityCombobox from '../ui/EntityCombobox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '../ui/Modal';
@@ -289,6 +291,12 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
     loadWeekTickets();
   }, [loadWeekTickets]);
 
+  // Recharge tickets + synthèse quand un autre composant du module Suivi publie
+  useRefreshSubscription('suivi', () => {
+    loadWeekTickets();
+    loadSynthese();
+  });
+
   useEffect(() => {
     if (skipPrefillRef.current) {
       skipPrefillRef.current = false;
@@ -473,6 +481,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
         incidents: incidentsPayload,
       });
       await Promise.all([loadWeekTickets(), loadSynthese()]);
+      refreshBus.publish('suivi');
       setEditorOpen(false);
       clearEditorForNewTicket();
     } catch (err) {
@@ -489,6 +498,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
     try {
       await api.deleteSuiviIncidentTicket(selectedTicketId);
       await Promise.all([loadWeekTickets(), loadSynthese()]);
+      refreshBus.publish('suivi');
       setEditorOpen(false);
       resetForm();
     } catch (err) {
@@ -510,6 +520,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
         resetForm();
       }
       await Promise.all([loadWeekTickets(), loadSynthese()]);
+      refreshBus.publish('suivi');
     } catch (err) {
       setError(err?.message || 'Erreur suppression ticket incident');
     } finally {

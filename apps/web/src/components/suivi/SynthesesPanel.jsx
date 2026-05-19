@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
 
@@ -76,6 +77,9 @@ function SynthesesPanel({ currentUser: _currentUser }) {
   useEffect(() => {
     fetchSynthese();
   }, [fetchSynthese]);
+
+  // Synthèse toujours à jour lorsque le module Suivi publie
+  useRefreshSubscription('suivi', fetchSynthese);
 
   const handleNavigateWeek = (delta) => {
     const [y, wPart] = semaine.split('-W');

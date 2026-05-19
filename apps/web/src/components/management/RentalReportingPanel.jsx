@@ -1,10 +1,11 @@
 import './RentalReportingPanel.css';
 
 import { format } from 'date-fns';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Input, SectionHeader, Select } from '@/design-system';
 
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 
 const RentalReportingPanel = () => {
@@ -34,20 +35,25 @@ const RentalReportingPanel = () => {
     return { startDate: start, endDate: end };
   }, [period, customStart, customEnd]);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const result = await api.getRentalReporting(dateRange);
-        setData(result);
-      } catch {
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await api.getRentalReporting(dateRange);
+      setData(result);
+    } catch {
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   }, [dateRange]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Reporting réactif aux mutations de commandes/réservations effectuées ailleurs
+  useRefreshSubscription('orders', load);
+  useRefreshSubscription('reservations', load);
 
   if (loading && !data) {
     return <div className="rental-reporting-loading">Chargement du reporting...</div>;

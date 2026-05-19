@@ -16,6 +16,7 @@ import {
 } from '@/design-system';
 
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import { todayIso } from './utils';
 
 export default function ControlPerformModal({ control, onClose, onDone }) {
@@ -33,6 +34,7 @@ export default function ControlPerformModal({ control, onClose, onDone }) {
       if (nextDue) payload.next_due_date = nextDue;
       const r = await api.performControl(control.id, payload);
       if (!r?.success) throw new Error(r?.error || 'Erreur');
+      refreshBus.publish('controls');
       onDone?.(r.data);
       onClose?.();
     } catch (e) {

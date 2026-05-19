@@ -24,7 +24,9 @@ import {
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
+import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
 import FicheSuivi from './FicheSuivi';
 import IncidentsSuiviPanel from './IncidentsSuiviPanel';
@@ -74,6 +76,9 @@ function SuiviPanel({
   const [collapsedNonPermanents, setCollapsedNonPermanents] = useState(true);
   const [collapsedFavorites, setCollapsedFavorites] = useState(false);
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  // Compteur d'invalidation pour relancer les useEffect de chargement lorsque le bus 'suivi' publie
+  const [busTick, setBusTick] = useState(0);
+  useRefreshSubscription('suivi', () => setBusTick((t) => t + 1));
   // Compte Equipe : personne sélectionnée via PIN/MDP
   const isTeamAccount = !!currentUser?.isTeam;
   const [suiviPerson, setSuiviPerson] = useState(null); // personne authentifiée pour le suivi
@@ -174,7 +179,7 @@ function SuiviPanel({
         setError('Erreur chargement personnel');
       }
     })();
-  }, [currentUser, initialPersonId, selectedPerson]);
+  }, [currentUser, initialPersonId, selectedPerson, busTick]);
 
   // Charger la fiche quand personne ou date change
   useEffect(() => {
@@ -197,7 +202,7 @@ function SuiviPanel({
     };
     // dépend uniquement de l'id (pas de l'objet entier) pour éviter les rechargements parasites
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPerson?.id, selectedDate]);
+  }, [selectedPerson?.id, selectedDate, busTick]);
 
   const handleNavigateDay = useCallback(
     (delta) => {
@@ -229,6 +234,8 @@ function SuiviPanel({
           const updated = await api.updateSuiviSheet(selectedPerson.id, selectedDate, payload);
           setSheet(updated);
         }
+        // Notifie les autres vues du module Suivi (incidents, synthèses, autres onglets)
+        refreshBus.publish('suivi');
         // Mode personnel : déclencher l'auto-logout après sauvegarde
         if (isPersonalMode && onPersonalDataSaved) {
           await onPersonalDataSaved();

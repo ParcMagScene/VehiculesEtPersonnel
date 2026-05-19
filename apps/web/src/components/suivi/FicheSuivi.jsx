@@ -16,6 +16,7 @@ import {
 import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
 
 function newEntry(period = 'AM', sortOrder = 0) {
@@ -346,6 +347,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
 
       const created = await api.createSuiviRecurringTask(sheet.person_id, payload);
       setRecurringTasks((prev) => [created, ...prev]);
+      refreshBus.publish('suivi');
 
       if (isRecurringDueForSheet(payload)) {
         const entry = {
@@ -377,6 +379,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
     try {
       await api.deleteSuiviRecurringTask(id);
       setRecurringTasks((prev) => prev.filter((r) => r.id !== id));
+      refreshBus.publish('suivi');
     } catch (e) {
       setRecurringError('Suppression impossible');
     }
@@ -421,6 +424,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
       };
       const updated = await api.updateSuiviRecurringTask(editingRecurringId, payload);
       setRecurringTasks((prev) => prev.map((r) => (r.id === editingRecurringId ? updated : r)));
+      refreshBus.publish('suivi');
       setShowRecurringForm(null);
       resetRecurringForm();
     } catch (e) {
@@ -447,6 +451,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
             : e,
         ),
       );
+      refreshBus.publish('suivi');
       setPostponeTarget(null);
       setDirty(false);
     } catch (err) {

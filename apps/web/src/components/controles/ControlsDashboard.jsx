@@ -28,7 +28,9 @@ import {
   Table,
 } from '@/design-system';
 
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import ControlEditorModal from './ControlEditorModal';
 import ControlHistoryModal from './ControlHistoryModal';
 import ControlPerformModal from './ControlPerformModal';
@@ -77,6 +79,9 @@ export default function ControlsDashboard({ user }) {
     load();
   }, [load]);
 
+  // Dashboard rafraîchi quand un contrôle est créé/édité/effectué/supprimé ailleurs
+  useRefreshSubscription('controls', load);
+
   useEffect(() => {
     api.getControlTypes(true).then((r) => setTypes(r?.data || []));
   }, []);
@@ -86,8 +91,10 @@ export default function ControlsDashboard({ user }) {
   const handleDelete = async (ctrl) => {
     if (!window.confirm(`Désactiver le contrôle « ${ctrl.type_name} » ?`)) return;
     const r = await api.deleteControl(ctrl.id);
-    if (r?.success) load();
-    else alert(r?.error || 'Erreur suppression');
+    if (r?.success) {
+      refreshBus.publish('controls');
+      load();
+    } else alert(r?.error || 'Erreur suppression');
   };
 
   const handleRecompute = async () => {
@@ -97,6 +104,7 @@ export default function ControlsDashboard({ user }) {
       alert(
         `Recalcul OK — ${r.data?.changed || 0} statut(s) mis à jour, ${r.data?.missed || 0} manqué(s).`,
       );
+      refreshBus.publish('controls');
       load();
     } else alert(r?.error || 'Erreur');
   };

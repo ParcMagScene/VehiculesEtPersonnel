@@ -7,7 +7,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Button, EmptyState, SectionHeader, Spinner, StatusBadge } from '@/design-system';
 
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import ControlEditorModal from './ControlEditorModal';
 import ControlHistoryModal from './ControlHistoryModal';
 import ControlPerformModal from './ControlPerformModal';
@@ -35,6 +37,9 @@ export default function EquipmentControls({ entityType, entityId, entityName, is
   useEffect(() => {
     load();
   }, [load]);
+
+  // Liste rafraîchie quand un contrôle change ailleurs (dashboard, autre entité)
+  useRefreshSubscription('controls', load);
 
   return (
     <div>
@@ -130,7 +135,10 @@ export default function EquipmentControls({ entityType, entityId, entityName, is
                       onClick={async () => {
                         if (!window.confirm(`Désactiver « ${c.type_name} » ?`)) return;
                         const r = await api.deleteControl(c.id);
-                        if (r?.success) load();
+                        if (r?.success) {
+                          refreshBus.publish('controls');
+                          load();
+                        }
                       }}
                       aria-label="Supprimer"
                     />

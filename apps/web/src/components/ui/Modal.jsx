@@ -23,6 +23,7 @@ const ModalTitleIdContext = createContext(null);
  */
 function Modal({
   open,
+  isOpen, // alias rétro-compatible (cf. audit 2026-05-18). Préférer `open`.
   onClose,
   size = 'md',
   className = '',
@@ -32,6 +33,20 @@ function Modal({
   ariaLabelledBy,
   children,
 }) {
+  // Filet de sécurité : si un caller passe `isOpen` au lieu de `open` (bug
+  // historique "modal transparent"), on accepte les deux. En développement,
+  // on émet un avertissement pour guider la migration vers `open`.
+  if (open === undefined && isOpen !== undefined) {
+    open = isOpen;
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[Modal] La prop `isOpen` est dépréciée, utilisez `open`. ' +
+          'Voir docs/04-Operations/AUDIT-UPDATES-MODALS-2026-05-18.md',
+      );
+    }
+  }
+
   const overlayRef = useRef(null);
   const previousFocus = useRef(null);
   const generatedTitleId = useId();

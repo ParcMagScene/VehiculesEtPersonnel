@@ -3,11 +3,11 @@
 // (Embed dans EquipmentDetail / VehicleDetail)
 // ═══════════════════════════════════════════════════════════════
 import { CheckCircle2, History, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { Button, EmptyState, SectionHeader, Spinner, StatusBadge } from '@/design-system';
 
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
+import { useListResource } from '../../hooks/useListResource';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import ControlEditorModal from './ControlEditorModal';
@@ -16,30 +16,25 @@ import ControlPerformModal from './ControlPerformModal';
 import { formatDueLabel, STATUS_COLORS, STATUS_LABELS } from './utils';
 
 export default function EquipmentControls({ entityType, entityId, entityName, isAdmin = false }) {
-  const [items, setItems] = useState(null);
-  const [error, setError] = useState(null);
   const [perform, setPerform] = useState(null);
   const [history, setHistory] = useState(null);
   const [editor, setEditor] = useState(null);
 
-  const load = useCallback(async () => {
-    if (!entityType || !entityId) return;
-    setError(null);
-    try {
-      const r = await api.getControlsForEntity(entityType, entityId);
-      if (!r?.success) throw new Error(r?.error || 'Erreur');
-      setItems(r.data || []);
-    } catch (e) {
-      setError(e.message);
-    }
+  const fetchControls = useCallback(async () => {
+    const r = await api.getControlsForEntity(entityType, entityId);
+    if (!r?.success) throw new Error(r?.error || 'Erreur');
+    return r.data || [];
   }, [entityType, entityId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Liste rafraîchie quand un contrôle change ailleurs (dashboard, autre entité)
-  useRefreshSubscription('controls', load);
+  // useListResource : state + load + bus 'controls' (dashboard, autre entité).
+  const enabled = !!(entityType && entityId);
+  const {
+    data: items,
+    error,
+    reload: load,
+  } = useListResource('controls', fetchControls, {
+    enabled,
+  });
 
   return (
     <div>
@@ -59,7 +54,7 @@ export default function EquipmentControls({ entityType, entityId, entityName, is
         }
       />
 
-      {error && <div style={{ color: '#991b1b' }}>{error}</div>}
+      {error && <div style={{ color: '#991b1b' }}>{error.message}</div>}
       {!items && !error && <Spinner />}
 
       {items && items.length === 0 && (

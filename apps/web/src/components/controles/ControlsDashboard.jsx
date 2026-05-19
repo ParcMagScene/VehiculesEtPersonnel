@@ -28,7 +28,7 @@ import {
   Table,
 } from '@/design-system';
 
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
+import { useListResource } from '../../hooks/useListResource';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import ControlEditorModal from './ControlEditorModal';
@@ -47,9 +47,6 @@ const STATS_CARDS = [
 
 export default function ControlsDashboard({ user }) {
   const isAdmin = !!user?.is_admin || user?.role === 'admin';
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [data, setData] = useState({ items: [], stats: {} });
   const [types, setTypes] = useState([]);
   const [filters, setFilters] = useState({
     status: '',
@@ -61,26 +58,21 @@ export default function ControlsDashboard({ user }) {
   const [history, setHistory] = useState(null);
   const [editor, setEditor] = useState(null); // { control } pour éditer
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const r = await api.getControlsDashboard(filters);
-      if (!r?.success) throw new Error(r?.error || 'Erreur');
-      setData({ items: r.data?.items || [], stats: r.data?.stats || {} });
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+  const fetchDashboard = useCallback(async () => {
+    const r = await api.getControlsDashboard(filters);
+    if (!r?.success) throw new Error(r?.error || 'Erreur');
+    return { items: r.data?.items || [], stats: r.data?.stats || {} };
   }, [filters]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Dashboard rafraîchi quand un contrôle est créé/édité/effectué/supprimé ailleurs
-  useRefreshSubscription('controls', load);
+  // useListResource : state + load au mont/filtres + bus 'controls' (création/édition/suppression ailleurs).
+  const {
+    data,
+    loading,
+    error,
+    reload: load,
+  } = useListResource('controls', fetchDashboard, {
+    initialData: { items: [], stats: {} },
+  });
 
   useEffect(() => {
     api.getControlTypes(true).then((r) => setTypes(r?.data || []));
@@ -179,7 +171,7 @@ export default function ControlsDashboard({ user }) {
 
         {error && (
           <div style={{ background: '#fee2e2', color: '#991b1b', padding: 10, borderRadius: 6 }}>
-            {error}
+            {error.message}
           </div>
         )}
 

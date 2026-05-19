@@ -199,7 +199,7 @@ Aucune modification : SSE + fallback polling 10s déjà en place pour le compteu
 | ~~UserManagement — subscribe `persons`~~            | **✅ livré** | Cf. §6.4.                                                                                              |
 | ~~AnnuairePanel — préservation page après bus~~     | **✅ vérifié** | Pattern `dataVersion` bump conservait déjà la page.                                                    |
 | ~~LogsTab — pagination cohérente après mutation~~   | **✅ vérifié** | Pattern `refreshKey` externe conservait déjà la page.                                                  |
-| Hook générique `useListResource(key, fetcher)`      | P3       | Refactor opportuniste, sans valeur immédiate.                                                           |
+| Hook générique `useListResource(key, fetcher)`      | **✅ livré** | Hook créé (`apps/web/src/hooks/useListResource.js`) + 7 tests dédiés. Refactor de démonstration : `EquipmentControls` + `ControlsDashboard`. Migration des autres call sites laissée opportuniste. |
 
 ---
 

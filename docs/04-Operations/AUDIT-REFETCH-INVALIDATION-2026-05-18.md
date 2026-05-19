@@ -3,7 +3,7 @@
 **Date :** 18 mai 2026
 **Périmètre :** `apps/web/` (frontend) + `apps/api/` (backend). **Hors périmètre : `apps/tv-client/`.**
 **Méthode :** Exploration exhaustive automatisée (subagent) + lecture ciblée + vérification grep.
-**Statut :** Audit ✅ | Patches sûrs P0 ✅ appliqués | P1-P3 documentés (PR ultérieures).
+**Statut :** Audit ✅ | Patches P0 ✅ | Phase A/B/C/D/E ✅ (clôturé 2026-05-19).
 
 ---
 
@@ -280,11 +280,17 @@ Certaines mutations renvoient `{success:true, id:X}`, d'autres l'objet complet, 
    - Mutation réservation → invalider dashboard widgets.
    - Mutation maintenance → invalider liste véhicules (badge maintenance).
 
-### Phase D — Normalisation réponses backend (P3, optionnel)
+### Phase D — Normalisation réponses backend (P3, optionnel) ✅ livré 2026-05-19
 
 1. Toute mutation POST renvoie l'objet créé complet (déjà fait majoritairement, cf. Phase 3 audit mutations 2026-05-18).
 2. PUT/PATCH renvoient l'objet mis à jour complet (plutôt que `{success:true}`).
 3. DELETE renvoient `{success:true, id}` minimal.
+
+**Livré (commit `16a51b80`)** — 11 endpoints PUT/PATCH critiques normalisés au format rétro-compatible `{success:true, ...obj}` :
+`PUT /api/reservations/:id`, `PUT /api/reservation-requests/:id/approve|reject`, `PUT /api/maintenances/:id`,
+`PUT /api/equipment-categories/:id`, `PUT /api/equipment/:id`, `PATCH /api/equipment/:id/photo`,
+`PUT /api/equipment-assignments/:id/return`, `PUT /api/sav-tickets/:id`, `PUT /api/sav-tickets/:id/link`,
+`PATCH /api/sav/tickets/:id`. DELETE et endpoints secondaires conservés (faible valeur vs coût).
 
 ### Phase E — Tests d'intégration (P2, ~1 j)
 

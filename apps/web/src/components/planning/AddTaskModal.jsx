@@ -3,7 +3,16 @@ import './AddTaskModal.css';
 import { Briefcase, Clock, MapPin, Plus, Search, Truck, Unlink, User } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
+import {
+  Button,
+  FormField,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Select,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { PLANNING_SECTIONS } from '../../constants/colors';
@@ -343,8 +352,7 @@ export default function AddTaskModal({
 
       <ModalBody className="atm-body">
         {/* Section / Type de tâche */}
-        <div className="atm-field">
-          <label>Type de tâche</label>
+        <FormField className="atm-field" label="Type de tâche">
           <Select
             value={section}
             onChange={(e) => {
@@ -370,12 +378,11 @@ export default function AddTaskModal({
               </option>
             ))}
           </Select>
-        </div>
+        </FormField>
 
         {/* Course type (sous-type) */}
         {showCourseType && (
-          <div className="atm-field">
-            <label>Type de course</label>
+          <FormField className="atm-field" label="Type de course">
             <Select value={courseType} onChange={(e) => setCourseType(e.target.value)}>
               {Object.entries(EVENT_TYPES).map(([key, info]) => (
                 <option key={key} value={key}>
@@ -383,14 +390,11 @@ export default function AddTaskModal({
                 </option>
               ))}
             </Select>
-          </div>
+          </FormField>
         )}
 
         {/* Titre */}
-        <div className="atm-field">
-          <label>
-            Titre <span className="atm-required">*</span>
-          </label>
+        <FormField className="atm-field" label="Titre" required>
           <Input
             type="text"
             value={title}
@@ -408,7 +412,7 @@ export default function AddTaskModal({
               if (e.key === 'Enter' && !e.shiftKey) handleSubmit();
             }}
           />
-        </div>
+        </FormField>
 
         {/* Affaire */}
         <div className="atm-field" ref={affaireRef}>
@@ -479,8 +483,7 @@ export default function AddTaskModal({
 
         {/* Google / iCal Event */}
         {allEvents.length > 0 && (
-          <div className="atm-field">
-            <label>Événement associé</label>
+          <FormField className="atm-field" label="Événement associé">
             <Select
               value={googleEventId}
               onChange={(e) => {
@@ -513,7 +516,7 @@ export default function AddTaskModal({
                 </option>
               ))}
             </Select>
-          </div>
+          </FormField>
         )}
 
         {/* Lieu (courses) */}
@@ -534,10 +537,14 @@ export default function AddTaskModal({
 
         {/* Responsable + Client (row) */}
         <div className="atm-row">
-          <div className="atm-field atm-field-half">
-            <label>
-              <User size={13} /> Responsable
-            </label>
+          <FormField
+            className="atm-field atm-field-half"
+            label={
+              <>
+                <User size={13} /> Responsable
+              </>
+            }
+          >
             <Select value={personId} onChange={(e) => setPersonId(e.target.value)}>
               <option value="">— Aucun —</option>
               {sortedPersons.map((p) => (
@@ -546,9 +553,8 @@ export default function AddTaskModal({
                 </option>
               ))}
             </Select>
-          </div>
-          <div className="atm-field atm-field-half">
-            <label>Client</label>
+          </FormField>
+          <FormField className="atm-field atm-field-half" label="Client">
             <Input
               type="text"
               value={client}
@@ -563,15 +569,19 @@ export default function AddTaskModal({
                 ))}
               </datalist>
             )}
-          </div>
+          </FormField>
         </div>
 
         {/* Véhicule (si section compatible) */}
         {showVehicle && (
-          <div className="atm-field">
-            <label>
-              <Truck size={13} /> Réservation véhicule
-            </label>
+          <FormField
+            className="atm-field"
+            label={
+              <>
+                <Truck size={13} /> Réservation véhicule
+              </>
+            }
+          >
             <Select
               value={reservationId}
               onChange={(e) => {
@@ -602,17 +612,16 @@ export default function AddTaskModal({
                 ))}
               </Select>
             )}
-          </div>
+          </FormField>
         )}
 
         {/* Date + Journée entière (ajouts 2026-05) :
             - Date : permet de cibler un autre jour que celui ouvert dans le planning.
             - Journée entière : masque Heure/Période et envoie all_day=1 au backend. */}
         <div className="atm-row">
-          <div className="atm-field atm-field-half">
-            <label>Date</label>
+          <FormField className="atm-field atm-field-half" label="Date">
             <input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
-          </div>
+          </FormField>
           <div
             className="atm-field atm-field-half"
             style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 6 }}
@@ -640,19 +649,22 @@ export default function AddTaskModal({
         {/* Heure + Période (masqués si journée entière) */}
         {!allDay && (
           <div className="atm-row">
-            <div className="atm-field atm-field-half">
-              <label>
-                <Clock size={13} /> Heure
-              </label>
+            <FormField
+              className="atm-field atm-field-half"
+              label={
+                <>
+                  <Clock size={13} /> Heure
+                </>
+              }
+            >
               <input type="time" value={time} onChange={(e) => handleTimeChange(e.target.value)} />
-            </div>
-            <div className="atm-field atm-field-half">
-              <label>Période</label>
+            </FormField>
+            <FormField className="atm-field atm-field-half" label="Période">
               <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
                 <option value="AM">AM (Matin)</option>
                 <option value="PM">PM (Après-midi)</option>
               </Select>
-            </div>
+            </FormField>
           </div>
         )}
       </ModalBody>

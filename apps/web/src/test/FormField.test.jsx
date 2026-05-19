@@ -96,4 +96,38 @@ describe('FormField', () => {
     );
     expect(container.querySelector('label')).toBeNull();
   });
+
+  it('auto-injecte un id sur le child et le lie au label via htmlFor', () => {
+    const { container } = render(
+      <FormField label="Email">
+        <input />
+      </FormField>,
+    );
+    const input = container.querySelector('input');
+    const label = container.querySelector('label');
+    expect(input.id).toBeTruthy();
+    expect(label.getAttribute('for')).toBe(input.id);
+  });
+
+  it("n'écrase pas l'id existant du child", () => {
+    const { container } = render(
+      <FormField label="Email" htmlFor="custom">
+        <input id="custom" />
+      </FormField>,
+    );
+    expect(container.querySelector('input').id).toBe('custom');
+    expect(container.querySelector('label').getAttribute('for')).toBe('custom');
+  });
+
+  it("injecte aria-describedby vers l'erreur", () => {
+    const { container } = render(
+      <FormField label="Nom" error="Requis">
+        <input />
+      </FormField>,
+    );
+    const input = container.querySelector('input');
+    const errorId = container.querySelector('.ui-form-error').id;
+    expect(input.getAttribute('aria-describedby')).toBe(errorId);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+  });
 });

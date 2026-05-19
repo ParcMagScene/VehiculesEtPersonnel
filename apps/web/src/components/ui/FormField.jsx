@@ -16,7 +16,9 @@ import { Children, cloneElement, isValidElement, useId } from 'react';
  * Accessibilité :
  * - hint et erreur reçoivent un id stable, et le premier enfant input/select/textarea
  *   reçoit automatiquement `aria-describedby` les pointant + `aria-invalid` si erreur.
- * - Sans casser les overrides : si l'enfant a déjà ses propres aria-*, ils gagnent.
+ * - Le premier enfant éligible reçoit aussi un `id` (s'il n'en a pas) et le `<label>`
+ *   est lié via `htmlFor` — adoption sans avoir à gérer les ids manuellement.
+ * - Sans casser les overrides : si l'enfant a déjà ses propres aria-* ou id, ils gagnent.
  */
 function FormField({
   label,
@@ -39,12 +41,15 @@ function FormField({
   const hintId = hint && !error ? `${baseId}-hint` : null;
   const describedBy = [errorId, hintId].filter(Boolean).join(' ') || null;
 
-  // Clone le premier enfant éligible pour lui injecter aria-describedby / aria-invalid.
+  // Clone le premier enfant éligible pour lui injecter id, aria-describedby, aria-invalid.
   let injected = false;
   const enhancedChildren = Children.map(children, (child) => {
     if (injected || !isValidElement(child)) return child;
     injected = true;
     const next = {};
+    if (!child.props.id) {
+      next.id = baseId;
+    }
     if (describedBy && !child.props['aria-describedby']) {
       next['aria-describedby'] = describedBy;
     }
@@ -59,7 +64,7 @@ function FormField({
       {label && (
         <label
           className={`ui-form-label${required ? ' ui-form-label--required' : ''}`}
-          htmlFor={htmlFor}
+          htmlFor={baseId}
         >
           {label}
         </label>

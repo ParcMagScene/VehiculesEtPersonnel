@@ -22,6 +22,7 @@ import {
   Button,
   Checkbox,
   EmptyState,
+  FormField,
   Input,
   Modal,
   ModalBody,
@@ -350,8 +351,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                   )}
 
                   {/* Template selector */}
-                  <div className="mailing-form-group">
-                    <label>Template (optionnel) :</label>
+                  <FormField className="mailing-form-group" label="Template (optionnel) :">
                     <Select
                       value={selectedTemplate?.id || ''}
                       onChange={(e) => {
@@ -367,7 +367,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                         </option>
                       ))}
                     </Select>
-                  </div>
+                  </FormField>
 
                   {/* Destinataires */}
                   <div className="mailing-form-group">
@@ -443,15 +443,14 @@ export default function MailingPanel({ isOpen, onClose }) {
                   </div>
 
                   {/* Sujet */}
-                  <div className="mailing-form-group">
-                    <label>Sujet :</label>
+                  <FormField className="mailing-form-group" label="Sujet :">
                     <Input
                       type="text"
                       value={composeSubject}
                       onChange={(e) => setComposeSubject(e.target.value)}
                       placeholder="Sujet de l'email..."
                     />
-                  </div>
+                  </FormField>
 
                   {/* Variables */}
                   {Object.keys(composeVars).length > 0 && (
@@ -476,8 +475,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                   )}
 
                   {/* HTML Body */}
-                  <div className="mailing-form-group">
-                    <label>Contenu HTML :</label>
+                  <FormField className="mailing-form-group" label="Contenu HTML :">
                     <Textarea
                       value={composeHtml}
                       onChange={(e) => setComposeHtml(e.target.value)}
@@ -485,7 +483,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                       placeholder="<p>Votre contenu HTML...</p>"
                       className="mailing-html-editor"
                     />
-                  </div>
+                  </FormField>
 
                   {/* Actions */}
                   <div className="mailing-compose-actions">
@@ -622,17 +620,15 @@ export default function MailingPanel({ isOpen, onClose }) {
                     <div className="mailing-tpl-editor">
                       <h3>{editingTemplate.id ? 'Modifier' : 'Nouveau'} template</h3>
 
-                      <div className="mailing-form-group">
-                        <label>Nom :</label>
+                      <FormField className="mailing-form-group" label="Nom :">
                         <Input
                           value={tplName}
                           onChange={(e) => setTplName(e.target.value)}
                           placeholder="Nom du template"
                         />
-                      </div>
+                      </FormField>
 
-                      <div className="mailing-form-group">
-                        <label>Catégorie :</label>
+                      <FormField className="mailing-form-group" label="Catégorie :">
                         <Select
                           value={tplCategory}
                           onChange={(e) => setTplCategory(e.target.value)}
@@ -643,16 +639,15 @@ export default function MailingPanel({ isOpen, onClose }) {
                             </option>
                           ))}
                         </Select>
-                      </div>
+                      </FormField>
 
-                      <div className="mailing-form-group">
-                        <label>Sujet :</label>
+                      <FormField className="mailing-form-group" label="Sujet :">
                         <Input
                           value={tplSubject}
                           onChange={(e) => setTplSubject(e.target.value)}
                           placeholder="Sujet de l'email"
                         />
-                      </div>
+                      </FormField>
 
                       <div className="mailing-form-group">
                         <label>Variables disponibles :</label>
@@ -671,15 +666,14 @@ export default function MailingPanel({ isOpen, onClose }) {
                         </div>
                       </div>
 
-                      <div className="mailing-form-group">
-                        <label>Contenu HTML :</label>
+                      <FormField className="mailing-form-group" label="Contenu HTML :">
                         <Textarea
                           value={tplHtml}
                           onChange={(e) => setTplHtml(e.target.value)}
                           rows={14}
                           className="mailing-html-editor"
                         />
-                      </div>
+                      </FormField>
 
                       <div className="mailing-tpl-editor-actions">
                         <Button
@@ -767,8 +761,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                   </div>
 
                   <div className="mailing-config-grid">
-                    <div className="mailing-form-group">
-                      <label>Hôte SMTP :</label>
+                    <FormField className="mailing-form-group" label="Hôte SMTP :">
                       <Input
                         value={configForm.smtp_host || ''}
                         onChange={(e) =>
@@ -776,9 +769,8 @@ export default function MailingPanel({ isOpen, onClose }) {
                         }
                         placeholder="smtp.example.com"
                       />
-                    </div>
-                    <div className="mailing-form-group">
-                      <label>Port :</label>
+                    </FormField>
+                    <FormField className="mailing-form-group" label="Port :">
                       <Input
                         type="number"
                         value={configForm.smtp_port || 587}
@@ -786,9 +778,8 @@ export default function MailingPanel({ isOpen, onClose }) {
                           setConfigForm((prev) => ({ ...prev, smtp_port: Number(e.target.value) }))
                         }
                       />
-                    </div>
-                    <div className="mailing-form-group">
-                      <label>Utilisateur SMTP :</label>
+                    </FormField>
+                    <FormField className="mailing-form-group" label="Utilisateur SMTP :">
                       <Input
                         value={configForm.smtp_user || ''}
                         onChange={(e) =>
@@ -796,9 +787,8 @@ export default function MailingPanel({ isOpen, onClose }) {
                         }
                         placeholder="user@example.com"
                       />
-                    </div>
-                    <div className="mailing-form-group">
-                      <label>Mot de passe :</label>
+                    </FormField>
+                    <FormField className="mailing-form-group" label="Mot de passe :">
                       <Input
                         type="password"
                         value={configForm.smtp_pass || ''}
@@ -808,9 +798,8 @@ export default function MailingPanel({ isOpen, onClose }) {
                         placeholder="••••••••"
                         autoComplete="off"
                       />
-                    </div>
-                    <div className="mailing-form-group">
-                      <label>Nom expéditeur :</label>
+                    </FormField>
+                    <FormField className="mailing-form-group" label="Nom expéditeur :">
                       <Input
                         value={configForm.from_name || ''}
                         onChange={(e) =>
@@ -818,7 +807,7 @@ export default function MailingPanel({ isOpen, onClose }) {
                         }
                         placeholder="eM@g"
                       />
-                    </div>
+                    </FormField>
                   </div>
 
                   <div className="mailing-form-group">

@@ -18,7 +18,15 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, EntityCombobox, Input, ModalLayout, Select, Textarea } from '@/design-system';
+import {
+  Button,
+  EntityCombobox,
+  FormField,
+  Input,
+  ModalLayout,
+  Select,
+  Textarea,
+} from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
@@ -401,10 +409,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         {/* Form */}
         <div className="tem-form">
           {/* Titre */}
-          <div className="tem-field full">
-            <label>
-              <FileText size={13} /> Titre
-            </label>
+          <FormField
+            className="tem-field full"
+            label={
+              <>
+                <FileText size={13} /> Titre
+              </>
+            }
+          >
             <Input
               ref={titleInputRef}
               type="text"
@@ -425,58 +437,73 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               lang="fr"
               autoComplete="off"
             />
-          </div>
+          </FormField>
 
           {/* Date + Période */}
           <div className="tem-row">
-            <div className="tem-field">
-              <label>
-                <Calendar size={13} /> Date
-              </label>
+            <FormField
+              className="tem-field"
+              label={
+                <>
+                  <Calendar size={13} /> Date
+                </>
+              }
+            >
               <input
                 type="date"
                 value={form.date}
                 onChange={(e) => update('date', e.target.value)}
               />
-            </div>
-            <div className="tem-field">
-              <label>Période</label>
+            </FormField>
+            <FormField className="tem-field" label="Période">
               <Select value={form.period} onChange={(e) => update('period', e.target.value)}>
                 <option value="AM">Matin (AM)</option>
                 <option value="PM">Après-midi (PM)</option>
               </Select>
-            </div>
+            </FormField>
           </div>
 
           {/* Heure début / fin */}
           <div className="tem-row">
-            <div className="tem-field">
-              <label>
-                <Clock size={13} /> Heure début
-              </label>
+            <FormField
+              className="tem-field"
+              label={
+                <>
+                  <Clock size={13} /> Heure début
+                </>
+              }
+            >
               <input
                 type="time"
                 value={form.time}
                 onChange={(e) => update('time', e.target.value)}
               />
-            </div>
-            <div className="tem-field">
-              <label>
-                <Clock size={13} /> Heure fin
-              </label>
+            </FormField>
+            <FormField
+              className="tem-field"
+              label={
+                <>
+                  <Clock size={13} /> Heure fin
+                </>
+              }
+            >
               <input
                 type="time"
                 value={form.endTime}
                 onChange={(e) => update('endTime', e.target.value)}
               />
-            </div>
+            </FormField>
           </div>
 
           {/* Personnel */}
-          <div className="tem-field full">
-            <label>
-              <User size={13} /> Personnel assigné
-            </label>
+          <FormField
+            className="tem-field full"
+            label={
+              <>
+                <User size={13} /> Personnel assigné
+              </>
+            }
+          >
             <EntityCombobox
               value={form.personId}
               onChange={(val) => update('personId', val)}
@@ -486,7 +513,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               }))}
               placeholder="— Aucun —"
             />
-          </div>
+          </FormField>
 
           {/* Affaire liée */}
           <div className="tem-field full" ref={affaireRef}>
@@ -553,10 +580,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
           </div>
 
           {/* Type de tâche */}
-          <div className="tem-field full">
-            <label>
-              <Briefcase size={13} /> Type
-            </label>
+          <FormField
+            className="tem-field full"
+            label={
+              <>
+                <Briefcase size={13} /> Type
+              </>
+            }
+          >
             <Select value={form.section} onChange={(e) => update('section', e.target.value)}>
               {Object.entries(SECTIONS).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -564,7 +595,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                 </option>
               ))}
             </Select>
-          </div>
+          </FormField>
 
           {/* Lieu / Adresse (affiché pour les sections courses) */}
           {COURSE_SECTIONS.has(form.section) && (
@@ -596,26 +627,24 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
           )}
 
           {/* Statut */}
-          <div className="tem-field full">
-            <label>Statut</label>
+          <FormField className="tem-field full" label="Statut">
             <Select value={form.status} onChange={(e) => update('status', e.target.value)}>
               <option value="pending">En attente</option>
               <option value="in_progress">En cours</option>
               <option value="done">Terminé</option>
               <option value="cancelled">Annulé</option>
             </Select>
-          </div>
+          </FormField>
 
           {/* Notes */}
-          <div className="tem-field full">
-            <label>Notes</label>
+          <FormField className="tem-field full" label="Notes">
             <Textarea
               value={form.notes}
               onChange={(e) => update('notes', e.target.value)}
               placeholder="Notes..."
               rows={3}
             />
-          </div>
+          </FormField>
           {/* ── Fusion de tâches ── */}
           <div className="tem-field full">
             <div className="tem-merge-header">

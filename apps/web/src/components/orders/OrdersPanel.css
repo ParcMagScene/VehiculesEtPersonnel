@@ -26,24 +26,11 @@
 }
 
 /* ═══ Slide Panel (inline dans orders-body) ═══ */
-.orders-slide-panel {
-  width: 0;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--theme-bg-card);
-  border-left: 1px solid var(--theme-border);
-  display: flex;
-  flex-direction: column;
-  transition:
-    width 0.25s ease,
-    min-width 0.25s ease,
-    opacity 0.25s ease;
-  opacity: 0;
-}
+/* Base, > *, .open (common), .open > *, .closing, .closing > * → .shared-slide-panel (theme.css) */
+/* Largeur spécifique conservée ci-dessous : */
 .orders-slide-panel.open {
   width: 400px;
   min-width: 400px;
-  opacity: 1;
 }
 .orders-slide-panel .slide-panel-header {
   display: flex;

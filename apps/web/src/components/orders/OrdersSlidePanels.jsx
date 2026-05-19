@@ -34,12 +34,12 @@ import {
 // ═══ Volet latéral Commande (clic simple) ═══
 export const OrderSlidePanel = React.memo(
   ({ order, onClose, onOpenDialog, onEdit, onDelete, onStatusChange }) => {
-    const { isOpen, handleClose } = useSlidePanelClose(order, onClose);
+    const { isOpen, isClosing, handleClose } = useSlidePanelClose(order, onClose);
     if (!order) return <div className="orders-slide-panel" />;
     const status = ORDER_STATUS[order.status] || ORDER_STATUS.draft;
     const items = order.items || [];
     return (
-      <div className={`orders-slide-panel ${isOpen ? 'open' : ''}`}>
+      <div className={`orders-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}>
         <div className="slide-panel-header">
           <Button variant="ghost" className="back-btn" onClick={handleClose} aria-label="Fermer">
             <X size={18} />
@@ -164,12 +164,12 @@ export const OrderSlidePanel = React.memo(
 // ═══ Volet latéral Devis (clic simple) ═══
 export const QuoteSlidePanel = React.memo(
   ({ quote, onClose, onOpenDialog, onEdit, onDelete, onConvert }) => {
-    const { isOpen, handleClose } = useSlidePanelClose(quote, onClose);
+    const { isOpen, isClosing, handleClose } = useSlidePanelClose(quote, onClose);
     if (!quote) return <div className="orders-slide-panel" />;
     const status = QUOTE_STATUS[quote.status] || QUOTE_STATUS.draft;
     const items = quote.items || [];
     return (
-      <div className={`orders-slide-panel ${isOpen ? 'open' : ''}`}>
+      <div className={`orders-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}>
         <div className="slide-panel-header">
           <Button variant="ghost" className="back-btn" onClick={handleClose} aria-label="Fermer">
             <X size={18} />
@@ -275,12 +275,12 @@ export const QuoteSlidePanel = React.memo(
 // ═══ Volet latéral Demande (clic simple) ═══
 export const RequestSlidePanel = React.memo(
   ({ request, onClose, onOpenDialog, isAdmin, onValidate, onEdit }) => {
-    const { isOpen, handleClose } = useSlidePanelClose(request, onClose);
+    const { isOpen, isClosing, handleClose } = useSlidePanelClose(request, onClose);
     if (!request) return <div className="orders-slide-panel" />;
     const status = REQUEST_STATUS[request.status] || REQUEST_STATUS.pending;
     const priority = REQUEST_PRIORITY[request.priority] || REQUEST_PRIORITY.normal;
     return (
-      <div className={`orders-slide-panel ${isOpen ? 'open' : ''}`}>
+      <div className={`orders-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}>
         <div className="slide-panel-header">
           <Button variant="ghost" className="back-btn" onClick={handleClose} aria-label="Fermer">
             <X size={18} />
@@ -378,10 +378,10 @@ export const RequestSlidePanel = React.memo(
 
 // ═══ Volet latéral Fournisseur (clic simple) ═══
 export const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail, onViewOrder }) => {
-  const { isOpen, handleClose } = useSlidePanelClose(supplier, onClose);
+  const { isOpen, isClosing, handleClose } = useSlidePanelClose(supplier, onClose);
   if (!supplier) return <div className="orders-slide-panel" />;
   return (
-    <div className={`orders-slide-panel ${isOpen ? 'open' : ''}`}>
+    <div className={`orders-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}>
       <div className="slide-panel-header">
         <Button variant="ghost" className="back-btn" onClick={handleClose} aria-label="Fermer">
           <X size={18} />
@@ -394,7 +394,7 @@ export const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail,
             variant="ghost"
             className="action-btn small"
             onClick={() => {
-              onClose();
+              handleClose();
               onViewDetail(supplier);
             }}
           >

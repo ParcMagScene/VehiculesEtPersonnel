@@ -41,8 +41,10 @@ import {
 
 import { ANNUAIRE_TAB_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import ContactsCSVImportDialog from './ContactsCSVImportDialog';
 import LocationsTab from './LocationsTab';
 import MatchingContactEntitiesModal from './MatchingContactEntitiesModal';
@@ -178,6 +180,15 @@ function AnnuairePanel({ currentUser }) {
     loadStats();
   }, [loadLookups, loadStats]);
 
+  // Auto-refresh quand l'annuaire change ailleurs (autre onglet/composant)
+  const bumpAll = useCallback(() => {
+    setDataVersion((v) => v + 1);
+    setRefVersion((v) => v + 1);
+    loadStats();
+    loadLookups();
+  }, [loadStats, loadLookups]);
+  useRefreshSubscription('annuaire', bumpAll);
+
   // ═══ Changement d'onglet (reset des filtres, batché avec React 18) ═══
   const handleTabChange = useCallback((tabId) => {
     setActiveTab(tabId);
@@ -300,6 +311,7 @@ function AnnuairePanel({ currentUser }) {
       setEditingItem(null);
       setDataVersion((v) => v + 1);
       loadStats();
+      refreshBus.publish('annuaire');
     } catch (e) {
       toast?.error(e.message || 'Erreur lors de la sauvegarde');
     }
@@ -328,6 +340,7 @@ function AnnuairePanel({ currentUser }) {
           toast?.success('Supprimé');
           setDataVersion((v) => v + 1);
           loadStats();
+          refreshBus.publish('annuaire');
         } catch (e) {
           toast?.error(e.message || 'Erreur');
         }
@@ -500,6 +513,7 @@ function AnnuairePanel({ currentUser }) {
       setDuplicateGroups((prev) => prev.filter((_, idx) => idx !== groupIndex));
       setDataVersion((v) => v + 1);
       loadStats();
+      refreshBus.publish('annuaire');
     } catch (e) {
       toast?.error(e.message || 'Erreur lors de la fusion');
     } finally {
@@ -519,6 +533,7 @@ function AnnuairePanel({ currentUser }) {
       setEditingRef(null);
       setRefVersion((v) => v + 1);
       loadLookups();
+      refreshBus.publish('annuaire');
     } catch (e) {
       toast?.error(e.message || 'Erreur');
     }
@@ -534,6 +549,7 @@ function AnnuairePanel({ currentUser }) {
           toast?.success('Supprimé');
           setRefVersion((v) => v + 1);
           loadLookups();
+          refreshBus.publish('annuaire');
         } catch (e) {
           toast?.error('Erreur');
         }

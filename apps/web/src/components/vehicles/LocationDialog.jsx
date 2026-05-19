@@ -21,6 +21,7 @@ import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
 import logger from '../../utils/logger';
+import { refreshBus } from '../../utils/refresh-bus';
 
 const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
   const toast = useToast();
@@ -429,6 +430,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
       if (location?.id) {
         // Mise à jour d'un lieu existant
         savedLocation = await api.updateLocation(location.id, locationData);
+        refreshBus.publish('annuaire');
         setSuccessMessage('✅ Lieu mis à jour avec succès !');
       } else {
         // Création d'un nouveau lieu
@@ -438,6 +440,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
           ...response,
           placeId: response.place_id,
         };
+        refreshBus.publish('annuaire');
         setSuccessMessage('✅ Lieu créé avec succès !');
       }
 

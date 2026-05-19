@@ -7,9 +7,11 @@ import { Button, SearchBar, Spinner, Table, Tooltip } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { loadFromIndexedDB } from '../../utils/indexedDB';
+import { refreshBus } from '../../utils/refresh-bus';
 import LocationDialog from '../vehicles/LocationDialog';
 
 const LocationsMapPanel = lazy(() => import('../locations/LocationsMapPanel'));
@@ -58,6 +60,8 @@ function LocationsTab({ currentUser }) {
       .catch(() => {});
   }, [loadLocations]);
 
+  useRefreshSubscription('annuaire', loadLocations);
+
   const allLocations = companyAddress
     ? [
         {
@@ -100,6 +104,7 @@ function LocationsTab({ currentUser }) {
         try {
           await api.deleteLocation(loc.id);
           await loadLocations();
+          refreshBus.publish('annuaire');
           toast.success('Lieu supprimé');
         } catch (err) {
           toast.error(`Erreur: ${err.message}`);

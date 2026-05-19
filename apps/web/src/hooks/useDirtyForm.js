@@ -5,20 +5,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * Compare l'état actuel avec un snapshot initial via JSON.stringify.
  *
  * @param {Object} formData - L'objet état du formulaire à surveiller
+ * @param {Object} [options]
+ * @param {(opts: { title?: string, message?: string, confirmLabel?: string, cancelLabel?: string, variant?: string, onConfirm: () => void }) => void} [options.confirmer]
+ *        Fonction de confirmation custom (ex. `confirm` de `useConfirmDialog`).
+ *        Si fournie, remplace le `window.confirm` natif pour `guardClose`.
  * @returns {{ isDirty: boolean, resetDirty: () => void, guardClose: (onClose: Function) => Function }}
  *
  * @example
- * const { isDirty, resetDirty, guardClose } = useDirtyForm(formData);
+ * const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+ * const { guardClose } = useDirtyForm(formData, { confirmer: confirm });
  *
- * const handleSave = async () => {
- *   await api.save(formData);
- *   resetDirty();
- *   onClose();
- * };
- *
- * return <Modal onClose={guardClose(onClose)}>...</Modal>;
+ * return <Modal onClose={guardClose(onClose)}>...{ConfirmDialogRenderer}</Modal>;
  */
-export function useDirtyForm(formData) {
+export function useDirtyForm(formData, { confirmer } = {}) {
   const initialRef = useRef(null);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -48,13 +47,24 @@ export function useDirtyForm(formData) {
         onClose();
         return;
       }
+      if (typeof confirmer === 'function') {
+        confirmer({
+          title: 'Modifications non sauvegardées',
+          message: 'Quitter sans enregistrer ?',
+          confirmLabel: 'Quitter sans enregistrer',
+          cancelLabel: 'Continuer l’édition',
+          variant: 'danger',
+          onConfirm: onClose,
+        });
+        return;
+      }
       if (
         window.confirm('Vous avez des modifications non sauvegardées. Quitter sans enregistrer ?')
       ) {
         onClose();
       }
     },
-    [isDirty],
+    [isDirty, confirmer],
   );
 
   return { isDirty, resetDirty, guardClose };

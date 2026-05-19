@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Button, Input, ModalLayout, Textarea, Toggle } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import AddressAutocomplete from '../AddressAutocomplete';
@@ -23,7 +24,8 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
     location: '',
   });
   const [saving, setSaving] = useState(false);
-  const { resetDirty, guardClose } = useDirtyForm(formData);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(formData, { confirmer: confirm });
   const safeClose = guardClose(onClose);
   const needsResetRef = useRef(false);
 
@@ -149,124 +151,131 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
   };
 
   return (
-    <ModalLayout
-      open={isOpen}
-      onClose={safeClose}
-      size="md"
-      title={mode === 'edit' ? "Modifier l'événement" : 'Nouvel événement Google'}
-      icon={<Calendar size={20} />}
-      className="event-form-modal"
-      footer={
-        <>
-          <Button variant="ghost" onClick={safeClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" form="google-event-form" disabled={saving}>
-            <Save size={16} />
-            {saving ? 'Enregistrement...' : mode === 'edit' ? 'Mettre à jour' : "Créer l'événement"}
-          </Button>
-        </>
-      }
-    >
-      <form id="google-event-form" onSubmit={handleSubmit}>
-        <div className="event-form-body">
-          {/* Titre */}
-          <div className="event-form-field">
-            <label>
-              <Type size={15} /> Titre
-            </label>
-            <Input
-              type="text"
-              value={formData.summary}
-              onChange={(e) => handleChange('summary', e.target.value)}
-              placeholder="Titre de l'événement"
-              autoFocus
-              required
-            />
-          </div>
-
-          {/* Journée entière toggle */}
-          <div className="event-form-field event-form-toggle">
-            <label>
-              <Clock size={15} /> Journée entière
-            </label>
-            <Toggle
-              checked={formData.allDay}
-              onChange={(e) => handleChange('allDay', e.target.checked)}
-            />
-          </div>
-
-          {/* Dates */}
-          {formData.allDay ? (
-            <div className="event-form-row">
-              <div className="event-form-field">
-                <label>Date de début</label>
-                <input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => handleChange('startDate', e.target.value)}
-                  required
-                />
-              </div>
-              <div className="event-form-field">
-                <label>Date de fin</label>
-                <input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => handleChange('endDate', e.target.value)}
-                />
-              </div>
+    <>
+      <ModalLayout
+        open={isOpen}
+        onClose={safeClose}
+        size="md"
+        title={mode === 'edit' ? "Modifier l'événement" : 'Nouvel événement Google'}
+        icon={<Calendar size={20} />}
+        className="event-form-modal"
+        footer={
+          <>
+            <Button variant="ghost" onClick={safeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" form="google-event-form" disabled={saving}>
+              <Save size={16} />
+              {saving
+                ? 'Enregistrement...'
+                : mode === 'edit'
+                  ? 'Mettre à jour'
+                  : "Créer l'événement"}
+            </Button>
+          </>
+        }
+      >
+        <form id="google-event-form" onSubmit={handleSubmit}>
+          <div className="event-form-body">
+            {/* Titre */}
+            <div className="event-form-field">
+              <label>
+                <Type size={15} /> Titre
+              </label>
+              <Input
+                type="text"
+                value={formData.summary}
+                onChange={(e) => handleChange('summary', e.target.value)}
+                placeholder="Titre de l'événement"
+                autoFocus
+                required
+              />
             </div>
-          ) : (
-            <div className="event-form-row">
-              <div className="event-form-field">
-                <label>Début</label>
-                <input
-                  type="datetime-local"
-                  value={formData.startDateTime}
-                  onChange={(e) => handleChange('startDateTime', e.target.value)}
-                  required
-                />
-              </div>
-              <div className="event-form-field">
-                <label>Fin</label>
-                <input
-                  type="datetime-local"
-                  value={formData.endDateTime}
-                  onChange={(e) => handleChange('endDateTime', e.target.value)}
-                  required
-                />
-              </div>
+
+            {/* Journée entière toggle */}
+            <div className="event-form-field event-form-toggle">
+              <label>
+                <Clock size={15} /> Journée entière
+              </label>
+              <Toggle
+                checked={formData.allDay}
+                onChange={(e) => handleChange('allDay', e.target.checked)}
+              />
             </div>
-          )}
 
-          {/* Lieu */}
-          <div className="event-form-field">
-            <label>
-              <MapPin size={15} /> Lieu
-            </label>
-            <AddressAutocomplete
-              value={formData.location}
-              onChange={(val) => handleChange('location', val)}
-              placeholder="Adresse ou lieu"
-            />
-          </div>
+            {/* Dates */}
+            {formData.allDay ? (
+              <div className="event-form-row">
+                <div className="event-form-field">
+                  <label>Date de début</label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => handleChange('startDate', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="event-form-field">
+                  <label>Date de fin</label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => handleChange('endDate', e.target.value)}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="event-form-row">
+                <div className="event-form-field">
+                  <label>Début</label>
+                  <input
+                    type="datetime-local"
+                    value={formData.startDateTime}
+                    onChange={(e) => handleChange('startDateTime', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="event-form-field">
+                  <label>Fin</label>
+                  <input
+                    type="datetime-local"
+                    value={formData.endDateTime}
+                    onChange={(e) => handleChange('endDateTime', e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
-          {/* Description */}
-          <div className="event-form-field">
-            <label>
-              <AlignLeft size={15} /> Description
-            </label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Description de l'événement"
-              rows={4}
-            />
+            {/* Lieu */}
+            <div className="event-form-field">
+              <label>
+                <MapPin size={15} /> Lieu
+              </label>
+              <AddressAutocomplete
+                value={formData.location}
+                onChange={(val) => handleChange('location', val)}
+                placeholder="Adresse ou lieu"
+              />
+            </div>
+
+            {/* Description */}
+            <div className="event-form-field">
+              <label>
+                <AlignLeft size={15} /> Description
+              </label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                placeholder="Description de l'événement"
+                rows={4}
+              />
+            </div>
           </div>
-        </div>
-      </form>
-    </ModalLayout>
+        </form>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

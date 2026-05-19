@@ -10,6 +10,7 @@ import { Button, SectionHeader, Select, Tooltip } from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 // Types de tâches (sections) disponibles pour l'association couleur
 const TASK_SECTIONS = [
@@ -81,6 +82,7 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
       const validRules = rules.filter((r) => r.keyword.trim());
       await api.saveDisplayColorRules(validRules);
       setRules(validRules);
+      refreshBus.publish('display');
       toast.success('Règles de couleurs enregistrées');
     } catch {
       toast.error('Erreur enregistrement');

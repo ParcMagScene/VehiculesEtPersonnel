@@ -10,6 +10,7 @@ import { Button, SectionHeader, Select } from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 const DURATION_OPTIONS = [
   { value: '15', label: '15 minutes' },
@@ -62,6 +63,7 @@ function SneakyTab({ _currentUser, refreshKey }) {
       formData.append('photo', selectedFile);
       formData.append('duration', duration);
       await api.uploadDisplaySneakyPhoto(formData);
+      refreshBus.publish('display');
       toast.success('Photo furtive activée !');
       setSelectedFile(null);
       setPreviewUrl(null);
@@ -75,6 +77,7 @@ function SneakyTab({ _currentUser, refreshKey }) {
   const handleDisable = useCallback(async () => {
     try {
       await api.deleteDisplaySneakyPhoto();
+      refreshBus.publish('display');
       toast.success('Photo furtive désactivée');
       setStatus({ active: false });
     } catch {

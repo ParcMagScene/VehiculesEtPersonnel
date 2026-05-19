@@ -154,6 +154,33 @@ Les modules cochés ✅ au §3.1 respectent le pattern cible :
 | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | [components/management/UserManagement.jsx](../../apps/web/src/components/management/UserManagement.jsx)             | `useRefreshSubscription('persons', () => loadData(true))` — latence quasi-nulle au lieu de 30 s. |
 
+### 6.5 Module **Display** (P2 traité)
+
+Bus `display` : le parent `DisplayDashboardPanel` s'abonne et incrémente `refreshKey` propagé aux tabs. Chaque tab publie après mutation pour synchroniser les autres vues actives (autre fenêtre, autre user).
+
+| Fichier                                                                                                                          | Modification                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [components/DisplayDashboard/DisplayDashboardPanel.jsx](../../apps/web/src/components/DisplayDashboard/DisplayDashboardPanel.jsx) | `useRefreshSubscription('display', …)` — bump global `refreshKey`.          |
+| [components/DisplayDashboard/AppearanceTab.jsx](../../apps/web/src/components/DisplayDashboard/AppearanceTab.jsx)                 | Publish après `saveDisplayAppearance` + `uploadDisplayLogo`.                 |
+| [components/DisplayDashboard/WelcomeMessagesTab.jsx](../../apps/web/src/components/DisplayDashboard/WelcomeMessagesTab.jsx)       | Publish après save/activate/disable message d'accueil + furtif.              |
+| [components/DisplayDashboard/ColorRulesTab.jsx](../../apps/web/src/components/DisplayDashboard/ColorRulesTab.jsx)                 | Publish après `saveDisplayColorRules`.                                      |
+| [components/DisplayDashboard/LocationIconsTab.jsx](../../apps/web/src/components/DisplayDashboard/LocationIconsTab.jsx)           | Publish après upload/delete GIF + save règles d'icônes.                      |
+| [components/DisplayDashboard/SneakyTab.jsx](../../apps/web/src/components/DisplayDashboard/SneakyTab.jsx)                         | Publish après upload/delete photo furtive.                                  |
+
+> _Note_ : `MessagesTab` / `PlaylistsTab` / `MediaTab` / `ScreensTab` / `TemplatesTab` / `LogsTab` existent mais ne sont plus rendus par `DisplayDashboardPanel` (legacy non câblé). Aucun fix appliqué ; à désactiver/archiver lors d'un futur nettoyage.
+
+### 6.6 Module **Video** (P2 traité)
+
+| Fichier                                                                                            | Modification                                                                |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [components/video/PresetPanel.jsx](../../apps/web/src/components/video/PresetPanel.jsx)             | `useRefreshSubscription('video-presets', loadPresets)` + publish create/update/delete preset. |
+
+> _Limite connue_ : la **fenêtre détachée** (`PresetDetachedView`) tourne dans un onglet/window séparé ; le bus actuel est intra-fenêtre uniquement (cf. `refresh-bus.js`). La synchro cross-window nécessiterait un `BroadcastChannel` — hors scope.
+
+### 6.7 Module **Messaging**
+
+Aucune modification : SSE + fallback polling 10s déjà en place pour le compteur non-lu (voir `useMessagingPolling.js`). Mécanisme plus réactif et plus pertinent que le bus pour ce cas.
+
 ### 6.4 Conventions
 
 - Format normalisé : `refreshBus.publish('<key>')` **après** que l'appel API ait résolu sans erreur.
@@ -166,9 +193,9 @@ Les modules cochés ✅ au §3.1 respectent le pattern cible :
 
 | Item                                                | Sévérité | Justification report                                                                                    |
 | --------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
-| Display tabs (Logs/Messages/Playlists/Media/Screens/Sonos) — bus | P2       | Panneaux de configuration faible concurrence ; le clic « rafraîchir » manuel reste acceptable.          |
-| VideoPanel — bus                                    | P2       | Idem ; mutations rares et faites depuis le même panneau.                                                |
-| Messaging — alignement bus                          | P2       | Polling 30 s déjà en place pour l'inbox.                                                                |
+| ~~Display tabs (Appearance/WelcomeMessages/ColorRules/LocationIcons/Sneaky) — bus~~ | **✅ livré** | Cf. §6.5. Tabs legacy (Messages/Playlists/Media/Screens/Templates/Logs) non câblés par le panneau, ignorés. |
+| ~~VideoPanel — bus~~                                | **✅ livré** | Cf. §6.6. Cross-window détaché = limite connue (BroadcastChannel à ajouter ultérieurement si besoin).      |
+| ~~Messaging — alignement bus~~                      | **✅ vérifié** | SSE + fallback polling 10s déjà opérationnels (`useMessagingPolling.js`).                              |
 | ~~UserManagement — subscribe `persons`~~            | **✅ livré** | Cf. §6.4.                                                                                              |
 | ~~AnnuairePanel — préservation page après bus~~     | **✅ vérifié** | Pattern `dataVersion` bump conservait déjà la page.                                                    |
 | ~~LogsTab — pagination cohérente après mutation~~   | **✅ vérifié** | Pattern `refreshKey` externe conservait déjà la page.                                                  |

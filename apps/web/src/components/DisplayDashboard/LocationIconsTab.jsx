@@ -19,6 +19,7 @@ import {
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api, { getApiUrl } from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 // Types de tâches (sections) disponibles pour l'association icône
 const TASK_SECTIONS = [
@@ -83,6 +84,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
         const formData = new FormData();
         formData.append('gif', file);
         await api.uploadDisplayLocationGif(formData);
+        refreshBus.publish('display');
         toast.success('Icône importée');
         e.target.value = '';
         const data = await api.getDisplayLocationGifs();
@@ -149,6 +151,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
       const validRules = rules.filter((r) => r.keyword && r.gifFilename);
       await api.saveDisplayLocationIconRules(validRules);
       setRules(validRules);
+      refreshBus.publish('display');
       toast.success("Règles d'icônes enregistrées");
     } catch {
       toast.error('Erreur enregistrement');

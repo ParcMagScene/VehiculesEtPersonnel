@@ -10,6 +10,7 @@ import { Button, SectionHeader, Select, Textarea } from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'];
 const DAY_LABELS = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven' };
@@ -81,6 +82,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
     try {
       setSaving(true);
       await api.saveDisplayWelcomeMessages({ welcomeMessages: messages });
+      refreshBus.publish('display');
       toast.success('Messages enregistrés');
     } catch {
       toast.error('Erreur enregistrement');
@@ -96,6 +98,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
     }
     try {
       await api.activateDisplaySneakyMessage(sneakyText.trim(), sneakyDuration);
+      refreshBus.publish('display');
       toast.success('Message furtif activé');
       setSneakyText('');
       const status = await api.getDisplaySneakyMessageStatus();
@@ -108,6 +111,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
   const handleDisableSneaky = useCallback(async () => {
     try {
       await api.deleteDisplaySneakyMessage();
+      refreshBus.publish('display');
       toast.success('Message furtif désactivé');
       setSneakyStatus({ active: false });
     } catch {

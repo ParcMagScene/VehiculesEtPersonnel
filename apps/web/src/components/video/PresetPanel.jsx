@@ -8,8 +8,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Tooltip } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import CameraPlayerWebRTC from './CameraPlayerWebRTC';
 
 const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
@@ -50,6 +52,9 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
     };
   }, [loadPresets]);
 
+  // Synchronisation cross-vues (fenêtre détachée ↔ panneau principal)
+  useRefreshSubscription('video-presets', loadPresets);
+
   const activePreset = presets.find((p) => p.id === activePresetId);
   const presetCameras = activePreset
     ? activePreset.cameraIds.map((id) => cameras.find((c) => c.id === id)).filter(Boolean)
@@ -68,6 +73,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
         await api.updateVideoPreset(activePresetId, { name: editName, cameraIds: editCameraIds });
       }
       await loadPresets();
+      refreshBus.publish('video-presets');
       setEditing(false);
       setCreating(false);
       toast.success(creating ? 'Preset créé' : 'Preset mis à jour');
@@ -89,6 +95,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
           await api.deleteVideoPreset(activePresetId);
           setActivePresetId(null);
           await loadPresets();
+          refreshBus.publish('video-presets');
           toast.success('Preset supprimé');
         } catch (err) {
           console.error('Erreur suppression preset:', err);

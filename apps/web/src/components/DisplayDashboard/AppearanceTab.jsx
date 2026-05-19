@@ -10,6 +10,7 @@ import { Button, Checkbox, Input, SectionHeader, Select } from '@/design-system'
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 const FONT_OPTIONS = [
   { value: 'Arial, sans-serif', label: 'Arial' },
@@ -71,6 +72,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
     try {
       setSaving(true);
       await api.saveDisplayAppearance(config);
+      refreshBus.publish('display');
       toast.success('Configuration enregistrée');
     } catch {
       toast.error('Erreur enregistrement');
@@ -88,6 +90,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
         formData.append('logo', file);
         const result = await api.uploadDisplayLogo(formData);
         setLogoPath(result.path);
+        refreshBus.publish('display');
         toast.success('Logo mis à jour');
       } catch {
         toast.error('Erreur upload logo');

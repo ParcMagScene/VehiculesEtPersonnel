@@ -10,6 +10,7 @@ import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from '
 
 import { Tab, TabList, TabPanel, Tabs } from '@/design-system';
 
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import ErrorBoundary from '../ErrorBoundary';
 
 // Lazy sub-tabs
@@ -117,6 +118,9 @@ function DisplayDashboardPanel({ currentUser }) {
   const _handleRefresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
+
+  // Réaction aux mutations Display publiées depuis tabs/modals via le bus
+  useRefreshSubscription('display', () => setRefreshKey((k) => k + 1));
 
   const validTabIds = CONFIG_TABS.map((t) => t.id);
   useEffect(() => {

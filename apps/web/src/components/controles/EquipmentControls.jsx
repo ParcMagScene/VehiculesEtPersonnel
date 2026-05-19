@@ -7,6 +7,7 @@ import { useCallback, useState } from 'react';
 
 import { Button, EmptyState, SectionHeader, Spinner, StatusBadge } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useListResource } from '../../hooks/useListResource';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -19,6 +20,7 @@ export default function EquipmentControls({ entityType, entityId, entityName, is
   const [perform, setPerform] = useState(null);
   const [history, setHistory] = useState(null);
   const [editor, setEditor] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const fetchControls = useCallback(async () => {
     const r = await api.getControlsForEntity(entityType, entityId);
@@ -127,13 +129,20 @@ export default function EquipmentControls({ entityType, entityId, entityName, is
                       size="sm"
                       variant="ghost"
                       icon={<Trash2 size={14} />}
-                      onClick={async () => {
-                        if (!window.confirm(`Désactiver « ${c.type_name} » ?`)) return;
-                        const r = await api.deleteControl(c.id);
-                        if (r?.success) {
-                          refreshBus.publish('controls');
-                          load();
-                        }
+                      onClick={() => {
+                        confirm({
+                          title: 'Désactiver le contrôle',
+                          message: `Désactiver « ${c.type_name} » ?`,
+                          variant: 'danger',
+                          confirmLabel: 'Désactiver',
+                          onConfirm: async () => {
+                            const r = await api.deleteControl(c.id);
+                            if (r?.success) {
+                              refreshBus.publish('controls');
+                              load();
+                            }
+                          },
+                        });
                       }}
                       aria-label="Supprimer"
                     />
@@ -158,6 +167,7 @@ export default function EquipmentControls({ entityType, entityId, entityName, is
           onSaved={load}
         />
       )}
+      {ConfirmDialogRenderer}
     </div>
   );
 }

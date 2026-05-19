@@ -395,21 +395,23 @@ function TaskPlanningPanel({
         }
       },
     });
-  const handleClearCompleted = async () => {
-    if (
-      !window.confirm(
-        `Supprimer toutes les tâches terminées du ${formatDateFr(selectedDate)} du planning et du dashboard ?`,
-      )
-    )
-      return;
-    try {
-      const r = await api.clearCompletedTasks(selectedDate);
-      toast.success(`${r.cleared || 0} tâche(s) terminée(s) effacée(s)`);
-      refreshBus.publish('planning');
-      loadTasks(true);
-    } catch {
-      toast.error('Erreur suppression');
-    }
+  const handleClearCompleted = () => {
+    confirm({
+      title: 'Supprimer les tâches terminées',
+      message: `Supprimer toutes les tâches terminées du ${formatDateFr(selectedDate)} du planning et du dashboard ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          const r = await api.clearCompletedTasks(selectedDate);
+          toast.success(`${r.cleared || 0} tâche(s) terminée(s) effacée(s)`);
+          refreshBus.publish('planning');
+          loadTasks(true);
+        } catch {
+          toast.error('Erreur suppression');
+        }
+      },
+    });
   };
 
   // ═══ Memoized data ═══

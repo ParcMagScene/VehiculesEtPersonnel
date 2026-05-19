@@ -17,6 +17,7 @@ import { Button, ProgressBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import useSwipeAction from '../../hooks/useSwipeAction';
@@ -62,6 +63,7 @@ function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [updatingTask, setUpdatingTask] = useState(null);
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -119,17 +121,24 @@ function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
     setActionId(null);
   };
 
-  const handleDelete = async (entry) => {
-    if (!window.confirm(`Supprimer "${entry.title || entry.content?.slice(0, 30)}" ?`)) return;
-    setActionId(entry.id);
-    try {
-      await api.request(`/display/messages/${entry.id}`, { method: 'DELETE' });
-      setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-      resetSwipe();
-    } catch (e) {
-      console.error('Erreur suppression entrée:', e);
-    }
-    setActionId(null);
+  const handleDelete = (entry) => {
+    confirm({
+      title: 'Supprimer l’entrée',
+      message: `Supprimer "${entry.title || entry.content?.slice(0, 30)}" ?`,
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setActionId(entry.id);
+        try {
+          await api.request(`/display/messages/${entry.id}`, { method: 'DELETE' });
+          setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+          resetSwipe();
+        } catch (e) {
+          console.error('Erreur suppression entrée:', e);
+        }
+        setActionId(null);
+      },
+    });
   };
 
   const handleToggleTask = async (task) => {
@@ -387,6 +396,7 @@ function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
           </div>
         )}
       </div>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

@@ -28,6 +28,7 @@ import {
   Table,
 } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useListResource } from '../../hooks/useListResource';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -57,6 +58,7 @@ export default function ControlsDashboard({ user }) {
   const [perform, setPerform] = useState(null);
   const [history, setHistory] = useState(null);
   const [editor, setEditor] = useState(null); // { control } pour éditer
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const fetchDashboard = useCallback(async () => {
     const r = await api.getControlsDashboard(filters);
@@ -80,25 +82,42 @@ export default function ControlsDashboard({ user }) {
 
   const items = useMemo(() => data.items, [data]);
 
-  const handleDelete = async (ctrl) => {
-    if (!window.confirm(`Désactiver le contrôle « ${ctrl.type_name} » ?`)) return;
-    const r = await api.deleteControl(ctrl.id);
-    if (r?.success) {
-      refreshBus.publish('controls');
-      load();
-    } else alert(r?.error || 'Erreur suppression');
+  const handleDelete = (ctrl) => {
+    confirm({
+      title: 'Désactiver le contrôle',
+      message: `Désactiver le contrôle « ${ctrl.type_name} » ?`,
+      variant: 'danger',
+      confirmLabel: 'Désactiver',
+      onConfirm: async () => {
+        const r = await api.deleteControl(ctrl.id);
+        if (r?.success) {
+          refreshBus.publish('controls');
+          load();
+        } else {
+          window.alert(r?.error || 'Erreur suppression');
+        }
+      },
+    });
   };
 
-  const handleRecompute = async () => {
-    if (!window.confirm('Relancer le calcul des statuts pour tous les contrôles actifs ?')) return;
-    const r = await api.recomputeControls();
-    if (r?.success) {
-      alert(
-        `Recalcul OK — ${r.data?.changed || 0} statut(s) mis à jour, ${r.data?.missed || 0} manqué(s).`,
-      );
-      refreshBus.publish('controls');
-      load();
-    } else alert(r?.error || 'Erreur');
+  const handleRecompute = () => {
+    confirm({
+      title: 'Recalculer les statuts',
+      message: 'Relancer le calcul des statuts pour tous les contrôles actifs ?',
+      confirmLabel: 'Recalculer',
+      onConfirm: async () => {
+        const r = await api.recomputeControls();
+        if (r?.success) {
+          window.alert(
+            `Recalcul OK — ${r.data?.changed || 0} statut(s) mis à jour, ${r.data?.missed || 0} manqué(s).`,
+          );
+          refreshBus.publish('controls');
+          load();
+        } else {
+          window.alert(r?.error || 'Erreur');
+        }
+      },
+    });
   };
 
   return (
@@ -283,6 +302,7 @@ export default function ControlsDashboard({ user }) {
           onSaved={load}
         />
       )}
+      {ConfirmDialogRenderer}
     </ModuleLayout>
   );
 }

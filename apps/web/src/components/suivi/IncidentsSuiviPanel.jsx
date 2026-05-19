@@ -3,6 +3,7 @@ import './IncidentsSuiviPanel.css';
 import { Calendar, ClipboardList, Loader2, Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -136,6 +137,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
   const [deleting, setDeleting] = useState(false);
   const [deletingTicketId, setDeletingTicketId] = useState(null);
   const [error, setError] = useState('');
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   // Lorsque true, le prochain useEffect de préremplissage est sauté
   // (utilisé quand on charge un ticket existant via startEditingTicket).
@@ -508,24 +510,31 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
     }
   };
 
-  const handleDeleteTicket = async (ticketId) => {
+  const handleDeleteTicket = (ticketId) => {
     if (!ticketId) return;
-    if (!window.confirm('Supprimer définitivement ce ticket incident ?')) return;
-    setDeletingTicketId(ticketId);
-    setError('');
-    try {
-      await api.deleteSuiviIncidentTicket(ticketId);
-      if (selectedTicketId === ticketId) {
-        setEditorOpen(false);
-        resetForm();
-      }
-      await Promise.all([loadWeekTickets(), loadSynthese()]);
-      refreshBus.publish('suivi');
-    } catch (err) {
-      setError(err?.message || 'Erreur suppression ticket incident');
-    } finally {
-      setDeletingTicketId(null);
-    }
+    confirm({
+      title: 'Supprimer le ticket',
+      message: 'Supprimer définitivement ce ticket incident ?',
+      variant: 'danger',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        setDeletingTicketId(ticketId);
+        setError('');
+        try {
+          await api.deleteSuiviIncidentTicket(ticketId);
+          if (selectedTicketId === ticketId) {
+            setEditorOpen(false);
+            resetForm();
+          }
+          await Promise.all([loadWeekTickets(), loadSynthese()]);
+          refreshBus.publish('suivi');
+        } catch (err) {
+          setError(err?.message || 'Erreur suppression ticket incident');
+        } finally {
+          setDeletingTicketId(null);
+        }
+      },
+    });
   };
 
   return (
@@ -955,6 +964,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
           </div>
         </ModalFooter>
       </Modal>
+      {ConfirmDialogRenderer}
     </div>
   );
 }

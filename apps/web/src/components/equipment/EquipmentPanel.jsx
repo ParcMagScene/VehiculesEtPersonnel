@@ -905,31 +905,34 @@ const EquipmentPanel = ({
                         variant="secondary"
                         className="eq-mgmt-import-btn"
                         disabled={backfillingRefs}
-                        onClick={async () => {
-                          if (
-                            !window.confirm(
+                        onClick={() => {
+                          confirm({
+                            title: 'Mettre à jour les références',
+                            message:
                               'Mettre à jour catégorie, marque, modèle, photo et localisation ' +
-                                'pour toutes les unités vides en se basant sur les unités déjà ' +
-                                'renseignées de la même référence ?\n\nLes valeurs déjà définies ' +
-                                'ne seront PAS écrasées.',
-                            )
-                          )
-                            return;
-                          setBackfillingRefs(true);
-                          try {
-                            const r = await api.backfillLocmatReferences();
-                            toast.success(
-                              `Mise à jour : ${r.updatedRows} ligne(s) complétée(s) sur ${r.processedRefs} référence(s)` +
-                                (r.normalizedSerials
-                                  ? `, ${r.normalizedSerials} sérialisé(s) ramené(s) à qté=1.`
-                                  : '.'),
-                            );
-                            await loadData?.();
-                          } catch (e) {
-                            toast.error(`Échec mise à jour : ${e?.message || 'erreur inconnue'}`);
-                          } finally {
-                            setBackfillingRefs(false);
-                          }
+                              'pour toutes les unités vides en se basant sur les unités déjà ' +
+                              'renseignées de la même référence ?\n\nLes valeurs déjà définies ne seront PAS écrasées.',
+                            confirmLabel: 'Mettre à jour',
+                            onConfirm: async () => {
+                              setBackfillingRefs(true);
+                              try {
+                                const r = await api.backfillLocmatReferences();
+                                toast.success(
+                                  `Mise à jour : ${r.updatedRows} ligne(s) complétée(s) sur ${r.processedRefs} référence(s)` +
+                                    (r.normalizedSerials
+                                      ? `, ${r.normalizedSerials} sérialisé(s) ramené(s) à qté=1.`
+                                      : '.'),
+                                );
+                                await loadData?.();
+                              } catch (e) {
+                                toast.error(
+                                  `Échec mise à jour : ${e?.message || 'erreur inconnue'}`,
+                                );
+                              } finally {
+                                setBackfillingRefs(false);
+                              }
+                            },
+                          });
                         }}
                         title="Re-propage catégorie, marque, modèle, photo et localisation depuis l'unité la mieux renseignée de chaque référence vers les autres unités vides. Idempotent : les valeurs déjà définies sont conservées."
                       >

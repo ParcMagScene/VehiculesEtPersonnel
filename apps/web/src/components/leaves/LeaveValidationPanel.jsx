@@ -46,7 +46,9 @@ import {
 } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 
@@ -177,6 +179,9 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
     loadData();
   }, [loadData]);
 
+  // Auto-refresh quand des congés changent ailleurs (mobile, salarié, etc.)
+  useRefreshSubscription('leaves', loadData);
+
   // Formatter date
   const fmtDate = (d) => {
     if (!d) return '—';
@@ -220,6 +225,7 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
         await api.signLeave(id, adminSignature, 'admin');
       }
 
+      refreshBus.publish('leaves');
       setDecisionMode(null);
       setAdminComment('');
       setModifiedStartDate('');

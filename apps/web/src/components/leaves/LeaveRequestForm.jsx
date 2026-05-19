@@ -34,6 +34,7 @@ import {
 
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 
 // ═══════════════════════════════════════
 // COMPOSANT SIGNATURE CANVAS
@@ -358,6 +359,7 @@ const LeaveRequestForm = ({
         await api.uploadLeaveJustification(result.id, justificationName, justificationFile);
       }
 
+      refreshBus.publish('leaves');
       if (onCreated) onCreated(result);
       onClose();
     } catch (err) {

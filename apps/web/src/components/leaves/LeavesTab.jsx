@@ -40,8 +40,10 @@ import {
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 import LeaveRequestForm from './LeaveRequestForm';
@@ -159,6 +161,9 @@ const LeavesTab = ({ persons = [], currentUser }) => {
     loadData();
   }, [loadData]);
 
+  // Auto-refresh quand les congés changent ailleurs (validation, mobile, etc.)
+  useRefreshSubscription('leaves', loadData);
+
   // ═══════════════════════════════════════
   // Computed
   // ═══════════════════════════════════════
@@ -210,6 +215,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       onConfirm: async () => {
         try {
           await api.cancelLeave(id);
+          refreshBus.publish('leaves');
           setCancellingId(null);
           loadData();
           toast.success('Demande annulée');

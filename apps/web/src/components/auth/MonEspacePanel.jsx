@@ -36,6 +36,7 @@ import {
 } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from '../leaves/leaveConstants';
@@ -95,6 +96,15 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
       .then((d) => setHasPin(!!d.hasPin))
       .catch(() => {});
   }, [loadLeaves, loadBalance]);
+
+  // Auto-refresh quand des congés changent ailleurs
+  useRefreshSubscription(
+    'leaves',
+    useCallback(() => {
+      loadLeaves();
+      loadBalance();
+    }, [loadLeaves, loadBalance]),
+  );
 
   const handleSetPin = async (e) => {
     e.preventDefault();

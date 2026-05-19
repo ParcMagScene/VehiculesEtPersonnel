@@ -31,8 +31,10 @@ import {
 } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
 import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 
@@ -90,10 +92,20 @@ const LeaveRequestsPanel = ({
     loadBalance();
   }, [loadRequests, loadBalance]);
 
+  // Auto-refresh quand des congés changent ailleurs
+  useRefreshSubscription(
+    'leaves',
+    useCallback(() => {
+      loadRequests();
+      loadBalance();
+    }, [loadRequests, loadBalance]),
+  );
+
   // Annuler une demande
   const handleCancel = async (id) => {
     try {
       await api.cancelLeave(id);
+      refreshBus.publish('leaves');
       setCancellingId(null);
       loadRequests();
       loadBalance();

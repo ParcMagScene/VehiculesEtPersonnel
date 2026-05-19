@@ -47,11 +47,13 @@ import {
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
 import { extractTextFromPDF } from '../../utils/pdfParser';
+import { refreshBus } from '../../utils/refresh-bus';
 import DepotMap from '../vehicles/DepotMap';
 import LocationSelector from '../vehicles/LocationSelector';
 
@@ -184,6 +186,9 @@ function StockPanel({
     loadData();
   }, [loadData]);
 
+  // Auto-refresh quand le stock change ailleurs
+  useRefreshSubscription('stock', loadData);
+
   // ═══ Handlers Articles ═══
   const handleSaveItem = async (data) => {
     try {
@@ -201,6 +206,7 @@ function StockPanel({
       }
       setShowItemForm(false);
       setEditingItem(null);
+      refreshBus.publish('stock');
       loadData();
     } catch (error) {
       toast.error('Erreur: ' + error.message);
@@ -215,6 +221,7 @@ function StockPanel({
         try {
           await api.deleteStockItem(item.id);
           setSelectedItem(null);
+          refreshBus.publish('stock');
           loadData();
         } catch (error) {
           toast.error('Erreur: ' + error.message);
@@ -233,6 +240,7 @@ function StockPanel({
       }
       setShowCategoryForm(false);
       setEditingCategory(null);
+      refreshBus.publish('stock');
       loadData();
     } catch (error) {
       toast.error('Erreur: ' + error.message);
@@ -246,6 +254,7 @@ function StockPanel({
       onConfirm: async () => {
         try {
           await api.deleteStockCategory(cat.id);
+          refreshBus.publish('stock');
           loadData();
         } catch (error) {
           toast.error('Erreur: ' + error.message);
@@ -259,6 +268,7 @@ function StockPanel({
     try {
       await api.createStockMovement(data);
       setShowMovementForm(false);
+      refreshBus.publish('stock');
       loadData();
       if (selectedItem) {
         const updated = await api.getStockItem(selectedItem.id);
@@ -2007,6 +2017,7 @@ function ImportStockModal({ onDone, onClose }) {
       toast.success(
         `Import terminé : ${res.inserted} créés, ${res.updated} mis à jour, ${res.skipped} ignorés`,
       );
+      refreshBus.publish('stock');
       onDone();
     } catch (e) {
       setError('Erreur import: ' + (e.message || 'erreur serveur'));

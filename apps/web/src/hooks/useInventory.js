@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import api from '../utils/api';
 import { loadFromIndexedDB, saveToIndexedDB, STORES } from '../utils/indexedDB';
+import { refreshBus } from '../utils/refresh-bus';
+import { useRefreshSubscription } from './useRefreshSubscription';
 
 /**
  * Hook centralisant les données du module Inventaire :
@@ -57,11 +59,16 @@ export function useInventory({ isAuthenticated, toast }) {
     loadInventoryData();
   }, [loadInventoryData]);
 
+  // Auto-refresh quand le stock change ailleurs (impacte alertes/stats)
+  useRefreshSubscription('stock', loadInventoryData);
+  useRefreshSubscription('inventory', loadInventoryData);
+
   // ── Emplacements CRUD ──
   const createLocation = useCallback(
     async (data) => {
       const loc = await api.createInventoryLocation(data);
       setLocations((prev) => [...prev, loc]);
+      refreshBus.publish('inventory');
       toast?.success('Emplacement créé');
       return loc;
     },
@@ -72,6 +79,7 @@ export function useInventory({ isAuthenticated, toast }) {
     async (id, data) => {
       const loc = await api.updateInventoryLocation(id, data);
       setLocations((prev) => prev.map((l) => (l.id === id ? loc : l)));
+      refreshBus.publish('inventory');
       toast?.success('Emplacement modifié');
       return loc;
     },
@@ -82,6 +90,7 @@ export function useInventory({ isAuthenticated, toast }) {
     async (id) => {
       await api.deleteInventoryLocation(id);
       setLocations((prev) => prev.filter((l) => l.id !== id));
+      refreshBus.publish('inventory');
       toast?.success('Emplacement supprimé');
     },
     [toast],

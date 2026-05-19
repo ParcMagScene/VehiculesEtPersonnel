@@ -119,6 +119,7 @@ export function useInventory({ isAuthenticated, toast }) {
     // Recharger la liste
     const an = await api.getInventoryAnomalies({ status: 'open' });
     setAnomalies(an);
+    refreshBus.publish('inventory');
     toast?.info(`${result.detected_count} anomalie(s) détectée(s)`);
     return result;
   }, [toast]);
@@ -127,6 +128,7 @@ export function useInventory({ isAuthenticated, toast }) {
     async (id, status) => {
       await api.updateAnomaly(id, { status });
       setAnomalies((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
+      refreshBus.publish('inventory');
       toast?.success('Anomalie mise à jour');
     },
     [toast],
@@ -140,6 +142,8 @@ export function useInventory({ isAuthenticated, toast }) {
       const [al, st] = await Promise.all([api.getInventoryAlerts(), api.getInventoryStats()]);
       setAlerts(al);
       setStats(st);
+      refreshBus.publish('inventory');
+      refreshBus.publish('stock');
       toast?.success(`${result.counted} article(s) comptés, ${result.adjustments} ajustement(s)`);
       return result;
     },
@@ -160,6 +164,7 @@ export function useInventory({ isAuthenticated, toast }) {
     await api.refreshInventoryStats();
     const st = await api.getInventoryStats();
     setStats(st);
+    refreshBus.publish('inventory');
   }, []);
 
   // ── Exports ──

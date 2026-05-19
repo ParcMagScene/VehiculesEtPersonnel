@@ -41,6 +41,7 @@ import {
 
 import { ANNUAIRE_TAB_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -1721,221 +1722,244 @@ function EntityFormModal({
     if (isContact) {
       data.is_primary = data.is_primary ? 1 : 0;
     }
+    resetDirty();
     onSave(data);
   };
 
   const types =
     entityType === 'clients' ? CLIENT_TYPES : entityType === 'suppliers' ? SUPPLIER_TYPES : [];
 
-  return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={`${isEdit ? 'Modifier' : 'Nouveau'} ${
-        isContact
-          ? 'contact'
-          : entityType === 'clients'
-            ? 'client'
-            : entityType === 'suppliers'
-              ? 'fournisseur'
-              : 'prestataire'
-      }`}
-      size="lg"
-      className="annuaire-form-modal"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" form="entity-form">
-            <Check size={15} /> {isEdit ? 'Modifier' : 'Créer'}
-          </Button>
-        </>
-      }
-    >
-      <form id="entity-form" onSubmit={handleSubmit} className="annuaire-form">
-        {isContact ? (
-          // ─── Contact form ───
-          <>
-            {/* Sélecteur d'entité parente (si pas pré-défini) */}
-            {!hasPresetParent && (
-              <div className="contact-parent-selector">
-                <FormField className="form-group" label="Rattacher à">
-                  <div className="contact-parent-row">
-                    <Select
-                      value={selectedParentType}
-                      onChange={(e) => {
-                        setSelectedParentType(e.target.value);
-                        handleClearParentEntity();
-                        setEntitySearch('');
-                      }}
-                    >
-                      <option value="">— Aucun (contact libre) —</option>
-                      <option value="client">Client</option>
-                      <option value="supplier">Fournisseur</option>
-                      <option value="prestataire">Prestataire</option>
-                    </Select>
-                  </div>
-                </FormField>
-                {selectedParentType && (
-                  <FormField
-                    className="form-group"
-                    label={selectedParentLabel ? 'Entité liée' : 'Rechercher...'}
-                  >
-                    {selectedParentLabel ? (
-                      <div className="contact-parent-selected">
-                        <span className={`entity-tag ${selectedParentType}`}>
-                          {selectedParentLabel}
-                        </span>
-                        <Button variant="ghost" type="button" onClick={handleClearParentEntity}>
-                          <X size={14} />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="contact-parent-search-wrapper">
-                        <Input
-                          value={entitySearch}
-                          onChange={(e) => setEntitySearch(e.target.value)}
-                          placeholder={`Rechercher un ${selectedParentType === 'client' ? 'client' : selectedParentType === 'supplier' ? 'fournisseur' : 'prestataire'}...`}
-                          autoFocus
-                        />
-                        {entitySearchLoading && <Spinner size="sm" />}
-                        {entitySearchResults.length > 0 && (
-                          <div className="contact-parent-results">
-                            {entitySearchResults.map((e) => (
-                              <div
-                                key={e.id}
-                                className="contact-parent-result-item"
-                                onClick={() => handleSelectParentEntity(e)}
-                              >
-                                <strong>{e.name}</strong>
-                                {e.city && <span className="result-city">{e.city}</span>}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </FormField>
-                )}
-              </div>
-            )}
-            <div className="form-row">
-              <FormField className="form-group" label="Prénom">
-                <Input
-                  maxLength={100}
-                  value={form.first_name || ''}
-                  onChange={(e) => handleChange('first_name', e.target.value)}
-                />
-              </FormField>
-              <FormField className="form-group" label="Nom" required>
-                <Input
-                  maxLength={100}
-                  value={form.last_name || ''}
-                  onChange={(e) => handleChange('last_name', e.target.value)}
-                  required
-                />
-              </FormField>
-            </div>
-            <div className="form-row">
-              <FormField className="form-group" label="Fonction">
-                <Input
-                  maxLength={100}
-                  value={form.job_title || ''}
-                  onChange={(e) => handleChange('job_title', e.target.value)}
-                />
-              </FormField>
-              <FormField className="form-group" label="Catégorie">
-                <Select
-                  value={form.category || ''}
-                  onChange={(e) => handleChange('category', e.target.value)}
-                >
-                  <option value="">— Choisir —</option>
-                  {(lookups.contact_categories || []).map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-            </div>
-            <div className="form-row">
-              <FormField className="form-group" label="Téléphone">
-                <Input
-                  maxLength={20}
-                  value={form.phone || ''}
-                  onChange={(e) => handleChange('phone', e.target.value)}
-                />
-              </FormField>
-              <FormField className="form-group" label="Tél. 2">
-                <Input
-                  maxLength={20}
-                  value={form.phone2 || ''}
-                  onChange={(e) => handleChange('phone2', e.target.value)}
-                />
-              </FormField>
-            </div>
-            <FormField className="form-group" label="Email">
-              <Input
-                type="email"
-                maxLength={254}
-                value={form.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
-              />
-            </FormField>
-            <div className="form-group">
-              <label className="checkbox-label">
-                <Checkbox
-                  checked={form.is_primary || false}
-                  onChange={(e) => handleChange('is_primary', e.target.checked)}
-                />
-                Contact principal
-              </label>
-            </div>
-            <FormField className="form-group" label="Notes">
-              <Textarea
-                value={form.notes || ''}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                rows={2}
-              />
-            </FormField>
-          </>
-        ) : (
-          // ─── Entity form (client/supplier/prestataire) ───
-          <>
-            <div className="form-row">
-              <FormField className="form-group flex-2" label="Nom" required>
-                <Input
-                  maxLength={200}
-                  value={form.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  required
-                />
-              </FormField>
-              <FormField className="form-group" label="Code libre">
-                <Input
-                  maxLength={50}
-                  value={form.code_libre || ''}
-                  onChange={(e) => handleChange('code_libre', e.target.value)}
-                />
-              </FormField>
-            </div>
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
-            {types.length > 0 && (
+  return (
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={`${isEdit ? 'Modifier' : 'Nouveau'} ${
+          isContact
+            ? 'contact'
+            : entityType === 'clients'
+              ? 'client'
+              : entityType === 'suppliers'
+                ? 'fournisseur'
+                : 'prestataire'
+        }`}
+        size="lg"
+        className="annuaire-form-modal"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" form="entity-form">
+              <Check size={15} /> {isEdit ? 'Modifier' : 'Créer'}
+            </Button>
+          </>
+        }
+      >
+        <form id="entity-form" onSubmit={handleSubmit} className="annuaire-form">
+          {isContact ? (
+            // ─── Contact form ───
+            <>
+              {/* Sélecteur d'entité parente (si pas pré-défini) */}
+              {!hasPresetParent && (
+                <div className="contact-parent-selector">
+                  <FormField className="form-group" label="Rattacher à">
+                    <div className="contact-parent-row">
+                      <Select
+                        value={selectedParentType}
+                        onChange={(e) => {
+                          setSelectedParentType(e.target.value);
+                          handleClearParentEntity();
+                          setEntitySearch('');
+                        }}
+                      >
+                        <option value="">— Aucun (contact libre) —</option>
+                        <option value="client">Client</option>
+                        <option value="supplier">Fournisseur</option>
+                        <option value="prestataire">Prestataire</option>
+                      </Select>
+                    </div>
+                  </FormField>
+                  {selectedParentType && (
+                    <FormField
+                      className="form-group"
+                      label={selectedParentLabel ? 'Entité liée' : 'Rechercher...'}
+                    >
+                      {selectedParentLabel ? (
+                        <div className="contact-parent-selected">
+                          <span className={`entity-tag ${selectedParentType}`}>
+                            {selectedParentLabel}
+                          </span>
+                          <Button variant="ghost" type="button" onClick={handleClearParentEntity}>
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="contact-parent-search-wrapper">
+                          <Input
+                            value={entitySearch}
+                            onChange={(e) => setEntitySearch(e.target.value)}
+                            placeholder={`Rechercher un ${selectedParentType === 'client' ? 'client' : selectedParentType === 'supplier' ? 'fournisseur' : 'prestataire'}...`}
+                            autoFocus
+                          />
+                          {entitySearchLoading && <Spinner size="sm" />}
+                          {entitySearchResults.length > 0 && (
+                            <div className="contact-parent-results">
+                              {entitySearchResults.map((e) => (
+                                <div
+                                  key={e.id}
+                                  className="contact-parent-result-item"
+                                  onClick={() => handleSelectParentEntity(e)}
+                                >
+                                  <strong>{e.name}</strong>
+                                  {e.city && <span className="result-city">{e.city}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </FormField>
+                  )}
+                </div>
+              )}
               <div className="form-row">
-                <FormField className="form-group" label="Type">
+                <FormField className="form-group" label="Prénom">
+                  <Input
+                    maxLength={100}
+                    value={form.first_name || ''}
+                    onChange={(e) => handleChange('first_name', e.target.value)}
+                  />
+                </FormField>
+                <FormField className="form-group" label="Nom" required>
+                  <Input
+                    maxLength={100}
+                    value={form.last_name || ''}
+                    onChange={(e) => handleChange('last_name', e.target.value)}
+                    required
+                  />
+                </FormField>
+              </div>
+              <div className="form-row">
+                <FormField className="form-group" label="Fonction">
+                  <Input
+                    maxLength={100}
+                    value={form.job_title || ''}
+                    onChange={(e) => handleChange('job_title', e.target.value)}
+                  />
+                </FormField>
+                <FormField className="form-group" label="Catégorie">
                   <Select
-                    value={form.type || ''}
-                    onChange={(e) => handleChange('type', e.target.value)}
+                    value={form.category || ''}
+                    onChange={(e) => handleChange('category', e.target.value)}
                   >
                     <option value="">— Choisir —</option>
-                    {types.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
+                    {(lookups.contact_categories || []).map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
                       </option>
                     ))}
                   </Select>
                 </FormField>
+              </div>
+              <div className="form-row">
+                <FormField className="form-group" label="Téléphone">
+                  <Input
+                    maxLength={20}
+                    value={form.phone || ''}
+                    onChange={(e) => handleChange('phone', e.target.value)}
+                  />
+                </FormField>
+                <FormField className="form-group" label="Tél. 2">
+                  <Input
+                    maxLength={20}
+                    value={form.phone2 || ''}
+                    onChange={(e) => handleChange('phone2', e.target.value)}
+                  />
+                </FormField>
+              </div>
+              <FormField className="form-group" label="Email">
+                <Input
+                  type="email"
+                  maxLength={254}
+                  value={form.email || ''}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                />
+              </FormField>
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <Checkbox
+                    checked={form.is_primary || false}
+                    onChange={(e) => handleChange('is_primary', e.target.checked)}
+                  />
+                  Contact principal
+                </label>
+              </div>
+              <FormField className="form-group" label="Notes">
+                <Textarea
+                  value={form.notes || ''}
+                  onChange={(e) => handleChange('notes', e.target.value)}
+                  rows={2}
+                />
+              </FormField>
+            </>
+          ) : (
+            // ─── Entity form (client/supplier/prestataire) ───
+            <>
+              <div className="form-row">
+                <FormField className="form-group flex-2" label="Nom" required>
+                  <Input
+                    maxLength={200}
+                    value={form.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    required
+                  />
+                </FormField>
+                <FormField className="form-group" label="Code libre">
+                  <Input
+                    maxLength={50}
+                    value={form.code_libre || ''}
+                    onChange={(e) => handleChange('code_libre', e.target.value)}
+                  />
+                </FormField>
+              </div>
+
+              {types.length > 0 && (
+                <div className="form-row">
+                  <FormField className="form-group" label="Type">
+                    <Select
+                      value={form.type || ''}
+                      onChange={(e) => handleChange('type', e.target.value)}
+                    >
+                      <option value="">— Choisir —</option>
+                      {types.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField className="form-group" label="Forme juridique">
+                    <Select
+                      value={form.legal_structure || ''}
+                      onChange={(e) => handleChange('legal_structure', e.target.value)}
+                    >
+                      <option value="">— Choisir —</option>
+                      {(lookups.legal_structures || []).map((s) => (
+                        <option key={s.code} value={s.code}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                </div>
+              )}
+
+              {entityType === 'prestataires' && (
                 <FormField className="form-group" label="Forme juridique">
                   <Select
                     value={form.legal_structure || ''}
@@ -1949,184 +1973,169 @@ function EntityFormModal({
                     ))}
                   </Select>
                 </FormField>
-              </div>
-            )}
+              )}
 
-            {entityType === 'prestataires' && (
-              <FormField className="form-group" label="Forme juridique">
+              <div className="form-row">
+                <FormField className="form-group" label="SIRET">
+                  <Input
+                    maxLength={17}
+                    value={form.siret || ''}
+                    onChange={(e) => handleChange('siret', e.target.value)}
+                  />
+                </FormField>
+                <FormField className="form-group" label="TVA Intra.">
+                  <Input
+                    maxLength={20}
+                    value={form.tva_intra || ''}
+                    onChange={(e) => handleChange('tva_intra', e.target.value)}
+                  />
+                </FormField>
+              </div>
+
+              <FormField className="form-group" label="Adresse">
+                <Input
+                  maxLength={500}
+                  value={form.address || ''}
+                  onChange={(e) => handleChange('address', e.target.value)}
+                />
+              </FormField>
+
+              <div className="form-row">
+                <FormField className="form-group" label="Code postal">
+                  <Input
+                    maxLength={10}
+                    value={form.postal_code || ''}
+                    onChange={(e) => handleChange('postal_code', e.target.value)}
+                  />
+                </FormField>
+                <FormField className="form-group flex-2" label="Ville">
+                  <Input
+                    maxLength={100}
+                    value={form.city || ''}
+                    onChange={(e) => handleChange('city', e.target.value)}
+                  />
+                </FormField>
+              </div>
+
+              <FormField className="form-group" label="Lieu lié">
+                <div className="form-row" style={{ gap: 8, alignItems: 'center' }}>
+                  <Select
+                    style={{ flex: 1 }}
+                    value={form.location_id || ''}
+                    onChange={(e) =>
+                      handleChange('location_id', e.target.value ? Number(e.target.value) : null)
+                    }
+                  >
+                    <option value="">— Aucun lieu —</option>
+                    {locationsList.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                        {l.address ? ` — ${l.address}` : ''}
+                      </option>
+                    ))}
+                  </Select>
+                  {form.location_id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleChange('location_id', null)}
+                      title="Délier"
+                    >
+                      <X size={14} />
+                    </Button>
+                  )}
+                </div>
+              </FormField>
+
+              <div className="form-row">
+                <FormField className="form-group" label="Téléphone">
+                  <Input
+                    maxLength={20}
+                    value={form.phone || ''}
+                    onChange={(e) => handleChange('phone', e.target.value)}
+                  />
+                </FormField>
+                <FormField className="form-group" label="Tél. 2">
+                  <Input
+                    maxLength={20}
+                    value={form.phone2 || ''}
+                    onChange={(e) => handleChange('phone2', e.target.value)}
+                  />
+                </FormField>
+              </div>
+
+              <div className="form-row">
+                <FormField className="form-group" label="Email">
+                  <Input
+                    type="email"
+                    maxLength={254}
+                    value={form.email || ''}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                  />
+                </FormField>
+                <FormField className="form-group" label="Site web">
+                  <Input
+                    maxLength={500}
+                    value={form.website || ''}
+                    onChange={(e) => handleChange('website', e.target.value)}
+                  />
+                </FormField>
+              </div>
+
+              {entityType === 'suppliers' && (
+                <FormField className="form-group" label="Nom du contact">
+                  <Input
+                    maxLength={100}
+                    value={form.contact_name || ''}
+                    onChange={(e) => handleChange('contact_name', e.target.value)}
+                  />
+                </FormField>
+              )}
+
+              <FormField className="form-group" label="Secteur d'activité">
                 <Select
-                  value={form.legal_structure || ''}
-                  onChange={(e) => handleChange('legal_structure', e.target.value)}
+                  value={form.activity_sector || ''}
+                  onChange={(e) => handleChange('activity_sector', e.target.value)}
                 >
                   <option value="">— Choisir —</option>
-                  {(lookups.legal_structures || []).map((s) => (
+                  {(lookups.activity_sectors || []).map((s) => (
                     <option key={s.code} value={s.code}>
                       {s.name}
                     </option>
                   ))}
                 </Select>
               </FormField>
-            )}
 
-            <div className="form-row">
-              <FormField className="form-group" label="SIRET">
-                <Input
-                  maxLength={17}
-                  value={form.siret || ''}
-                  onChange={(e) => handleChange('siret', e.target.value)}
-                />
-              </FormField>
-              <FormField className="form-group" label="TVA Intra.">
-                <Input
-                  maxLength={20}
-                  value={form.tva_intra || ''}
-                  onChange={(e) => handleChange('tva_intra', e.target.value)}
-                />
-              </FormField>
-            </div>
-
-            <FormField className="form-group" label="Adresse">
-              <Input
-                maxLength={500}
-                value={form.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
-              />
-            </FormField>
-
-            <div className="form-row">
-              <FormField className="form-group" label="Code postal">
-                <Input
-                  maxLength={10}
-                  value={form.postal_code || ''}
-                  onChange={(e) => handleChange('postal_code', e.target.value)}
-                />
-              </FormField>
-              <FormField className="form-group flex-2" label="Ville">
-                <Input
-                  maxLength={100}
-                  value={form.city || ''}
-                  onChange={(e) => handleChange('city', e.target.value)}
-                />
-              </FormField>
-            </div>
-
-            <FormField className="form-group" label="Lieu lié">
-              <div className="form-row" style={{ gap: 8, alignItems: 'center' }}>
-                <Select
-                  style={{ flex: 1 }}
-                  value={form.location_id || ''}
-                  onChange={(e) =>
-                    handleChange('location_id', e.target.value ? Number(e.target.value) : null)
-                  }
-                >
-                  <option value="">— Aucun lieu —</option>
-                  {locationsList.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                      {l.address ? ` — ${l.address}` : ''}
-                    </option>
+              <FormField className="form-group" label="Types de prestation">
+                <div className="service-types-grid">
+                  {(lookups.service_types || []).map((st) => (
+                    <label
+                      key={st.code}
+                      className={`service-type-chip ${(form.service_types || []).includes(st.code) ? 'selected' : ''}`}
+                    >
+                      <Checkbox
+                        checked={(form.service_types || []).includes(st.code)}
+                        onChange={() => toggleServiceType(st.code)}
+                      />
+                      {st.name}
+                    </label>
                   ))}
-                </Select>
-                {form.location_id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleChange('location_id', null)}
-                    title="Délier"
-                  >
-                    <X size={14} />
-                  </Button>
-                )}
-              </div>
-            </FormField>
+                </div>
+              </FormField>
 
-            <div className="form-row">
-              <FormField className="form-group" label="Téléphone">
-                <Input
-                  maxLength={20}
-                  value={form.phone || ''}
-                  onChange={(e) => handleChange('phone', e.target.value)}
+              <FormField className="form-group" label="Notes">
+                <Textarea
+                  value={form.notes || ''}
+                  onChange={(e) => handleChange('notes', e.target.value)}
+                  rows={3}
                 />
               </FormField>
-              <FormField className="form-group" label="Tél. 2">
-                <Input
-                  maxLength={20}
-                  value={form.phone2 || ''}
-                  onChange={(e) => handleChange('phone2', e.target.value)}
-                />
-              </FormField>
-            </div>
-
-            <div className="form-row">
-              <FormField className="form-group" label="Email">
-                <Input
-                  type="email"
-                  maxLength={254}
-                  value={form.email || ''}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                />
-              </FormField>
-              <FormField className="form-group" label="Site web">
-                <Input
-                  maxLength={500}
-                  value={form.website || ''}
-                  onChange={(e) => handleChange('website', e.target.value)}
-                />
-              </FormField>
-            </div>
-
-            {entityType === 'suppliers' && (
-              <FormField className="form-group" label="Nom du contact">
-                <Input
-                  maxLength={100}
-                  value={form.contact_name || ''}
-                  onChange={(e) => handleChange('contact_name', e.target.value)}
-                />
-              </FormField>
-            )}
-
-            <FormField className="form-group" label="Secteur d'activité">
-              <Select
-                value={form.activity_sector || ''}
-                onChange={(e) => handleChange('activity_sector', e.target.value)}
-              >
-                <option value="">— Choisir —</option>
-                {(lookups.activity_sectors || []).map((s) => (
-                  <option key={s.code} value={s.code}>
-                    {s.name}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-
-            <FormField className="form-group" label="Types de prestation">
-              <div className="service-types-grid">
-                {(lookups.service_types || []).map((st) => (
-                  <label
-                    key={st.code}
-                    className={`service-type-chip ${(form.service_types || []).includes(st.code) ? 'selected' : ''}`}
-                  >
-                    <Checkbox
-                      checked={(form.service_types || []).includes(st.code)}
-                      onChange={() => toggleServiceType(st.code)}
-                    />
-                    {st.name}
-                  </label>
-                ))}
-              </div>
-            </FormField>
-
-            <FormField className="form-group" label="Notes">
-              <Textarea
-                value={form.notes || ''}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                rows={3}
-              />
-            </FormField>
-          </>
-        )}
-      </form>
-    </ModalLayout>
+            </>
+          )}
+        </form>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 
@@ -2234,71 +2243,78 @@ function RefFormModal({ item, onSave, onClose }) {
     sort_order: item?.sort_order || 0,
     is_active: item?.is_active !== undefined ? item.is_active : 1,
   });
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    resetDirty();
     onSave(form);
   };
 
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={item ? 'Modifier' : 'Ajouter'}
-      size="sm"
-      className="annuaire-form-modal small"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" form="ref-form">
-            <Check size={15} /> Enregistrer
-          </Button>
-        </>
-      }
-    >
-      <form id="ref-form" onSubmit={handleSubmit} className="annuaire-form">
-        <div className="form-row">
-          <FormField className="form-group" label="Code" required>
-            <Input
-              maxLength={50}
-              value={form.code}
-              onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))}
-              required
-            />
-          </FormField>
-          <FormField className="form-group flex-2" label="Libellé" required>
-            <Input
-              maxLength={200}
-              value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              required
-            />
-          </FormField>
-        </div>
-        <div className="form-row">
-          <FormField className="form-group" label="Ordre">
-            <Input
-              type="number"
-              value={form.sort_order}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))
-              }
-            />
-          </FormField>
-          <div className="form-group">
-            <label className="checkbox-label">
-              <Checkbox
-                checked={!!form.is_active}
-                onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.checked ? 1 : 0 }))}
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={item ? 'Modifier' : 'Ajouter'}
+        size="sm"
+        className="annuaire-form-modal small"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" form="ref-form">
+              <Check size={15} /> Enregistrer
+            </Button>
+          </>
+        }
+      >
+        <form id="ref-form" onSubmit={handleSubmit} className="annuaire-form">
+          <div className="form-row">
+            <FormField className="form-group" label="Code" required>
+              <Input
+                maxLength={50}
+                value={form.code}
+                onChange={(e) => setForm((p) => ({ ...p, code: e.target.value }))}
+                required
               />
-              Actif
-            </label>
+            </FormField>
+            <FormField className="form-group flex-2" label="Libellé" required>
+              <Input
+                maxLength={200}
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                required
+              />
+            </FormField>
           </div>
-        </div>
-      </form>
-    </ModalLayout>
+          <div className="form-row">
+            <FormField className="form-group" label="Ordre">
+              <Input
+                type="number"
+                value={form.sort_order}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))
+                }
+              />
+            </FormField>
+            <div className="form-group">
+              <label className="checkbox-label">
+                <Checkbox
+                  checked={!!form.is_active}
+                  onChange={(e) => setForm((p) => ({ ...p, is_active: e.target.checked ? 1 : 0 }))}
+                />
+                Actif
+              </label>
+            </div>
+          </div>
+        </form>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 }
 

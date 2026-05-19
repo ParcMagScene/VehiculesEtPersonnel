@@ -63,6 +63,7 @@ import {
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -1113,6 +1114,7 @@ const PersonsTab = ({
 const PersonFormModal = ({ person, skills, positions, users, currentUser, onSave, onClose }) => {
   const isAdmin = !!currentUser?.isAdmin;
   const toast = useToast();
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [showAnnuaire, setShowAnnuaire] = useState(false);
   const [form, setForm] = useState(() => {
     let defaultPos = [];
@@ -1193,6 +1195,7 @@ const PersonFormModal = ({ person, skills, positions, users, currentUser, onSave
       payload.iban = form.iban || null;
       payload.hr_notes = form.hrNotes || null;
     }
+    resetDirty();
     onSave(payload);
   };
 
@@ -1211,346 +1214,355 @@ const PersonFormModal = ({ person, skills, positions, users, currentUser, onSave
     }));
   };
 
+  const { resetDirty, guardClose } = useDirtyForm(form, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
+
   return (
-    <ModalLayout
-      open
-      onClose={onClose}
-      title={person ? '✏️ Modifier la fiche' : '➕ Nouvelle personne'}
-      size="lg"
-      className="eq-modal pp-form-modal"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>
-            Annuler
-          </Button>
-          <Button variant="primary" type="submit" form="person-form">
-            {person ? 'Enregistrer' : 'Créer'}
-          </Button>
-        </>
-      }
-    >
-      <form id="person-form" onSubmit={handleSubmit} className="eq-modal-body">
-        <div className="eq-form-grid">
-          <div className="eq-form-field">
-            <label>Prénom *</label>
-            <Input
-              type="text"
-              required
-              maxLength={100}
-              value={form.firstName}
-              onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-              autoFocus
-            />
-          </div>
-          <div className="eq-form-field">
-            <label>Nom *</label>
-            <Input
-              type="text"
-              required
-              maxLength={100}
-              value={form.lastName}
-              onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-            />
-          </div>
-          <div className="eq-form-field">
-            <label>Email</label>
-            <Input
-              type="email"
-              maxLength={254}
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-          </div>
-          <div className="eq-form-field">
-            <label>Téléphone</label>
-            <PhoneInput value={form.phone} onChange={(val) => setForm({ ...form, phone: val })} />
-          </div>
-          <div className="eq-form-field">
-            <label>Catégorie</label>
-            <Select
-              value={form.type}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  type: e.target.value,
-                  contractType: e.target.value !== 'contractuel' ? '' : form.contractType,
-                })
-              }
-            >
-              {PERSON_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-          {form.type === 'contractuel' && (
+    <>
+      <ModalLayout
+        open
+        onClose={handleSafeClose}
+        title={person ? '✏️ Modifier la fiche' : '➕ Nouvelle personne'}
+        size="lg"
+        className="eq-modal pp-form-modal"
+        footer={
+          <>
+            <Button variant="ghost" onClick={handleSafeClose}>
+              Annuler
+            </Button>
+            <Button variant="primary" type="submit" form="person-form">
+              {person ? 'Enregistrer' : 'Créer'}
+            </Button>
+          </>
+        }
+      >
+        <form id="person-form" onSubmit={handleSubmit} className="eq-modal-body">
+          <div className="eq-form-grid">
             <div className="eq-form-field">
-              <label>Type de contrat</label>
+              <label>Prénom *</label>
+              <Input
+                type="text"
+                required
+                maxLength={100}
+                value={form.firstName}
+                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                autoFocus
+              />
+            </div>
+            <div className="eq-form-field">
+              <label>Nom *</label>
+              <Input
+                type="text"
+                required
+                maxLength={100}
+                value={form.lastName}
+                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+              />
+            </div>
+            <div className="eq-form-field">
+              <label>Email</label>
+              <Input
+                type="email"
+                maxLength={254}
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+            </div>
+            <div className="eq-form-field">
+              <label>Téléphone</label>
+              <PhoneInput value={form.phone} onChange={(val) => setForm({ ...form, phone: val })} />
+            </div>
+            <div className="eq-form-field">
+              <label>Catégorie</label>
               <Select
-                value={form.contractType}
-                onChange={(e) => setForm({ ...form, contractType: e.target.value })}
+                value={form.type}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    type: e.target.value,
+                    contractType: e.target.value !== 'contractuel' ? '' : form.contractType,
+                  })
+                }
               >
-                <option value="">— Choisir —</option>
-                {CONTRACT_TYPES.map((t) => (
+                {PERSON_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
                   </option>
                 ))}
               </Select>
             </div>
-          )}
-          <div className="eq-form-field">
-            <label>Statut</label>
-            <Select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-            >
-              <option value="active">Actif</option>
-              <option value="inactive">Inactif</option>
-            </Select>
-          </div>
-          <div className="eq-form-field">
-            <label>
-              <Link2 size={14} /> Compte utilisateur
-            </label>
-            <Select
-              value={form.userId || ''}
-              onChange={(e) => setForm({ ...form, userId: e.target.value || null })}
-            >
-              <option value="">Aucun (non lié)</option>
-              {(users || []).map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name || u.email || `Utilisateur #${u.id}`}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="eq-form-field eq-form-full">
-            <label>Notes</label>
-            <Textarea
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            />
-          </div>
+            {form.type === 'contractuel' && (
+              <div className="eq-form-field">
+                <label>Type de contrat</label>
+                <Select
+                  value={form.contractType}
+                  onChange={(e) => setForm({ ...form, contractType: e.target.value })}
+                >
+                  <option value="">— Choisir —</option>
+                  {CONTRACT_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+            <div className="eq-form-field">
+              <label>Statut</label>
+              <Select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+              >
+                <option value="active">Actif</option>
+                <option value="inactive">Inactif</option>
+              </Select>
+            </div>
+            <div className="eq-form-field">
+              <label>
+                <Link2 size={14} /> Compte utilisateur
+              </label>
+              <Select
+                value={form.userId || ''}
+                onChange={(e) => setForm({ ...form, userId: e.target.value || null })}
+              >
+                <option value="">Aucun (non lié)</option>
+                {(users || []).map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name || u.email || `Utilisateur #${u.id}`}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div className="eq-form-field eq-form-full">
+              <label>Notes</label>
+              <Textarea
+                rows={2}
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
+            </div>
 
-          {/* Annuaire — coordonnées étendues + contact d'urgence (+ RH si admin) */}
-          <div className="eq-form-field eq-form-full">
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={() => setShowAnnuaire((v) => !v)}
-              aria-expanded={showAnnuaire}
-            >
-              {showAnnuaire ? '▾' : '▸'} Annuaire — coordonnées & contact d'urgence
-              {isAdmin ? ' (+ RH)' : ''}
-            </Button>
-          </div>
-          {showAnnuaire && (
-            <>
-              <div className="eq-form-field eq-form-full">
-                <label>Adresse</label>
-                <Input
-                  type="text"
-                  maxLength={500}
-                  value={form.address}
-                  onChange={(e) => setForm({ ...form, address: e.target.value })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Code postal</label>
-                <Input
-                  type="text"
-                  maxLength={10}
-                  value={form.postalCode}
-                  onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Ville</label>
-                <Input
-                  type="text"
-                  maxLength={100}
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Pays</label>
-                <Input
-                  type="text"
-                  maxLength={100}
-                  value={form.country}
-                  onChange={(e) => setForm({ ...form, country: e.target.value })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Date de naissance</label>
-                <Input
-                  type="date"
-                  value={form.birthDate || ''}
-                  onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Téléphone personnel</label>
-                <PhoneInput
-                  value={form.phonePersonal}
-                  onChange={(val) => setForm({ ...form, phonePersonal: val })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Email personnel</label>
-                <Input
-                  type="email"
-                  maxLength={254}
-                  value={form.personalEmail}
-                  onChange={(e) => setForm({ ...form, personalEmail: e.target.value })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>LinkedIn</label>
-                <Input
-                  type="url"
-                  maxLength={500}
-                  placeholder="https://linkedin.com/in/…"
-                  value={form.linkedinUrl}
-                  onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Contact d'urgence — Nom</label>
-                <Input
-                  type="text"
-                  maxLength={255}
-                  value={form.emergencyContactName}
-                  onChange={(e) => setForm({ ...form, emergencyContactName: e.target.value })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Contact d'urgence — Téléphone</label>
-                <PhoneInput
-                  value={form.emergencyContactPhone}
-                  onChange={(val) => setForm({ ...form, emergencyContactPhone: val })}
-                />
-              </div>
-              <div className="eq-form-field">
-                <label>Contact d'urgence — Lien</label>
-                <Input
-                  type="text"
-                  maxLength={100}
-                  placeholder="Conjoint, parent, ami…"
-                  value={form.emergencyContactRelation}
-                  onChange={(e) => setForm({ ...form, emergencyContactRelation: e.target.value })}
-                />
-              </div>
-              {isAdmin && (
-                <>
-                  <div className="eq-form-field eq-form-full">
-                    <label>🔒 N° Sécurité sociale (admin)</label>
-                    <Input
-                      type="text"
-                      maxLength={30}
-                      autoComplete="off"
-                      value={form.socialSecurityNumber}
-                      onChange={(e) => setForm({ ...form, socialSecurityNumber: e.target.value })}
-                    />
-                  </div>
-                  <div className="eq-form-field eq-form-full">
-                    <label>🔒 IBAN (admin)</label>
-                    <Input
-                      type="text"
-                      maxLength={40}
-                      autoComplete="off"
-                      value={form.iban}
-                      onChange={(e) => setForm({ ...form, iban: e.target.value })}
-                    />
-                  </div>
-                  <div className="eq-form-field eq-form-full">
-                    <label>🔒 Notes RH (admin)</label>
-                    <Textarea
-                      rows={3}
-                      value={form.hrNotes}
-                      onChange={(e) => setForm({ ...form, hrNotes: e.target.value })}
-                    />
-                  </div>
-                </>
-              )}
-            </>
-          )}
+            {/* Annuaire — coordonnées étendues + contact d'urgence (+ RH si admin) */}
+            <div className="eq-form-field eq-form-full">
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setShowAnnuaire((v) => !v)}
+                aria-expanded={showAnnuaire}
+              >
+                {showAnnuaire ? '▾' : '▸'} Annuaire — coordonnées & contact d'urgence
+                {isAdmin ? ' (+ RH)' : ''}
+              </Button>
+            </div>
+            {showAnnuaire && (
+              <>
+                <div className="eq-form-field eq-form-full">
+                  <label>Adresse</label>
+                  <Input
+                    type="text"
+                    maxLength={500}
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Code postal</label>
+                  <Input
+                    type="text"
+                    maxLength={10}
+                    value={form.postalCode}
+                    onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Ville</label>
+                  <Input
+                    type="text"
+                    maxLength={100}
+                    value={form.city}
+                    onChange={(e) => setForm({ ...form, city: e.target.value })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Pays</label>
+                  <Input
+                    type="text"
+                    maxLength={100}
+                    value={form.country}
+                    onChange={(e) => setForm({ ...form, country: e.target.value })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Date de naissance</label>
+                  <Input
+                    type="date"
+                    value={form.birthDate || ''}
+                    onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Téléphone personnel</label>
+                  <PhoneInput
+                    value={form.phonePersonal}
+                    onChange={(val) => setForm({ ...form, phonePersonal: val })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Email personnel</label>
+                  <Input
+                    type="email"
+                    maxLength={254}
+                    value={form.personalEmail}
+                    onChange={(e) => setForm({ ...form, personalEmail: e.target.value })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>LinkedIn</label>
+                  <Input
+                    type="url"
+                    maxLength={500}
+                    placeholder="https://linkedin.com/in/…"
+                    value={form.linkedinUrl}
+                    onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Contact d'urgence — Nom</label>
+                  <Input
+                    type="text"
+                    maxLength={255}
+                    value={form.emergencyContactName}
+                    onChange={(e) => setForm({ ...form, emergencyContactName: e.target.value })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Contact d'urgence — Téléphone</label>
+                  <PhoneInput
+                    value={form.emergencyContactPhone}
+                    onChange={(val) => setForm({ ...form, emergencyContactPhone: val })}
+                  />
+                </div>
+                <div className="eq-form-field">
+                  <label>Contact d'urgence — Lien</label>
+                  <Input
+                    type="text"
+                    maxLength={100}
+                    placeholder="Conjoint, parent, ami…"
+                    value={form.emergencyContactRelation}
+                    onChange={(e) => setForm({ ...form, emergencyContactRelation: e.target.value })}
+                  />
+                </div>
+                {isAdmin && (
+                  <>
+                    <div className="eq-form-field eq-form-full">
+                      <label>🔒 N° Sécurité sociale (admin)</label>
+                      <Input
+                        type="text"
+                        maxLength={30}
+                        autoComplete="off"
+                        value={form.socialSecurityNumber}
+                        onChange={(e) => setForm({ ...form, socialSecurityNumber: e.target.value })}
+                      />
+                    </div>
+                    <div className="eq-form-field eq-form-full">
+                      <label>🔒 IBAN (admin)</label>
+                      <Input
+                        type="text"
+                        maxLength={40}
+                        autoComplete="off"
+                        value={form.iban}
+                        onChange={(e) => setForm({ ...form, iban: e.target.value })}
+                      />
+                    </div>
+                    <div className="eq-form-field eq-form-full">
+                      <label>🔒 Notes RH (admin)</label>
+                      <Textarea
+                        rows={3}
+                        value={form.hrNotes}
+                        onChange={(e) => setForm({ ...form, hrNotes: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
+              </>
+            )}
 
-          {/* Compétences */}
-          <div className="eq-form-field eq-form-full">
-            <label>Compétences</label>
-            <div className="skills-selector">
-              {skills.map((skill) => {
-                const selected = form.skills.find((s) => s.skillId === skill.id);
-                return (
-                  <div key={skill.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      className="skill-toggle"
-                      onClick={() => toggleSkill(skill.id)}
-                      style={{ '--chip-color': getCategoryColor(skill.category) }}
+            {/* Compétences */}
+            <div className="eq-form-field eq-form-full">
+              <label>Compétences</label>
+              <div className="skills-selector">
+                {skills.map((skill) => {
+                  const selected = form.skills.find((s) => s.skillId === skill.id);
+                  return (
+                    <div
+                      key={skill.id}
+                      className={`skill-chip-select ${selected ? 'selected' : ''}`}
                     >
-                      {selected && <Check size={12} />} {skill.name}
-                    </Button>
-                    {selected && (
-                      <Select
-                        className="skill-level-select"
-                        value={selected.level}
-                        onChange={(e) => updateSkillLevel(skill.id, e.target.value)}
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        className="skill-toggle"
+                        onClick={() => toggleSkill(skill.id)}
+                        style={{ '--chip-color': getCategoryColor(skill.category) }}
                       >
-                        {SKILL_LEVELS.map((l) => (
-                          <option key={l.value} value={l.value}>
-                            {l.label}
-                          </option>
-                        ))}
-                      </Select>
-                    )}
-                  </div>
-                );
-              })}
+                        {selected && <Check size={12} />} {skill.name}
+                      </Button>
+                      {selected && (
+                        <Select
+                          className="skill-level-select"
+                          value={selected.level}
+                          onChange={(e) => updateSkillLevel(skill.id, e.target.value)}
+                        >
+                          {SKILL_LEVELS.map((l) => (
+                            <option key={l.value} value={l.value}>
+                              {l.label}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Postes habituels */}
-          <div className="eq-form-field eq-form-full">
-            <label>Postes habituels</label>
-            <div className="skills-selector">
-              {positions.map((pos) => {
-                const selected = form.defaultPositions.includes(pos.name);
-                const catColor =
-                  POSITION_CATEGORIES.find((c) => c.value === pos.category)?.color ||
-                  'var(--theme-text-gray)';
-                return (
-                  <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      className="skill-toggle"
-                      onClick={() =>
-                        setForm((prev) => ({
-                          ...prev,
-                          defaultPositions: selected
-                            ? prev.defaultPositions.filter((n) => n !== pos.name)
-                            : [...prev.defaultPositions, pos.name],
-                        }))
-                      }
-                      style={{ '--chip-color': catColor }}
-                    >
-                      {selected && <Check size={12} />} {pos.name}
-                    </Button>
-                  </div>
-                );
-              })}
+            {/* Postes habituels */}
+            <div className="eq-form-field eq-form-full">
+              <label>Postes habituels</label>
+              <div className="skills-selector">
+                {positions.map((pos) => {
+                  const selected = form.defaultPositions.includes(pos.name);
+                  const catColor =
+                    POSITION_CATEGORIES.find((c) => c.value === pos.category)?.color ||
+                    'var(--theme-text-gray)';
+                  return (
+                    <div key={pos.id} className={`skill-chip-select ${selected ? 'selected' : ''}`}>
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        className="skill-toggle"
+                        onClick={() =>
+                          setForm((prev) => ({
+                            ...prev,
+                            defaultPositions: selected
+                              ? prev.defaultPositions.filter((n) => n !== pos.name)
+                              : [...prev.defaultPositions, pos.name],
+                          }))
+                        }
+                        style={{ '--chip-color': catColor }}
+                      >
+                        {selected && <Check size={12} />} {pos.name}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      </form>
-    </ModalLayout>
+        </form>
+      </ModalLayout>
+      {ConfirmDialogRenderer}
+    </>
   );
 };
 

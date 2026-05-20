@@ -63,26 +63,42 @@ function FicheSuivi({ sheet, onSave, saving }) {
   const [postponeSaving, setPostponeSaving] = useState(false);
   const [postponeError, setPostponeError] = useState('');
 
+  // Lorsqu'on déclenche nous-mêmes un save, la réponse du serveur (sheet.modified_at
+  // mis à jour) ne doit PAS écraser le state local : l'utilisateur peut avoir
+  // continué à taper entre l'envoi et la réponse. On consomme ce flag dans
+  // l'effet de réhydratation pour ignorer l'écho de notre propre save.
+  const skipNextSyncRef = useRef(false);
+  const lastSheetIdRef = useRef(null);
+
   useEffect(() => {
-    if (sheet) {
-      setEntries((prev) => {
-        const prevById = new Map(prev.filter((p) => p.id).map((p) => [p.id, p._key]));
-        return (sheet.entries || []).map((e, i) => {
-          // Préserve _key existant pour éviter le remount des <tr> (perte de
-          // focus dans les inputs Tâche / Commentaire pendant la saisie après
-          // un auto-save qui rafraîchit la fiche).
-          const reusedKey = (e.id && prevById.get(e.id)) || prev[i]?._key;
-          const _key =
-            reusedKey ||
-            e.id ||
-            crypto.randomUUID?.() ||
-            Math.random().toString(36).slice(2) + Date.now().toString(36);
-          return { ...e, _key };
-        });
-      });
-      setNotes(sheet.notes || '');
-      setDirty(false);
+    if (!sheet) return;
+    const sameSheet = lastSheetIdRef.current === sheet.id;
+    lastSheetIdRef.current = sheet.id;
+
+    // Skip rehydration when the update originates from our own auto-save and
+    // we're still on the same sheet (preserve in-flight user edits + focus).
+    if (sameSheet && skipNextSyncRef.current) {
+      skipNextSyncRef.current = false;
+      return;
     }
+
+    setEntries((prev) => {
+      const prevById = new Map(prev.filter((p) => p.id).map((p) => [p.id, p._key]));
+      return (sheet.entries || []).map((e, i) => {
+        // Préserve _key existant pour éviter le remount des <tr> (perte de
+        // focus dans les inputs Tâche / Commentaire pendant la saisie après
+        // un auto-save qui rafraîchit la fiche).
+        const reusedKey = (e.id && prevById.get(e.id)) || prev[i]?._key;
+        const _key =
+          reusedKey ||
+          e.id ||
+          crypto.randomUUID?.() ||
+          Math.random().toString(36).slice(2) + Date.now().toString(36);
+        return { ...e, _key };
+      });
+    });
+    setNotes(sheet.notes || '');
+    setDirty(false);
     // dépend uniquement de l'identité de la fiche, pas du contenu (évite réhydration en boucle)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet?.id, sheet?.modified_at]);
@@ -196,6 +212,9 @@ function FicheSuivi({ sheet, onSave, saving }) {
         recurring_task_id: e.recurring_task_id || null,
         sort_order: i,
       }));
+      // Marque l'écho serveur du save comme à ignorer (préserve la saisie
+      // en cours si l'utilisateur tape pendant l'aller-retour API).
+      skipNextSyncRef.current = true;
       onSave({ status, notes, entries: cleanEntries });
       setDirty(false);
     },

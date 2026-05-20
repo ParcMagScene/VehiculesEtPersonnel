@@ -1,3 +1,5 @@
+> ⚠️ **Document d archive (avril 2026)** — voir [README.md](README.md) pour l index courant et les fichiers de référence (GUIDE, INTEGRATION, API, CHECKLIST).
+>
 # 🔐 Authentification Personnelle — Résumé d'Implémentation
 
 ## ✅ Qu'est-ce qui a été créé

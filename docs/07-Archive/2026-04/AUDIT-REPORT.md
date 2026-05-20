@@ -1,3 +1,5 @@
+> ⚠️ **Document d archive (20 avril 2026)** — remplacé par [AUDIT-COMPLET 2026-05-06](../../04-Operations/audits/2026-05/AUDIT-COMPLET-2026-05-06.md).
+>
 # 🔍 Rapport d'Audit — eM@g Frontend/Backend
 
 **Date** : 20 avril 2026  

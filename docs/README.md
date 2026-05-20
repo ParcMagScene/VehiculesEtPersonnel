@@ -26,11 +26,13 @@
 - [GUIDE_DEVELOPPEUR.md](03-Guides/GUIDE_DEVELOPPEUR.md) — Installation, configuration, déploiement, commandes
 - [GUIDE_GOOGLE_OAUTH2.md](03-Guides/GUIDE_GOOGLE_OAUTH2.md) — Configuration Google OAuth2 et Calendar
 - [GUIDE_SONOS.md](03-Guides/GUIDE_SONOS.md) — Module Sonos : architecture, discovery, contrôle
+- [auth-personnel/](03-Guides/auth-personnel/) — Authentification personnelle (compte Équipe → membre du personnel) — guide, intégration, API, checklist
 
 ### ⚙️ 04-Operations
 - [CHECKLIST_PRODUCTION.md](04-Operations/CHECKLIST_PRODUCTION.md) — Checklist pré-déploiement production
 - [PLAN_MAINTENANCE.md](04-Operations/PLAN_MAINTENANCE.md) — Cycles de maintenance, monitoring, procédures
 - [ROLLBACK_PLAN.md](04-Operations/ROLLBACK_PLAN.md) — Procédures de rollback en cas d'incident
+- [audits/2026-05/](04-Operations/audits/2026-05/) — Audit complet 06/05/2026 + plans de correction S1 / S2 + patches CSP
 
 ### 📋 05-Specs
 - [README.md](05-Specs/README.md) — Index des spécifications

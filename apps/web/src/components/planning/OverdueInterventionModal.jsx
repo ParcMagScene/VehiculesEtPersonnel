@@ -7,6 +7,7 @@ import { Button, ModalLayout, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
 import { formatDateSimple } from '../../utils/formatUtils';
 
@@ -25,6 +26,9 @@ const OverdueInterventionModal = ({
   const [showReasonInput, setShowReasonInput] = useState(false);
   const [action, setAction] = useState(null); // 'completed', 'cancelled', 'pending', 'reschedule'
 
+  const { resetDirty, guardClose } = useDirtyForm({ reason }, { confirmer: confirm });
+  const handleSafeClose = guardClose(onClose);
+
   const handleAction = async (actionType) => {
     setAction(actionType);
     if (actionType === STATUS.CANCELLED || actionType === STATUS.PENDING) {
@@ -34,11 +38,13 @@ const OverdueInterventionModal = ({
         message: "Confirmer que l'intervention a été réalisée ?",
         onConfirm: async () => {
           await onMarkCompleted(intervention);
+          resetDirty();
           onClose();
         },
       });
     } else if (actionType === 'reschedule') {
       await onReschedule(intervention);
+      resetDirty();
       onClose();
     }
   };
@@ -50,6 +56,7 @@ const OverdueInterventionModal = ({
       } else if (action === STATUS.PENDING) {
         await onMarkPending(intervention, reason);
       }
+      resetDirty();
       onClose();
     } else {
       toast.warning('Veuillez indiquer un motif');
@@ -60,7 +67,7 @@ const OverdueInterventionModal = ({
     <>
       <ModalLayout
         open
-        onClose={onClose}
+        onClose={handleSafeClose}
         title="Intervention en retard"
         size="md"
         className="overdue-intervention-modal no-drag-resize"

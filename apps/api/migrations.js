@@ -246,6 +246,11 @@ export function runPostInitMigrations(db) {
       db.prepare('ALTER TABLE orders ADD COLUMN completion_notified INTEGER DEFAULT 0').run();
       logger.info('✅ Migration: colonne completion_notified ajoutée à orders');
     }
+    // L2 — numéro de commande fournisseur libre (indépendant de la référence eM@g)
+    if (!orderCols.includes('supplier_order_number')) {
+      db.prepare('ALTER TABLE orders ADD COLUMN supplier_order_number TEXT').run();
+      logger.info('✅ Migration: colonne supplier_order_number ajoutée à orders');
+    }
   } catch (error) {
     logger.warn('⚠️ Migration orders workflow:', error.message);
   }

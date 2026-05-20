@@ -154,6 +154,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         type = 'purchase',
         affaire_id,
         supplier_id,
+        supplier_order_number,
         status = 'draft',
         order_date,
         expected_date,
@@ -206,8 +207,8 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         const result = db
           .prepare(
             `
-          INSERT INTO orders (reference, type, affaire_id, supplier_id, status, order_date, expected_date, total_ht, tva_rate, total_ttc, notes, created_by)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO orders (reference, type, affaire_id, supplier_id, supplier_order_number, status, order_date, expected_date, total_ht, tva_rate, total_ttc, notes, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
           )
           .run(
@@ -215,6 +216,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
             type,
             affaire_id || null,
             supplier_id || null,
+            supplier_order_number ? String(supplier_order_number).trim() || null : null,
             status,
             order_date || new Date().toISOString().slice(0, 10),
             expected_date || null,
@@ -276,6 +278,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       const {
         affaire_id,
         supplier_id,
+        supplier_order_number,
         status,
         order_date,
         expected_date,
@@ -322,13 +325,16 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
 
         db.prepare(
           `
-          UPDATE orders SET affaire_id = ?, supplier_id = ?, status = ?, order_date = ?, 
+          UPDATE orders SET affaire_id = ?, supplier_id = ?, supplier_order_number = ?, status = ?, order_date = ?, 
           expected_date = ?, received_date = ?, total_ht = ?, tva_rate = ?, total_ttc = ?, 
           notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
         `,
         ).run(
           affaire_id !== undefined ? affaire_id : existing.affaire_id,
           supplier_id !== undefined ? supplier_id : existing.supplier_id,
+          supplier_order_number !== undefined
+            ? String(supplier_order_number).trim() || null
+            : existing.supplier_order_number,
           status || existing.status,
           order_date || existing.order_date,
           expected_date !== undefined ? expected_date : existing.expected_date,

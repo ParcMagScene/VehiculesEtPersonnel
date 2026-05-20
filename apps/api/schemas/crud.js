@@ -86,6 +86,7 @@ export const orderSchema = z
     type: z.enum(['purchase', 'sale', 'order', 'quote', 'devis']).optional().default('purchase'),
     affaire_id: optStr(100),
     supplier_id: optInt,
+    supplier_order_number: optStr(100),
     status: optStr(50),
     order_date: optDate,
     expected_date: optDate,

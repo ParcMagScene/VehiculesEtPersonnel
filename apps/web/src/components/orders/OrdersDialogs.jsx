@@ -91,6 +91,10 @@ export const OrderDetailDialog = React.memo(
                   <span>{order.supplier_name || '—'}</span>
                 </div>
                 <div className="detail-field">
+                  <span className="field-label">N° cmd fournisseur</span>
+                  <span>{order.supplier_order_number || '—'}</span>
+                </div>
+                <div className="detail-field">
                   <span className="field-label">Date commande</span>
                   <span>{formatDate(order.order_date)}</span>
                 </div>

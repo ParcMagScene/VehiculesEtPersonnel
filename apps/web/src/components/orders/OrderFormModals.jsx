@@ -21,6 +21,7 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
     return {
       type: order?.type || 'purchase',
       supplier_id: order?.supplier_id || '',
+      supplier_order_number: order?.supplier_order_number || '',
       affaire_id: order?.affaire_id || '',
       status: order?.status || 'draft',
       order_date: order?.order_date || new Date().toISOString().slice(0, 10),

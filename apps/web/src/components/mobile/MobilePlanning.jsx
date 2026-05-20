@@ -20,7 +20,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
 
@@ -46,7 +46,12 @@ function MobilePlanning({
     'mobile:planning:selectedMonth',
     null,
   );
-  const selectedMonth = selectedMonthIso ? new Date(selectedMonthIso) : currentDate;
+  // Stabilisé via useMemo : sinon `new Date()` recrée une nouvelle référence
+  // à chaque render et invalide tous les useMemo qui en dépendent.
+  const selectedMonth = useMemo(
+    () => (selectedMonthIso ? new Date(selectedMonthIso) : currentDate),
+    [selectedMonthIso, currentDate],
+  );
   const setSelectedMonth = (next) => {
     const resolved = typeof next === 'function' ? next(selectedMonth) : next;
     setSelectedMonthIso(resolved instanceof Date ? resolved.toISOString() : resolved);

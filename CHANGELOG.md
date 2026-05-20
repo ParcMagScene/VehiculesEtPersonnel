@@ -11,6 +11,13 @@ Format : [Keep a Changelog](https://keepachangelog.com) + [Semantic Versioning](
 ## [Unreleased]
 
 ### Added
+- **Mobile — Persistance UI complète (audit 2026-05-20, plan L0→L9)** : aucun travail perdu sur F5, retour navigateur ou réveil d'onglet. Trois primitives natives Web Storage (pas de Redux) :
+  - [`useDraftStorage`](apps/web/src/hooks/useDraftStorage.js) — brouillons sessionStorage avec TTL 24 h, support clé dynamique, API `[value, setValue, {clear, commit, isDirty}]`.
+  - [`useStoredListState`](apps/web/src/hooks/useStoredListState.js) — préférences UI sérialisables (filtres, sélection par id, mode d'affichage).
+  - [`useMobileRouter`](apps/web/src/hooks/useMobileRouter.js) étendu avec query params (`navigate(screen, params)` + `setParams(updater)`).
+  - Composants couverts : `MobileReservations`, `MobileMaintenances`, `MobileEquipmentQR` (drafts par UID), `MobileMessaging` (draft par conversation), `MobileLeaves`, `MobileAffaires`, `MobilePersonnel`, `MobilePlanning`, `MobileTasks`.
+  - `MOBILE_TAB_SCREENS` étendu à `affaires/personnel/leaves/tasks/messaging`.
+  - 45 tests Vitest (drafts, router params, stored state). Documentation détaillée : [docs/01-Architecture/NAVIGATION.md](docs/01-Architecture/NAVIGATION.md#persistance-ui-mobile-audit-2026-05-20).
 - **Locmat — Détections additionnelles** : doublons stricts dans `Serialise.csv`, collisions intra-CSV (même serial sur 2 codes), collisions DB cross-équipement, suppressions (refs en DB absentes des CSV). Trois nouveaux onglets dans `LocmatImportModal` : **Suppressions**, **Doublons**, **Collisions** (consultatifs, n'écrivent rien automatiquement). Schéma `locmatConfirmSchema` étendu (`missingProducts`, `duplicates`, `collisions`). 4 tests supplémentaires (13/13 ✅).
 - **Équipements — `Numéro MAG`** : nouvelle propriété libre par équipement, visible dans le formulaire, le détail (dialog + volet), la grille (colonne triable) et la fiche imprimable. Migration idempotente `apps/api/migrations/equipment-numero-mag-v1.js` ajoutant `equipment.numero_mag TEXT` + `idx_equipment_numero_mag`. Recherche serveur étendue (`e.numero_mag LIKE ?`). Schéma Zod et routes `POST/PUT /api/equipment` mis à jour.
 

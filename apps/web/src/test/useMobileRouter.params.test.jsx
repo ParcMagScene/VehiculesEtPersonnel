@@ -46,9 +46,7 @@ describe('useMobileRouter — query params', () => {
 
   it('navigate ignore les params vides / null', () => {
     const { result } = renderHook(() => useMobileRouter());
-    act(() =>
-      result.current.navigate('affaires', { sel: 'AF-1', q: '', x: null, y: undefined }),
-    );
+    act(() => result.current.navigate('affaires', { sel: 'AF-1', q: '', x: null, y: undefined }));
     expect(window.location.hash).toBe('#/mobile/affaires?sel=AF-1');
   });
 
@@ -74,9 +72,7 @@ describe('useMobileRouter — query params', () => {
     window.location.hash = '#/mobile/affaires?sel=AF-1';
     const { result } = renderHook(() => useMobileRouter());
     act(() => result.current.setParams((p) => ({ ...p, count: '1' })));
-    act(() =>
-      result.current.setParams((p) => ({ ...p, count: String(Number(p.count) + 1) })),
-    );
+    act(() => result.current.setParams((p) => ({ ...p, count: String(Number(p.count) + 1) })));
     expect(result.current.params).toEqual({ sel: 'AF-1', count: '2' });
   });
 

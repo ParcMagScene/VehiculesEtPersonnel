@@ -64,10 +64,7 @@ function MobileTasks({ currentUser, onBack }) {
   const [personId, setPersonId] = useState(null);
   const [updating, setUpdating] = useState(null);
   // L7 : sections repliées (Set sauvegardé comme Array JSON) + showAllTasks persistés.
-  const [collapsedArr, setCollapsedArr] = useStoredListState(
-    'mobile:tasks:collapsedSections',
-    [],
-  );
+  const [collapsedArr, setCollapsedArr] = useStoredListState('mobile:tasks:collapsedSections', []);
   const collapsedSections = useMemo(() => new Set(collapsedArr || []), [collapsedArr]);
   const setCollapsedSections = useCallback(
     (updater) => {

@@ -55,18 +55,17 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
   const [error, setError] = useState(null);
   // L3 : sous-écran + brouillons persistés par UID (sessionStorage).
   // Clés par UID → changer de QR n'expose pas un brouillon d'un autre équipement.
-  const [screen, setScreen] = useStoredListState(
-    `mobile:equipment-qr:${uid}:screen`,
-    'menu',
-  ); // menu | fiche | defaut | sav | intervention
+  const [screen, setScreen] = useStoredListState(`mobile:equipment-qr:${uid}:screen`, 'menu'); // menu | fiche | defaut | sav | intervention
   const [defautForm, setDefautForm, defautCtl] = useDraftStorage(
     `mobile:equipment-qr:${uid}:defaut`,
     { title: '', description: '' },
   );
-  const [savForm, setSavForm, savCtl] = useDraftStorage(
-    `mobile:equipment-qr:${uid}:sav`,
-    { title: '', description: '', type: 'panne', priority: 'medium' },
-  );
+  const [savForm, setSavForm, savCtl] = useDraftStorage(`mobile:equipment-qr:${uid}:sav`, {
+    title: '',
+    description: '',
+    type: 'panne',
+    priority: 'medium',
+  });
   const [interventionForm, setInterventionForm, interventionCtl] = useDraftStorage(
     `mobile:equipment-qr:${uid}:intervention`,
     { title: '', description: '', type: 'reparation', resolution: '' },

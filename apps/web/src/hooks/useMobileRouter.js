@@ -138,9 +138,7 @@ export default function useMobileRouter() {
   const setParams = useCallback((updater) => {
     setState((prev) => {
       const merged =
-        typeof updater === 'function'
-          ? updater(prev.params)
-          : { ...prev.params, ...updater };
+        typeof updater === 'function' ? updater(prev.params) : { ...prev.params, ...updater };
       const h = buildHash(prev.screen, merged);
       if (h) window.history.replaceState(null, '', h);
       // Normalise (supprime les clés vides) pour la cohérence du state interne.

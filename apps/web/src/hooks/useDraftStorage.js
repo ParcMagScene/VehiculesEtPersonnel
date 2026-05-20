@@ -143,10 +143,7 @@ export function useDraftStorage(key, initial, options = {}) {
 
   const isDirty = useMemo(() => !shallowEqual(value, initialRef.current), [value]);
 
-  const controls = useMemo(
-    () => ({ clear, commit, isDirty }),
-    [clear, commit, isDirty],
-  );
+  const controls = useMemo(() => ({ clear, commit, isDirty }), [clear, commit, isDirty]);
 
   return [value, setValue, controls];
 }

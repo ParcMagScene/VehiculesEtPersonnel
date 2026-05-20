@@ -58,6 +58,7 @@ import {
   STEP_TEMPLATES,
 } from '../../utils/affaireWorkflow';
 import api, { getApiUrl } from '../../utils/api';
+import { groupBpItemsBySectionMap } from '../../utils/bpItemsGrouping';
 import { capitalizeText } from '../../utils/dateUtils';
 import { formatDateSimple } from '../../utils/formatUtils';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -1088,7 +1089,7 @@ const AffaireDetailContent = ({
     [bpItems.items],
   );
 
-  // Regrouper le matériel BP par section
+  // Regrouper le matériel BP par section (puis fusion lignes identiques — L4)
   const bpItemsBySection = useMemo(() => {
     const sections = {};
     for (const item of bpMaterielItems) {
@@ -1096,10 +1097,10 @@ const AffaireDetailContent = ({
       if (!sections[sec]) sections[sec] = [];
       sections[sec].push(item);
     }
-    return sections;
+    return groupBpItemsBySectionMap(sections);
   }, [bpMaterielItems]);
 
-  // Regrouper les articles Vente BP par section
+  // Regrouper les articles Vente BP par section (puis fusion lignes identiques — L4)
   const bpArticlesBySection = useMemo(() => {
     const sections = {};
     for (const item of bpArticleItems) {
@@ -1107,7 +1108,7 @@ const AffaireDetailContent = ({
       if (!sections[sec]) sections[sec] = [];
       sections[sec].push(item);
     }
-    return sections;
+    return groupBpItemsBySectionMap(sections);
   }, [bpArticleItems]);
 
   // Pièces jointes locales
@@ -2478,7 +2479,28 @@ const AffaireDetailContent = ({
                           <span>{item.reference || '—'}</span>
                         </td>
                         <td className="art-desc">{item.description || '—'}</td>
-                        <td className="art-qty">{item.quantity ?? '—'}</td>
+                        <td className="art-qty">
+                          {item.quantity ?? '—'}
+                          {item._groupedCount > 1 && (
+                            <Tooltip
+                              content={`${item._groupedCount} lignes identiques fusionnées (sérialisés)`}
+                            >
+                              <span
+                                style={{
+                                  marginLeft: 4,
+                                  fontSize: 10,
+                                  padding: '1px 5px',
+                                  borderRadius: 8,
+                                  background: 'var(--theme-bg-tertiary)',
+                                  color: 'var(--theme-text-secondary)',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                ×{item._groupedCount}
+                              </span>
+                            </Tooltip>
+                          )}
+                        </td>
                         <td>
                           {item.matchStatus === 'matched' || item.matchStatus === 'manual' ? (
                             <span
@@ -2592,7 +2614,26 @@ const AffaireDetailContent = ({
                           <span>{item.reference || '—'}</span>
                         </td>
                         <td className="art-desc">{item.description || '—'}</td>
-                        <td className="art-qty">{item.quantity ?? '—'}</td>
+                        <td className="art-qty">
+                          {item.quantity ?? '—'}
+                          {item._groupedCount > 1 && (
+                            <Tooltip content={`${item._groupedCount} lignes identiques fusionnées`}>
+                              <span
+                                style={{
+                                  marginLeft: 4,
+                                  fontSize: 10,
+                                  padding: '1px 5px',
+                                  borderRadius: 8,
+                                  background: 'var(--theme-bg-tertiary)',
+                                  color: 'var(--theme-text-secondary)',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                ×{item._groupedCount}
+                              </span>
+                            </Tooltip>
+                          )}
+                        </td>
                         <td>
                           {item.supplierArticleId ? (
                             <span

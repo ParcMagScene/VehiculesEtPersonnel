@@ -78,7 +78,16 @@ function SuiviPanel({
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   // Compteur d'invalidation pour relancer les useEffect de chargement lorsque le bus 'suivi' publie
   const [busTick, setBusTick] = useState(0);
-  useRefreshSubscription('suivi', () => setBusTick((t) => t + 1));
+  // Permet d'ignorer le bus 'suivi' que nous publions nous-mêmes après un save
+  // (sinon on refetch la fiche en cours d'édition et on écrase la saisie).
+  const ignoreNextSuiviBusRef = useRef(false);
+  useRefreshSubscription('suivi', () => {
+    if (ignoreNextSuiviBusRef.current) {
+      ignoreNextSuiviBusRef.current = false;
+      return;
+    }
+    setBusTick((t) => t + 1);
+  });
   // Compte Equipe : personne sélectionnée via PIN/MDP
   const isTeamAccount = !!currentUser?.isTeam;
   const [suiviPerson, setSuiviPerson] = useState(null); // personne authentifiée pour le suivi
@@ -235,6 +244,9 @@ function SuiviPanel({
           setSheet(updated);
         }
         // Notifie les autres vues du module Suivi (incidents, synthèses, autres onglets)
+        // mais on s'auto-ignore pour ne pas refetch la fiche qu'on vient de sauver
+        // (écraserait la saisie en cours).
+        ignoreNextSuiviBusRef.current = true;
         refreshBus.publish('suivi');
         // Mode personnel : déclencher l'auto-logout après sauvegarde
         if (isPersonalMode && onPersonalDataSaved) {

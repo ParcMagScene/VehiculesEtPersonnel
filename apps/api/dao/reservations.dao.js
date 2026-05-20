@@ -219,6 +219,68 @@ class ReservationsDao extends BaseDao {
     if (!row || !row.linked_event_ids) return null;
     return safeJsonParse(row.linked_event_ids, null);
   }
+
+  /**
+   * Détecte les chevauchements pour un véhicule sur une période donnée.
+   *
+   * On se base sur le *jour* (start_date / end_date au format YYYY-MM-DD) ET
+   * sur la période demi-journée (AM/PM). Conflit si la nouvelle plage et une
+   * plage existante ont au moins une demi-journée commune.
+   *
+   * @param {object} args
+   * @param {string|number} args.vehicleId
+   * @param {string} args.startDate — YYYY-MM-DD
+   * @param {'AM'|'PM'} [args.startPeriod='AM']
+   * @param {string} args.endDate — YYYY-MM-DD
+   * @param {'AM'|'PM'} [args.endPeriod='PM']
+   * @param {string} [args.excludeId] — id de réservation à exclure (cas UPDATE)
+   * @returns {Array<{id,start_date,start_period,end_date,end_period,client_name}>}
+   */
+  findOverlapping({
+    vehicleId,
+    startDate,
+    startPeriod = 'AM',
+    endDate,
+    endPeriod = 'PM',
+    excludeId = null,
+  }) {
+    if (!vehicleId || !startDate || !endDate) return [];
+
+    // Encodage rapide d'une demi-journée en entier comparable :
+    // jour * 2 + (PM ? 1 : 0). Compatible SQLite via expressions arithmétiques.
+    const toSlot = (d, p) => {
+      const day = String(d).slice(0, 10);
+      // YYYY-MM-DD → entier YYYYMMDD * 2 (+ 1 si PM)
+      const compact = Number(day.replace(/-/g, ''));
+      if (!Number.isFinite(compact)) return null;
+      return compact * 2 + (p === 'PM' ? 1 : 0);
+    };
+
+    const newStart = toSlot(startDate, startPeriod);
+    const newEnd = toSlot(endDate, endPeriod);
+    if (newStart == null || newEnd == null) return [];
+
+    // Comparaison côté JS (les volumes de réservations par véhicule sont faibles)
+    // pour éviter des subtilités SQL liées aux chaînes de format.
+    const rows = db
+      .prepare(
+        `SELECT id, start_date, start_period, end_date, end_period, client_name
+         FROM reservations
+         WHERE vehicle_id = ?`,
+      )
+      .all(vehicleId);
+
+    return rows.filter((r) => {
+      if (excludeId != null && String(r.id) === String(excludeId)) return false;
+      const existingStart = toSlot(r.start_date, r.start_period || 'AM');
+      const existingEnd = toSlot(
+        r.end_date || r.start_date,
+        r.end_period || r.start_period || 'PM',
+      );
+      if (existingStart == null || existingEnd == null) return false;
+      return Math.max(newStart, existingStart) <= Math.min(newEnd, existingEnd);
+    });
+  }
 }
 
 export const reservationsDao = new ReservationsDao();

@@ -22,12 +22,13 @@ import {
   buildLightburnPlateSvg,
   LIGHTBURN_LAYOUT,
 } from './services/lightburnLabelGenerator.js';
+import { MAG_NUMBER_RE, parseMagSerial } from './services/magNumber.js';
 import { buildEquipmentQrPayload } from './services/qrcodeGenerator.js';
 import { safeContentDispositionName } from './utils/safeFilename.js';
 
-// Validation simple du format mag_number : 1 lettre + 2 ou 3 chiffres,
-// ou null/empty pour effacer. Tolérant aux espaces autour.
-const MAG_REGEX = /^[A-Za-z][0-9]{2,4}$/;
+// Validation du format mag_number déléguée au module partagé magNumber.js
+// (LETTRES + CHIFFRES, ex VX1, E09). Tolère espaces autour, normalise UPPER.
+const MAG_REGEX = MAG_NUMBER_RE;
 
 function normalizeMagNumber(raw) {
   if (raw == null) return null;
@@ -36,19 +37,16 @@ function normalizeMagNumber(raw) {
   return s;
 }
 
-// Détecte un préfixe Numéro Mag dans une chaîne serial.
-// Patterns supportés (case insensitive) :
-//   "T01 - 2400953513"  → { mag: 'T01', serial: '2400953513' }
-//   "T01-2400953513"    → idem
-//   "T01 2400953513"    → idem
-//   "2400953513"        → { mag: null, serial: '2400953513' } (rien à détecter)
-// Le préfixe doit matcher MAG_REGEX et être suivi d'un séparateur (espace ou -).
-const MAG_PREFIX_RE = /^([A-Za-z][0-9]{2,4})\s*[-\s]\s*(.+)$/;
+// Détecte un numéro MAG dans une chaîne serial via le module partagé.
+// Séparateur STRICT : ` - ` (au moins un espace de chaque côté du tiret).
+// Sans espaces autour du tiret ⇒ PAS un numéro MAG (la chaîne reste entière).
+//   "T01 - 2400953513"     → { mag: 'T01', serial: '2400953513' }
+//   "VX1 - 2400953513"     → { mag: 'VX1', serial: '2400953513' }
+//   "T01-2400953513"       → { mag: null, serial: 'T01-2400953513' }
+//   "2400953513"           → { mag: null, serial: '2400953513' }
 function detectMagFromSerial(serial) {
-  if (!serial) return { mag: null, serial: serial || '' };
-  const m = String(serial).trim().match(MAG_PREFIX_RE);
-  if (!m) return { mag: null, serial: String(serial).trim() };
-  return { mag: m[1].toUpperCase(), serial: m[2].trim() };
+  const { coreSerial, magNumber } = parseMagSerial(serial);
+  return { mag: magNumber, serial: coreSerial };
 }
 
 export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {

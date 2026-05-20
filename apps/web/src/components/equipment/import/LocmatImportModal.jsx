@@ -34,6 +34,7 @@ import { useConfirmDialog } from '../../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../../hooks/useDirtyForm';
 import { useToast } from '../../../hooks/useToast';
 import api from '../../../utils/api';
+import { parseMagSerial } from '../../../utils/magNumber';
 
 const TABS = [
   { key: 'newProducts', label: 'Nouvelles réfs', icon: Plus, color: 'success' },
@@ -172,19 +173,8 @@ function normalizeLocations(rows) {
 
 function normalizeSerials(rows) {
   // Format Locmat des SN : `T01 -  2400953513` (mag préfixe TETRA2)
-  // ou `0788770045   - V12` (mag suffixe VIPER). Mag = lettre + 1à 3 chiffres.
-  const MAG_RE = /^[A-Z]\d{1,3}$/;
-  function parseSerial(raw) {
-    const s = String(raw || '').trim();
-    if (!s) return { coreSerial: '', magNumber: null };
-    const parts = s.split(/\s+-\s+/);
-    if (parts.length === 2) {
-      const [a, b] = parts.map((x) => x.trim());
-      if (MAG_RE.test(a) && !MAG_RE.test(b)) return { coreSerial: b, magNumber: a };
-      if (MAG_RE.test(b) && !MAG_RE.test(a)) return { coreSerial: a, magNumber: b };
-    }
-    return { coreSerial: s, magNumber: null };
-  }
+  // ou `0788770045   - V12` (mag suffixe VIPER). MAG = LETTRES + CHIFFRES.
+  // Séparateur strict ` - ` (espaces obligatoires). Source : utils/magNumber.js.
   return rows
     .map((row) => {
       const rawSerial = String(
@@ -198,7 +188,7 @@ function normalizeSerials(rows) {
         ]) || '',
       ).trim();
       if (!rawSerial) return null;
-      const { coreSerial, magNumber } = parseSerial(rawSerial);
+      const { coreSerial, magNumber } = parseMagSerial(rawSerial);
       return {
         code: String(
           pick(row, ['Code libre générique', 'Code Libre', 'Code Article', 'Code', 'Référence']) ||

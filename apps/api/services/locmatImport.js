@@ -48,25 +48,20 @@ const SER_FIELDS = {
   brand: ['Marque', 'Brand'],
 };
 
-// Format Locmat des SN : `<core> - <mag>` ou `<mag> - <core>` où mag = lettre + 1à 3 chiffres.
+// Format Locmat des SN : `<core> - <mag>` ou `<mag> - <core>` où mag = LETTRES + CHIFFRES
+// (ex: T01, VX1, E09). Séparateur strict ` - ` (au moins un espace de chaque côté).
 // Ex : `T01 -  2400953513` (TETRA2), `0788770045   - V12` (VIPER).
-const MAG_NUMBER_RE = /^[A-Z]\d{1,3}$/;
+// Cf. apps/api/services/magNumber.js pour la source de vérité.
+import { parseMagSerial } from './magNumber.js';
 
 /**
- * Parse un SN Locmat brut. Extrait un éventuel numéro MAG (T01, V12...).
+ * Parse un SN Locmat brut. Extrait un éventuel numéro MAG (T01, V12, VX1...).
+ * Délègue à parseMagSerial (module partagé).
  * @param {string} rawSerial
  * @returns {{ coreSerial: string, magNumber: string|null }}
  */
 export function parseLocmatSerial(rawSerial) {
-  const raw = String(rawSerial || '').trim();
-  if (!raw) return { coreSerial: '', magNumber: null };
-  const parts = raw.split(/\s+-\s+/);
-  if (parts.length === 2) {
-    const [a, b] = parts.map((s) => s.trim());
-    if (MAG_NUMBER_RE.test(a) && !MAG_NUMBER_RE.test(b)) return { coreSerial: b, magNumber: a };
-    if (MAG_NUMBER_RE.test(b) && !MAG_NUMBER_RE.test(a)) return { coreSerial: a, magNumber: b };
-  }
-  return { coreSerial: raw, magNumber: null };
+  return parseMagSerial(rawSerial);
 }
 
 function normalizeKey(k) {

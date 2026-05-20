@@ -50,16 +50,23 @@ if (APPLY) {
 const db = new Database(DB_PATH);
 db.pragma('foreign_keys = ON');
 
-// Pattern : capture <base> et <suffix> où suffix = lettre + 1-3 chiffres
-// Exemples : "2300858495    - P1", "AH100662 - V12", "SN-X - T01"
-// On exige un séparateur " - " (avec espaces autour) ou " — "
-const SUFFIX_RE = /^(.*?)\s+[-—]\s+([A-Za-z]\d{1,3})\s*$/;
+// Pattern : capture <base> et <suffix> où suffix = MAG = LETTRES + CHIFFRES
+// (ex: T01, VX1, E09, AB12). Source: apps/api/services/magNumber.js
+// Exemples : "2300858495    - P1", "AH100662 - V12", "SN-X - VX1"
+// Séparateur strict : " - " avec espaces (ou em-dash " — " toléré pour legacy).
+const MAG_PART_RE = '[A-Za-z]{1,3}[0-9]{1,4}';
+const SUFFIX_RE = new RegExp(`^(.*?)\\s+[-—]\\s+(${MAG_PART_RE})\\s*$`);
+const MAG_VALIDATE_RE = new RegExp(`^${MAG_PART_RE}$`);
 
-const all = db.prepare(`
+const all = db
+  .prepare(
+    `
   SELECT id, uid, name, serial_number, numero_mag
   FROM equipment
   WHERE serial_number IS NOT NULL AND TRIM(serial_number) <> ''
-`).all();
+`,
+  )
+  .all();
 
 // Index : par (sn_base, suffix) → lignes "anciennes"
 // Index : par (sn_base, numero_mag) → lignes "nouvelles"
@@ -73,7 +80,7 @@ for (const row of all) {
     const sn_base = m[1].trim();
     const suffix = m[2].toUpperCase();
     oldRows.push({ row, sn_base, suffix });
-  } else if (row.numero_mag && /^[A-Za-z]\d{1,3}$/.test(row.numero_mag.trim())) {
+  } else if (row.numero_mag && MAG_VALIDATE_RE.test(row.numero_mag.trim())) {
     const key = `${sn.trim()}|${row.numero_mag.trim().toUpperCase()}`;
     if (!newByKey.has(key)) newByKey.set(key, []);
     newByKey.get(key).push(row);
@@ -86,17 +93,34 @@ console.log(`[scan] index "nouveau" (SN propre + N°MAG) : ${newByKey.size} clé
 
 // Comptage refs
 const countSav = db.prepare('SELECT COUNT(*) c FROM sav_tickets WHERE equipment_id = ?');
-const countAssign = db.prepare('SELECT COUNT(*) c FROM equipment_assignments WHERE equipment_id = ?');
+const countAssign = db.prepare(
+  'SELECT COUNT(*) c FROM equipment_assignments WHERE equipment_id = ?',
+);
 const countLists = db.prepare('SELECT COUNT(*) c FROM equipment_lists WHERE equipment_id = ?');
 
 const updateSav = db.prepare('UPDATE sav_tickets SET equipment_id = ? WHERE equipment_id = ?');
-const updateAssign = db.prepare('UPDATE equipment_assignments SET equipment_id = ? WHERE equipment_id = ?');
-const updateLists = db.prepare('UPDATE equipment_lists SET equipment_id = ? WHERE equipment_id = ?');
+const updateAssign = db.prepare(
+  'UPDATE equipment_assignments SET equipment_id = ? WHERE equipment_id = ?',
+);
+const updateLists = db.prepare(
+  'UPDATE equipment_lists SET equipment_id = ? WHERE equipment_id = ?',
+);
 
 const deleteEq = db.prepare('DELETE FROM equipment WHERE id = ?');
-const updateEq = db.prepare('UPDATE equipment SET serial_number = ?, numero_mag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+const updateEq = db.prepare(
+  'UPDATE equipment SET serial_number = ?, numero_mag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+);
 
-let stats = { paired: 0, orphan: 0, skipped: 0, savMoved: 0, assignMoved: 0, listMoved: 0, deleted: 0, normalized: 0 };
+let stats = {
+  paired: 0,
+  orphan: 0,
+  skipped: 0,
+  savMoved: 0,
+  assignMoved: 0,
+  listMoved: 0,
+  deleted: 0,
+  normalized: 0,
+};
 
 const tx = db.transaction(() => {
   for (const { row, sn_base, suffix } of oldRows) {
@@ -107,14 +131,18 @@ const tx = db.transaction(() => {
       // Orphelin → normaliser en place
       stats.orphan++;
       stats.normalized++;
-      console.log(`[orphan] ${row.uid}  "${row.serial_number}"  →  SN="${sn_base}", N°MAG="${suffix}"`);
+      console.log(
+        `[orphan] ${row.uid}  "${row.serial_number}"  →  SN="${sn_base}", N°MAG="${suffix}"`,
+      );
       if (APPLY) updateEq.run(sn_base, suffix, row.id);
       continue;
     }
 
     if (matches.length > 1) {
       stats.skipped++;
-      console.log(`[skip]   ${row.uid}  collision: ${matches.length} candidats nouveaux pour ${key}`);
+      console.log(
+        `[skip]   ${row.uid}  collision: ${matches.length} candidats nouveaux pour ${key}`,
+      );
       continue;
     }
 
@@ -136,7 +164,7 @@ const tx = db.transaction(() => {
 
     console.log(
       `[merge]  ${row.uid} → ${target.uid}  (sn_base=${sn_base}, mag=${suffix})  ` +
-      `[sav=${nbSav}, assign=${nbAssign}, lists=${nbList}]`
+        `[sav=${nbSav}, assign=${nbAssign}, lists=${nbList}]`,
     );
 
     if (APPLY) {
@@ -157,6 +185,7 @@ console.log(`Skippés (collision): ${stats.skipped}`);
 console.log(`SAV transférés     : ${stats.savMoved}`);
 console.log(`Assignments transf.: ${stats.assignMoved}`);
 console.log(`Listes transférées : ${stats.listMoved}`);
-if (!APPLY) console.log(`\n→ Pour exécuter réellement : node scripts/merge-duplicate-serials.mjs --apply`);
+if (!APPLY)
+  console.log(`\n→ Pour exécuter réellement : node scripts/merge-duplicate-serials.mjs --apply`);
 
 db.close();

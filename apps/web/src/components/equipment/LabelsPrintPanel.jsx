@@ -5,10 +5,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, EmptyState, SearchBar, Spinner } from '@/design-system';
 import { api } from '@/utils/api';
+import { MAG_NUMBER_RE } from '@/utils/magNumber';
 
 const PAGE_SIZE = 50;
 const MAX_PER_PLATE = 32;
-const MAG_REGEX = /^[A-Z][0-9]{2,4}$/;
+// LETTRES + CHIFFRES (ex VX1, E09, T01). Source : utils/magNumber.js.
+const MAG_REGEX = MAG_NUMBER_RE;
 // Plaque 200×200 mm → en pixels à 300 DPI = 200/25.4 * 300 ≈ 2362 px
 const PNG_PX = Math.round((200 / 25.4) * 300);
 

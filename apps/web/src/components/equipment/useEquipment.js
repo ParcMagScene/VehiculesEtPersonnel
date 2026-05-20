@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRefreshOnFocus } from '../../hooks/useRefreshOnFocus';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -129,6 +130,9 @@ export const useEquipment = ({ currentUser, initialTab }) => {
   // Auto-refresh quand le materiel ou SAV change ailleurs
   useRefreshSubscription('equipment', loadData);
   useRefreshSubscription('sav', loadData);
+
+  // [N4] Refresh au retour de focus (veille tab / multi-onglets). Throttle 60s.
+  useRefreshOnFocus(loadData, { minIntervalMs: 60_000 });
 
   const families = useMemo(() => categories.filter((c) => c.level === 'family'), [categories]);
   const subfamilies = useMemo(

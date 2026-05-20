@@ -30,7 +30,9 @@ import { Button, Checkbox, SearchBar, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useRefreshOnFocus } from '../../hooks/useRefreshOnFocus';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
+import { useStoredListState } from '../../hooks/useStoredListState';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency } from '../../utils/formatUtils';
@@ -62,14 +64,17 @@ function OrdersPanel({ currentUser, isMobile }) {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const isSimpleUser = isMobile && !currentUser?.isAdmin;
-  const [activeTab, setActiveTab] = useState(isSimpleUser ? 'requests' : 'orders');
+  const [activeTab, setActiveTab] = useStoredListState(
+    'orders:activeTab',
+    isSimpleUser ? 'requests' : 'orders',
+  );
   const [orders, setOrders] = useState([]);
   const [quotes, setQuotes] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [stats, setStats] = useState(null);
   const [clients, setClients] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useStoredListState('orders:statusFilter', '');
   const [loading, setLoading] = useState(true);
   const [myLinkedOrders, setMyLinkedOrders] = useState([]);
 
@@ -95,7 +100,10 @@ function OrdersPanel({ currentUser, isMobile }) {
   const [dispatchPrefill, setDispatchPrefill] = useState(null); // { request, assignments, prefillOrder, newLineIds }
 
   const [suppliersWithOrders, setSuppliersWithOrders] = useState([]);
-  const [showArchivedSuppliers, setShowArchivedSuppliers] = useState(false);
+  const [showArchivedSuppliers, setShowArchivedSuppliers] = useStoredListState(
+    'orders:showArchivedSuppliers',
+    false,
+  );
   const [selectedSupplierPanel, setSelectedSupplierPanel] = useState(null);
   const [supplierDetailData, setSupplierDetailData] = useState(null);
   const [newSupplierId, setNewSupplierId] = useState(null);
@@ -210,6 +218,9 @@ function OrdersPanel({ currentUser, isMobile }) {
 
   // Auto-refresh quand des commandes/fournisseurs/demandes changent ailleurs
   useRefreshSubscription('orders', loadData);
+
+  // [N4] Refresh au retour de focus (veille tab / multi-onglets). Throttle 60s.
+  useRefreshOnFocus(loadData, { minIntervalMs: 60_000 });
 
   // Scroll en tête de liste après création d'un fournisseur
   useEffect(() => {

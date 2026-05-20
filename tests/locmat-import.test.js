@@ -369,11 +369,11 @@ describe('diffWithDatabase', () => {
     assert.equal(r.legacyCatalogToDelete[0].quantity, 5);
   });
 
-  it('normalise un serial_number legacy au format "MAG - SN" (ex: VX14 → I14)', () => {
+  it('normalise un serial_number legacy au format "MAG - SN" (ex: V14 → I14)', () => {
     // Scénario : la DB contient une unité historique dont le serial_number
-    // est resté au format brut "VX14 - 2115080074074" (numero_mag NULL).
+    // est resté au format brut "V14 - 2115080074074" (numero_mag NULL).
     // Le CSV LocMat apporte "I14 - 2115080074074" → coreSerial 2115080074074, mag I14.
-    // Attendu : 1 serialUpdate avec equipmentId + magNumber='I14' + fromMag='VX14',
+    // Attendu : 1 serialUpdate avec equipmentId + magNumber='I14' + fromMag='V14',
     // pas de newSerial doublon.
     const dbCatalogByCode = new Map([
       [
@@ -383,14 +383,14 @@ describe('diffWithDatabase', () => {
           reference: 'VIPER',
           name: 'Viper',
           quantity: 1,
-          serial_number: 'VX14 - 2115080074074',
+          serial_number: 'V14 - 2115080074074',
         },
       ],
     ]);
     const dbSerialsByCode = new Map([['VIPER', new Set(['2115080074074'])]]);
     const dbOwnerCodeBySerial = new Map([['2115080074074', 'VIPER']]);
     const dbMagBySerial = new Map([
-      ['2115080074074', { magNumber: 'VX14', equipmentId: 42, rawSerial: 'VX14 - 2115080074074' }],
+      ['2115080074074', { magNumber: 'V14', equipmentId: 42, rawSerial: 'V14 - 2115080074074' }],
     ]);
     const r = diffWithDatabase({
       locations: [],
@@ -414,8 +414,8 @@ describe('diffWithDatabase', () => {
     assert.equal(u.equipmentId, 42);
     assert.equal(u.serial, '2115080074074');
     assert.equal(u.magNumber, 'I14');
-    assert.equal(u.fromMag, 'VX14');
-    assert.equal(u.fromSerial, 'VX14 - 2115080074074');
+    assert.equal(u.fromMag, 'V14');
+    assert.equal(u.fromSerial, 'V14 - 2115080074074');
   });
 
   it('normalise un serial_number legacy même si le MAG est inchangé', () => {

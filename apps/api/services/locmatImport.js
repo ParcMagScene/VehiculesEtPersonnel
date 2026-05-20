@@ -48,14 +48,14 @@ const SER_FIELDS = {
   brand: ['Marque', 'Brand'],
 };
 
-// Format Locmat des SN : `<core> - <mag>` ou `<mag> - <core>` où mag = LETTRES + CHIFFRES
-// (ex: T01, VX1, E09). Séparateur strict ` - ` (au moins un espace de chaque côté).
+// Format Locmat des SN : `<core> - <mag>` ou `<mag> - <core>` où mag = 1 LETTRE + 2 CHIFFRES
+// strict (ex: T01, V12, E09). Séparateur strict ` - ` (au moins un espace de chaque côté).
 // Ex : `T01 -  2400953513` (TETRA2), `0788770045   - V12` (VIPER).
 // Cf. apps/api/services/magNumber.js pour la source de vérité.
 import { parseMagSerial } from './magNumber.js';
 
 /**
- * Parse un SN Locmat brut. Extrait un éventuel numéro MAG (T01, V12, VX1...).
+ * Parse un SN Locmat brut. Extrait un éventuel numéro MAG (T01, V12, E09...).
  * Délègue à parseMagSerial (module partagé).
  * @param {string} rawSerial
  * @returns {{ coreSerial: string, magNumber: string|null }}

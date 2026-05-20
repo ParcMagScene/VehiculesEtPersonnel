@@ -59,11 +59,19 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
     try {
       // Modèle A : on cible les equipment qui ont un serial_number (= unités
       // physiques migrées) et qui ne sont pas des catalogues archivés.
+      // [BUG-DOUBLONS] On exclut aussi les lignes status='removed' (legacy
+      // LocMat archivées) qui polluaient la liste avec des serials non splittés
+      // type "G01 - 2400947145". Pour les voir : ?includeRemoved=1.
+      const includeRemoved =
+        req.query.includeRemoved === '1' || req.query.includeRemoved === 'true';
       const where = [
         'e.serial_number IS NOT NULL',
         "e.serial_number != ''",
         "e.name NOT LIKE '%[archive]%'",
       ];
+      if (!includeRemoved) {
+        where.push("(e.status IS NULL OR e.status != 'removed')");
+      }
       const params = {};
       if (req.query.equipmentId) {
         where.push('e.id = @equipmentId');

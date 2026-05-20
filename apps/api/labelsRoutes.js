@@ -134,13 +134,35 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
           detail: 'Attendu : 1 lettre + 2 à 4 chiffres (ex: A12, B003)',
         });
       }
-      const exists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(id);
+      const exists = db.prepare('SELECT id, serial_number FROM equipment WHERE id = ?').get(id);
       if (!exists) return res.status(404).json({ error: 'Équipement introuvable' });
 
-      db.prepare(
-        'UPDATE equipment SET numero_mag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      ).run(mag, id);
-      res.json({ success: true, id, mag_number: mag });
+      // Normalisation symétrique : si le serial_number contient encore le préfixe
+      // MAG (cas legacy / import Locmat brut), on le sépare pour ne garder que
+      // le coreSerial côté serial_number et le mag côté numero_mag.
+      //   "G08 - 2300890619" + mag=G08 → serial_number='2300890619'
+      // On n'écrase JAMAIS le serial_number si le MAG détecté dans la chaîne
+      // diffère du MAG demandé (sécurité contre les conflits).
+      let nextSerial = exists.serial_number;
+      if (exists.serial_number) {
+        const det = parseMagSerial(exists.serial_number);
+        if (det.magNumber && (!mag || det.magNumber === mag)) {
+          nextSerial = det.coreSerial;
+        }
+      }
+      const serialChanged = nextSerial !== exists.serial_number;
+      if (serialChanged) {
+        db.prepare(
+          `UPDATE equipment
+             SET numero_mag = ?, serial_number = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+        ).run(mag, nextSerial, id);
+      } else {
+        db.prepare(
+          'UPDATE equipment SET numero_mag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ).run(mag, id);
+      }
+      res.json({ success: true, id, mag_number: mag, serial: nextSerial });
     } catch (e) {
       logger.error('PUT /api/labels/serial/:id:', e.message);
       res.status(500).json({ error: 'Erreur lors de la mise à jour', detail: e.message });

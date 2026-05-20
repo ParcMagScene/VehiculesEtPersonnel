@@ -136,9 +136,22 @@ export default function LabelsPrintPanel() {
     }
     setMagEdits((p) => ({ ...p, [id]: { ...edit, status: 'saving' } }));
     try {
-      await api.updateSerialMagNumber(id, edit.value || null);
+      const resp = await api.updateSerialMagNumber(id, edit.value || null);
+      // Le backend renvoie aussi `serial` (potentiellement nettoyé du préfixe MAG).
+      const nextSerial = resp && typeof resp.serial === 'string' ? resp.serial : null;
       setItems((prev) =>
-        prev.map((it) => (it.serial_id === id ? { ...it, mag_number: edit.value || null } : it)),
+        prev.map((it) =>
+          it.serial_id === id
+            ? {
+                ...it,
+                mag_number: edit.value || null,
+                serial: nextSerial != null ? nextSerial : it.serial,
+                // L'éventuelle suggestion devient caduque.
+                suggested_mag: null,
+                suggested_serial: null,
+              }
+            : it,
+        ),
       );
       setMagEdits((p) => ({ ...p, [id]: { ...edit, status: 'saved' } }));
       // efface le badge "saved" après 2s

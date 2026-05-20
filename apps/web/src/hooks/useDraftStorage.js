@@ -29,7 +29,7 @@
  * - Mode privé / quota plein : fallback silencieux (try/catch interne).
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 h
 
@@ -105,6 +105,16 @@ export function useDraftStorage(key, initial, options = {}) {
   const [value, setValueState] = useState(() =>
     readDraft(storageRef.current, key, initialRef.current, ttlMs),
   );
+
+  // Si la clé change (ex: brouillon par UID / par conversation), on relit le
+  // storage pour la nouvelle clé. Compatible avec les usages à clé statique :
+  // l'effect ne déclenche qu'un re-set idempotent au premier mount.
+  const lastKeyRef = useRef(key);
+  useEffect(() => {
+    if (lastKeyRef.current === key) return;
+    lastKeyRef.current = key;
+    setValueState(readDraft(storageRef.current, key, initialRef.current, ttlMs));
+  }, [key, ttlMs]);
 
   const setValue = useCallback(
     (next) => {

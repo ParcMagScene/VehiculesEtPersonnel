@@ -121,6 +121,25 @@ function buildDbMagBySerial() {
   return map;
 }
 
+// Index refUpper → liste de tous les id `equipment` actifs (catalogue + unités).
+// Utilisé pour soft-delete en masse les références absentes du CSV.
+function buildDbAllActiveIdsByCode() {
+  const rows = db
+    .prepare(
+      `SELECT id, reference FROM equipment
+       WHERE reference IS NOT NULL AND reference != ''
+         AND (status IS NULL OR status != 'removed')`,
+    )
+    .all();
+  const map = new Map();
+  for (const r of rows) {
+    const key = String(r.reference).toUpperCase();
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(r.id);
+  }
+  return map;
+}
+
 export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
   // ─── 1. PREVIEW (read-only, calcule le diff) ───
   app.post(
@@ -136,6 +155,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         const dbSerialsByCode = buildDbSerialsByCode();
         const dbOwnerCodeBySerial = buildDbOwnerCodeBySerial();
         const dbMagBySerial = buildDbMagBySerial();
+        const dbAllActiveIdsByCode = buildDbAllActiveIdsByCode();
 
         const diff = diffWithDatabase({
           locations,
@@ -144,6 +164,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           dbSerialsByCode,
           dbOwnerCodeBySerial,
           dbMagBySerial,
+          dbAllActiveIdsByCode,
         });
 
         res.json({
@@ -189,6 +210,10 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           removedSerials,
           legacyCatalogToDelete = [],
           missingProducts = [],
+          // Synchronisation stricte : si true (défaut), les références présentes
+          // en DB mais absentes des deux CSV sont soft-delete (toutes leurs unités).
+          // LocMat est la source de vérité pour le stock physique réel.
+          deleteMissingProducts = true,
           duplicates = { locations: [], serials: [] },
           collisions = [],
         } = req.body;
@@ -334,6 +359,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           serialsReactivated: 0,
           serialsMagUpdated: 0,
           legacyCatalogDeleted: 0,
+          missingProductsRemoved: 0,
           backfilled: 0,
           serialsSkippedCollision: 0,
           errors: [],
@@ -512,6 +538,27 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
             }
           }
 
+          // ── E5. soft-delete des références absentes de LocMat ──
+          // LocMat est la source de vérité du stock physique : toute référence
+          // active en DB mais absente des deux CSV doit être désactivée (avec
+          // toutes ses unités sérialisées). Soft seulement : status='removed'.
+          if (deleteMissingProducts) {
+            for (const m of missingProducts) {
+              const ids =
+                Array.isArray(m.equipmentIds) && m.equipmentIds.length > 0
+                  ? m.equipmentIds
+                  : [m.id].filter(Boolean);
+              for (const eqId of ids) {
+                try {
+                  const info = softRemoveUnitById.run(eqId);
+                  if (info.changes > 0) result.missingProductsRemoved++;
+                } catch (e) {
+                  result.errors.push(`Suppression ${m.code} (#${eqId}): ${e.message}`);
+                }
+              }
+            }
+          }
+
           // ── E4. backfill catégorie/marque/localisation pour toutes les
           //       références touchées (newSerials + serialUpdates). On relit
           //       le parent APRÈS les suppressions legacy pour être certain
@@ -557,6 +604,7 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
               serialsReactivated: result.serialsReactivated,
               serialsMagUpdated: result.serialsMagUpdated,
               legacyCatalogDeleted: result.legacyCatalogDeleted,
+              missingProductsRemoved: result.missingProductsRemoved,
               backfilled: result.backfilled,
               missingProductsCount: missingProducts.length,
               duplicatesCount:

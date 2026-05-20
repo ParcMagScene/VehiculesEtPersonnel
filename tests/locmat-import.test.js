@@ -283,10 +283,31 @@ describe('diffWithDatabase', () => {
       serials: [],
       dbItemsByCode,
       dbSerialsByCode: new Map(),
+      dbAllActiveIdsByCode: new Map([
+        ['OLD-1', [11, 101, 102, 103]],
+        ['KEEP-1', [12]],
+      ]),
     });
     assert.equal(r.missingProducts.length, 1);
     assert.equal(r.missingProducts[0].code, 'OLD-1');
     assert.equal(r.missingProducts[0].quantity, 3);
+    assert.deepEqual(r.missingProducts[0].equipmentIds, [11, 101, 102, 103]);
+    assert.equal(r.missingProducts[0].unitsCount, 4);
+  });
+
+  it('missingProducts: fallback sur dbItem.id si dbAllActiveIdsByCode non fourni', () => {
+    const dbItemsByCode = new Map([
+      ['GONE', { id: 42, name: 'Disparu', reference: 'GONE', quantity: 1 }],
+    ]);
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [],
+      dbItemsByCode,
+      dbSerialsByCode: new Map(),
+    });
+    assert.equal(r.missingProducts.length, 1);
+    assert.deepEqual(r.missingProducts[0].equipmentIds, [42]);
+    assert.equal(r.missingProducts[0].unitsCount, 1);
   });
 
   it('émet serialUpdates quand le N° MAG diffère (CSV vs DB)', () => {

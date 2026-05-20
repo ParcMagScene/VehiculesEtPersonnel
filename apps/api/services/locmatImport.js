@@ -161,6 +161,9 @@ export function normalizeSerialRow(row) {
  * @param {Map<string,string>}      [args.dbOwnerCodeBySerial]  index inverse serial → refUpper (collision cross-ref)
  * @param {Map<string,{magNumber:string|null, equipmentId:number}>} [args.dbMagBySerial]
  *        Index serial → numéro mag actuel + id, pour détecter les mises à jour de N° MAG.
+ * @param {Map<string,number[]>} [args.dbAllActiveIdsByCode] Index refUpper → liste des id
+ *        de toutes les lignes equipment actives pour cette référence (catalogue + unités).
+ *        Utilisé pour soft-delete en masse les missingProducts.
  * @returns Diff { newProducts, updatedProducts, quantityChanges, newSerials, serialUpdates,
  *                 removedSerials, missingProducts, duplicates, collisions, errors,
  *                 legacyCatalogToDelete }
@@ -172,6 +175,7 @@ export function diffWithDatabase({
   dbSerialsByCode,
   dbOwnerCodeBySerial,
   dbMagBySerial,
+  dbAllActiveIdsByCode,
   // back-compat : tolère l'ancien nom dbItemsByCode
   dbItemsByCode,
 }) {
@@ -179,6 +183,7 @@ export function diffWithDatabase({
   if (!dbSerialsByCode) dbSerialsByCode = new Map();
   if (!dbOwnerCodeBySerial) dbOwnerCodeBySerial = new Map();
   if (!dbMagBySerial) dbMagBySerial = new Map();
+  if (!dbAllActiveIdsByCode) dbAllActiveIdsByCode = new Map();
 
   const newProducts = [];
   const updatedProducts = [];
@@ -397,15 +402,20 @@ export function diffWithDatabase({
   }
 
   // ─── 3. Suppressions : refs présentes en DB mais absentes des deux CSV ───
-  // (signalement seulement, pas d'écriture côté serveur sans confirmation)
+  // On enrichit chaque entrée avec `equipmentIds` = toutes les lignes actives
+  // de cette référence (catalogue + unités sérialisées), pour permettre au
+  // confirm() de les soft-delete en masse si l'utilisateur le demande.
   const csvCodes = new Set([...seenCodes, ...serialsByCode.keys()]);
   for (const [dbCode, dbItem] of dbCatalogByCode.entries()) {
     if (!csvCodes.has(dbCode)) {
+      const ids = dbAllActiveIdsByCode.get(dbCode) || [dbItem.id].filter(Boolean);
       missingProducts.push({
         id: dbItem.id,
         code: dbItem.reference || dbCode,
         name: dbItem.name || null,
         quantity: Math.round(Number(dbItem.quantity) || 0),
+        equipmentIds: ids,
+        unitsCount: ids.length,
       });
     }
   }

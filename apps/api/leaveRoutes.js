@@ -1210,10 +1210,74 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
       const persons = db
         .prepare("SELECT id, first_name, last_name FROM persons WHERE status = 'active'")
         .all();
-      const balances = persons.map((p) => ({
-        ...p,
-        balance: getOrCreateBalance(p.id, targetYear),
-      }));
+
+      // [P1-8] Précharger les soldes (année cible + précédente) en 2 requêtes
+      // au lieu de 2-3 queries × N personnes (N+1 fix). On INSERT à la volée
+      // les soldes manquants pour préserver la sémantique de getOrCreateBalance.
+      const personIds = persons.map((p) => p.id);
+      const balancesByPerson = new Map();
+      const prevBalancesByPerson = new Map();
+
+      if (personIds.length > 0) {
+        const placeholders = personIds.map(() => '?').join(',');
+        const targetYearInt = parseInt(targetYear, 10);
+        const prevYearInt = targetYearInt - 1;
+
+        const currentRows = db
+          .prepare(
+            `SELECT * FROM leave_balances WHERE type = 'conge_paye' AND year = ? AND person_id IN (${placeholders})`,
+          )
+          .all(targetYearInt, ...personIds);
+        for (const r of currentRows) balancesByPerson.set(r.person_id, r);
+
+        const prevRows = db
+          .prepare(
+            `SELECT * FROM leave_balances WHERE type = 'conge_paye' AND year = ? AND person_id IN (${placeholders})`,
+          )
+          .all(prevYearInt, ...personIds);
+        for (const r of prevRows) prevBalancesByPerson.set(r.person_id, r);
+
+        // INSERT en lot pour les personnes sans solde année cible (préserve l'auto-création)
+        const insertStmt = db.prepare(
+          'INSERT INTO leave_balances (person_id, year, type, days_entitled, days_taken) VALUES (?, ?, ?, ?, 0)',
+        );
+        const selectStmt = db.prepare(
+          'SELECT * FROM leave_balances WHERE person_id = ? AND year = ? AND type = ?',
+        );
+        const missing = personIds.filter((id) => !balancesByPerson.has(id));
+        if (missing.length > 0) {
+          const insertMany = db.transaction((ids) => {
+            for (const id of ids) {
+              insertStmt.run(id, targetYearInt, 'conge_paye', DAYS_PER_YEAR);
+              balancesByPerson.set(id, selectStmt.get(id, targetYearInt, 'conge_paye'));
+            }
+          });
+          insertMany(missing);
+        }
+      }
+
+      const today = new Date();
+      const carryOverDeadline = new Date(`${targetYear}-12-31`);
+      const carryOverActive = today <= carryOverDeadline;
+
+      const balances = persons.map((p) => {
+        const balance = balancesByPerson.get(p.id);
+        const prev = prevBalancesByPerson.get(p.id);
+        let carryOver = 0;
+        if (prev && carryOverActive) {
+          const remaining = prev.days_entitled - prev.days_taken;
+          if (remaining > 0) carryOver = remaining;
+        }
+        return {
+          ...p,
+          balance: {
+            ...balance,
+            remaining: balance.days_entitled - balance.days_taken,
+            carryOver,
+            totalAvailable: balance.days_entitled - balance.days_taken + carryOver,
+          },
+        };
+      });
 
       res.json(balances);
     } catch (error) {

@@ -242,11 +242,14 @@ export function setupSupplierDocumentsRoutes(app, authenticateToken, requireAdmi
         .all(req.params.id);
 
       // BL correspondence: find affaires linked to this supplier's orders
+      // [P1-8] Batch query (WHERE IN) au lieu d'un SELECT par affaire (N+1 fix)
       const affaireIds = [...new Set(orders.map((o) => o.affaire_id).filter(Boolean))];
-      const blCorrespondence = [];
-      for (const affId of affaireIds) {
-        const bls = db.prepare('SELECT * FROM bl_imports WHERE affaire_id = ?').all(affId);
-        blCorrespondence.push(...bls.map((bl) => ({ ...bl, affaire_id: affId })));
+      let blCorrespondence = [];
+      if (affaireIds.length > 0) {
+        const placeholders = affaireIds.map(() => '?').join(',');
+        blCorrespondence = db
+          .prepare(`SELECT * FROM bl_imports WHERE affaire_id IN (${placeholders})`)
+          .all(...affaireIds);
       }
 
       // Workflow summary per order

@@ -23,6 +23,7 @@ import {
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 
 import api from '../../utils/api';
+import { softReload } from '../../utils/softReload';
 import { loadFromIndexedDB, saveToIndexedDB, STORES } from '../../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../../utils/photoList';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
@@ -695,9 +696,7 @@ const ManagementPanel = ({
       );
 
       // Attendre 500ms pour que l'utilisateur voie le message, puis recharger
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      softReload('backup-restored', { delayMs: 500 });
     } catch (err) {
       console.error('Erreur import:', err);
       setImportStatus("❌ Erreur lors de l'import : " + err.message);

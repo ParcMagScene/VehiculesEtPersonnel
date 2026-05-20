@@ -10,6 +10,7 @@ import useMobileRouter from '../../hooks/useMobileRouter';
 import useSwipeBack from '../../hooks/useSwipeBack';
 import { PALETTES, useTheme } from '../../hooks/useTheme';
 import api from '../../utils/api';
+import { softReload } from '../../utils/softReload';
 import MobileHeader from './MobileHeader';
 import MobileHome from './MobileHome';
 import MobileLogin from './MobileLogin';
@@ -336,7 +337,7 @@ function MobileApp({ onSwitchToDesktop }) {
             variant="ghost"
             onClick={() => {
               setShowUserMenu(false);
-              window.location.reload();
+              softReload('user-switch');
             }}
           >
             <LayoutGrid size={18} />

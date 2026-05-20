@@ -64,15 +64,39 @@ export function ScrollToTopOnModuleChange() {
  * @template T
  * @param {string} key - nom du search param
  * @param {T} defaultValue - valeur par défaut si param absent ou invalide
- * @param {{ allowed?: Set<T>, replace?: boolean }} [options]
+ * @param {{ allowed?: Set<T>, replace?: boolean, onInvalid?: (raw: string) => void }} [options]
  * @returns {[T, (next: T | ((prev: T) => T)) => void]}
  */
 export function useSearchParamState(key, defaultValue, options = {}) {
-  const { allowed, replace = true } = options;
+  const { allowed, replace = true, onInvalid } = options;
   const [params, setParams] = useSearchParams();
 
   const raw = params.get(key);
+  const isInvalid = raw != null && allowed && !allowed.has(raw);
   const value = raw != null && (!allowed || allowed.has(raw)) ? raw : defaultValue;
+
+  // Notifie l'appelant qu'une valeur invalide a été détectée dans l'URL.
+  // Le caller peut alors afficher un toast "Paramètre inconnu, redirection...".
+  useEffect(() => {
+    if (isInvalid && typeof onInvalid === 'function') {
+      onInvalid(raw);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInvalid, raw]);
+
+  // Si la valeur de l'URL est invalide, on nettoie l'URL en l'effaçant
+  // (le hook retourne déjà defaultValue, mais l'URL conservait la valeur fautive).
+  useEffect(() => {
+    if (!isInvalid) return;
+    setParams(
+      (prev) => {
+        const updated = new URLSearchParams(prev);
+        updated.delete(key);
+        return updated;
+      },
+      { replace: true },
+    );
+  }, [isInvalid, key, setParams]);
 
   const setValue = useCallback(
     (next) => {

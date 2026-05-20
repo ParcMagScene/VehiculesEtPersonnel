@@ -147,8 +147,12 @@ function AppContent() {
   // - refresh F5 → module restauré gratuitement
   // - replace history (clic d'onglet ne pollue pas le bouton "Précédent")
   // - fallback localStorage uniquement au TOUT premier chargement (cf. effet plus bas)
+  // - onInvalid → toast + nettoyage URL si ?module=valeurInconnue
   const [activeModule, _setActiveModule] = useSearchParamState('module', DEFAULT_MODULE, {
     allowed: ALLOWED_MODULES,
+    onInvalid: (raw) => {
+      toast.warning(`Module « ${raw} » inconnu — redirection vers le tableau de bord.`);
+    },
   });
   const [, startModuleTransition] = useTransition();
   const setActiveModule = useCallback(

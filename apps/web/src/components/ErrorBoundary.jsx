@@ -1,6 +1,8 @@
 import React from 'react';
 
 import { Button } from '@/design-system';
+
+import { softReload } from '../utils/softReload';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -112,7 +114,7 @@ class ErrorBoundary extends React.Component {
             onClick={() =>
               isInline
                 ? this.setState({ hasError: false, error: null, errorInfo: null })
-                : window.location.reload()
+                : softReload('error-boundary')
             }
             style={{
               marginTop: '20px',

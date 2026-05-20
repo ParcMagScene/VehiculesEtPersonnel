@@ -335,12 +335,20 @@ export function diffWithDatabase({
       if (dbSet.has(s.serial)) {
         const dbInfo = dbMagBySerial.get(s.serial);
         const currentMag = dbInfo?.magNumber || null;
-        if (s.magNumber && s.magNumber !== currentMag) {
+        const dbRawSerial = dbInfo?.rawSerial || null;
+        // On émet un serialUpdate dans deux cas :
+        //  1) Le N° MAG diffère entre CSV et DB.
+        //  2) Le serial_number stocké est "sale" (legacy "MAG - SN") :
+        //     on profite du passage pour le normaliser au coreSerial.
+        const magDiffers = !!s.magNumber && s.magNumber !== currentMag;
+        const serialNeedsNormalization = dbRawSerial && dbRawSerial !== s.serial;
+        if (magDiffers || serialNeedsNormalization) {
           serialUpdates.push({
             code,
             serial: s.serial,
-            magNumber: s.magNumber,
+            magNumber: s.magNumber || currentMag || null,
             fromMag: currentMag,
+            fromSerial: dbRawSerial,
             equipmentId: dbInfo?.equipmentId || null,
           });
         }
@@ -366,9 +374,11 @@ export function diffWithDatabase({
     // supprimés : dans DB mais plus dans CSV
     for (const dbSer of dbSet) {
       if (!csvSet.has(dbSer)) {
+        const dbInfo = dbMagBySerial.get(dbSer);
         removedSerials.push({
           code,
           serial: dbSer,
+          equipmentId: dbInfo?.equipmentId || null,
         });
       }
     }

@@ -20,6 +20,7 @@ import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { locmatConfirmSchema, locmatPreviewSchema, validate } from './schemas/imports.js';
 import { diffWithDatabase } from './services/locmatImport.js';
+import { parseMagSerial } from './services/magNumber.js';
 import { buildEquipmentQrPayload, generateQrDataUrl } from './services/qrcodeGenerator.js';
 import { getNextUid } from './services/uidCounter.js';
 
@@ -52,7 +53,10 @@ function buildDbCatalogByCode() {
   return map;
 }
 
-// Index serials existants par code de référence
+// Index serials existants par code de référence.
+// On indexe par **coreSerial** (résultat de parseMagSerial) pour matcher
+// correctement les lignes legacy dont le serial_number contient encore
+// le numéro MAG (ex: "VX14 - 2115080074074" → coreSerial "2115080074074").
 function buildDbSerialsByCode() {
   const rows = db
     .prepare(
@@ -65,13 +69,15 @@ function buildDbSerialsByCode() {
   const map = new Map();
   for (const r of rows) {
     const key = String(r.reference || '').toUpperCase();
+    const { coreSerial } = parseMagSerial(r.serial_number);
+    const indexed = coreSerial || r.serial_number;
     if (!map.has(key)) map.set(key, new Set());
-    map.get(key).add(r.serial_number);
+    map.get(key).add(indexed);
   }
   return map;
 }
 
-// Index inverse : serial → refUpper propriétaire (collision cross-ref)
+// Index inverse : coreSerial → refUpper propriétaire (collision cross-ref).
 function buildDbOwnerCodeBySerial() {
   const rows = db
     .prepare(
@@ -82,11 +88,16 @@ function buildDbOwnerCodeBySerial() {
     )
     .all();
   const map = new Map();
-  for (const r of rows) map.set(r.serial_number, String(r.reference).toUpperCase());
+  for (const r of rows) {
+    const { coreSerial } = parseMagSerial(r.serial_number);
+    const indexed = coreSerial || r.serial_number;
+    map.set(indexed, String(r.reference).toUpperCase());
+  }
   return map;
 }
 
-// Index serial → { magNumber, equipmentId } (pour détecter MAJ N° MAG)
+// Index coreSerial → { magNumber, equipmentId, rawSerial } (pour détecter MAJ N° MAG
+// et normaliser un serial_number legacy contenant le MAG).
 function buildDbMagBySerial() {
   const rows = db
     .prepare(
@@ -97,9 +108,14 @@ function buildDbMagBySerial() {
     .all();
   const map = new Map();
   for (const r of rows) {
-    map.set(r.serial_number, {
-      magNumber: r.numero_mag || null,
+    const { coreSerial, magNumber: legacyMag } = parseMagSerial(r.serial_number);
+    const indexed = coreSerial || r.serial_number;
+    map.set(indexed, {
+      // Priorité au champ numero_mag explicite ; fallback sur le MAG legacy
+      // extrait du serial_number historique.
+      magNumber: r.numero_mag || legacyMag || null,
       equipmentId: r.id,
+      rawSerial: r.serial_number,
     });
   }
   return map;
@@ -210,6 +226,20 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           WHERE UPPER(reference) = UPPER(?) AND serial_number = ?
             AND (status IS NULL OR status != 'removed')
         `);
+        // MAJ N° MAG + normalisation du serial_number (par id).
+        // Utilisée quand la ligne DB a un serial_number legacy contenant le MAG
+        // (ex: "VX14 - 2115080074074") : on remet à plat numero_mag + serial_number
+        // au coreSerial fourni par le CSV.
+        const updateMagAndSerialById = db.prepare(`
+          UPDATE equipment SET
+            numero_mag     = ?,
+            serial_number  = ?,
+            stock_quantity = 1,
+            is_serialized  = 0,
+            updated_at     = CURRENT_TIMESTAMP
+          WHERE id = ?
+            AND (status IS NULL OR status != 'removed')
+        `);
         // Suppression définitive d'une ligne catalogue legacy (modèle A pur).
         // FK pointant vers equipment.id :
         //   - equipment_lists      (NOT NULL, CASCADE)         → géré par SQLite
@@ -279,6 +309,12 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           `UPDATE equipment SET status = 'removed', updated_at = CURRENT_TIMESTAMP
            WHERE UPPER(reference) = UPPER(?) AND serial_number = ?
              AND (status IS NULL OR status != 'removed')`,
+        );
+        // Soft-delete par id (utilisé quand le diff fournit equipmentId,
+        // notamment pour les serials legacy au format "MAG - SN").
+        const softRemoveUnitById = db.prepare(
+          `UPDATE equipment SET status = 'removed', updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND (status IS NULL OR status != 'removed')`,
         );
         // Vérifier qu'une (ref, serial) n'existe pas déjà avant INSERT unité
         const findUnitByRefSerial = db.prepare(
@@ -436,17 +472,26 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           // ── E. serials supprimés (soft) ──
           for (const s of removedSerials) {
             try {
-              const info = softRemoveUnit.run(s.code, s.serial);
+              // Préférer la suppression par id (robuste face aux SN legacy
+              // contenant le MAG dans serial_number).
+              const info = s.equipmentId
+                ? softRemoveUnitById.run(s.equipmentId)
+                : softRemoveUnit.run(s.code, s.serial);
               if (info.changes > 0) result.serialsRemoved++;
             } catch (e) {
               result.errors.push(`Suppression serial ${s.serial}: ${e.message}`);
             }
           }
 
-          // ── E2. mises à jour N° MAG (+ force stock_quantity=1) ──
+          // ── E2. mises à jour N° MAG (et normalisation serial_number legacy) ──
+          // Si equipmentId est fourni : UPDATE par id + normalise serial_number
+          // au coreSerial du CSV (résout le cas "VX14 - 2115080074074" → "I14" + SN propre).
+          // Sinon : fallback par (reference, serial_number).
           for (const u of serialUpdates) {
             try {
-              const info = updateMagAndForceQty1.run(u.magNumber || null, u.code, u.serial);
+              const info = u.equipmentId
+                ? updateMagAndSerialById.run(u.magNumber || null, u.serial, u.equipmentId)
+                : updateMagAndForceQty1.run(u.magNumber || null, u.code, u.serial);
               if (info.changes > 0) result.serialsMagUpdated++;
             } catch (e) {
               result.errors.push(`MAJ N° MAG ${u.serial} (${u.code}): ${e.message}`);

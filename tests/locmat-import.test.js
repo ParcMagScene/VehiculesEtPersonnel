@@ -18,10 +18,10 @@ describe('normalizeLocationRow', () => {
   it('tolère les en-têtes accentués / casse', () => {
     const r = normalizeLocationRow({
       'Code Libre': 'ABC-1',
-      'Désignation': 'Vis M8',
-      'Quantité': '12',
-      'Tarif': '0,45',
-      'Sérialisé': 'oui',
+      Désignation: 'Vis M8',
+      Quantité: '12',
+      Tarif: '0,45',
+      Sérialisé: 'oui',
     });
     assert.equal(r.code, 'ABC-1');
     assert.equal(r.name, 'Vis M8');
@@ -83,11 +83,47 @@ describe('parseLocmatSerial', () => {
 describe('diffWithDatabase', () => {
   it('détecte newProducts / updatedProducts / quantityChanges', () => {
     const dbItemsByCode = new Map([
-      ['ABC-1', { id: 1, name: 'Vis M8', description: null, unit_price: 0.45, sell_price: 0, quantity: 10, barcode: null, location: null }],
+      [
+        'ABC-1',
+        {
+          id: 1,
+          name: 'Vis M8',
+          description: null,
+          unit_price: 0.45,
+          sell_price: 0,
+          quantity: 10,
+          barcode: null,
+          location: null,
+        },
+      ],
     ]);
     const locations = [
-      { code: 'ABC-1', name: 'Vis M8 hex', quantity: 12, price: 0.5, value: 0, description: null, category: null, barcode: null, location: null, isMagScene: false, isSerialized: false },
-      { code: 'NEW-1', name: 'Boulon', quantity: 5, price: 0, value: 0, description: null, category: null, barcode: null, location: null, isMagScene: false, isSerialized: false },
+      {
+        code: 'ABC-1',
+        name: 'Vis M8 hex',
+        quantity: 12,
+        price: 0.5,
+        value: 0,
+        description: null,
+        category: null,
+        barcode: null,
+        location: null,
+        isMagScene: false,
+        isSerialized: false,
+      },
+      {
+        code: 'NEW-1',
+        name: 'Boulon',
+        quantity: 5,
+        price: 0,
+        value: 0,
+        description: null,
+        category: null,
+        barcode: null,
+        location: null,
+        isMagScene: false,
+        isSerialized: false,
+      },
     ];
 
     const r = diffWithDatabase({
@@ -145,8 +181,32 @@ describe('diffWithDatabase', () => {
   it('signale les codes dupliqués comme erreurs', () => {
     const r = diffWithDatabase({
       locations: [
-        { code: 'X', name: 'A', quantity: 1, price: 0, value: 0, description: null, category: null, barcode: null, location: null, isMagScene: false, isSerialized: false },
-        { code: 'X', name: 'B', quantity: 2, price: 0, value: 0, description: null, category: null, barcode: null, location: null, isMagScene: false, isSerialized: false },
+        {
+          code: 'X',
+          name: 'A',
+          quantity: 1,
+          price: 0,
+          value: 0,
+          description: null,
+          category: null,
+          barcode: null,
+          location: null,
+          isMagScene: false,
+          isSerialized: false,
+        },
+        {
+          code: 'X',
+          name: 'B',
+          quantity: 2,
+          price: 0,
+          value: 0,
+          description: null,
+          category: null,
+          barcode: null,
+          location: null,
+          isMagScene: false,
+          isSerialized: false,
+        },
       ],
       serials: [],
       dbItemsByCode: new Map(),
@@ -167,9 +227,7 @@ describe('diffWithDatabase', () => {
 
   it('détecte les doublons stricts dans Serialise.csv', () => {
     const r = diffWithDatabase({
-      locations: [
-        { code: 'CAM-1', name: 'Cam', quantity: 2, price: 0, isSerialized: true },
-      ],
+      locations: [{ code: 'CAM-1', name: 'Cam', quantity: 2, price: 0, isSerialized: true }],
       serials: [
         { code: 'CAM-1', serial: 'SN1' },
         { code: 'CAM-1', serial: 'SN1' }, // doublon
@@ -203,9 +261,7 @@ describe('diffWithDatabase', () => {
     const r = diffWithDatabase({
       locations: [{ code: 'CAM-1', name: 'A', quantity: 1, isSerialized: true }],
       serials: [{ code: 'CAM-1', serial: 'SN-EXIST' }],
-      dbItemsByCode: new Map([
-        ['CAM-1', { id: 7, name: 'A', quantity: 1 }],
-      ]),
+      dbItemsByCode: new Map([['CAM-1', { id: 7, name: 'A', quantity: 1 }]]),
       dbSerialsByCode: new Map(),
       // SN-EXIST appartient déjà à une AUTRE référence
       dbOwnerCodeBySerial: new Map([['SN-EXIST', 'OTHER-REF']]),
@@ -223,9 +279,7 @@ describe('diffWithDatabase', () => {
       ['KEEP-1', { id: 12, name: 'Gardé', reference: 'KEEP-1', quantity: 1 }],
     ]);
     const r = diffWithDatabase({
-      locations: [
-        { code: 'KEEP-1', name: 'Gardé', quantity: 1, isSerialized: false },
-      ],
+      locations: [{ code: 'KEEP-1', name: 'Gardé', quantity: 1, isSerialized: false }],
       serials: [],
       dbItemsByCode,
       dbSerialsByCode: new Map(),
@@ -236,7 +290,12 @@ describe('diffWithDatabase', () => {
   });
 
   it('émet serialUpdates quand le N° MAG diffère (CSV vs DB)', () => {
-    const dbCatalogByCode = new Map([['TETRA2', { id: 100, reference: 'TETRA2', name: 'Bar', quantity: 1, serial_number: '2400953513' }]]);
+    const dbCatalogByCode = new Map([
+      [
+        'TETRA2',
+        { id: 100, reference: 'TETRA2', name: 'Bar', quantity: 1, serial_number: '2400953513' },
+      ],
+    ]);
     const dbSerialsByCode = new Map([['TETRA2', new Set(['2400953513', '2400954278'])]]);
     const dbMagBySerial = new Map([
       ['2400953513', { magNumber: null, equipmentId: 100 }],
@@ -264,7 +323,9 @@ describe('diffWithDatabase', () => {
     const r = diffWithDatabase({
       locations: [],
       serials: [{ code: 'X', serial: 'SN1', magNumber: 'T01' }],
-      dbCatalogByCode: new Map([['X', { id: 1, reference: 'X', name: 'X', quantity: 1, serial_number: 'SN1' }]]),
+      dbCatalogByCode: new Map([
+        ['X', { id: 1, reference: 'X', name: 'X', quantity: 1, serial_number: 'SN1' }],
+      ]),
       dbSerialsByCode: new Map([['X', new Set(['SN1'])]]),
       dbMagBySerial: new Map([['SN1', { magNumber: 'T01', equipmentId: 1 }]]),
     });
@@ -285,5 +346,79 @@ describe('diffWithDatabase', () => {
     assert.equal(r.legacyCatalogToDelete.length, 1);
     assert.equal(r.legacyCatalogToDelete[0].equipmentId, 50);
     assert.equal(r.legacyCatalogToDelete[0].quantity, 5);
+  });
+
+  it('normalise un serial_number legacy au format "MAG - SN" (ex: VX14 → I14)', () => {
+    // Scénario : la DB contient une unité historique dont le serial_number
+    // est resté au format brut "VX14 - 2115080074074" (numero_mag NULL).
+    // Le CSV LocMat apporte "I14 - 2115080074074" → coreSerial 2115080074074, mag I14.
+    // Attendu : 1 serialUpdate avec equipmentId + magNumber='I14' + fromMag='VX14',
+    // pas de newSerial doublon.
+    const dbCatalogByCode = new Map([
+      [
+        'VIPER',
+        {
+          id: 42,
+          reference: 'VIPER',
+          name: 'Viper',
+          quantity: 1,
+          serial_number: 'VX14 - 2115080074074',
+        },
+      ],
+    ]);
+    const dbSerialsByCode = new Map([['VIPER', new Set(['2115080074074'])]]);
+    const dbOwnerCodeBySerial = new Map([['2115080074074', 'VIPER']]);
+    const dbMagBySerial = new Map([
+      ['2115080074074', { magNumber: 'VX14', equipmentId: 42, rawSerial: 'VX14 - 2115080074074' }],
+    ]);
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [
+        {
+          code: 'VIPER',
+          serial: '2115080074074',
+          magNumber: 'I14',
+          rawSerial: 'I14 - 2115080074074',
+        },
+      ],
+      dbCatalogByCode,
+      dbSerialsByCode,
+      dbOwnerCodeBySerial,
+      dbMagBySerial,
+    });
+    assert.equal(r.newSerials.length, 0, 'aucun newSerial attendu (matche via coreSerial)');
+    assert.equal(r.collisions.length, 0);
+    assert.equal(r.serialUpdates.length, 1);
+    const u = r.serialUpdates[0];
+    assert.equal(u.equipmentId, 42);
+    assert.equal(u.serial, '2115080074074');
+    assert.equal(u.magNumber, 'I14');
+    assert.equal(u.fromMag, 'VX14');
+    assert.equal(u.fromSerial, 'VX14 - 2115080074074');
+  });
+
+  it('normalise un serial_number legacy même si le MAG est inchangé', () => {
+    // Cas : CSV apporte le même MAG que celui déjà extrait du serial_number legacy.
+    // On émet quand même un serialUpdate pour nettoyer le serial_number stocké.
+    const dbMagBySerial = new Map([
+      ['2400953513', { magNumber: 'T01', equipmentId: 7, rawSerial: 'T01 - 2400953513' }],
+    ]);
+    const r = diffWithDatabase({
+      locations: [],
+      serials: [{ code: 'TETRA', serial: '2400953513', magNumber: 'T01' }],
+      dbCatalogByCode: new Map([
+        [
+          'TETRA',
+          { id: 7, reference: 'TETRA', name: 'T', quantity: 1, serial_number: 'T01 - 2400953513' },
+        ],
+      ]),
+      dbSerialsByCode: new Map([['TETRA', new Set(['2400953513'])]]),
+      dbMagBySerial,
+    });
+    assert.equal(r.newSerials.length, 0);
+    assert.equal(r.serialUpdates.length, 1);
+    assert.equal(r.serialUpdates[0].equipmentId, 7);
+    assert.equal(r.serialUpdates[0].fromSerial, 'T01 - 2400953513');
+    assert.equal(r.serialUpdates[0].serial, '2400953513');
   });
 });

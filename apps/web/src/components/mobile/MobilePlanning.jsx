@@ -27,6 +27,7 @@ import { Button, Tooltip } from '@/design-system';
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
+import useStoredListState from '../../hooks/useStoredListState';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
 
 function MobilePlanning({
@@ -39,7 +40,17 @@ function MobilePlanning({
   drivers: _drivers = [],
   onRefresh,
 }) {
-  const [selectedMonth, setSelectedMonth] = useState(currentDate);
+  // L7 : mois sélectionné persisté (ISO string) — survive au F5.
+  // currentDate (prop parent) sert de fallback au premier mount uniquement.
+  const [selectedMonthIso, setSelectedMonthIso] = useStoredListState(
+    'mobile:planning:selectedMonth',
+    null,
+  );
+  const selectedMonth = selectedMonthIso ? new Date(selectedMonthIso) : currentDate;
+  const setSelectedMonth = (next) => {
+    const resolved = typeof next === 'function' ? next(selectedMonth) : next;
+    setSelectedMonthIso(resolved instanceof Date ? resolved.toISOString() : resolved);
+  };
   const scrollWrapperRef = useRef(null);
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(onRefresh, {

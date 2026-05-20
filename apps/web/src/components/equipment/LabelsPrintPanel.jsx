@@ -1,14 +1,16 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import './LabelsPrintPanel.css';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button, EmptyState, SearchBar, Spinner } from '@/design-system';
 import { api } from '@/utils/api';
 import { MAG_NUMBER_RE } from '@/utils/magNumber';
 
 const PAGE_SIZE = 50;
-const MAX_PER_PLATE = 32;
+// Capacité d'UNE plaque LightBurn (4 colonnes × 8 lignes = 32 étiquettes).
+// Si la sélection dépasse 32, la génération produit plusieurs plaques.
+const PER_PLATE = 32;
 // LETTRES + CHIFFRES (ex VX1, E09, T01). Source : utils/magNumber.js.
 const MAG_REGEX = MAG_NUMBER_RE;
 // Plaque 200×200 mm → en pixels à 300 DPI = 200/25.4 * 300 ≈ 2362 px
@@ -61,8 +63,10 @@ export default function LabelsPrintPanel() {
   const [selected, setSelected] = useState(() => new Set());
   const [magEdits, setMagEdits] = useState({}); // { id: { value, status: 'idle'|'saving'|'saved'|'error' } }
 
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const previewBlobRef = useRef(null);
+  // plates : tableau de plaques générées. Chaque plaque = { blob, url } où url
+  // est un object URL pour l'iframe d'aperçu. Reset à chaque nouvelle génération.
+  const [plates, setPlates] = useState([]);
+  const [plateIndex, setPlateIndex] = useState(0);
   const [generating, setGenerating] = useState(false);
 
   // ─── Chargement liste ───
@@ -96,11 +100,12 @@ export default function LabelsPrintPanel() {
   );
 
   // ─── Sélection ───
+  // Pas de cap : si la sélection dépasse PER_PLATE, on génère plusieurs plaques.
   const toggleOne = (id) => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
-      else if (next.size < MAX_PER_PLATE) next.add(id);
+      else next.add(id);
       return next;
     });
   };
@@ -108,14 +113,8 @@ export default function LabelsPrintPanel() {
     setSelected((prev) => {
       const next = new Set(prev);
       const allSelected = pageItems.every((it) => next.has(it.serial_id));
-      if (allSelected) {
-        pageItems.forEach((it) => next.delete(it.serial_id));
-      } else {
-        for (const it of pageItems) {
-          if (next.size >= MAX_PER_PLATE) break;
-          next.add(it.serial_id);
-        }
-      }
+      if (allSelected) pageItems.forEach((it) => next.delete(it.serial_id));
+      else pageItems.forEach((it) => next.add(it.serial_id));
       return next;
     });
   };
@@ -159,21 +158,32 @@ export default function LabelsPrintPanel() {
     }
   };
 
-  // ─── Génération plaque ───
+  // ─── Génération plaque(s) ───
+  // Découpe la sélection en lots de PER_PLATE et génère 1 plaque par lot.
   const generate = async () => {
     if (selected.size === 0) return;
     setGenerating(true);
     setError(null);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
+    // Révoque les anciens object URLs avant de remplacer.
+    plates.forEach((p) => URL.revokeObjectURL(p.url));
+    setPlates([]);
+    setPlateIndex(0);
     try {
-      const ids = items
-        .map((i) => i.serial_id)
-        .filter((id) => selected.has(id))
-        .slice(0, MAX_PER_PLATE);
-      const blob = await api.generateLabelsPlate(ids);
-      previewBlobRef.current = blob;
-      setPreviewUrl(URL.createObjectURL(blob));
+      const allIds = items.map((i) => i.serial_id).filter((id) => selected.has(id));
+      const chunks = [];
+      for (let i = 0; i < allIds.length; i += PER_PLATE) {
+        chunks.push(allIds.slice(i, i + PER_PLATE));
+      }
+      const stamp = Date.now();
+      const next = [];
+      for (let k = 0; k < chunks.length; k++) {
+        const suffix = chunks.length > 1 ? `-${k + 1}-sur-${chunks.length}` : '';
+        const filename = `plaque-etiquettes-${stamp}${suffix}.svg`;
+        // eslint-disable-next-line no-await-in-loop
+        const blob = await api.generateLabelsPlate(chunks[k], filename);
+        next.push({ blob, url: URL.createObjectURL(blob) });
+      }
+      setPlates(next);
     } catch (e) {
       setError(e.message || 'Erreur de génération');
     } finally {
@@ -182,15 +192,24 @@ export default function LabelsPrintPanel() {
   };
 
   const downloadSvg = () => {
-    if (!previewBlobRef.current) return;
-    downloadBlob(previewBlobRef.current, `plaque-etiquettes-${Date.now()}.svg`);
+    if (plates.length === 0) return;
+    const stamp = Date.now();
+    plates.forEach((p, i) => {
+      const suffix = plates.length > 1 ? `-${i + 1}-sur-${plates.length}` : '';
+      downloadBlob(p.blob, `plaque-etiquettes-${stamp}${suffix}.svg`);
+    });
   };
   const downloadPng = async () => {
-    if (!previewBlobRef.current) return;
+    if (plates.length === 0) return;
     setError(null);
     try {
-      const png = await svgBlobToPngBlob(previewBlobRef.current);
-      downloadBlob(png, `plaque-etiquettes-${Date.now()}.png`);
+      const stamp = Date.now();
+      for (let i = 0; i < plates.length; i++) {
+        const suffix = plates.length > 1 ? `-${i + 1}-sur-${plates.length}` : '';
+        // eslint-disable-next-line no-await-in-loop
+        const png = await svgBlobToPngBlob(plates[i].blob);
+        downloadBlob(png, `plaque-etiquettes-${stamp}${suffix}.png`);
+      }
     } catch (e) {
       setError(`Conversion PNG échouée : ${e.message}`);
     }
@@ -199,14 +218,14 @@ export default function LabelsPrintPanel() {
   // cleanup
   useEffect(
     () => () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      plates.forEach((p) => URL.revokeObjectURL(p.url));
     },
-    [previewUrl],
+    [plates],
   );
 
   const allPageSelected =
     pageItems.length > 0 && pageItems.every((it) => selected.has(it.serial_id));
-  const selectionFull = selected.size >= MAX_PER_PLATE;
+  const plateCount = Math.max(1, Math.ceil(selected.size / PER_PLATE));
 
   return (
     <div className="lpp-container">
@@ -228,8 +247,10 @@ export default function LabelsPrintPanel() {
           </label>
         </div>
         <div className="lpp-toolbar-right">
-          <span className={`lpp-counter ${selectionFull ? 'lpp-counter-warn' : ''}`}>
-            {selected.size} / {MAX_PER_PLATE} sélectionnés
+          <span className="lpp-counter">
+            {selected.size} sélectionné{selected.size > 1 ? 's' : ''}
+            {selected.size > 0 &&
+              ` — ${plateCount} plaque${plateCount > 1 ? 's' : ''} de ${PER_PLATE}`}
           </span>
           {selected.size > 0 && (
             <Button variant="ghost" size="sm" onClick={clearSelection}>
@@ -237,7 +258,9 @@ export default function LabelsPrintPanel() {
             </Button>
           )}
           <Button variant="primary" disabled={selected.size === 0 || generating} onClick={generate}>
-            {generating ? 'Génération…' : `Générer plaque (${selected.size})`}
+            {generating
+              ? 'Génération…'
+              : `Générer ${plateCount} plaque${plateCount > 1 ? 's' : ''} (${selected.size})`}
           </Button>
         </div>
       </div>
@@ -300,7 +323,6 @@ export default function LabelsPrintPanel() {
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleOne(it.serial_id)}
-                        disabled={!checked && selectionFull}
                       />
                     </td>
                     <td>{it.equipment_name}</td>
@@ -373,15 +395,45 @@ export default function LabelsPrintPanel() {
         </div>
       )}
 
-      {previewUrl && (
+      {plates.length > 0 && (
         <div className="lpp-preview">
-          <iframe src={previewUrl} title="Aperçu plaque étiquettes" />
+          {plates.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={plateIndex <= 0}
+                onClick={() => setPlateIndex((i) => Math.max(0, i - 1))}
+              >
+                ← Plaque précédente
+              </Button>
+              <span>
+                Plaque {plateIndex + 1} / {plates.length}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={plateIndex >= plates.length - 1}
+                onClick={() => setPlateIndex((i) => Math.min(plates.length - 1, i + 1))}
+              >
+                Plaque suivante →
+              </Button>
+            </div>
+          )}
+          <iframe
+            src={plates[plateIndex].url}
+            title={`Aperçu plaque étiquettes ${plateIndex + 1}/${plates.length}`}
+          />
           <div style={{ display: 'flex', gap: 8 }}>
             <Button variant="primary" onClick={downloadSvg}>
-              Télécharger SVG (LightBurn)
+              {plates.length > 1
+                ? `Télécharger ${plates.length} SVG (LightBurn)`
+                : 'Télécharger SVG (LightBurn)'}
             </Button>
             <Button variant="secondary" onClick={downloadPng}>
-              Télécharger PNG 300 DPI
+              {plates.length > 1
+                ? `Télécharger ${plates.length} PNG 300 DPI`
+                : 'Télécharger PNG 300 DPI'}
             </Button>
           </div>
         </div>

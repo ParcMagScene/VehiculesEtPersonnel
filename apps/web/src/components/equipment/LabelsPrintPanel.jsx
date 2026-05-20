@@ -60,7 +60,10 @@ export default function LabelsPrintPanel() {
   const [withoutMag, setWithoutMag] = useState(false);
   const [page, setPage] = useState(1);
 
-  const [selected, setSelected] = useState(() => new Set());
+  // selection : Map<serial_id, item> conservé indépendamment du filtre/recherche.
+  // Permet d'empiler des items de références différentes (ex : 36 VIPER + 22 MEGAPOINTE)
+  // et de les retrouver dans le panier même après changement de filtre.
+  const [selection, setSelection] = useState(() => new Map());
   const [magEdits, setMagEdits] = useState({}); // { id: { value, status: 'idle'|'saving'|'saved'|'error' } }
 
   // plates : tableau de plaques générées. Chaque plaque = { blob, url } où url
@@ -101,24 +104,34 @@ export default function LabelsPrintPanel() {
 
   // ─── Sélection ───
   // Pas de cap : si la sélection dépasse PER_PLATE, on génère plusieurs plaques.
-  const toggleOne = (id) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+  const toggleOne = (item) => {
+    const id = typeof item === 'object' ? item.serial_id : item;
+    setSelection((prev) => {
+      const next = new Map(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        // Si on n'a que l'id (retiré depuis le panier d'un item disparu du filtre),
+        // on retombe sur l'objet courant si présent dans items.
+        const obj =
+          typeof item === 'object'
+            ? item
+            : items.find((i) => i.serial_id === id) || { serial_id: id };
+        next.set(id, obj);
+      }
       return next;
     });
   };
   const togglePage = () => {
-    setSelected((prev) => {
-      const next = new Set(prev);
+    setSelection((prev) => {
+      const next = new Map(prev);
       const allSelected = pageItems.every((it) => next.has(it.serial_id));
       if (allSelected) pageItems.forEach((it) => next.delete(it.serial_id));
-      else pageItems.forEach((it) => next.add(it.serial_id));
+      else pageItems.forEach((it) => next.set(it.serial_id, it));
       return next;
     });
   };
-  const clearSelection = () => setSelected(new Set());
+  const clearSelection = () => setSelection(new Map());
 
   // ─── Édition mag_number ───
   const onMagChange = (id, raw) => {
@@ -174,15 +187,16 @@ export default function LabelsPrintPanel() {
   // ─── Génération plaque(s) ───
   // Découpe la sélection en lots de PER_PLATE et génère 1 plaque par lot.
   const generate = async () => {
-    if (selected.size === 0) return;
+    if (selection.size === 0) return;
     // Avertit si certains items ont déjà été imprimés.
-    const alreadyPrinted = items.filter(
-      (it) => selected.has(it.serial_id) && (it.print_count || 0) > 0,
-    );
+    const alreadyPrinted = Array.from(selection.values()).filter((it) => (it.print_count || 0) > 0);
     if (alreadyPrinted.length > 0) {
       const sample = alreadyPrinted
         .slice(0, 8)
-        .map((it) => `• ${it.equipment_name} (${it.mag_number || it.serial})`)
+        .map(
+          (it) =>
+            `• ${it.equipment_name || `#${it.serial_id}`} (${it.mag_number || it.serial || ''})`,
+        )
         .join('\n');
       const more = alreadyPrinted.length > 8 ? `\n… +${alreadyPrinted.length - 8} autre(s)` : '';
       const ok = window.confirm(
@@ -197,7 +211,8 @@ export default function LabelsPrintPanel() {
     setPlates([]);
     setPlateIndex(0);
     try {
-      const allIds = items.map((i) => i.serial_id).filter((id) => selected.has(id));
+      // Ordre = ordre d'insertion dans le Map = ordre de sélection utilisateur.
+      const allIds = Array.from(selection.keys());
       const chunks = [];
       for (let i = 0; i < allIds.length; i += PER_PLATE) {
         chunks.push(allIds.slice(i, i + PER_PLATE));
@@ -254,15 +269,29 @@ export default function LabelsPrintPanel() {
   );
 
   const allPageSelected =
-    pageItems.length > 0 && pageItems.every((it) => selected.has(it.serial_id));
-  const plateCount = Math.max(1, Math.ceil(selected.size / PER_PLATE));
+    pageItems.length > 0 && pageItems.every((it) => selection.has(it.serial_id));
+  const plateCount = Math.max(1, Math.ceil(selection.size / PER_PLATE));
 
-  // Liste ordonnée des items sélectionnés (basée sur l'ordre courant des items
-  // pour préserver l'ordre d'impression). Permet d'afficher le volet « panier ».
-  const selectedItems = useMemo(
-    () => items.filter((it) => selected.has(it.serial_id)),
-    [items, selected],
-  );
+  // Synchronise les détails de la sélection avec les items rechargés :
+  // print_count / last_printed_at / mag_number à jour après reload() ou save MAG.
+  useEffect(() => {
+    if (items.length === 0 || selection.size === 0) return;
+    setSelection((prev) => {
+      let mutated = false;
+      const next = new Map(prev);
+      for (const it of items) {
+        if (next.has(it.serial_id)) {
+          next.set(it.serial_id, it);
+          mutated = true;
+        }
+      }
+      return mutated ? next : prev;
+    });
+  }, [items]);
+
+  // Liste ordonnée des items sélectionnés (ordre d'insertion préservé par Map).
+  // Indépendant des filtres en cours : on voit tous les items du panier.
+  const selectedItems = useMemo(() => Array.from(selection.values()), [selection]);
   const alreadyPrintedCount = selectedItems.filter((it) => (it.print_count || 0) > 0).length;
 
   const formatPrintedAt = (iso) => {
@@ -302,19 +331,23 @@ export default function LabelsPrintPanel() {
         </div>
         <div className="lpp-toolbar-right">
           <span className="lpp-counter">
-            {selected.size} sélectionné{selected.size > 1 ? 's' : ''}
-            {selected.size > 0 &&
+            {selection.size} sélectionné{selection.size > 1 ? 's' : ''}
+            {selection.size > 0 &&
               ` — ${plateCount} plaque${plateCount > 1 ? 's' : ''} de ${PER_PLATE}`}
           </span>
-          {selected.size > 0 && (
+          {selection.size > 0 && (
             <Button variant="ghost" size="sm" onClick={clearSelection}>
               Tout désélectionner
             </Button>
           )}
-          <Button variant="primary" disabled={selected.size === 0 || generating} onClick={generate}>
+          <Button
+            variant="primary"
+            disabled={selection.size === 0 || generating}
+            onClick={generate}
+          >
             {generating
               ? 'Génération…'
-              : `Générer ${plateCount} plaque${plateCount > 1 ? 's' : ''} (${selected.size})`}
+              : `Générer ${plateCount} plaque${plateCount > 1 ? 's' : ''} (${selection.size})`}
           </Button>
         </div>
       </div>
@@ -353,7 +386,7 @@ export default function LabelsPrintPanel() {
               </thead>
               <tbody>
                 {pageItems.map((it) => {
-                  const checked = selected.has(it.serial_id);
+                  const checked = selection.has(it.serial_id);
                   const edit = magEdits[it.serial_id];
                   const magVal = edit ? edit.value : it.mag_number || '';
                   const hasSuggestion = !!it.suggested_mag && !it.mag_number && !edit;
@@ -374,11 +407,7 @@ export default function LabelsPrintPanel() {
                   return (
                     <tr key={it.serial_id} className={checked ? 'lpp-selected' : ''}>
                       <td>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleOne(it.serial_id)}
-                        />
+                        <input type="checkbox" checked={checked} onChange={() => toggleOne(it)} />
                       </td>
                       <td>
                         {it.equipment_name}
@@ -439,7 +468,7 @@ export default function LabelsPrintPanel() {
         <aside className="lpp-cart" aria-label="Sélection en cours">
           <div className="lpp-cart-header">
             <span>
-              Sélection ({selected.size})
+              Sélection ({selection.size})
               {alreadyPrintedCount > 0 && (
                 <span
                   className="lpp-printed-badge"
@@ -449,13 +478,13 @@ export default function LabelsPrintPanel() {
                 </span>
               )}
             </span>
-            {selected.size > 0 && (
+            {selection.size > 0 && (
               <Button variant="ghost" size="sm" onClick={clearSelection}>
                 Vider
               </Button>
             )}
           </div>
-          {selected.size === 0 ? (
+          {selection.size === 0 ? (
             <div className="lpp-cart-empty">
               Cochez des équipements à gauche pour préparer une plaque.
             </div>
@@ -475,7 +504,7 @@ export default function LabelsPrintPanel() {
                       <button
                         type="button"
                         className="lpp-cart-item-remove"
-                        onClick={() => toggleOne(it.serial_id)}
+                        onClick={() => toggleOne(it)}
                         aria-label={`Retirer ${it.equipment_name} de la sélection`}
                         title="Retirer de la sélection"
                       >

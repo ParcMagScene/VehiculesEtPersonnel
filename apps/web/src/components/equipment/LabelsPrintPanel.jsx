@@ -175,6 +175,21 @@ export default function LabelsPrintPanel() {
   // Découpe la sélection en lots de PER_PLATE et génère 1 plaque par lot.
   const generate = async () => {
     if (selected.size === 0) return;
+    // Avertit si certains items ont déjà été imprimés.
+    const alreadyPrinted = items.filter(
+      (it) => selected.has(it.serial_id) && (it.print_count || 0) > 0,
+    );
+    if (alreadyPrinted.length > 0) {
+      const sample = alreadyPrinted
+        .slice(0, 8)
+        .map((it) => `• ${it.equipment_name} (${it.mag_number || it.serial})`)
+        .join('\n');
+      const more = alreadyPrinted.length > 8 ? `\n… +${alreadyPrinted.length - 8} autre(s)` : '';
+      const ok = window.confirm(
+        `${alreadyPrinted.length} équipement(s) de la sélection ont déjà été imprimés au moins une fois :\n\n${sample}${more}\n\nGénérer quand même ?`,
+      );
+      if (!ok) return;
+    }
     setGenerating(true);
     setError(null);
     // Révoque les anciens object URLs avant de remplacer.
@@ -197,6 +212,8 @@ export default function LabelsPrintPanel() {
         next.push({ blob, url: URL.createObjectURL(blob) });
       }
       setPlates(next);
+      // Rafraîchit la liste pour mettre à jour print_count / last_printed_at.
+      reload();
     } catch (e) {
       setError(e.message || 'Erreur de génération');
     } finally {
@@ -240,6 +257,30 @@ export default function LabelsPrintPanel() {
     pageItems.length > 0 && pageItems.every((it) => selected.has(it.serial_id));
   const plateCount = Math.max(1, Math.ceil(selected.size / PER_PLATE));
 
+  // Liste ordonnée des items sélectionnés (basée sur l'ordre courant des items
+  // pour préserver l'ordre d'impression). Permet d'afficher le volet « panier ».
+  const selectedItems = useMemo(
+    () => items.filter((it) => selected.has(it.serial_id)),
+    [items, selected],
+  );
+  const alreadyPrintedCount = selectedItems.filter((it) => (it.print_count || 0) > 0).length;
+
+  const formatPrintedAt = (iso) => {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T') + 'Z');
+      return d.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return iso;
+    }
+  };
+
   return (
     <div className="lpp-container">
       <div className="lpp-toolbar">
@@ -280,108 +321,182 @@ export default function LabelsPrintPanel() {
 
       {error && <div className="lpp-error">{error}</div>}
 
-      <div className="lpp-table-wrapper">
-        {loading ? (
-          <div className="lpp-loading">
-            <Spinner /> Chargement…
-          </div>
-        ) : items.length === 0 ? (
-          <EmptyState
-            title="Aucun numéro de série"
-            description="Importez des données Locmat ou ajustez vos filtres."
-          />
-        ) : (
-          <table className="lpp-table">
-            <thead>
-              <tr>
-                <th>
-                  <input
-                    type="checkbox"
-                    checked={allPageSelected}
-                    onChange={togglePage}
-                    aria-label="Sélectionner la page"
-                  />
-                </th>
-                <th>Produit</th>
-                <th>Référence</th>
-                <th>UID</th>
-                <th>S/N</th>
-                <th>Numéro Mag</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageItems.map((it) => {
-                const checked = selected.has(it.serial_id);
-                const edit = magEdits[it.serial_id];
-                const magVal = edit ? edit.value : it.mag_number || '';
-                const hasSuggestion = !!it.suggested_mag && !it.mag_number && !edit;
-                const magCls = edit
-                  ? edit.status === 'error'
-                    ? 'lpp-mag-invalid'
-                    : edit.status === 'saved'
-                      ? 'lpp-mag-saved'
-                      : ''
-                  : hasSuggestion
-                    ? 'lpp-mag-suggested'
-                    : '';
-                const applySuggestion = () => {
-                  onMagChange(it.serial_id, it.suggested_mag);
-                  // Délai pour laisser le state se propager avant le PUT
-                  setTimeout(() => onMagBlur(it.serial_id), 0);
-                };
-                return (
-                  <tr key={it.serial_id} className={checked ? 'lpp-selected' : ''}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleOne(it.serial_id)}
-                      />
-                    </td>
-                    <td>{it.equipment_name}</td>
-                    <td>{it.equipment_reference || '—'}</td>
-                    <td>
-                      <code style={{ fontSize: '0.8em' }}>
-                        {it.serial_uid || it.equipment_uid || '—'}
-                      </code>
-                    </td>
-                    <td>
-                      <code>{it.serial}</code>
-                      {hasSuggestion && (
-                        <div className="lpp-suggested-hint" title="Détecté depuis le S/N">
-                          → <code>{it.suggested_serial}</code>
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <div className="lpp-mag-cell">
+      <div className="lpp-main">
+        <div className="lpp-table-wrapper">
+          {loading ? (
+            <div className="lpp-loading">
+              <Spinner /> Chargement…
+            </div>
+          ) : items.length === 0 ? (
+            <EmptyState
+              title="Aucun numéro de série"
+              description="Importez des données Locmat ou ajustez vos filtres."
+            />
+          ) : (
+            <table className="lpp-table">
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      type="checkbox"
+                      checked={allPageSelected}
+                      onChange={togglePage}
+                      aria-label="Sélectionner la page"
+                    />
+                  </th>
+                  <th>Produit</th>
+                  <th>Référence</th>
+                  <th>UID</th>
+                  <th>S/N</th>
+                  <th>Numéro Mag</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((it) => {
+                  const checked = selected.has(it.serial_id);
+                  const edit = magEdits[it.serial_id];
+                  const magVal = edit ? edit.value : it.mag_number || '';
+                  const hasSuggestion = !!it.suggested_mag && !it.mag_number && !edit;
+                  const magCls = edit
+                    ? edit.status === 'error'
+                      ? 'lpp-mag-invalid'
+                      : edit.status === 'saved'
+                        ? 'lpp-mag-saved'
+                        : ''
+                    : hasSuggestion
+                      ? 'lpp-mag-suggested'
+                      : '';
+                  const applySuggestion = () => {
+                    onMagChange(it.serial_id, it.suggested_mag);
+                    // Délai pour laisser le state se propager avant le PUT
+                    setTimeout(() => onMagBlur(it.serial_id), 0);
+                  };
+                  return (
+                    <tr key={it.serial_id} className={checked ? 'lpp-selected' : ''}>
+                      <td>
                         <input
-                          type="text"
-                          className={`lpp-mag-input ${magCls}`}
-                          value={magVal}
-                          maxLength={5}
-                          placeholder={hasSuggestion ? it.suggested_mag : 'A12'}
-                          onChange={(e) => onMagChange(it.serial_id, e.target.value)}
-                          onBlur={() => onMagBlur(it.serial_id)}
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleOne(it.serial_id)}
                         />
-                        {hasSuggestion && (
-                          <button
-                            type="button"
-                            className="lpp-mag-apply"
-                            onClick={applySuggestion}
-                            title={`Appliquer la suggestion : ${it.suggested_mag}`}
+                      </td>
+                      <td>
+                        {it.equipment_name}
+                        {(it.print_count || 0) > 0 && (
+                          <span
+                            className="lpp-printed-badge"
+                            title={`Déjà imprimé ${it.print_count}× (dernière : ${formatPrintedAt(it.last_printed_at)})`}
                           >
-                            ✓ {it.suggested_mag}
-                          </button>
+                            🖨 {it.print_count}×
+                          </span>
                         )}
+                      </td>
+                      <td>{it.equipment_reference || '—'}</td>
+                      <td>
+                        <code style={{ fontSize: '0.8em' }}>
+                          {it.serial_uid || it.equipment_uid || '—'}
+                        </code>
+                      </td>
+                      <td>
+                        <code>{it.serial}</code>
+                        {hasSuggestion && (
+                          <div className="lpp-suggested-hint" title="Détecté depuis le S/N">
+                            → <code>{it.suggested_serial}</code>
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <div className="lpp-mag-cell">
+                          <input
+                            type="text"
+                            className={`lpp-mag-input ${magCls}`}
+                            value={magVal}
+                            maxLength={5}
+                            placeholder={hasSuggestion ? it.suggested_mag : 'A12'}
+                            onChange={(e) => onMagChange(it.serial_id, e.target.value)}
+                            onBlur={() => onMagBlur(it.serial_id)}
+                          />
+                          {hasSuggestion && (
+                            <button
+                              type="button"
+                              className="lpp-mag-apply"
+                              onClick={applySuggestion}
+                              title={`Appliquer la suggestion : ${it.suggested_mag}`}
+                            >
+                              ✓ {it.suggested_mag}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <aside className="lpp-cart" aria-label="Sélection en cours">
+          <div className="lpp-cart-header">
+            <span>
+              Sélection ({selected.size})
+              {alreadyPrintedCount > 0 && (
+                <span
+                  className="lpp-printed-badge"
+                  title={`${alreadyPrintedCount} déjà imprimé(s) au moins une fois`}
+                >
+                  ⚠ {alreadyPrintedCount} déjà imprimé{alreadyPrintedCount > 1 ? 's' : ''}
+                </span>
+              )}
+            </span>
+            {selected.size > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearSelection}>
+                Vider
+              </Button>
+            )}
+          </div>
+          {selected.size === 0 ? (
+            <div className="lpp-cart-empty">
+              Cochez des équipements à gauche pour préparer une plaque.
+            </div>
+          ) : (
+            <div className="lpp-cart-list">
+              {selectedItems.map((it) => {
+                const printed = (it.print_count || 0) > 0;
+                return (
+                  <div
+                    key={`cart-${it.serial_id}`}
+                    className={`lpp-cart-item${printed ? ' lpp-cart-printed' : ''}`}
+                  >
+                    <div className="lpp-cart-item-head">
+                      <span className="lpp-cart-item-name" title={it.equipment_name}>
+                        {it.equipment_name}
+                      </span>
+                      <button
+                        type="button"
+                        className="lpp-cart-item-remove"
+                        onClick={() => toggleOne(it.serial_id)}
+                        aria-label={`Retirer ${it.equipment_name} de la sélection`}
+                        title="Retirer de la sélection"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="lpp-cart-item-meta">
+                      <span>{it.mag_number || '—'}</span>
+                      <span>{it.serial}</span>
+                    </div>
+                    {printed && (
+                      <div className="lpp-cart-item-printed">
+                        Imprimé {it.print_count}× — dernière {formatPrintedAt(it.last_printed_at)}
                       </div>
-                    </td>
-                  </tr>
+                    )}
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        )}
+            </div>
+          )}
+        </aside>
       </div>
 
       {totalPages > 1 && (

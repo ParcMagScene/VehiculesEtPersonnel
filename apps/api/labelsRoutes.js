@@ -49,6 +49,45 @@ function detectMagFromSerial(serial) {
   return { mag: magNumber, serial: coreSerial };
 }
 
+// ─── Migration inline : historique d'impression d'étiquettes ─────────
+// Une ligne par génération réussie (par équipement, par plaque).
+// Permet de détecter les ré-impressions involontaires.
+function ensureLabelPrintsTable(database) {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS equipment_label_prints (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      equipment_id INTEGER NOT NULL,
+      printed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      printed_by INTEGER,
+      format TEXT,
+      filename TEXT,
+      FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_equipment_label_prints_eq
+      ON equipment_label_prints(equipment_id);
+    CREATE INDEX IF NOT EXISTS idx_equipment_label_prints_at
+      ON equipment_label_prints(printed_at);
+  `);
+}
+ensureLabelPrintsTable(db);
+
+const insertLabelPrintStmt = db.prepare(
+  `INSERT INTO equipment_label_prints (equipment_id, printed_by, format, filename)
+   VALUES (?, ?, ?, ?)`,
+);
+const insertLabelPrintsTx = db.transaction((ids, userId, format, filename) => {
+  for (const id of ids) insertLabelPrintStmt.run(id, userId || null, format, filename || null);
+});
+
+function recordLabelPrints(equipmentIds, userId, format, filename) {
+  const clean = (Array.isArray(equipmentIds) ? equipmentIds : [])
+    .map((n) => Number(n))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (clean.length === 0) return 0;
+  insertLabelPrintsTx(clean, userId, format, filename);
+  return clean.length;
+}
+
 export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
   // ─── GET /api/labels/serialized ──────────────────────────────────────
   // Liste des serials actifs avec equipment associé. Filtres optionnels :
@@ -100,7 +139,11 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
                   e.uid           AS equipment_uid,
                   e.reference     AS equipment_reference,
                   e.name          AS equipment_name,
-                  e.numero_mag    AS equipment_numero_mag
+                  e.numero_mag    AS equipment_numero_mag,
+                  (SELECT COUNT(*) FROM equipment_label_prints p WHERE p.equipment_id = e.id)
+                    AS print_count,
+                  (SELECT MAX(p.printed_at) FROM equipment_label_prints p WHERE p.equipment_id = e.id)
+                    AS last_printed_at
            FROM equipment e
            WHERE ${where.join(' AND ')}
            ORDER BY e.name COLLATE NOCASE ASC, e.serial_number COLLATE NOCASE ASC
@@ -245,6 +288,13 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
         req.body?.filename,
         'plaque-etiquettes-200x200.svg',
       );
+      // Historique : 1 ligne par equipment_id imprimé sur cette plaque.
+      try {
+        const printedIds = ids.filter((id) => byId.has(id));
+        recordLabelPrints(printedIds, req.user?.id, 'plate-svg', filename);
+      } catch (logErr) {
+        logger.warn('label print history insert failed:', logErr.message);
+      }
       res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(svg);
@@ -343,6 +393,12 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
         req.body?.filename,
         'lightburn-plaque-200x200.svg',
       );
+      try {
+        const printedIds = ids.filter((id) => byId.has(id));
+        recordLabelPrints(printedIds, req.user?.id, 'lightburn-plate', filename);
+      } catch (logErr) {
+        logger.warn('label print history insert failed:', logErr.message);
+      }
       res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(svg);

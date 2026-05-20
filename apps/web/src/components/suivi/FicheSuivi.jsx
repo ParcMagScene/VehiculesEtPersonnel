@@ -65,13 +65,21 @@ function FicheSuivi({ sheet, onSave, saving }) {
 
   useEffect(() => {
     if (sheet) {
-      const mapped = (sheet.entries || []).map((e) => ({
-        ...e,
-        _key:
-          e.id ||
-          (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)),
-      }));
-      setEntries(mapped);
+      setEntries((prev) => {
+        const prevById = new Map(prev.filter((p) => p.id).map((p) => [p.id, p._key]));
+        return (sheet.entries || []).map((e, i) => {
+          // Préserve _key existant pour éviter le remount des <tr> (perte de
+          // focus dans les inputs Tâche / Commentaire pendant la saisie après
+          // un auto-save qui rafraîchit la fiche).
+          const reusedKey = (e.id && prevById.get(e.id)) || prev[i]?._key;
+          const _key =
+            reusedKey ||
+            e.id ||
+            crypto.randomUUID?.() ||
+            Math.random().toString(36).slice(2) + Date.now().toString(36);
+          return { ...e, _key };
+        });
+      });
       setNotes(sheet.notes || '');
       setDirty(false);
     }

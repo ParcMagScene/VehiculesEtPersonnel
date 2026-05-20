@@ -3,6 +3,7 @@ import db, { addToHistory } from '../database.js';
 import logger from '../logger.js';
 import { orderSchema } from '../schemas/crud.js';
 import { validate } from '../schemas/imports.js';
+import { diffOrderItems } from '../services/orderImportDiff.js';
 import { parsePagination, sendPaginated } from '../utils/pagination.js';
 import { generateReference, ORDER_TRANSITIONS, validateStatusTransition } from './_helpers.js';
 
@@ -388,6 +389,195 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         .prepare('SELECT * FROM order_items WHERE order_id = ?')
         .all(req.params.id);
       res.json({ ...order, items: orderItems });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ═══ L8 — 3.2 : Import PDF commande fournisseur (preview & apply) ═══
+  // Le frontend parse le PDF (apps/web/src/utils/catalogParsers.js) et envoie
+  // un tableau d'items { ref_code?, designation, quantity?, unit?, unit_price_ht? }.
+  // - preview : calcule le diff (added/updated/unchanged/conflicts), sans toucher la DB.
+  // - apply   : applique le diff dans une transaction, en honorant les décisions par clé.
+
+  function normalizeIncomingItems(rawItems) {
+    if (!Array.isArray(rawItems)) return [];
+    const out = [];
+    for (const it of rawItems) {
+      if (!it || typeof it !== 'object') continue;
+      const designation = String(it.designation || '').trim();
+      if (!designation) continue;
+      const qty = Number(it.quantity);
+      const price = Number(it.unit_price_ht);
+      out.push({
+        designation,
+        ref_code: it.ref_code != null ? String(it.ref_code).trim() || null : null,
+        quantity: Number.isFinite(qty) && qty > 0 ? qty : 1,
+        unit: it.unit ? String(it.unit).trim() : 'u',
+        unit_price_ht: Number.isFinite(price) && price >= 0 ? price : 0,
+      });
+    }
+    return out;
+  }
+
+  app.post('/api/orders/:id/import-preview', authenticateToken, (req, res) => {
+    try {
+      const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+      if (!order) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
+      const items = normalizeIncomingItems(req.body && req.body.items);
+      const opts = {
+        quantityMode: req.body && req.body.quantityMode === 'replace' ? 'replace' : 'sum',
+      };
+      const existing = db
+        .prepare(
+          'SELECT id, designation, ref_code, quantity, unit_price_ht FROM order_items WHERE order_id = ?',
+        )
+        .all(req.params.id);
+      const diff = diffOrderItems(existing, items, opts);
+      res.json({
+        success: true,
+        orderId: order.id,
+        reference: order.reference,
+        diff,
+      });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  app.post('/api/orders/:id/import-apply', authenticateToken, (req, res) => {
+    try {
+      const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+      if (!order) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
+
+      const items = normalizeIncomingItems(req.body && req.body.items);
+      if (items.length === 0) {
+        return res.status(400).json({ success: false, error: 'Aucune ligne valide à importer' });
+      }
+      const decisions = (req.body && req.body.decisions) || {};
+      const opts = {
+        quantityMode: req.body && req.body.quantityMode === 'replace' ? 'replace' : 'sum',
+      };
+
+      const existing = db
+        .prepare(
+          'SELECT id, designation, ref_code, quantity, unit_price_ht, tva_rate FROM order_items WHERE order_id = ?',
+        )
+        .all(req.params.id);
+      const diff = diffOrderItems(existing, items, opts);
+
+      const tvaRate = order.tva_rate || 20;
+
+      const applyTx = db.transaction(() => {
+        const insertItem = db.prepare(
+          'INSERT INTO order_items (order_id, designation, quantity, unit, unit_price_ht, tva_rate, total_ht, ref_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        );
+        const updateItem = db.prepare(
+          'UPDATE order_items SET quantity = ?, unit_price_ht = ?, total_ht = ? WHERE id = ?',
+        );
+
+        let addedCount = 0;
+        let updatedCount = 0;
+        let skippedCount = 0;
+        const perKey = decisions.perKey || {};
+
+        // added
+        for (const a of diff.added) {
+          const action = perKey[a.key] || 'add';
+          if (action === 'skip') {
+            skippedCount++;
+            continue;
+          }
+          const qty = Number(a.item.quantity) || 1;
+          const price = Number(a.item.unit_price_ht) || 0;
+          insertItem.run(
+            req.params.id,
+            a.item.designation,
+            qty,
+            a.item.unit || 'u',
+            price,
+            tvaRate,
+            qty * price,
+            a.item.ref_code || null,
+          );
+          addedCount++;
+        }
+
+        // updated
+        for (const u of diff.updated) {
+          const action = perKey[u.key] || 'update';
+          if (action === 'skip') {
+            skippedCount++;
+            continue;
+          }
+          if (action === 'add') {
+            const qty = Number(u.incoming.quantity) || 1;
+            const price = Number(u.incoming.unit_price_ht) || 0;
+            insertItem.run(
+              req.params.id,
+              u.incoming.designation,
+              qty,
+              'u',
+              price,
+              tvaRate,
+              qty * price,
+              u.incoming.ref_code || null,
+            );
+            addedCount++;
+            continue;
+          }
+          const qty = Number(u.suggested.quantity) || 1;
+          const price = Number(u.suggested.unit_price_ht) || 0;
+          updateItem.run(qty, price, qty * price, u.existingId);
+          updatedCount++;
+        }
+
+        // Recalcul des totaux de la commande
+        const sumRow = db
+          .prepare(
+            'SELECT COALESCE(SUM(quantity * unit_price_ht), 0) AS total_ht FROM order_items WHERE order_id = ?',
+          )
+          .get(req.params.id);
+        const total_ht = Number(sumRow.total_ht) || 0;
+        const total_ttc = total_ht * (1 + tvaRate / 100);
+        db.prepare(
+          'UPDATE orders SET total_ht = ?, total_ttc = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ).run(total_ht, total_ttc, req.params.id);
+
+        addToHistory(
+          'order',
+          req.params.id,
+          'import',
+          JSON.stringify({
+            added: addedCount,
+            updated: updatedCount,
+            skipped: skippedCount,
+            conflicts: diff.conflicts.length,
+          }),
+          req.user.id,
+          req.user.name,
+        );
+
+        return { addedCount, updatedCount, skippedCount };
+      });
+
+      const result = applyTx();
+      const updatedOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+      const updatedItems = db
+        .prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC')
+        .all(req.params.id);
+      res.json({
+        success: true,
+        order: { ...updatedOrder, items: updatedItems },
+        applied: {
+          added: result.addedCount,
+          updated: result.updatedCount,
+          skipped: result.skippedCount,
+          conflicts: diff.conflicts,
+        },
+      });
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });

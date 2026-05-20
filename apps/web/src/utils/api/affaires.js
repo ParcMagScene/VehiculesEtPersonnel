@@ -82,6 +82,10 @@ export function registerAffairesMethods(ApiClient) {
     async getAffaireHistory(id) {
       return this.request(`/affaires/${id}/history`);
     },
+    // L6 — Historique générique des imports BL/BP (création auto, MAJ dates)
+    async getAffaireImportHistory(id) {
+      return this.request(`/affaires/${id}/import-history`);
+    },
     async applyStepTemplate(id, { replace } = {}) {
       return this.request(`/affaires/${id}/apply-template`, {
         method: 'POST',

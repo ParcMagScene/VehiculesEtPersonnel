@@ -876,6 +876,28 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // GET /api/affaires/:id/import-history — L6
+  // Historique générique des évènements (création auto, MAJ dates depuis imports BL/BP)
+  app.get('/api/affaires/:id/import-history', authenticateToken, (req, res) => {
+    try {
+      const { id } = req.params;
+      const history = db
+        .prepare(
+          `SELECT ah.*, u.username AS user_name
+           FROM affaire_history ah
+           LEFT JOIN users u ON ah.user_id = u.id
+           WHERE ah.affaire_id = ?
+           ORDER BY ah.created_at DESC, ah.id DESC
+           LIMIT 200`,
+        )
+        .all(id);
+      res.json(history);
+    } catch (error) {
+      logger.error('Erreur GET /api/affaires/:id/import-history:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // POST /api/affaires/:id/apply-template — Appliquer template d'étapes selon le type
   app.post('/api/affaires/:id/apply-template', authenticateToken, (req, res) => {
     try {

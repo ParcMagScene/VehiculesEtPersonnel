@@ -34,7 +34,7 @@
     "db:migrate:status": "node scripts/migrate.mjs --status",
     "audit:routes": "node scripts/audit-routes.mjs",
     "docs:check": "node scripts/check-doc-coherence.mjs",
-    "test": "node --test --test-force-exit tests/unit.test.js tests/schemas.test.js tests/db-init.test.js tests/audit-fixes.test.js tests/sav-comparator.test.js tests/cache.test.js tests/sentry.test.js tests/pagination.test.js tests/captcha.test.js tests/bp-items-grouping.test.mjs tests/planning-rollover-helpers.test.mjs",
+    "test": "node --test --test-force-exit tests/unit.test.js tests/schemas.test.js tests/db-init.test.js tests/audit-fixes.test.js tests/sav-comparator.test.js tests/cache.test.js tests/sentry.test.js tests/pagination.test.js tests/captcha.test.js tests/bp-items-grouping.test.mjs tests/planning-rollover-helpers.test.mjs tests/affaire-history.test.mjs",
     "test:api": "node --test tests/api-integration.test.js",
     "test:all": "node --test tests/",
     "test:coverage": "node --test --experimental-test-coverage --test-force-exit tests/unit.test.js tests/schemas.test.js tests/db-init.test.js tests/audit-fixes.test.js tests/sprint4.test.js",

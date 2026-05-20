@@ -1030,6 +1030,38 @@ export function runPostInitMigrations(db) {
     logger.warn('⚠️ Migration Phase 9 affaire_status_history:', e.message);
   }
 
+  // 9c. Table historique générique des évènements d'affaire (L6)
+  // Trace les modifications de champs (dates notamment) lors des imports BL/BP
+  // ainsi que la création automatique d'affaires.
+  try {
+    const historyExists = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='affaire_history'")
+      .get();
+    if (!historyExists) {
+      db.exec(`
+        CREATE TABLE affaire_history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          affaire_id INTEGER NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
+          event_type TEXT NOT NULL,
+          source TEXT,
+          source_ref TEXT,
+          field_name TEXT,
+          old_value TEXT,
+          new_value TEXT,
+          user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          notes TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      db.exec('CREATE INDEX IF NOT EXISTS idx_ah_affaire ON affaire_history(affaire_id)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_ah_created ON affaire_history(created_at)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_ah_event_type ON affaire_history(event_type)');
+      logger.info('✅ Migration L6: table affaire_history créée');
+    }
+  } catch (e) {
+    logger.warn('⚠️ Migration L6 affaire_history:', e.message);
+  }
+
   // ═══ Migration : colonne show_in_planning dans persons ═══
   try {
     const personCols = db.pragma('table_info(persons)').map((c) => c.name);

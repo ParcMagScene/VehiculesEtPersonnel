@@ -16,6 +16,7 @@ import { getVehicleAvatar } from '../../utils/vehicleAvatars';
    ═══════════════════════════════════════════════ */
 const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onAction }) => {
   const [mileageHistory, setMileageHistory] = useState([]);
+  const [periodicControls, setPeriodicControls] = useState([]);
   const isAdmin = currentUser?.isAdmin === true;
 
   useEffect(() => {
@@ -37,6 +38,23 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
           setMileageHistory(kmEntries);
         })
         .catch(() => {});
+    }
+  }, [vehicle?.id]);
+
+  // L3 — Charger les contrôles périodiques du nouveau système (equipment_controls)
+  // (le slide panel n'affichait auparavant que le JSON legacy `controles_techniques`,
+  // d'où l'invisibilité des contrôles créés via /api/controls).
+  useEffect(() => {
+    if (vehicle?.id && typeof api.getControlsForEntity === 'function') {
+      api
+        .getControlsForEntity('vehicle', vehicle.id)
+        .then((res) => {
+          const list = res?.data || res || [];
+          setPeriodicControls(Array.isArray(list) ? list : []);
+        })
+        .catch(() => setPeriodicControls([]));
+    } else {
+      setPeriodicControls([]);
     }
   }, [vehicle?.id]);
 
@@ -264,6 +282,38 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
                   <div className="vdp-ct-dates">
                     <span>Dernier : {formatDateSimple(ct.date)}</span>
                     {ct.deadline && <span>Échéance : {formatDateSimple(ct.deadline)}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* L3 — Contrôles périodiques suivis (nouveau système equipment_controls) */}
+      {periodicControls.length > 0 && (
+        <section className="vdp-section">
+          <h4 className="vdp-section-title">
+            <Calendar size={14} /> Contrôles périodiques suivis ({periodicControls.length})
+          </h4>
+          <div className="vdp-ct-list">
+            {periodicControls.map((c) => {
+              const deadline = getDeadlineStatus(c.next_due_date);
+              const label = c.type_name || c.type_code || 'Contrôle';
+              return (
+                <div key={c.id} className="vdp-ct-item">
+                  <div className="vdp-ct-header">
+                    <span className="vdp-ct-type">{label}</span>
+                    {deadline && (
+                      <span className={`vdp-ct-badge ${deadline.className}`}>{deadline.label}</span>
+                    )}
+                  </div>
+                  <div className="vdp-ct-dates">
+                    {c.last_done_date && (
+                      <span>Dernier : {formatDateSimple(c.last_done_date)}</span>
+                    )}
+                    {c.next_due_date && <span>Échéance : {formatDateSimple(c.next_due_date)}</span>}
+                    {c.status && <span>Statut : {c.status}</span>}
                   </div>
                 </div>
               );

@@ -16,11 +16,25 @@ import {
   Textarea,
 } from '@/design-system';
 
+import useDraftStorage from '../../hooks/useDraftStorage';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
+import useStoredListState from '../../hooks/useStoredListState';
 import { useToast } from '../../hooks/useToast';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import api from '../../utils/api';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
+
+// Forme initiale du brouillon — figée au mount par useDraftStorage (useRef interne).
+const buildInitialFormData = () => ({
+  vehicleId: '',
+  startDate: format(new Date(), 'yyyy-MM-dd'),
+  endDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
+  clientId: '',
+  driverId: '',
+  locationId: '',
+  notes: '',
+});
 
 // Fonction pour formater une date en toute sécurité
 const safeFormatDate = (dateValue, formatStr = 'dd MMM yyyy') => {
@@ -50,7 +64,8 @@ const MobileReservations = forwardRef(
     ref,
   ) => {
     const toast = useToast();
-    const [showForm, setShowForm] = useState(false);
+    // Persistance L2 : showForm + draft survivent à un F5 / fermeture d'onglet.
+    const [showForm, setShowForm] = useStoredListState('mobile:reservations:showForm', false);
     const [openedDirectly, setOpenedDirectly] = useState(false);
     const [showVehiclePicker, setShowVehiclePicker] = useState(false);
 
@@ -65,17 +80,15 @@ const MobileReservations = forwardRef(
         setOpenedDirectly(true);
       },
     }));
-    const [formData, setFormData] = useState({
-      vehicleId: '',
-      startDate: format(new Date(), 'yyyy-MM-dd'),
-      endDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-      clientId: '',
-      driverId: '',
-      locationId: '',
-      notes: '',
-    });
+    const [formData, setFormData, draftCtl] = useDraftStorage(
+      'mobile:reservations:draft',
+      buildInitialFormData(),
+    );
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+
+    // Bloque le refresh navigateur tant que des saisies non envoyées sont présentes.
+    useUnsavedChangesGuard(showForm && draftCtl.isDirty);
 
     const handleSubmit = async (e) => {
       e.preventDefault();
@@ -115,15 +128,8 @@ const MobileReservations = forwardRef(
           );
         }
         setShowForm(false);
-        setFormData({
-          vehicleId: '',
-          startDate: format(new Date(), 'yyyy-MM-dd'),
-          endDate: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
-          clientId: '',
-          driverId: '',
-          locationId: '',
-          notes: '',
-        });
+        // Brouillon validé → on purge la clé sessionStorage.
+        draftCtl.commit();
       } catch (err) {
         setError(err.message || 'Erreur lors de la création');
       } finally {

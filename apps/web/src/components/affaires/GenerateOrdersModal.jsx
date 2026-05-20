@@ -30,6 +30,8 @@ import {
   Table,
 } from '@/design-system';
 
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 
 const STATUS_LABELS = {
@@ -48,6 +50,9 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
   const [supplierActions, setSupplierActions] = useState({}); // { supplierName: { action: 'create'|'add', orderId: number } }
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState(null);
+
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(supplierActions, { confirmer: confirm });
 
   // Charger les données
   useEffect(() => {
@@ -74,6 +79,14 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
     };
     load();
   }, [affaireId]);
+
+  // Reset dirty snapshot après chargement initial (les defaults ne sont pas un changement utilisateur)
+  useEffect(() => {
+    if (!loading && data) {
+      resetDirty();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, data]);
 
   const setAction = useCallback((supplierName, action, orderId = null) => {
     setSupplierActions((prev) => ({ ...prev, [supplierName]: { action, orderId } }));
@@ -133,6 +146,7 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
       ]);
     } finally {
       setProcessing(false);
+      resetDirty();
     }
   };
 
@@ -143,12 +157,14 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
     onClose();
   };
 
+  const handleSafeClose = guardClose(handleClose);
+
   const activeSuppliers = data?.suppliers?.filter((s) => supplierActions[s.name]) || [];
   const totalArticles = activeSuppliers.reduce((sum, s) => sum + (s.items?.length || 0), 0);
 
   return (
-    <Modal open onClose={handleClose} size="lg" className="gen-orders-modal">
-      <ModalHeader icon={<ShoppingCart size={20} />} onClose={handleClose}>
+    <Modal open onClose={handleSafeClose} size="lg" className="gen-orders-modal">
+      <ModalHeader icon={<ShoppingCart size={20} />} onClose={handleSafeClose}>
         Commandes — {affaireReference || affaireId}
       </ModalHeader>
 
@@ -209,7 +225,7 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
       {/* Footer */}
       {!loading && !error && data && data.suppliers.length > 0 && !results && (
         <ModalFooter>
-          <Button variant="ghost" onClick={handleClose}>
+          <Button variant="ghost" onClick={handleSafeClose}>
             Annuler
           </Button>
           <Button
@@ -232,6 +248,7 @@ export default function GenerateOrdersModal({ affaireId, affaireReference, onClo
           </Button>
         </ModalFooter>
       )}
+      {ConfirmDialogRenderer}
     </Modal>
   );
 }

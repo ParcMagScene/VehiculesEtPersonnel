@@ -6,6 +6,8 @@ import { useCallback, useRef, useState } from 'react';
 import { Button, InlineAlert, ModalLayout, Spinner, Table } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 
 /**
@@ -76,6 +78,13 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef(null);
+
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(
+    { fileName, rowsCount: parsedRows.length },
+    { confirmer: confirm },
+  );
+  const handleSafeClose = guardClose(onClose);
 
   const handleFile = useCallback((file) => {
     if (!file) return;
@@ -158,6 +167,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
       const res = await api.importContactsCsv(backendData, 'import');
       setResult(res);
       setStep('done');
+      resetDirty();
       if (onSuccess) onSuccess(res);
     } catch (err) {
       setError("Erreur lors de l'import : " + err.message);
@@ -168,7 +178,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
   return (
     <ModalLayout
       open
-      onClose={onClose}
+      onClose={handleSafeClose}
       title="Import CSV Contacts"
       icon={<Upload size={20} />}
       size="lg"
@@ -176,7 +186,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
       footer={
         <>
           {step === 'upload' && (
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="ghost" onClick={handleSafeClose}>
               Annuler
             </Button>
           )}
@@ -324,6 +334,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
 
       {/* ── Erreur ── */}
       {error && <InlineAlert>{error}</InlineAlert>}
+      {ConfirmDialogRenderer}
     </ModalLayout>
   );
 }

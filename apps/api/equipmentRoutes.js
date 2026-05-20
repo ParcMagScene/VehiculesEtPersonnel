@@ -197,11 +197,19 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         q.offset || '',
         q.page || '',
         q.pageSize || '',
+        q.includeRemoved ? '1' : '0',
       ].join('|');
     }),
     (req, res) => {
       try {
         const { status, category_id, search, location_zone, location_depot, limit } = req.query;
+        // [BUG-DOUBLONS] Par défaut, masquer les lignes status='removed' (lignes legacy
+        // archivées après import LocMat). Elles apparaissaient en double dans
+        // l'inventaire. Pour les voir : passer ?status=removed ou ?includeRemoved=1.
+        const includeRemoved =
+          req.query.includeRemoved === '1' ||
+          req.query.includeRemoved === 'true' ||
+          status === 'removed';
         let sql = `
         SELECT e.*, ec.name as category_name, ec.icon as category_icon, ec.color as category_color,
                u.name as created_by_name,
@@ -217,6 +225,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         if (status) {
           sql += ' AND e.status = ?';
           params.push(status);
+        } else if (!includeRemoved) {
+          sql += " AND (e.status IS NULL OR e.status != 'removed')";
         }
         if (category_id) {
           sql += ' AND e.category_id = ?';

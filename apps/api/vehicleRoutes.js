@@ -349,25 +349,6 @@ export function setupVehicleRoutes(
           logger.info('⚠️ ID manquant, génération côté serveur:', reservation.id);
         }
 
-        // [FIX 2026-05-20] Garde-fou serveur : refuser les chevauchements.
-        // Le check frontend (useAppData.checkOverlap) était contourné par
-        // certains chemins (AddTaskModal, AffaireDetailPanel, MobileReservations)
-        // et par un await manquant dans Calendar.handleSaveReservation.
-        const overlapConflicts = reservationsDao.findOverlapping({
-          vehicleId: reservation.vehicle_id,
-          startDate: reservation.start_date,
-          startPeriod: reservation.start_period || 'AM',
-          endDate: reservation.end_date,
-          endPeriod: reservation.end_period || 'PM',
-        });
-        if (overlapConflicts.length > 0) {
-          return res.status(409).json({
-            success: false,
-            error: 'Ce véhicule est déjà réservé sur cette période',
-            conflicts: overlapConflicts,
-          });
-        }
-
         // Calcul automatique du prix de location si véhicule de location
         const vehicleForPrice = db
           .prepare('SELECT * FROM vehicles WHERE id = ?')
@@ -493,24 +474,6 @@ export function setupVehicleRoutes(
     async (req, res) => {
       try {
         const reservation = req.body;
-
-        // [FIX 2026-05-20] Garde-fou serveur : refuser les chevauchements
-        // (en excluant la réservation elle-même, cas légitime d'édition).
-        const overlapConflicts = reservationsDao.findOverlapping({
-          vehicleId: reservation.vehicleId || reservation.vehicle_id,
-          startDate: reservation.date || reservation.start_date,
-          startPeriod: reservation.period || reservation.start_period || 'AM',
-          endDate: reservation.endDate || reservation.end_date,
-          endPeriod: reservation.endPeriod || reservation.end_period || 'PM',
-          excludeId: req.params.id,
-        });
-        if (overlapConflicts.length > 0) {
-          return res.status(409).json({
-            success: false,
-            error: 'Ce véhicule est déjà réservé sur cette période',
-            conflicts: overlapConflicts,
-          });
-        }
 
         // Préserver les liens Google Drive existants (gérés uniquement via PATCH depuis EventDetailsModal)
         const existing = db
@@ -807,14 +770,13 @@ export function setupVehicleRoutes(
       }
 
       // [AUDIT FIX HIGH-3] Vérifier les chevauchements avec les réservations existantes
-      // (utilise findOverlapping pour cohérence AM/PM avec POST/PUT).
-      const conflicts = reservationsDao.findOverlapping({
-        vehicleId: request.vehicle_id,
-        startDate: request.start_date,
-        startPeriod: request.start_period || 'AM',
-        endDate: request.end_date,
-        endPeriod: request.end_period || 'PM',
-      });
+      const overlapStmt = db.prepare(`
+      SELECT id, start_date, end_date, client_name 
+      FROM reservations 
+      WHERE vehicle_id = ? 
+        AND start_date <= ? AND end_date >= ?
+    `);
+      const conflicts = overlapStmt.all(request.vehicle_id, request.end_date, request.start_date);
 
       if (conflicts.length > 0) {
         return res.status(409).json({

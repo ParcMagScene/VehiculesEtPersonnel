@@ -42,9 +42,7 @@ import {
 import { ANNUAIRE_TAB_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
-import { useRefreshOnFocus } from '../../hooks/useRefreshOnFocus';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
-import { useStoredListState } from '../../hooks/useStoredListState';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -115,8 +113,7 @@ function contactEntityLabel(c) {
 // ═══ Composant Principal ═══
 function AnnuairePanel({ currentUser }) {
   const toast = useToast();
-  // [N5] activeTab + showFilters persistes par onglet (sessionStorage)
-  const [activeTab, setActiveTab] = useStoredListState('annuaire:activeTab', 'clients');
+  const [activeTab, setActiveTab] = useState('clients');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [data, setData] = useState([]);
@@ -130,7 +127,7 @@ function AnnuairePanel({ currentUser }) {
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const [typeFilter, setTypeFilter] = useState('');
   const [sectorFilter, setSectorFilter] = useState('');
-  const [showFilters, setShowFilters] = useStoredListState('annuaire:showFilters', false);
+  const [showFilters, setShowFilters] = useState(false);
   // Contact form linked entity
   const [contactParentType, setContactParentType] = useState('');
   const [contactParentId, setContactParentId] = useState('');
@@ -192,9 +189,6 @@ function AnnuairePanel({ currentUser }) {
     loadLookups();
   }, [loadStats, loadLookups]);
   useRefreshSubscription('annuaire', bumpAll);
-
-  // [N4] Refresh au retour de focus (veille tab / multi-onglets). Throttle 60s.
-  useRefreshOnFocus(bumpAll, { minIntervalMs: 60_000 });
 
   // ═══ Changement d'onglet (reset des filtres, batché avec React 18) ═══
   const handleTabChange = useCallback((tabId) => {

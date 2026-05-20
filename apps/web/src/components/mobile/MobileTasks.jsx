@@ -12,7 +12,7 @@ import {
   User,
   XCircle,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Accordion, Button, ProgressBar } from '@/design-system';
 
@@ -20,7 +20,6 @@ import { ROLES, STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
-import useStoredListState from '../../hooks/useStoredListState';
 import useSwipeAction from '../../hooks/useSwipeAction';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -63,20 +62,8 @@ function MobileTasks({ currentUser, onBack }) {
   const [loading, setLoading] = useState(true);
   const [personId, setPersonId] = useState(null);
   const [updating, setUpdating] = useState(null);
-  // L7 : sections repliées (Set sauvegardé comme Array JSON) + showAllTasks persistés.
-  const [collapsedArr, setCollapsedArr] = useStoredListState('mobile:tasks:collapsedSections', []);
-  const collapsedSections = useMemo(() => new Set(collapsedArr || []), [collapsedArr]);
-  const setCollapsedSections = useCallback(
-    (updater) => {
-      setCollapsedArr((prev) => {
-        const prevSet = new Set(prev || []);
-        const next = typeof updater === 'function' ? updater(prevSet) : updater;
-        return Array.from(next instanceof Set ? next : []);
-      });
-    },
-    [setCollapsedArr],
-  );
-  const [showAllTasks, setShowAllTasks] = useStoredListState('mobile:tasks:showAll', false);
+  const [collapsedSections, setCollapsedSections] = useState(new Set());
+  const [showAllTasks, setShowAllTasks] = useState(false);
 
   const today = new Date().toISOString().slice(0, 10);
 

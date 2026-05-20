@@ -20,14 +20,13 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useAffairesList } from '../../hooks/useAffairesList';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
-import useStoredListState from '../../hooks/useStoredListState';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import api from '../../utils/api';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
@@ -45,21 +44,13 @@ const getAffaireStatus = (a, todayStr) => {
 function MobileAffaires({ onBack }) {
   // Sprint 2 : source unique via useAffairesList (cache IDB + subscribe bus auto).
   const { affaires, loading, reload: loadAffaires } = useAffairesList();
-  // L6 : sélection + filtres persistés en sessionStorage.
-  // selectedAffaire stocké par numéro (clé stable), reconstruction depuis la liste.
-  const [selectedAffaireNum, setSelectedAffaireNum] = useStoredListState(
-    'mobile:affaires:selectedNum',
-    null,
-  );
+  const [selectedAffaire, setSelectedAffaire] = useState(null);
   const [detailData, setDetailData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [currentDate, setCurrentDate] = useState(startOfDay(new Date()));
-  const [searchTerm, setSearchTerm] = useStoredListState('mobile:affaires:searchTerm', '');
-  const [filterType, setFilterType] = useStoredListState('mobile:affaires:filterType', null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState(null); // null = tous
   const searchRef = useRef(null);
-  const selectedAffaire = selectedAffaireNum
-    ? affaires.find((a) => a.numeroAffaire === selectedAffaireNum) || null
-    : null;
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
@@ -117,40 +108,28 @@ function MobileAffaires({ onBack }) {
   const isToday = isSameDay(currentDate, new Date());
 
   // Charger les détails quand on sélectionne une affaire
-  const openDetail = useCallback(
-    async (affaire) => {
-      setSelectedAffaireNum(affaire?.numeroAffaire || null);
-      if (!affaire?.id) {
-        setDetailData(null);
-        return;
-      }
-      setDetailLoading(true);
-      try {
-        const detail = await api.getAffaireMobileDetail(affaire.numeroAffaire);
-        setDetailData({
-          links: detail?.links || { children: [], parents: [], total: 0 },
-          personnelCount: detail?.personnelCount || 0,
-          reservations: Array.isArray(detail?.reservations) ? detail.reservations : [],
-          tasks: Array.isArray(detail?.tasks) ? detail.tasks : [],
-          personnel: Array.isArray(detail?.personnel) ? detail.personnel : [],
-        });
-      } catch {
-        setDetailData(null);
-      } finally {
-        setDetailLoading(false);
-      }
-    },
-    [setSelectedAffaireNum],
-  );
-
-  // Restauration du détail au F5 : si une sélection persistée existe et que
-  // la liste vient d'arriver, on recharge automatiquement le détail.
-  useEffect(() => {
-    if (selectedAffaire && !detailData && !detailLoading) {
-      openDetail(selectedAffaire);
+  const openDetail = useCallback(async (affaire) => {
+    setSelectedAffaire(affaire);
+    if (!affaire.id) {
+      setDetailData(null);
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAffaire?.id]);
+    setDetailLoading(true);
+    try {
+      const detail = await api.getAffaireMobileDetail(affaire.numeroAffaire);
+      setDetailData({
+        links: detail?.links || { children: [], parents: [], total: 0 },
+        personnelCount: detail?.personnelCount || 0,
+        reservations: Array.isArray(detail?.reservations) ? detail.reservations : [],
+        tasks: Array.isArray(detail?.tasks) ? detail.tasks : [],
+        personnel: Array.isArray(detail?.personnel) ? detail.personnel : [],
+      });
+    } catch {
+      setDetailData(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
 
   // ═══ Vue Détail ═══
   if (selectedAffaire) {
@@ -173,7 +152,7 @@ function MobileAffaires({ onBack }) {
             variant="ghost"
             className="maff-back"
             onClick={() => {
-              setSelectedAffaireNum(null);
+              setSelectedAffaire(null);
               setDetailData(null);
             }}
             aria-label="Retour"

@@ -105,11 +105,6 @@ export const MOBILE_REVERSE_ROUTES = Object.fromEntries(
  * Écrans considérés comme onglets principaux : leur dernière visite est
  * persistée dans `localStorage[MOBILE_ACTIVE_TAB_KEY]` afin d'être restaurée
  * au prochain démarrage si l'URL ne précise rien.
- *
- * L8 (audit persistance mobile 2026-05-20) : on étend la restauration aux
- * modules les plus utilisés depuis le drawer (affaires, personnel, leaves,
- * tasks, messaging) — l'utilisateur retrouve son écran de travail après un
- * F5 ou une fermeture/ouverture d'onglet.
  */
 export const MOBILE_TAB_SCREENS = new Set([
   'home',
@@ -117,11 +112,6 @@ export const MOBILE_TAB_SCREENS = new Set([
   'parc-dashboard',
   'orders',
   'suivi',
-  'affaires',
-  'personnel',
-  'leaves',
-  'tasks',
-  'messaging',
 ]);
 
 /**

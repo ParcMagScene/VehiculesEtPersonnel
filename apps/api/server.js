@@ -105,14 +105,12 @@ import {
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { stopPlanningRolloverCron } from './planningRoutes.js';
 import { setupProfileRoutes } from './profileRoutes.js';
-// ── Routes ──
-import {
-  setupClientsRoutes,
-  setupConfigRoutes,
-  setupDriversRoutes,
-  setupGaragesRoutes,
-  setupLocationsRoutes,
-} from './routes.js';
+// ── Routes ── [P1-15] split de l'ancien routes.js (799 lignes) en 5 modules dédiés
+import { setupClientsRoutes } from './clientsRoutes.js';
+import { setupConfigRoutes } from './configRoutes.js';
+import { setupDriversRoutes } from './driversRoutes.js';
+import { setupGaragesRoutes } from './garagesRoutes.js';
+import { setupLocationsRoutes } from './locationsRoutes.js';
 import { setupSavRoutes } from './savRoutes.js';
 import { logSecurityEvent } from './securityLog.js';
 import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';

@@ -21,7 +21,6 @@ import { ROLES, STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
-import useStoredListState from '../../hooks/useStoredListState';
 import useSwipeAction from '../../hooks/useSwipeAction';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -32,31 +31,15 @@ import SwipeableRow from './SwipeableRow';
 
 // ─── Composant principal ────────────────────────────────
 function MobileLeaves({ currentUser, onBack }) {
-  // L5 : view / filter / sélection persistés en sessionStorage — survivent au F5.
-  const [view, setView] = useStoredListState('mobile:leaves:view', 'list'); // list | form | detail | admin
+  const [view, setView] = useState('list'); // list | form | detail | admin
   const [leaves, setLeaves] = useState([]);
   const [balances, setBalances] = useState([]);
   const [pendingLeaves, setPendingLeaves] = useState([]);
   const [pendingCount, setPendingCount] = useState(0);
-  const [selectedLeaveId, setSelectedLeaveId] = useStoredListState(
-    'mobile:leaves:selectedId',
-    null,
-  );
+  const [selectedLeave, setSelectedLeave] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useStoredListState('mobile:leaves:filter', 'all'); // all | pending | accepted | refused
+  const [filter, setFilter] = useState('all'); // all | pending | accepted | refused
   const isAdmin = currentUser?.role === ROLES.ADMIN || currentUser?.role === ROLES.MANAGER;
-
-  // Reconstruction de l'objet sélectionné à partir de l'id stocké.
-  const selectedLeave =
-    selectedLeaveId != null
-      ? leaves.find((l) => l.id === selectedLeaveId) ||
-        pendingLeaves.find((l) => l.id === selectedLeaveId) ||
-        null
-      : null;
-  const setSelectedLeave = useCallback(
-    (leave) => setSelectedLeaveId(leave ? leave.id : null),
-    [setSelectedLeaveId],
-  );
 
   const loadData = useCallback(async () => {
     setLoading(true);

@@ -14,8 +14,6 @@ import logger from '../logger.js';
 import { uploadBL } from '../middleware/upload.js';
 import { validate } from '../schemas/imports.js';
 import { bpItemMatchArticleSchema, bpItemMatchSchema } from '../schemas/planning.js';
-import { recordAffaireHistory } from '../services/affaireHistory.js';
-import { extractDatesFromParsedData } from '../services/blDateExtractor.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,48 +188,47 @@ export function setupBLImportRoutes(app, authenticateToken) {
               const today = new Date().toISOString().slice(0, 10);
 
               // Extraire date_debut et date_fin depuis les sections si disponibles
-              const { dateDebut, dateFin } = extractDatesFromParsedData(pd);
+              let dateDebut = pd?.date || pd?.dateLivraison || pd?.dateDebut || null;
+              let dateFin = pd?.dateFin || null;
+              if (pd?.sections && Array.isArray(pd.sections) && pd.sections.length > 0) {
+                for (const sec of pd.sections) {
+                  const dmDebut = sec.dateDebut?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                  if (dmDebut) {
+                    const iso = `${dmDebut[3]}-${dmDebut[2]}-${dmDebut[1]}`;
+                    if (!dateDebut || iso < dateDebut) dateDebut = iso;
+                  }
+                  const dmFin = sec.dateFin?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                  if (dmFin) {
+                    const iso = `${dmFin[3]}-${dmFin[2]}-${dmFin[1]}`;
+                    if (!dateFin || iso > dateFin) dateFin = iso;
+                  }
+                }
+              }
 
-              const insertResult = db
-                .prepare(
-                  `
+              db.prepare(
+                `
             INSERT INTO affaires (numero_affaire, type, client, interlocuteur, tel, fax,
               date_debut, date_fin, devis, adresse_livraison, titre, description,
               created_by, modified_by)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
-                )
-                .run(
-                  linkedAffaireId,
-                  affaireTypeResolved || 'Prestation',
-                  pd?.client || '',
-                  pd?.interlocuteur || '',
-                  pd?.tel || '',
-                  pd?.fax || '',
-                  dateDebut || today,
-                  dateFin || '',
-                  pd?.devis || '',
-                  pd?.adresse || '',
-                  pd?.nomAffaire || pd?.objet || '',
-                  `Créée automatiquement depuis l'import BL ${file ? file.originalname : 'text-import'}`,
-                  req.user.id,
-                  req.user.id,
-                );
+              ).run(
+                linkedAffaireId,
+                affaireTypeResolved || 'Prestation',
+                pd?.client || '',
+                pd?.interlocuteur || '',
+                pd?.tel || '',
+                pd?.fax || '',
+                dateDebut || today,
+                dateFin || '',
+                pd?.devis || '',
+                pd?.adresse || '',
+                pd?.nomAffaire || pd?.objet || '',
+                `Créée automatiquement depuis l'import BL ${file ? file.originalname : 'text-import'}`,
+                req.user.id,
+                req.user.id,
+              );
               affaireCreated = true;
-              // L6 — historique
-              const newAffaireId = Number(insertResult.lastInsertRowid);
-              if (newAffaireId > 0) {
-                recordAffaireHistory(db, {
-                  affaire_id: newAffaireId,
-                  event_type: 'affaire_created',
-                  source: 'bl_import',
-                  source_ref: id,
-                  field_name: 'numero_affaire',
-                  new_value: linkedAffaireId,
-                  user_id: req.user.id,
-                  notes: `Import ${file ? file.originalname : 'text-import'}${dateDebut ? ` — dates ${dateDebut}${dateFin ? ' → ' + dateFin : ''}` : ''}`,
-                });
-              }
               // Invalider les caches pour que GET /api/affaires et planning-affaires retournent la nouvelle affaire
               invalidateEntity('affaires');
               listCache.invalidatePattern(/^planning-affaires/);
@@ -241,16 +238,6 @@ export function setupBLImportRoutes(app, authenticateToken) {
                 logger.error('Erreur création auto affaire:', affaireErr.message);
               }
             }
-          } else {
-            // L6 — tracer le rattachement à une affaire existante
-            recordAffaireHistory(db, {
-              affaire_id: existingAffaire.id,
-              event_type: 'bl_import_linked',
-              source: 'bl_import',
-              source_ref: id,
-              user_id: req.user.id,
-              notes: `Import ${file ? file.originalname : 'text-import'} rattaché`,
-            });
           }
         }
 
@@ -575,7 +562,22 @@ export function setupBLImportRoutes(app, authenticateToken) {
                 if (existingAffaire) {
                   // Mise à jour de l'affaire avec les nouvelles données parsées (si des champs sont vides)
                   try {
-                    const { dateDebut, dateFin } = extractDatesFromParsedData(pd);
+                    let dateDebut = pd?.date || pd?.dateLivraison || pd?.dateDebut || null;
+                    let dateFin = pd?.dateFin || null;
+                    if (pd?.sections && Array.isArray(pd.sections)) {
+                      for (const sec of pd.sections) {
+                        const dmD = sec.dateDebut?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                        if (dmD) {
+                          const iso = `${dmD[3]}-${dmD[2]}-${dmD[1]}`;
+                          if (!dateDebut || iso < dateDebut) dateDebut = iso;
+                        }
+                        const dmF = sec.dateFin?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                        if (dmF) {
+                          const iso = `${dmF[3]}-${dmF[2]}-${dmF[1]}`;
+                          if (!dateFin || iso > dateFin) dateFin = iso;
+                        }
+                      }
+                    }
                     // Mettre à jour les champs vides de l'affaire existante
                     const aff = db
                       .prepare('SELECT * FROM affaires WHERE numero_affaire = ?')
@@ -655,43 +657,7 @@ export function setupBLImportRoutes(app, authenticateToken) {
                         `UPDATE affaires SET ${updates.join(', ')} WHERE numero_affaire = ?`,
                       ).run(...params);
                       affaireUpdated = true;
-                      // L6 — tracer les changements de dates dans l'historique
-                      if (dateDebut && !aff.date_debut) {
-                        recordAffaireHistory(db, {
-                          affaire_id: existingAffaire.id,
-                          event_type: 'date_change',
-                          source: 'batch_import',
-                          source_ref: id,
-                          field_name: 'date_debut',
-                          old_value: aff.date_debut,
-                          new_value: dateDebut,
-                          user_id: req.user.id,
-                          notes: `Renseignée depuis ${existingFilename}`,
-                        });
-                      }
-                      if (dateFin && !aff.date_fin) {
-                        recordAffaireHistory(db, {
-                          affaire_id: existingAffaire.id,
-                          event_type: 'date_change',
-                          source: 'batch_import',
-                          source_ref: id,
-                          field_name: 'date_fin',
-                          old_value: aff.date_fin,
-                          new_value: dateFin,
-                          user_id: req.user.id,
-                          notes: `Renseignée depuis ${existingFilename}`,
-                        });
-                      }
                     }
-                    // L6 — toujours tracer le rattachement même sans changement
-                    recordAffaireHistory(db, {
-                      affaire_id: existingAffaire.id,
-                      event_type: 'bl_import_linked',
-                      source: 'batch_import',
-                      source_ref: id,
-                      user_id: req.user.id,
-                      notes: `Import ${existingFilename} rattaché`,
-                    });
                   } catch (updErr) {
                     logger.error('Erreur update affaire batch:', updErr.message);
                   }
@@ -699,47 +665,46 @@ export function setupBLImportRoutes(app, authenticateToken) {
                   // Créer l'affaire
                   try {
                     const today = new Date().toISOString().slice(0, 10);
-                    const { dateDebut, dateFin } = extractDatesFromParsedData(pd);
-                    const insertResult = db
-                      .prepare(
-                        `
+                    let dateDebut = pd?.date || pd?.dateLivraison || pd?.dateDebut || null;
+                    let dateFin = pd?.dateFin || null;
+                    if (pd?.sections && Array.isArray(pd.sections)) {
+                      for (const sec of pd.sections) {
+                        const dmD = sec.dateDebut?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                        if (dmD) {
+                          const iso = `${dmD[3]}-${dmD[2]}-${dmD[1]}`;
+                          if (!dateDebut || iso < dateDebut) dateDebut = iso;
+                        }
+                        const dmF = sec.dateFin?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+                        if (dmF) {
+                          const iso = `${dmF[3]}-${dmF[2]}-${dmF[1]}`;
+                          if (!dateFin || iso > dateFin) dateFin = iso;
+                        }
+                      }
+                    }
+                    db.prepare(
+                      `
                 INSERT INTO affaires (numero_affaire, type, client, interlocuteur, tel, fax,
                   date_debut, date_fin, devis, adresse_livraison, titre, description,
                   created_by, modified_by)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               `,
-                      )
-                      .run(
-                        linkedAffaireId,
-                        affaireTypeResolved || 'Prestation',
-                        pd?.client || '',
-                        pd?.interlocuteur || '',
-                        pd?.tel || '',
-                        pd?.fax || '',
-                        dateDebut || today,
-                        dateFin || '',
-                        pd?.devis || '',
-                        pd?.adresse || '',
-                        pd?.nomAffaire || pd?.objet || '',
-                        `Créée automatiquement — import batch BL ${file ? file.originalname : 'text-import'}`,
-                        req.user.id,
-                        req.user.id,
-                      );
+                    ).run(
+                      linkedAffaireId,
+                      affaireTypeResolved || 'Prestation',
+                      pd?.client || '',
+                      pd?.interlocuteur || '',
+                      pd?.tel || '',
+                      pd?.fax || '',
+                      dateDebut || today,
+                      dateFin || '',
+                      pd?.devis || '',
+                      pd?.adresse || '',
+                      pd?.nomAffaire || pd?.objet || '',
+                      `Créée automatiquement — import batch BL ${file ? file.originalname : 'text-import'}`,
+                      req.user.id,
+                      req.user.id,
+                    );
                     affaireCreated = true;
-                    // L6 — historique
-                    const newAffaireId = Number(insertResult.lastInsertRowid);
-                    if (newAffaireId > 0) {
-                      recordAffaireHistory(db, {
-                        affaire_id: newAffaireId,
-                        event_type: 'affaire_created',
-                        source: 'batch_import',
-                        source_ref: id,
-                        field_name: 'numero_affaire',
-                        new_value: linkedAffaireId,
-                        user_id: req.user.id,
-                        notes: `Batch import ${existingFilename}${dateDebut ? ` — dates ${dateDebut}${dateFin ? ' → ' + dateFin : ''}` : ''}`,
-                      });
-                    }
                   } catch (affErr) {
                     if (!affErr.message?.includes('UNIQUE')) {
                       logger.error('Erreur création affaire batch:', affErr.message);

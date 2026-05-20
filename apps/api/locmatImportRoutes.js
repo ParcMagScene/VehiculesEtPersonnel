@@ -20,7 +20,6 @@ import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import { locmatConfirmSchema, locmatPreviewSchema, validate } from './schemas/imports.js';
 import { diffWithDatabase } from './services/locmatImport.js';
-import { parseMagSerial } from './services/magNumber.js';
 import { buildEquipmentQrPayload, generateQrDataUrl } from './services/qrcodeGenerator.js';
 import { getNextUid } from './services/uidCounter.js';
 
@@ -53,10 +52,7 @@ function buildDbCatalogByCode() {
   return map;
 }
 
-// Index serials existants par code de référence.
-// On indexe par **coreSerial** (résultat de parseMagSerial) pour matcher
-// correctement les lignes legacy dont le serial_number contient encore
-// le numéro MAG (ex: "VX14 - 2115080074074" → coreSerial "2115080074074").
+// Index serials existants par code de référence
 function buildDbSerialsByCode() {
   const rows = db
     .prepare(
@@ -69,15 +65,13 @@ function buildDbSerialsByCode() {
   const map = new Map();
   for (const r of rows) {
     const key = String(r.reference || '').toUpperCase();
-    const { coreSerial } = parseMagSerial(r.serial_number);
-    const indexed = coreSerial || r.serial_number;
     if (!map.has(key)) map.set(key, new Set());
-    map.get(key).add(indexed);
+    map.get(key).add(r.serial_number);
   }
   return map;
 }
 
-// Index inverse : coreSerial → refUpper propriétaire (collision cross-ref).
+// Index inverse : serial → refUpper propriétaire (collision cross-ref)
 function buildDbOwnerCodeBySerial() {
   const rows = db
     .prepare(
@@ -88,16 +82,11 @@ function buildDbOwnerCodeBySerial() {
     )
     .all();
   const map = new Map();
-  for (const r of rows) {
-    const { coreSerial } = parseMagSerial(r.serial_number);
-    const indexed = coreSerial || r.serial_number;
-    map.set(indexed, String(r.reference).toUpperCase());
-  }
+  for (const r of rows) map.set(r.serial_number, String(r.reference).toUpperCase());
   return map;
 }
 
-// Index coreSerial → { magNumber, equipmentId, rawSerial } (pour détecter MAJ N° MAG
-// et normaliser un serial_number legacy contenant le MAG).
+// Index serial → { magNumber, equipmentId } (pour détecter MAJ N° MAG)
 function buildDbMagBySerial() {
   const rows = db
     .prepare(
@@ -108,34 +97,10 @@ function buildDbMagBySerial() {
     .all();
   const map = new Map();
   for (const r of rows) {
-    const { coreSerial, magNumber: legacyMag } = parseMagSerial(r.serial_number);
-    const indexed = coreSerial || r.serial_number;
-    map.set(indexed, {
-      // Priorité au champ numero_mag explicite ; fallback sur le MAG legacy
-      // extrait du serial_number historique.
-      magNumber: r.numero_mag || legacyMag || null,
+    map.set(r.serial_number, {
+      magNumber: r.numero_mag || null,
       equipmentId: r.id,
-      rawSerial: r.serial_number,
     });
-  }
-  return map;
-}
-
-// Index refUpper → liste de tous les id `equipment` actifs (catalogue + unités).
-// Utilisé pour soft-delete en masse les références absentes du CSV.
-function buildDbAllActiveIdsByCode() {
-  const rows = db
-    .prepare(
-      `SELECT id, reference FROM equipment
-       WHERE reference IS NOT NULL AND reference != ''
-         AND (status IS NULL OR status != 'removed')`,
-    )
-    .all();
-  const map = new Map();
-  for (const r of rows) {
-    const key = String(r.reference).toUpperCase();
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(r.id);
   }
   return map;
 }
@@ -155,7 +120,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
         const dbSerialsByCode = buildDbSerialsByCode();
         const dbOwnerCodeBySerial = buildDbOwnerCodeBySerial();
         const dbMagBySerial = buildDbMagBySerial();
-        const dbAllActiveIdsByCode = buildDbAllActiveIdsByCode();
 
         const diff = diffWithDatabase({
           locations,
@@ -164,7 +128,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           dbSerialsByCode,
           dbOwnerCodeBySerial,
           dbMagBySerial,
-          dbAllActiveIdsByCode,
         });
 
         res.json({
@@ -210,10 +173,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           removedSerials,
           legacyCatalogToDelete = [],
           missingProducts = [],
-          // Synchronisation stricte : si true (défaut), les références présentes
-          // en DB mais absentes des deux CSV sont soft-delete (toutes leurs unités).
-          // LocMat est la source de vérité pour le stock physique réel.
-          deleteMissingProducts = true,
           duplicates = { locations: [], serials: [] },
           collisions = [],
         } = req.body;
@@ -249,20 +208,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
             is_serialized  = 0,
             updated_at     = CURRENT_TIMESTAMP
           WHERE UPPER(reference) = UPPER(?) AND serial_number = ?
-            AND (status IS NULL OR status != 'removed')
-        `);
-        // MAJ N° MAG + normalisation du serial_number (par id).
-        // Utilisée quand la ligne DB a un serial_number legacy contenant le MAG
-        // (ex: "VX14 - 2115080074074") : on remet à plat numero_mag + serial_number
-        // au coreSerial fourni par le CSV.
-        const updateMagAndSerialById = db.prepare(`
-          UPDATE equipment SET
-            numero_mag     = ?,
-            serial_number  = ?,
-            stock_quantity = 1,
-            is_serialized  = 0,
-            updated_at     = CURRENT_TIMESTAMP
-          WHERE id = ?
             AND (status IS NULL OR status != 'removed')
         `);
         // Suppression définitive d'une ligne catalogue legacy (modèle A pur).
@@ -335,12 +280,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
            WHERE UPPER(reference) = UPPER(?) AND serial_number = ?
              AND (status IS NULL OR status != 'removed')`,
         );
-        // Soft-delete par id (utilisé quand le diff fournit equipmentId,
-        // notamment pour les serials legacy au format "MAG - SN").
-        const softRemoveUnitById = db.prepare(
-          `UPDATE equipment SET status = 'removed', updated_at = CURRENT_TIMESTAMP
-           WHERE id = ? AND (status IS NULL OR status != 'removed')`,
-        );
         // Vérifier qu'une (ref, serial) n'existe pas déjà avant INSERT unité
         const findUnitByRefSerial = db.prepare(
           `SELECT id, status FROM equipment
@@ -359,7 +298,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           serialsReactivated: 0,
           serialsMagUpdated: 0,
           legacyCatalogDeleted: 0,
-          missingProductsRemoved: 0,
           backfilled: 0,
           serialsSkippedCollision: 0,
           errors: [],
@@ -498,26 +436,17 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
           // ── E. serials supprimés (soft) ──
           for (const s of removedSerials) {
             try {
-              // Préférer la suppression par id (robuste face aux SN legacy
-              // contenant le MAG dans serial_number).
-              const info = s.equipmentId
-                ? softRemoveUnitById.run(s.equipmentId)
-                : softRemoveUnit.run(s.code, s.serial);
+              const info = softRemoveUnit.run(s.code, s.serial);
               if (info.changes > 0) result.serialsRemoved++;
             } catch (e) {
               result.errors.push(`Suppression serial ${s.serial}: ${e.message}`);
             }
           }
 
-          // ── E2. mises à jour N° MAG (et normalisation serial_number legacy) ──
-          // Si equipmentId est fourni : UPDATE par id + normalise serial_number
-          // au coreSerial du CSV (résout le cas "VX14 - 2115080074074" → "I14" + SN propre).
-          // Sinon : fallback par (reference, serial_number).
+          // ── E2. mises à jour N° MAG (+ force stock_quantity=1) ──
           for (const u of serialUpdates) {
             try {
-              const info = u.equipmentId
-                ? updateMagAndSerialById.run(u.magNumber || null, u.serial, u.equipmentId)
-                : updateMagAndForceQty1.run(u.magNumber || null, u.code, u.serial);
+              const info = updateMagAndForceQty1.run(u.magNumber || null, u.code, u.serial);
               if (info.changes > 0) result.serialsMagUpdated++;
             } catch (e) {
               result.errors.push(`MAJ N° MAG ${u.serial} (${u.code}): ${e.message}`);
@@ -535,27 +464,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
               if (info.changes > 0) result.legacyCatalogDeleted++;
             } catch (e) {
               result.errors.push(`Suppression catalogue legacy ${l.code}: ${e.message}`);
-            }
-          }
-
-          // ── E5. soft-delete des références absentes de LocMat ──
-          // LocMat est la source de vérité du stock physique : toute référence
-          // active en DB mais absente des deux CSV doit être désactivée (avec
-          // toutes ses unités sérialisées). Soft seulement : status='removed'.
-          if (deleteMissingProducts) {
-            for (const m of missingProducts) {
-              const ids =
-                Array.isArray(m.equipmentIds) && m.equipmentIds.length > 0
-                  ? m.equipmentIds
-                  : [m.id].filter(Boolean);
-              for (const eqId of ids) {
-                try {
-                  const info = softRemoveUnitById.run(eqId);
-                  if (info.changes > 0) result.missingProductsRemoved++;
-                } catch (e) {
-                  result.errors.push(`Suppression ${m.code} (#${eqId}): ${e.message}`);
-                }
-              }
             }
           }
 
@@ -604,7 +512,6 @@ export function setupLocmatImportRoutes(app, authenticateToken, requireAdmin) {
               serialsReactivated: result.serialsReactivated,
               serialsMagUpdated: result.serialsMagUpdated,
               legacyCatalogDeleted: result.legacyCatalogDeleted,
-              missingProductsRemoved: result.missingProductsRemoved,
               backfilled: result.backfilled,
               missingProductsCount: missingProducts.length,
               duplicatesCount:

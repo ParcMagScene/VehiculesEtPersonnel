@@ -49,45 +49,6 @@ function detectMagFromSerial(serial) {
   return { mag: magNumber, serial: coreSerial };
 }
 
-// ─── Migration inline : historique d'impression d'étiquettes ─────────
-// Une ligne par génération réussie (par équipement, par plaque).
-// Permet de détecter les ré-impressions involontaires.
-function ensureLabelPrintsTable(database) {
-  database.exec(`
-    CREATE TABLE IF NOT EXISTS equipment_label_prints (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      equipment_id INTEGER NOT NULL,
-      printed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      printed_by INTEGER,
-      format TEXT,
-      filename TEXT,
-      FOREIGN KEY (equipment_id) REFERENCES equipment(id) ON DELETE CASCADE
-    );
-    CREATE INDEX IF NOT EXISTS idx_equipment_label_prints_eq
-      ON equipment_label_prints(equipment_id);
-    CREATE INDEX IF NOT EXISTS idx_equipment_label_prints_at
-      ON equipment_label_prints(printed_at);
-  `);
-}
-ensureLabelPrintsTable(db);
-
-const insertLabelPrintStmt = db.prepare(
-  `INSERT INTO equipment_label_prints (equipment_id, printed_by, format, filename)
-   VALUES (?, ?, ?, ?)`,
-);
-const insertLabelPrintsTx = db.transaction((ids, userId, format, filename) => {
-  for (const id of ids) insertLabelPrintStmt.run(id, userId || null, format, filename || null);
-});
-
-function recordLabelPrints(equipmentIds, userId, format, filename) {
-  const clean = (Array.isArray(equipmentIds) ? equipmentIds : [])
-    .map((n) => Number(n))
-    .filter((n) => Number.isFinite(n) && n > 0);
-  if (clean.length === 0) return 0;
-  insertLabelPrintsTx(clean, userId, format, filename);
-  return clean.length;
-}
-
 export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
   // ─── GET /api/labels/serialized ──────────────────────────────────────
   // Liste des serials actifs avec equipment associé. Filtres optionnels :
@@ -98,19 +59,11 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
     try {
       // Modèle A : on cible les equipment qui ont un serial_number (= unités
       // physiques migrées) et qui ne sont pas des catalogues archivés.
-      // [BUG-DOUBLONS] On exclut aussi les lignes status='removed' (legacy
-      // LocMat archivées) qui polluaient la liste avec des serials non splittés
-      // type "G01 - 2400947145". Pour les voir : ?includeRemoved=1.
-      const includeRemoved =
-        req.query.includeRemoved === '1' || req.query.includeRemoved === 'true';
       const where = [
         'e.serial_number IS NOT NULL',
         "e.serial_number != ''",
         "e.name NOT LIKE '%[archive]%'",
       ];
-      if (!includeRemoved) {
-        where.push("(e.status IS NULL OR e.status != 'removed')");
-      }
       const params = {};
       if (req.query.equipmentId) {
         where.push('e.id = @equipmentId');
@@ -139,11 +92,7 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
                   e.uid           AS equipment_uid,
                   e.reference     AS equipment_reference,
                   e.name          AS equipment_name,
-                  e.numero_mag    AS equipment_numero_mag,
-                  (SELECT COUNT(*) FROM equipment_label_prints p WHERE p.equipment_id = e.id)
-                    AS print_count,
-                  (SELECT MAX(p.printed_at) FROM equipment_label_prints p WHERE p.equipment_id = e.id)
-                    AS last_printed_at
+                  e.numero_mag    AS equipment_numero_mag
            FROM equipment e
            WHERE ${where.join(' AND ')}
            ORDER BY e.name COLLATE NOCASE ASC, e.serial_number COLLATE NOCASE ASC
@@ -185,35 +134,13 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
           detail: 'Attendu : 1 lettre + 2 à 4 chiffres (ex: A12, B003)',
         });
       }
-      const exists = db.prepare('SELECT id, serial_number FROM equipment WHERE id = ?').get(id);
+      const exists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(id);
       if (!exists) return res.status(404).json({ error: 'Équipement introuvable' });
 
-      // Normalisation symétrique : si le serial_number contient encore le préfixe
-      // MAG (cas legacy / import Locmat brut), on le sépare pour ne garder que
-      // le coreSerial côté serial_number et le mag côté numero_mag.
-      //   "G08 - 2300890619" + mag=G08 → serial_number='2300890619'
-      // On n'écrase JAMAIS le serial_number si le MAG détecté dans la chaîne
-      // diffère du MAG demandé (sécurité contre les conflits).
-      let nextSerial = exists.serial_number;
-      if (exists.serial_number) {
-        const det = parseMagSerial(exists.serial_number);
-        if (det.magNumber && (!mag || det.magNumber === mag)) {
-          nextSerial = det.coreSerial;
-        }
-      }
-      const serialChanged = nextSerial !== exists.serial_number;
-      if (serialChanged) {
-        db.prepare(
-          `UPDATE equipment
-             SET numero_mag = ?, serial_number = ?, updated_at = CURRENT_TIMESTAMP
-           WHERE id = ?`,
-        ).run(mag, nextSerial, id);
-      } else {
-        db.prepare(
-          'UPDATE equipment SET numero_mag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-        ).run(mag, id);
-      }
-      res.json({ success: true, id, mag_number: mag, serial: nextSerial });
+      db.prepare(
+        'UPDATE equipment SET numero_mag = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ).run(mag, id);
+      res.json({ success: true, id, mag_number: mag });
     } catch (e) {
       logger.error('PUT /api/labels/serial/:id:', e.message);
       res.status(500).json({ error: 'Erreur lors de la mise à jour', detail: e.message });
@@ -288,13 +215,6 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
         req.body?.filename,
         'plaque-etiquettes-200x200.svg',
       );
-      // Historique : 1 ligne par equipment_id imprimé sur cette plaque.
-      try {
-        const printedIds = ids.filter((id) => byId.has(id));
-        recordLabelPrints(printedIds, req.user?.id, 'plate-svg', filename);
-      } catch (logErr) {
-        logger.warn('label print history insert failed:', logErr.message);
-      }
       res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(svg);
@@ -393,12 +313,6 @@ export function setupLabelsRoutes(app, authenticateToken, requireAdmin) {
         req.body?.filename,
         'lightburn-plaque-200x200.svg',
       );
-      try {
-        const printedIds = ids.filter((id) => byId.has(id));
-        recordLabelPrints(printedIds, req.user?.id, 'lightburn-plate', filename);
-      } catch (logErr) {
-        logger.warn('label print history insert failed:', logErr.message);
-      }
       res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(svg);

@@ -327,15 +327,10 @@ const Calendar = ({
   }, [vehicles, view, reservations, collapsedSections]);
 
   // ═══ HANDLERS ═══
-  const handleSaveReservation = async (reservationData) => {
-    // [FIX 2026-05-20] Les handlers parents sont async — on doit `await` pour
-    // que `success === false` (chevauchement, erreur 409) empêche la fermeture
-    // du modal. Sans await, `success` est une Promise truthy et l'utilisateur
-    // pense que la réservation est créée alors qu'elle a été rejetée.
+  const handleSaveReservation = (reservationData) => {
     let success = false;
-    if (selectedReservation)
-      success = await onUpdateReservation(selectedReservation.id, reservationData);
-    else success = await onAddReservation(reservationData);
+    if (selectedReservation) success = onUpdateReservation(selectedReservation.id, reservationData);
+    else success = onAddReservation(reservationData);
     if (success !== false) {
       setSelectedSlot(null);
       setSelectedReservation(null);

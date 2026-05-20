@@ -18,7 +18,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, ModalLayout, Spinner } from '@/design-system';
 
 import { AVATAR_COLORS } from '../../constants/colors';
-import useDraftStorage from '../../hooks/useDraftStorage';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import api, { getApiUrl } from '../../utils/api';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
@@ -122,12 +121,7 @@ function MobileMessaging({ currentUser, onBack }) {
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
-  // L4 : draft input persisté PAR conversation (clé dynamique).
-  // `key=null` quand aucune conv active → hook se comporte comme useState pur.
-  const inputDraftKey = activeConversation
-    ? `mobile:messaging:${activeConversation.id}:input`
-    : null;
-  const [inputText, setInputText, inputDraftCtl] = useDraftStorage(inputDraftKey, '');
+  const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [showNewConv, setShowNewConv] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
@@ -462,7 +456,7 @@ function MobileMessaging({ currentUser, onBack }) {
   const handleSend = async () => {
     if (!inputText.trim() || !activeConversation) return;
     const text = inputText.trim();
-    inputDraftCtl.commit(); // purge sessionStorage + reset à ''
+    setInputText('');
 
     try {
       const msg = await api.sendMessage(activeConversation.id, text);

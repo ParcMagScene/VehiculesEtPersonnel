@@ -213,9 +213,6 @@ export default function LocmatImportModal({ onDone, onClose }) {
   const [diff, setDiff] = useState(null);
   const [activeTab, setActiveTab] = useState('newProducts');
   const [result, setResult] = useState(null);
-  // LocMat = source de vérité du stock physique : par défaut, on supprime
-  // (soft) les références présentes en DB mais absentes des CSV.
-  const [deleteMissingProducts, setDeleteMissingProducts] = useState(true);
   const locInputRef = useRef(null);
   const serInputRef = useRef(null);
 
@@ -241,7 +238,6 @@ export default function LocmatImportModal({ onDone, onClose }) {
       serialUpdates: (diff.serialUpdates || []).length,
       removedSerials: diff.removedSerials.length,
       legacyCatalogToDelete: (diff.legacyCatalogToDelete || []).length,
-      missingProducts: (diff.missingProducts || []).length,
       errors: diff.errors.length,
     };
   }, [diff]);
@@ -294,7 +290,6 @@ export default function LocmatImportModal({ onDone, onClose }) {
         legacyCatalogToDelete: diff.legacyCatalogToDelete || [],
         // signalements (sans action automatique côté serveur)
         missingProducts: diff.missingProducts || [],
-        deleteMissingProducts,
         duplicates: diff.duplicates || { locations: [], serials: [] },
         collisions: diff.collisions || [],
       });
@@ -440,33 +435,6 @@ export default function LocmatImportModal({ onDone, onClose }) {
             <div className="locmat-tab-panel">
               <DiffTable tabKey={activeTab} rows={diff[activeTab] || []} />
             </div>
-            {counts?.missingProducts > 0 && (
-              <label
-                className="locmat-sync-option"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginTop: 12,
-                  padding: '8px 12px',
-                  background: 'var(--color-warning-bg, #fff3cd)',
-                  borderRadius: 6,
-                  fontSize: 14,
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={deleteMissingProducts}
-                  onChange={(e) => setDeleteMissingProducts(e.target.checked)}
-                />
-                <span>
-                  <strong>
-                    Supprimer les {counts.missingProducts} référence(s) absente(s) de LocMat
-                  </strong>{' '}
-                  <em>(soft-delete — LocMat est la source de vérité du stock physique)</em>
-                </span>
-              </label>
-            )}
           </div>
         )}
 
@@ -514,12 +482,6 @@ export default function LocmatImportModal({ onDone, onClose }) {
               {result.legacyCatalogDeleted > 0 && (
                 <li>
                   Catalogues legacy supprimés : <strong>{result.legacyCatalogDeleted}</strong>
-                </li>
-              )}
-              {result.missingProductsRemoved > 0 && (
-                <li>
-                  Équipements supprimés (absents LocMat) :{' '}
-                  <strong>{result.missingProductsRemoved}</strong>
                 </li>
               )}
               {result.backfilled > 0 && (

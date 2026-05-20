@@ -1,28 +1,3 @@
-# Authentification Personnelle — Index
-
-> Permet aux utilisateurs du compte commun `commun@magsav.com` (Équipe) d'accéder aux données
-> personnalisées d'un membre du personnel (planning, fiches de suivi) via PIN ou mot de passe,
-> avec auto-déconnexion (2 s après sauvegarde / 5 min d'inactivité / 15 min max).
-
-## Documents de référence (à jour)
-
-| Fichier | Rôle |
-|---|---|
-| [GUIDE-AUTHENTIFICATION-PERSONNELLE.md](GUIDE-AUTHENTIFICATION-PERSONNELLE.md) | Vue d'ensemble fonctionnelle + architecture backend (route `POST /api/suivi/personal-auth`). |
-| [INTEGRATION-AUTHENTIFICATION-PERSONNELLE.md](INTEGRATION-AUTHENTIFICATION-PERSONNELLE.md) | Instructions d'intégration côté `apps/web` (Provider, wrappers, PlanningPanel). |
-| [API-PERSONNEL-AUTH.md](API-PERSONNEL-AUTH.md) | Référence API du hook `usePersonalAuth()` et signatures. |
-| [CHECKLIST-DEPLOIEMENT-PERSONNEL-AUTH.md](CHECKLIST-DEPLOIEMENT-PERSONNEL-AUTH.md) | Checklist phase par phase pour le déploiement. |
-
-## Documents d'archive (avril 2026)
-
-Conservés pour historique mais redondants avec les 4 fichiers ci-dessus :
-
-- [SYNTHESE-AUTHENTIFICATION-PERSONNELLE.md](SYNTHESE-AUTHENTIFICATION-PERSONNELLE.md)
-- [AUTHENTIFICATION-PERSONNELLE-RESUME.md](AUTHENTIFICATION-PERSONNELLE-RESUME.md)
-- [QUICK-START-PERSONNEL-AUTH.md](QUICK-START-PERSONNEL-AUTH.md)
-
----
-
 # 🎉 Projet Achevé — Authentification Personnelle pour Planning et Suivi
 
 **Date de création:** 27 avril 2026  

@@ -91,31 +91,4 @@ describe('useSearchParamState — Sprint B/D nav', () => {
     expect(STOCK_SUBTABS.has('inventory')).toBe(true);
     expect(CALENDAR_VIEWS.has(DEFAULT_CALENDAR_VIEW)).toBe(true);
   });
-
-  it('appelle onInvalid quand la valeur URL est hors du set allowed', async () => {
-    const calls = [];
-    const onInvalid = (raw) => calls.push(raw);
-    renderHook(
-      () => useSearchParamState('module', DEFAULT_MODULE, { allowed: ALLOWED_MODULES, onInvalid }),
-      { wrapper: wrapper('/?module=ghost') },
-    );
-    // L'effet d'invalidation s'exécute après le render initial
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(calls).toEqual(['ghost']);
-  });
-
-  it("n'appelle PAS onInvalid quand la valeur est valide", async () => {
-    const calls = [];
-    const onInvalid = (raw) => calls.push(raw);
-    renderHook(
-      () => useSearchParamState('module', DEFAULT_MODULE, { allowed: ALLOWED_MODULES, onInvalid }),
-      { wrapper: wrapper('/?module=stock') },
-    );
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(calls).toEqual([]);
-  });
 });

@@ -48,14 +48,14 @@ const SER_FIELDS = {
   brand: ['Marque', 'Brand'],
 };
 
-// Format Locmat des SN : `<core> - <mag>` ou `<mag> - <core>` où mag = 1 LETTRE + 2 CHIFFRES
-// strict (ex: T01, V12, E09). Séparateur strict ` - ` (au moins un espace de chaque côté).
+// Format Locmat des SN : `<core> - <mag>` ou `<mag> - <core>` où mag = LETTRES + CHIFFRES
+// (ex: T01, VX1, E09). Séparateur strict ` - ` (au moins un espace de chaque côté).
 // Ex : `T01 -  2400953513` (TETRA2), `0788770045   - V12` (VIPER).
 // Cf. apps/api/services/magNumber.js pour la source de vérité.
 import { parseMagSerial } from './magNumber.js';
 
 /**
- * Parse un SN Locmat brut. Extrait un éventuel numéro MAG (T01, V12, E09...).
+ * Parse un SN Locmat brut. Extrait un éventuel numéro MAG (T01, V12, VX1...).
  * Délègue à parseMagSerial (module partagé).
  * @param {string} rawSerial
  * @returns {{ coreSerial: string, magNumber: string|null }}
@@ -161,9 +161,6 @@ export function normalizeSerialRow(row) {
  * @param {Map<string,string>}      [args.dbOwnerCodeBySerial]  index inverse serial → refUpper (collision cross-ref)
  * @param {Map<string,{magNumber:string|null, equipmentId:number}>} [args.dbMagBySerial]
  *        Index serial → numéro mag actuel + id, pour détecter les mises à jour de N° MAG.
- * @param {Map<string,number[]>} [args.dbAllActiveIdsByCode] Index refUpper → liste des id
- *        de toutes les lignes equipment actives pour cette référence (catalogue + unités).
- *        Utilisé pour soft-delete en masse les missingProducts.
  * @returns Diff { newProducts, updatedProducts, quantityChanges, newSerials, serialUpdates,
  *                 removedSerials, missingProducts, duplicates, collisions, errors,
  *                 legacyCatalogToDelete }
@@ -175,7 +172,6 @@ export function diffWithDatabase({
   dbSerialsByCode,
   dbOwnerCodeBySerial,
   dbMagBySerial,
-  dbAllActiveIdsByCode,
   // back-compat : tolère l'ancien nom dbItemsByCode
   dbItemsByCode,
 }) {
@@ -183,7 +179,6 @@ export function diffWithDatabase({
   if (!dbSerialsByCode) dbSerialsByCode = new Map();
   if (!dbOwnerCodeBySerial) dbOwnerCodeBySerial = new Map();
   if (!dbMagBySerial) dbMagBySerial = new Map();
-  if (!dbAllActiveIdsByCode) dbAllActiveIdsByCode = new Map();
 
   const newProducts = [];
   const updatedProducts = [];
@@ -340,20 +335,12 @@ export function diffWithDatabase({
       if (dbSet.has(s.serial)) {
         const dbInfo = dbMagBySerial.get(s.serial);
         const currentMag = dbInfo?.magNumber || null;
-        const dbRawSerial = dbInfo?.rawSerial || null;
-        // On émet un serialUpdate dans deux cas :
-        //  1) Le N° MAG diffère entre CSV et DB.
-        //  2) Le serial_number stocké est "sale" (legacy "MAG - SN") :
-        //     on profite du passage pour le normaliser au coreSerial.
-        const magDiffers = !!s.magNumber && s.magNumber !== currentMag;
-        const serialNeedsNormalization = dbRawSerial && dbRawSerial !== s.serial;
-        if (magDiffers || serialNeedsNormalization) {
+        if (s.magNumber && s.magNumber !== currentMag) {
           serialUpdates.push({
             code,
             serial: s.serial,
-            magNumber: s.magNumber || currentMag || null,
+            magNumber: s.magNumber,
             fromMag: currentMag,
-            fromSerial: dbRawSerial,
             equipmentId: dbInfo?.equipmentId || null,
           });
         }
@@ -379,11 +366,9 @@ export function diffWithDatabase({
     // supprimés : dans DB mais plus dans CSV
     for (const dbSer of dbSet) {
       if (!csvSet.has(dbSer)) {
-        const dbInfo = dbMagBySerial.get(dbSer);
         removedSerials.push({
           code,
           serial: dbSer,
-          equipmentId: dbInfo?.equipmentId || null,
         });
       }
     }
@@ -402,20 +387,15 @@ export function diffWithDatabase({
   }
 
   // ─── 3. Suppressions : refs présentes en DB mais absentes des deux CSV ───
-  // On enrichit chaque entrée avec `equipmentIds` = toutes les lignes actives
-  // de cette référence (catalogue + unités sérialisées), pour permettre au
-  // confirm() de les soft-delete en masse si l'utilisateur le demande.
+  // (signalement seulement, pas d'écriture côté serveur sans confirmation)
   const csvCodes = new Set([...seenCodes, ...serialsByCode.keys()]);
   for (const [dbCode, dbItem] of dbCatalogByCode.entries()) {
     if (!csvCodes.has(dbCode)) {
-      const ids = dbAllActiveIdsByCode.get(dbCode) || [dbItem.id].filter(Boolean);
       missingProducts.push({
         id: dbItem.id,
         code: dbItem.reference || dbCode,
         name: dbItem.name || null,
         quantity: Math.round(Number(dbItem.quantity) || 0),
-        equipmentIds: ids,
-        unitsCount: ids.length,
       });
     }
   }

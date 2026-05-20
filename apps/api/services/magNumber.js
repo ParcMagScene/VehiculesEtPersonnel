@@ -3,24 +3,23 @@
 //
 // Source de vérité unique côté backend pour la détection des numéros MAG.
 //
-// Règles métier (validées 2026-05-20, resserrées 2026-05-20 PM) :
-//   • Un numéro MAG est de la forme EXACTEMENT 1 LETTRE + 2 CHIFFRES
-//     (ex: T01, E09, V12, B99). Toute autre combinaison est invalide.
+// Règles métier (validées 2026-05-20) :
+//   • Un numéro MAG est de la forme LETTRES + CHIFFRES (ex: VX1, E09, T01).
 //   • Il est TOUJOURS séparé du numéro de série par exactement " - "
 //     (au moins un espace de chaque côté du tiret). Plusieurs espaces tolérés
 //     (ex: "T01 -  2400953513").
 //   • Si le tiret n'est pas entouré d'espaces (ex: "T01-2400953513"), alors
 //     ce n'est PAS un numéro MAG : la chaîne complète reste le numéro de série.
-//   • Le MAG peut apparaître en préfixe ou en suffixe ("V12 - SN" ou "SN - V12").
+//   • Le MAG peut apparaître en préfixe ou en suffixe ("VX1 - SN" ou "SN - VX1").
 //
 // Format strict :
-//   ^[A-Z][0-9]{2}$          (uppercase normalisé, tolère minuscules en entrée)
+//   ^[A-Z]{1,3}[0-9]{1,4}$   (uppercase normalisé, tolère minuscules en entrée)
 //
 // Le séparateur exigé est `\s+-\s+` (au moins un espace de chaque côté).
 // ═══════════════════════════════════════════════════════════════
 
 /** Regex stricte du format d'un numéro MAG (déjà normalisé en majuscules). */
-export const MAG_NUMBER_RE = /^[A-Z][0-9]{2}$/;
+export const MAG_NUMBER_RE = /^[A-Z]{1,3}[0-9]{1,4}$/;
 
 /** Regex du séparateur exigé entre numéro MAG et numéro de série. */
 export const MAG_SEPARATOR_RE = /\s+-\s+/;
@@ -54,12 +53,10 @@ export function isMagNumber(raw) {
  *
  *   "T01 - 2400953513"     → { coreSerial: '2400953513', magNumber: 'T01' }
  *   "0788770045   - V12"   → { coreSerial: '0788770045', magNumber: 'V12' }
- *   "E09 - SN-12-34"       → { coreSerial: 'SN-12-34',  magNumber: 'E09' }
+ *   "VX1 - SN-12-34"       → { coreSerial: 'SN-12-34',  magNumber: 'VX1' }
  *   "B884971"              → { coreSerial: 'B884971',   magNumber: null }
  *   "T01-2400953513"       → { coreSerial: 'T01-2400953513', magNumber: null }
  *                              (pas d'espaces ⇒ pas un MAG)
- *   "VX1 - 2400953513"     → { coreSerial: 'VX1 - 2400953513', magNumber: null }
- *                              (2 lettres ⇒ format invalide)
  *   "T01-SN - 2400"        → { coreSerial: 'T01-SN - 2400', magNumber: null }
  *                              (split donne ['T01-SN', '2400'] : aucun n'est un MAG)
  *

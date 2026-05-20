@@ -30,7 +30,6 @@ import { Avatar, Button, Skeleton } from '@/design-system';
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
-import useStoredListState from '../../hooks/useStoredListState';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
@@ -65,21 +64,10 @@ function MobilePersonnel({ onBack, currentUser }) {
     taskAssignments: [],
   });
   const [loading, setLoading] = useState(true);
-  // L7 : préférences UI persistées — viewMode + sélection (par id).
-  const [selectedPersonId, setSelectedPersonId] = useStoredListState(
-    'mobile:personnel:selectedId',
-    null,
-  );
-  const [viewMode, setViewMode] = useStoredListState('mobile:personnel:viewMode', 'day');
+  const [selectedPerson, setSelectedPerson] = useState(null);
+  const [viewMode, setViewMode] = useState('day'); // 'day' | 'week'
   const [currentDate, setCurrentDate] = useState(startOfDay(new Date()));
   const [myPersonId, setMyPersonId] = useState(null);
-  const selectedPerson = selectedPersonId
-    ? persons.find((p) => p.id === selectedPersonId) || null
-    : null;
-  const setSelectedPerson = useCallback(
-    (p) => setSelectedPersonId(p ? p.id : null),
-    [setSelectedPersonId],
-  );
 
   const isSimpleUser = currentUser && !currentUser.isAdmin;
 

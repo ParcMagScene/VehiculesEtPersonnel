@@ -4,14 +4,6 @@
 // et retourne { items: [...], stats: { total, parsed, skipped } }
 // ═══════════════════════════════════════════════════════════
 
-import {
-  cleanDesignation,
-  isAmbiguousRef,
-  isLikelyHeader,
-  normalizeRef,
-  summarizeDesignationQuality,
-} from './catalogDesignation.js';
-
 // ─── Nettoyage commun ───
 const clean = (s) => s?.trim().replace(/\s+/g, ' ') || '';
 const parsePrice = (s) => {
@@ -418,104 +410,43 @@ export function parseASD(text) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// PARSER GÉNÉRIQUE ADAPTATIF (fallback)
-// Tente plusieurs formes de lignes, retient celle qui produit
-// le plus d'articles de qualité (chantier L7 — 6.2).
-// Couvre :
-//   - colonnes variables (réf-désignation-prix, prix d'abord, etc.)
-//   - prix avec ou sans devise (€, EUR, HT, TTC)
-//   - désignations multi-lignes (continuation sur la ligne suivante)
-//   - références ambiguës (numéros de page) filtrées via isAmbiguousRef
+// PARSER GÉNÉRIQUE (fallback)
+// Tente de détecter des lignes produit: code + texte + prix
 // ═══════════════════════════════════════════════════════════
-
-// Patterns essayés en fallback adaptatif.
-// Chacun renvoie { supplier_ref, designation, price_ht } depuis un match.
-const GENERIC_SHAPES = [
-  {
-    id: 'ref-desig-price-eur',
-    // REF DESIGNATION PRICE €|EUR [HT|TTC]
-    rx: /^([\w./-]{2,20})\s+(.{5,160}?)\s+([\d\s]+[,.]\d{1,2})\s*(?:€|EUR|euros?)\s*(?:HT|TTC)?\s*$/i,
-    map: (m) => ({ supplier_ref: m[1], designation: m[2], price_ht: m[3] }),
-  },
-  {
-    id: 'ref-desig-price-bare',
-    // REF DESIGNATION PRICE (sans devise mais avec décimales)
-    rx: /^([\w./-]{2,20})\s+(.{5,160}?)\s+([\d\s]+[,.]\d{2})\s*$/,
-    map: (m) => ({ supplier_ref: m[1], designation: m[2], price_ht: m[3] }),
-  },
-  {
-    id: 'price-first',
-    // PRICE €|EUR REF DESIGNATION
-    rx: /^([\d\s]+[,.]\d{1,2})\s*(?:€|EUR)?\s+([\w./-]{2,20})\s+(.{5,160})\s*$/i,
-    map: (m) => ({ supplier_ref: m[2], designation: m[3], price_ht: m[1] }),
-  },
-  {
-    id: 'ref-qty-unit-desig-price',
-    // REF [QTY] [UNIT] DESIGNATION PRICE €
-    rx: /^([\w./-]{2,20})\s+\d+(?:[.,]\d+)?\s+(?:m|cm|mm|kg|g|pc|pcs|u|pce)\s+(.{5,160}?)\s+([\d\s]+[,.]\d{1,2})\s*(?:€|EUR)?\s*(?:HT|TTC)?\s*$/i,
-    map: (m) => ({ supplier_ref: m[1], designation: m[2], price_ht: m[3] }),
-  },
-  {
-    id: 'desig-ref-price',
-    // DESIGNATION REF PRICE € (réf alphanumérique en fin avant prix)
-    rx: /^(.{5,120}?)\s+([A-Z][\w./-]{2,20})\s+([\d\s]+[,.]\d{1,2})\s*(?:€|EUR)\s*(?:HT|TTC)?\s*$/,
-    map: (m) => ({ supplier_ref: m[2], designation: m[1], price_ht: m[3] }),
-  },
-];
-
-/**
- * Tente d'extraire un article d'une ligne en essayant toutes les formes connues.
- * Retourne { item, shape } ou null.
- */
-function tryGenericShapes(line) {
-  for (const shape of GENERIC_SHAPES) {
-    const m = line.match(shape.rx);
-    if (m) {
-      const raw = shape.map(m);
-      const designation = cleanDesignation(raw.designation);
-      const ref = normalizeRef(raw.supplier_ref);
-      if (!designation || isLikelyHeader(designation)) continue;
-      if (!ref || isAmbiguousRef(ref)) continue;
-      return {
-        item: {
-          supplier_ref: ref,
-          brand: null,
-          model: null,
-          designation,
-          price_ht: parsePrice(raw.price_ht),
-        },
-        shape: shape.id,
-      };
-    }
-  }
-  return null;
-}
-
 export function parseGeneric(text) {
   const items = [];
   const lines = text.split('\n');
-  const shapeCounts = {};
+
+  // Pattern: quelque chose qui ressemble à REF DESIGNATION PRIX
+  // Ref: alphanumérique 2-20 chars, Designation: texte, Prix: nombre avec , ou .
+  const lineRx = /^([\w./-]{2,20})\s+(.{5,120}?)\s+([\d\s,.]+)\s*€?\s*(HT)?\s*$/;
 
   for (const raw of lines) {
     const line = raw.trim();
     if (!line || line.length < 10) continue;
-    if (isLikelyHeader(line)) continue;
 
-    const hit = tryGenericShapes(line);
-    if (hit) {
-      items.push(hit.item);
-      shapeCounts[hit.shape] = (shapeCounts[hit.shape] || 0) + 1;
+    const match = line.match(lineRx);
+    if (match) {
+      const designation = clean(match[2]);
+      // Filtrer les en-têtes et lignes parasites
+      if (/^(code|ref|désignation|description|page|total|sous-total|catalogue)/i.test(designation))
+        continue;
+      if (/^(code|ref|page|\d{1,3}\s*$)/i.test(match[1])) continue;
+
+      const price = parsePrice(match[3]);
+      items.push({
+        supplier_ref: match[1],
+        brand: null,
+        model: null,
+        designation,
+        price_ht: price,
+      });
     }
   }
 
   return {
     items,
-    stats: {
-      total: lines.length,
-      parsed: items.length,
-      skipped: lines.length - items.length,
-      shapes: shapeCounts,
-    },
+    stats: { total: lines.length, parsed: items.length, skipped: lines.length - items.length },
   };
 }
 
@@ -551,30 +482,16 @@ const SUPPLIER_PATTERNS = [
 ];
 
 /**
- * Détecte automatiquement le fournisseur et retourne le parser adapté.
- * Stratégie adaptative (L7 — 6.2) : on score chaque profil sur l'échantillon
- * et on retient le meilleur (au lieu du premier match), pour éviter qu'un
- * pattern faible mais positionné en tête de liste ne masque un vrai fournisseur.
- *
+ * Détecte automatiquement le fournisseur et retourne le parser adapté
  * @param {string} text - Texte brut extrait du PDF (premières pages suffisent)
  * @returns {{ id: string, label: string, parser: Function } | null}
  */
 export function detectSupplier(text) {
   const sample = text.substring(0, 15000); // Analyser les premières pages
-  let best = null;
-  let bestScore = 0;
   for (const sp of SUPPLIER_PATTERNS) {
-    const matches = sample.match(new RegExp(sp.rx.source, 'gi'));
-    if (!matches) continue;
-    // Score = nombre d'occurrences, avec bonus si plusieurs matches distincts
-    const distinct = new Set(matches.map((m) => m.toLowerCase()));
-    const score = matches.length + distinct.size * 2;
-    if (score > bestScore) {
-      bestScore = score;
-      best = sp;
-    }
+    if (sp.rx.test(sample)) return sp;
   }
-  return best;
+  return null;
 }
 
 // ─── Marques connues pour détection automatique dans la désignation ───
@@ -770,26 +687,8 @@ export function parseCatalog(text, forceParserId) {
 
   const result = parser(text);
 
-  // Post-traitement commun (L7 — 6.1) :
-  //  1. Nettoyer chaque désignation (collapse spaces, retirer leader dots, HT/€)
-  //  2. Filtrer les références ambiguës (numéros de page, dimensions...)
-  //  3. Détecter/normaliser les marques (inferBrands)
-  //  4. Calculer un score qualité global (quality)
-  const cleaned = [];
-  for (const item of result.items) {
-    if (!item) continue;
-    const designation = cleanDesignation(item.designation);
-    if (!designation || isLikelyHeader(designation)) continue;
-    const ref = item.supplier_ref ? normalizeRef(item.supplier_ref) : null;
-    // On garde l'article sans réf si la désignation est de qualité ; sinon on
-    // exige une réf non ambiguë.
-    if (ref && isAmbiguousRef(ref)) continue;
-    cleaned.push({ ...item, designation, supplier_ref: ref });
-  }
-  result.items = cleaned;
+  // Post-traitement : détecter les marques dans les désignations
   inferBrands(result.items);
-  const quality = summarizeDesignationQuality(result.items);
-  result.stats = { ...(result.stats || {}), quality };
 
   return {
     ...result,

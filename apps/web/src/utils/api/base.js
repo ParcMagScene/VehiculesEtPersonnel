@@ -2,7 +2,6 @@
 // Détection automatique de l'URL du backend
 
 import { clearAllIndexedDB, loadAuthFromIDB, saveAuthToIDB } from '../indexedDB.js';
-import { softReload } from '../softReload.js';
 
 const NETWORK_BACKOFF_BASE_MS = 2000;
 const NETWORK_BACKOFF_MAX_MS = 60000;
@@ -355,7 +354,7 @@ export class ApiClient {
     // Refresh échoué → déconnexion définitive
     console.warn('[Auth] Refresh échoué après 401 → déconnexion forcée');
     this.clearAuth();
-    softReload('auth-session-expired');
+    window.location.reload();
     throw new Error('Session expirée');
   }
 
@@ -424,7 +423,7 @@ export class ApiClient {
     // 401 après retry → déconnexion
     if (response.status === 401 && !isAuthEndpoint && _isRetry) {
       this.clearAuth();
-      softReload('auth-session-expired');
+      window.location.reload();
       throw new Error('Session expirée');
     }
 
@@ -433,7 +432,7 @@ export class ApiClient {
       // Token invalide = JWT corrompu ou secret changé → forcer re-login
       if (data.error === 'Token invalide') {
         this.clearAuth();
-        softReload('auth-token-invalid');
+        window.location.reload();
         throw new Error('Token invalide — reconnexion requise');
       }
       const error = new Error(data.error || 'Accès refusé');
@@ -595,7 +594,7 @@ export class ApiClient {
         if (canRetry) return true;
       }
       this.clearAuth();
-      softReload('auth-access-denied');
+      window.location.reload();
       throw new Error('Accès refusé');
     }
     return false;

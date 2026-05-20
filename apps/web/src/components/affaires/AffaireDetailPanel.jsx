@@ -257,9 +257,6 @@ const AffaireDetailContent = ({
   const [statusHistory, setStatusHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
-  // L6 — Historique imports BL/BP (création auto + MAJ dates)
-  const [importHistory, setImportHistory] = useState([]);
-  const [showImportHistory, setShowImportHistory] = useState(false);
   const [planningOpen, setPlanningOpen] = useState(false);
   const [annotatingBL, setAnnotatingBL] = useState(null); // bl import object en cours d'annotation
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
@@ -398,21 +395,6 @@ const AffaireDetailContent = ({
   useEffect(() => {
     if (showHistory) loadHistory();
   }, [showHistory, loadHistory]);
-
-  // L6 — chargement historique imports
-  const loadImportHistory = useCallback(async () => {
-    if (!affaire.id) return;
-    try {
-      const data = await api.getAffaireImportHistory(affaire.id);
-      setImportHistory(Array.isArray(data) ? data : []);
-    } catch {
-      setImportHistory([]);
-    }
-  }, [affaire.id]);
-
-  useEffect(() => {
-    if (showImportHistory) loadImportHistory();
-  }, [showImportHistory, loadImportHistory]);
 
   // ═══ États pour consultation réservation / événement ═══
   const [viewedReservation, setViewedReservation] = useState(null);
@@ -1202,14 +1184,6 @@ const AffaireDetailContent = ({
             <Button variant="ghost" size="sm" onClick={() => setShowHistory((v) => !v)}>
               <Clock size={14} /> {showHistory ? 'Masquer' : 'Historique'}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowImportHistory((v) => !v)}
-              title="Historique des imports BL/BP et MAJ de dates"
-            >
-              <Clock size={14} /> {showImportHistory ? 'Masquer imports' : 'Historique imports'}
-            </Button>
           </div>
         )}
         {showHistory && statusHistory.length > 0 && (
@@ -1240,38 +1214,6 @@ const AffaireDetailContent = ({
         )}
         {showHistory && statusHistory.length === 0 && (
           <p className="wh-empty">Aucune transition enregistrée</p>
-        )}
-        {showImportHistory && importHistory.length > 0 && (
-          <div className="workflow-history">
-            {importHistory.map((h) => {
-              const labelMap = {
-                affaire_created: 'Création auto',
-                date_change: 'Date modifiée',
-                field_change: 'Champ modifié',
-                bl_import_linked: 'Import rattaché',
-              };
-              return (
-                <div key={h.id} className="workflow-history-item">
-                  <span className="wh-date">{fmtDate(h.created_at)}</span>
-                  <span className="wh-badge" style={{ background: '#475569', color: '#fff' }}>
-                    {labelMap[h.event_type] || h.event_type}
-                  </span>
-                  {h.field_name && <span className="wh-notes">{h.field_name}</span>}
-                  {(h.old_value || h.new_value) && (
-                    <span className="wh-notes">
-                      {h.old_value || '∅'} <ArrowRight size={10} /> {h.new_value || '∅'}
-                    </span>
-                  )}
-                  {h.source && <span className="wh-notes">[{h.source}]</span>}
-                  {h.user_name && <span className="wh-user">{h.user_name}</span>}
-                  {h.notes && <span className="wh-notes">{h.notes}</span>}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {showImportHistory && importHistory.length === 0 && (
-          <p className="wh-empty">Aucun import enregistré</p>
         )}
       </section>
 

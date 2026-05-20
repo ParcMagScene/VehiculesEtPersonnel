@@ -56,43 +56,9 @@
         "docs/06-Changelog/CHANGELOG_UI.md",
         "docs/06-Changelog/CHANGELOG_DOCS.md"
       ]
-    },
-    "guides-auth-personnel": {
-      "path": "docs/03-Guides/auth-personnel/",
-      "index": "docs/03-Guides/auth-personnel/README.md",
-      "files": [
-        "docs/03-Guides/auth-personnel/README.md",
-        "docs/03-Guides/auth-personnel/GUIDE-AUTHENTIFICATION-PERSONNELLE.md",
-        "docs/03-Guides/auth-personnel/INTEGRATION-AUTHENTIFICATION-PERSONNELLE.md",
-        "docs/03-Guides/auth-personnel/API-PERSONNEL-AUTH.md",
-        "docs/03-Guides/auth-personnel/CHECKLIST-DEPLOIEMENT-PERSONNEL-AUTH.md",
-        "docs/03-Guides/auth-personnel/SYNTHESE-AUTHENTIFICATION-PERSONNELLE.md",
-        "docs/03-Guides/auth-personnel/AUTHENTIFICATION-PERSONNELLE-RESUME.md",
-        "docs/03-Guides/auth-personnel/QUICK-START-PERSONNEL-AUTH.md"
-      ]
-    },
-    "audits-2026-05": {
-      "path": "docs/04-Operations/audits/2026-05/",
-      "index": "docs/04-Operations/audits/2026-05/README.md",
-      "files": [
-        "docs/04-Operations/audits/2026-05/README.md",
-        "docs/04-Operations/audits/2026-05/AUDIT-COMPLET-2026-05-06.md",
-        "docs/04-Operations/audits/2026-05/AUDIT-CSP-PATCHES.md",
-        "docs/04-Operations/audits/2026-05/PLAN-CORRECTION-S1-2026-05-07.md",
-        "docs/04-Operations/audits/2026-05/PLAN-CORRECTION-S2-2026-05-07.md"
-      ]
-    },
-    "archive-2026-04": {
-      "path": "docs/07-Archive/2026-04/",
-      "index": "docs/07-Archive/2026-04/README.md",
-      "files": [
-        "docs/07-Archive/2026-04/README.md",
-        "docs/07-Archive/2026-04/AUDIT-REPORT.md"
-      ]
     }
   },
-  "generatedNote": "totalFiles ajusté le 2026-05-20 après ajout audits + plan persistance mobile.",
-  "totalFiles": 119,
+  "totalFiles": 102,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

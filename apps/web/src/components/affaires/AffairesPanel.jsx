@@ -37,9 +37,7 @@ import {
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
-import { useRefreshOnFocus } from '../../hooks/useRefreshOnFocus';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
-import { useStoredListState } from '../../hooks/useStoredListState';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import { fetchAffaires } from '../../utils/affairesLoader';
 import { AFFAIRE_STATUS_MAP } from '../../utils/affaireWorkflow';
@@ -100,10 +98,8 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   const [isLoading, setIsLoading] = useState(true);
 
   // Filtres internes (anciennement dans App.jsx / Header)
-  // [N5] searchTerm / filterType / showArchived / viewMode persistes par onglet (sessionStorage)
-  // Filtres date restent volatils : leurs defauts dependent de "aujourd'hui".
-  const [searchTerm, setSearchTerm] = useStoredListState('affaires:search', '');
-  const [filterType, setFilterType] = useStoredListState('affaires:type', '');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('');
   const [filterDateStart, setFilterDateStart] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -114,9 +110,9 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
     d.setDate(d.getDate() + 6);
     return d.toISOString().slice(0, 10);
   });
-  const [showArchived, setShowArchived] = useStoredListState('affaires:showArchived', false);
+  const [showArchived, setShowArchived] = useState(false);
   const [slidingMode, setSlidingMode] = useState(false);
-  const [viewMode, setViewMode] = useStoredListState('affaires:viewMode', 'week'); // 'week' | 'month'
+  const [viewMode, setViewMode] = useState('week'); // 'week' | 'month'
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
@@ -317,9 +313,6 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
   // Refresh automatique quand une mutation cross-module invalide les affaires
   // (ex. création/modif/suppression de réservation publiée via refreshBus depuis useAppData).
   useRefreshSubscription('affaires', loadDbAffaires);
-
-  // [N4] Refresh au retour de focus (veille tab / multi-onglets). Throttle 60s.
-  useRefreshOnFocus(loadDbAffaires, { minIntervalMs: 60_000 });
 
   // [2.7] Deep link depuis Google Calendar badge → sélectionne/filtre l'affaire
   useEffect(() => {

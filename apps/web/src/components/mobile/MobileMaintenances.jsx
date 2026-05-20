@@ -8,32 +8,17 @@ import { forwardRef, useImperativeHandle, useState } from 'react';
 import { Button, FormField, InlineAlert, Select, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import useDraftStorage from '../../hooks/useDraftStorage';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
-import useStoredListState from '../../hooks/useStoredListState';
-import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import api from '../../utils/api';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
-
-// Brouillon initial — figé au premier mount par useDraftStorage.
-const buildInitialFormData = () => ({
-  vehicleId: '',
-  type: '',
-  startDate: format(new Date(), 'yyyy-MM-dd'),
-  endDate: '',
-  garageId: '',
-  description: '',
-  status: STATUS.PENDING,
-});
 
 const MobileMaintenances = forwardRef(
   (
     { vehicles, maintenances, garages, currentUser, onMaintenanceCreated, onBack, onRefresh },
     ref,
   ) => {
-    // Persistance L2 : showForm + type + brouillon survivent au refresh.
-    const [showForm, setShowForm] = useStoredListState('mobile:maintenances:showForm', false);
-    const [formType, setFormType] = useStoredListState('mobile:maintenances:formType', '');
+    const [showForm, setShowForm] = useState(false);
+    const [formType, setFormType] = useState(''); // 'scheduled', 'request', 'breakdown'
     const [openedDirectly, setOpenedDirectly] = useState(false);
     const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(onRefresh, {
       disabled: !onRefresh,
@@ -46,15 +31,17 @@ const MobileMaintenances = forwardRef(
         setOpenedDirectly(true);
       },
     }));
-    const [formData, setFormData, draftCtl] = useDraftStorage(
-      'mobile:maintenances:draft',
-      buildInitialFormData(),
-    );
+    const [formData, setFormData] = useState({
+      vehicleId: '',
+      type: '',
+      startDate: format(new Date(), 'yyyy-MM-dd'),
+      endDate: '',
+      garageId: '',
+      description: '',
+      status: STATUS.PENDING,
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-
-    // Bloque refresh tant qu'un brouillon non envoyé existe.
-    useUnsavedChangesGuard(showForm && draftCtl.isDirty);
 
     const handleTypeSelect = (type) => {
       setFormType(type);
@@ -79,8 +66,15 @@ const MobileMaintenances = forwardRef(
         onMaintenanceCreated(newMaintenance);
         setShowForm(false);
         setFormType('');
-        // Brouillon validé → purge sessionStorage et reset.
-        draftCtl.commit();
+        setFormData({
+          vehicleId: '',
+          type: '',
+          startDate: format(new Date(), 'yyyy-MM-dd'),
+          endDate: '',
+          garageId: '',
+          description: '',
+          status: STATUS.PENDING,
+        });
       } catch (err) {
         setError(err.message || 'Erreur lors de la création');
       } finally {

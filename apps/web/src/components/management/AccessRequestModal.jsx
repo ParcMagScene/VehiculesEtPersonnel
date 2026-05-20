@@ -9,7 +9,6 @@ import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
-import { softReload } from '../../utils/softReload';
 
 function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
   const [step, setStep] = useState('request'); // 'request' | 'create-password' | 'pending'
@@ -102,7 +101,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
       resetDirty();
       onSuccess?.();
       onClose();
-      softReload('account-created');
+      window.location.reload();
     } catch (err) {
       setError(err.message || 'Erreur lors de la création du compte');
     } finally {

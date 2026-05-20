@@ -277,11 +277,8 @@ export const locmatConfirmSchema = z.object({
     .optional()
     .default([]),
   // Champs de signalement (advisory) : retournés par le preview, renvoyés tels quels
-  // pour traçabilité dans import_logs.
+  // pour traçabilité dans import_logs. Aucune écriture automatique côté serveur.
   missingProducts: z.array(z.any()).optional().default([]),
-  // Si true (défaut), les missingProducts sont soft-delete (status='removed')
-  // au confirm. LocMat est la source de vérité pour le stock physique.
-  deleteMissingProducts: z.boolean().optional().default(true),
   duplicates: z
     .object({
       locations: z.array(z.any()).optional().default([]),

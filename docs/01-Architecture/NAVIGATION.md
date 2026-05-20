@@ -63,67 +63,10 @@ API style `useState`. Particularités :
 
 1. `useMobileRouter` parse `window.location.hash`.
 2. Hash QR (`MOBILE_QR_PATTERN`) → écran spécial `qr-landing` + `qrUid`.
-3. `navigate(screen, params?)` pousse dans l'historique — bouton back navigateur OK.
-   Les paramètres optionnels sont sérialisés en query string après le path
-   (`#/mobile/equipment-qr?uid=EMAG-123`).
+3. `navigate(screen)` pousse dans l'historique — bouton back navigateur OK.
 4. `goBack()` remplace le hash courant via `MOBILE_BACK_TARGET`.
 5. Les écrans listés dans `MOBILE_TAB_SCREENS` sont persistés
    (`localStorage[MOBILE_ACTIVE_TAB_KEY]`) pour restauration au prochain démarrage.
-
-## Persistance UI mobile (audit 2026-05-20)
-
-Objectif : aucun travail perdu sur F5, retour navigateur, ou réveil d'onglet.
-Trois primitives complémentaires, **toutes basées sur Web Storage natif**
-(pas de Redux/Zustand/Jotai). Chaque clé est documentée pour audit RGPD.
-
-| Hook | Backend | Usage |
-|---|---|---|
-| [`useDraftStorage(key, initial, {ttlMs})`](../../apps/web/src/hooks/useDraftStorage.js) | `sessionStorage` | Brouillons de formulaires (TTL 24 h par défaut). API `[value, setValue, {clear, commit, isDirty}]`. `key=null` désactive la persistance. Recharge automatiquement quand la clé change (chat multi-conversation, équipement multi-UID). |
-| [`useStoredListState(key, default, {backend})`](../../apps/web/src/hooks/useStoredListState.js) | `session` ou `local` | Préférences UI sérialisables JSON (filtres, mode d'affichage, sélection par id). |
-| [`useUnsavedChangesGuard(isDirty)`](../../apps/web/src/hooks/useUnsavedChangesGuard.js) | listener `beforeunload` | Dialogue natif si formulaire dirty au moment d'un F5 ou close. |
-
-### Clés sessionStorage / localStorage utilisées
-
-| Clé | Hook | Composant | Contenu |
-|---|---|---|---|
-| `mobile:reservations:draft` | `useDraftStorage` | `MobileReservations` | Brouillon formulaire réservation |
-| `mobile:reservations:showForm` | `useStoredListState` | `MobileReservations` | `bool` — formulaire ouvert |
-| `mobile:maintenances:draft` | `useDraftStorage` | `MobileMaintenances` | Brouillon maintenance |
-| `mobile:maintenances:showForm` | `useStoredListState` | `MobileMaintenances` | `bool` |
-| `mobile:maintenances:formType` | `useStoredListState` | `MobileMaintenances` | Type sélectionné dans le formulaire |
-| `mobile:equipment-qr:<uid>:screen` | `useStoredListState` | `MobileEquipmentQR` | Écran actif par équipement |
-| `mobile:equipment-qr:<uid>:draft:<type>` | `useDraftStorage` | `MobileEquipmentQR` | Brouillon défaut/SAV/intervention par UID |
-| `mobile:messaging:<conversationId>:input` | `useDraftStorage` | `MobileMessaging` | Message en cours de saisie par conversation |
-| `mobile:leaves:view` / `:filter` / `:selectedId` | `useStoredListState` | `MobileLeaves` | Vue, filtre, demande sélectionnée |
-| `mobile:affaires:selectedNum` / `:search` / `:filterType` | `useStoredListState` | `MobileAffaires` | Affaire ouverte, recherche, filtre |
-| `mobile:personnel:selectedId` / `:viewMode` | `useStoredListState` | `MobilePersonnel` | Personne sélectionnée, jour/semaine |
-| `mobile:planning:selectedMonth` | `useStoredListState` | `MobilePlanning` | Mois visualisé (ISO string) |
-| `mobile:tasks:collapsedSections` / `:showAll` | `useStoredListState` | `MobileTasks` | Sections repliées (Array sérialisé en Set), filtre "toutes" |
-| `mobileActiveTab` (`MOBILE_ACTIVE_TAB_KEY`) | `useMobileRouter` | (global) | Dernier onglet visité dans `MOBILE_TAB_SCREENS` |
-
-### Conventions
-
-- **Préfixe `mobile:` obligatoire** pour les clés rattachées à l'app mobile.
-- **Sélection persistée = identifiant uniquement** (jamais l'objet métier).
-  Le composant reconstruit l'objet depuis la collection courante au mount —
-  évite stale data et fuite RGPD (les objets contiennent souvent du PII).
-- **Objets non sérialisables JSON** (Set, Date) : convertir au boundary du
-  hook (Set ↔ Array, Date ↔ ISO string). Exemple : `MobileTasks`.
-- **TTL drafts = 24 h** : un brouillon plus ancien est ignoré au reload pour
-  éviter de réinjecter un état périmé (équipement supprimé, formulaire
-  modifié côté backend, etc.).
-
-### Compromis assumés
-
-- **`MobileMessaging` — `activeConversation` non persisté** dans le hash.
-  Le draft est lié à `conversationId` (donc bien restauré une fois la
-  conversation rouverte) mais l'utilisateur retombe sur la liste après F5.
-  Persistance via query param refusée à ce stade : refactor trop invasif
-  pour un gain marginal (l'utilisateur retrouve immédiatement la conversation
-  via la liste, et le brouillon réapparaît).
-- **`currentDate` de `MobilePersonnel`** non persisté : voulu — revient
-  systématiquement à aujourd'hui (cohérent avec un outil de planification
-  journalier).
 
 ## Garde formulaires (Sprint D)
 

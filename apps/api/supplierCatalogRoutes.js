@@ -21,7 +21,6 @@ import {
   brandResolveSchema,
   taxonomyApplySchema,
 } from './schemas/supplier.js';
-import { parseSuggestQuery, rankSuggestions } from './services/catalogSuggest.js';
 
 // ============ ARTICLES FOURNISSEURS ============
 
@@ -95,44 +94,6 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
       res.json({ articles, total, limit: lim, offset: off });
     } catch (error) {
       logger.error('Erreur GET supplier-articles:', error.message);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
-
-  // GET /api/supplier-articles/suggest — Autocomplete (L9 — 3.3)
-  // Query params : q (texte), supplier_id (optionnel, boost), limit (1..50, défaut 10)
-  // Payload léger optimisé pour un input d'autocomplete.
-  app.get('/api/supplier-articles/suggest', authenticateToken, (req, res) => {
-    try {
-      const { q, supplier_id, limit } = req.query;
-      const query = parseSuggestQuery(q);
-      if (query.isEmpty) {
-        return res.json({ suggestions: [], query: query.normalized });
-      }
-      const lim = Math.max(1, Math.min(parseInt(limit, 10) || 10, 50));
-      // Pré-filtre SQL : LIKE sur ref / designation / brand / model.
-      // On récupère jusqu'à 200 candidats pour laisser le scoring trier finement.
-      const params = [query.like, query.like, query.like, query.like];
-      let sql = `SELECT sa.id, sa.supplier_id, sa.supplier_ref, sa.designation,
-                        sa.brand, sa.model, sa.price_ht, sa.unit,
-                        s.name as supplier_name
-                 FROM supplier_articles sa
-                 LEFT JOIN suppliers s ON sa.supplier_id = s.id
-                 WHERE (sa.supplier_ref LIKE ? OR sa.designation LIKE ?
-                        OR sa.brand LIKE ? OR sa.model LIKE ?)`;
-      if (supplier_id) {
-        sql += ' AND sa.supplier_id = ?';
-        params.push(supplier_id);
-      }
-      sql += ' LIMIT 200';
-      const candidates = db.prepare(sql).all(...params);
-      const ranked = rankSuggestions(candidates, query, {
-        limit: lim,
-        preferSupplierId: supplier_id || null,
-      });
-      res.json({ suggestions: ranked, query: query.normalized, total: ranked.length });
-    } catch (error) {
-      logger.error('Erreur GET supplier-articles/suggest:', error.message);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });

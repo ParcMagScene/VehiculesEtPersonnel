@@ -16,8 +16,6 @@ import { Button, InlineAlert, Input, Select, Spinner, Textarea } from '@/design-
 
 import { EQUIPMENT_STATUS, STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
-import useDraftStorage from '../../hooks/useDraftStorage';
-import useStoredListState from '../../hooks/useStoredListState';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -53,23 +51,20 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
   const [equipment, setEquipment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // L3 : sous-écran + brouillons persistés par UID (sessionStorage).
-  // Clés par UID → changer de QR n'expose pas un brouillon d'un autre équipement.
-  const [screen, setScreen] = useStoredListState(`mobile:equipment-qr:${uid}:screen`, 'menu'); // menu | fiche | defaut | sav | intervention
-  const [defautForm, setDefautForm, defautCtl] = useDraftStorage(
-    `mobile:equipment-qr:${uid}:defaut`,
-    { title: '', description: '' },
-  );
-  const [savForm, setSavForm, savCtl] = useDraftStorage(`mobile:equipment-qr:${uid}:sav`, {
+  const [screen, setScreen] = useState('menu'); // menu | fiche | defaut | sav | intervention
+  const [defautForm, setDefautForm] = useState({ title: '', description: '' });
+  const [savForm, setSavForm] = useState({
     title: '',
     description: '',
     type: 'panne',
     priority: 'medium',
   });
-  const [interventionForm, setInterventionForm, interventionCtl] = useDraftStorage(
-    `mobile:equipment-qr:${uid}:intervention`,
-    { title: '', description: '', type: 'reparation', resolution: '' },
-  );
+  const [interventionForm, setInterventionForm] = useState({
+    title: '',
+    description: '',
+    type: 'reparation',
+    resolution: '',
+  });
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(null);
 
@@ -106,7 +101,7 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
       });
       refreshBus.publish('sav');
       setSubmitSuccess('Signalement envoyé !');
-      defautCtl.commit();
+      setDefautForm({ title: '', description: '' });
       setTimeout(() => {
         setSubmitSuccess(null);
         setScreen('menu');
@@ -144,7 +139,6 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
         setSubmitSuccess('Demande SAV créée !');
       }
       setSavForm({ title: '', description: '', type: 'panne', priority: 'medium' });
-      savCtl.commit();
       setTimeout(() => {
         setSubmitSuccess(null);
         setScreen('menu');
@@ -172,7 +166,6 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
       });
       setSubmitSuccess('Intervention enregistrée !');
       setInterventionForm({ title: '', description: '', type: 'reparation', resolution: '' });
-      interventionCtl.commit();
       setTimeout(() => {
         setSubmitSuccess(null);
         setScreen('menu');

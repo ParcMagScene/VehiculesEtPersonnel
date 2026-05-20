@@ -28,12 +28,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { setupBLImportRoutes } from './planning/blImportRoutes.js';
 import { setupTaskRoutes } from './planning/taskRoutes.js';
-import {
-  addOneDayToDateStr,
-  formatLocalDate,
-  isMidnightTick,
-  subtractOneDayFromDateStr,
-} from './services/planningRolloverHelpers.js';
 
 // ═══════════════════════════════════════════════
 // VALIDATION — Dates & Heures
@@ -854,41 +848,6 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
     },
   );
 
-  // GET /api/planning/tasks/rollover/status — diagnostic L5
-  // Renvoie : cronActive, todayStr, pendingPastCount (à reporter), pendingTodayCount
-  app.get('/api/planning/tasks/rollover/status', authenticateToken, (req, res) => {
-    try {
-      const todayStr = formatLocalDate(new Date());
-      const pendingPast = db
-        .prepare(
-          `SELECT COUNT(*) AS n FROM task_assignments
-           WHERE date < ? AND status IN ('pending', 'in_progress')
-             AND section NOT IN ('rdv', 'evenements')
-             AND source_type != 'recurring'
-             AND deleted_at IS NULL`,
-        )
-        .get(todayStr);
-      const pendingToday = db
-        .prepare(
-          `SELECT COUNT(*) AS n FROM task_assignments
-           WHERE date = ? AND status IN ('pending', 'in_progress')
-             AND section NOT IN ('rdv', 'evenements')
-             AND source_type != 'recurring'
-             AND deleted_at IS NULL`,
-        )
-        .get(todayStr);
-      res.json({
-        cronActive: rolloverCronTimer !== null,
-        todayStr,
-        pendingPastCount: pendingPast?.n || 0,
-        pendingTodayCount: pendingToday?.n || 0,
-      });
-    } catch (error) {
-      logger.error('GET /api/planning/tasks/rollover/status error:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
-
   // ═══════════════════════════════════════════════════════
   // iCal Calendars — CRUD + synchronisation
   // ═══════════════════════════════════════════════════════
@@ -1173,7 +1132,9 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
   // Reporter les tâches non terminées au lendemain
   function rolloverPendingTasks(fromDate) {
-    const nextDate = addOneDayToDateStr(fromDate);
+    const d = new Date(fromDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    const nextDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
     // Tâches pending/in_progress du jour qui ne sont pas des RDV/événements
     // Exclure les soft-deleted ET les tâches récurrentes (elles seront re-générées)
@@ -1358,12 +1319,14 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
       const now = new Date();
       // Apres minuit: reporter les taches non faites de J-1 vers J
       // et generer les recurrentes de J. Garde-fou: une seule execution par jour.
-      if (isMidnightTick(now)) {
-        const todayStr = formatLocalDate(now);
+      if (now.getHours() === 0 && now.getMinutes() === 0) {
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         if (lastRunDayKey === todayStr) return;
         lastRunDayKey = todayStr;
 
-        const yesterdayStr = subtractOneDayFromDateStr(todayStr);
+        const yesterdayD = new Date(now);
+        yesterdayD.setDate(yesterdayD.getDate() - 1);
+        const yesterdayStr = `${yesterdayD.getFullYear()}-${String(yesterdayD.getMonth() + 1).padStart(2, '0')}-${String(yesterdayD.getDate()).padStart(2, '0')}`;
 
         // 1. Reporter les tâches non terminées de la veille vers aujourd'hui
         const rolled = rolloverPendingTasks(yesterdayStr);
@@ -1386,7 +1349,7 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
     // Au démarrage : reporter les tâches pending des jours précédents + générer récurrentes
     const now = new Date();
-    const todayStr = formatLocalDate(now);
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     // 1. Reporter les tâches pending de tous les jours passés vers aujourd'hui
     try {

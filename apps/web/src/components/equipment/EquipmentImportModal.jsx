@@ -14,6 +14,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { Button, InlineAlert, ModalLayout, Spinner, Table } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 
 // Colonnes CSV attendues (séparateur ;)
@@ -85,6 +87,13 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [expandedFamilies, setExpandedFamilies] = useState(new Set());
+
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(
+    { step, rowsCount: csvData?.rows?.length || 0 },
+    { confirmer: confirm },
+  );
+  const handleSafeClose = guardClose(onClose);
 
   // Analyse du CSV et extraction des hiérarchies
   const hierarchy = useMemo(() => {
@@ -162,6 +171,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
       const result = await api.importEquipmentCsv(csvData.rows, 'import');
       setResult(result);
       setStep('done');
+      resetDirty();
     } catch (err) {
       setError(err.message);
       setStep('preview');
@@ -182,7 +192,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
   return (
     <ModalLayout
       open
-      onClose={onClose}
+      onClose={handleSafeClose}
       title="Import CSV Mat\u00e9riel"
       icon={<Upload size={18} />}
       size="lg"
@@ -191,7 +201,7 @@ const EquipmentImportModal = ({ onClose, onImportDone }) => {
       footer={
         <>
           {step === 'upload' && (
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="ghost" onClick={handleSafeClose}>
               Fermer
             </Button>
           )}

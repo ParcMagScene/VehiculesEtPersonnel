@@ -30,6 +30,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, EmptyState, InlineAlert, ModalLayout, Table } from '@/design-system';
 
+import { useConfirmDialog } from '../../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../../hooks/useDirtyForm';
 import { useToast } from '../../../hooks/useToast';
 import api from '../../../utils/api';
 
@@ -224,6 +226,18 @@ export default function LocmatImportModal({ onDone, onClose }) {
   const locInputRef = useRef(null);
   const serInputRef = useRef(null);
 
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(
+    {
+      step,
+      locName: locFile?.name || '',
+      serName: serFile?.name || '',
+      hasDiff: !!diff,
+    },
+    { confirmer: confirm },
+  );
+  const handleSafeClose = guardClose(onClose);
+
   const counts = useMemo(() => {
     if (!diff) return null;
     return {
@@ -292,6 +306,7 @@ export default function LocmatImportModal({ onDone, onClose }) {
       if (!res?.success) throw new Error(res?.error || 'Échec import');
       setResult(res);
       setStep('done');
+      resetDirty();
       toast.success?.('Import Locmat terminé');
     } catch (e) {
       setError(e.message || "Erreur lors de l'import.");
@@ -321,7 +336,7 @@ export default function LocmatImportModal({ onDone, onClose }) {
   return (
     <ModalLayout
       open
-      onClose={!isImporting ? onClose : undefined}
+      onClose={!isImporting ? handleSafeClose : undefined}
       size="xl"
       className="stock-modal stock-modal-lg"
       title={
@@ -332,7 +347,7 @@ export default function LocmatImportModal({ onDone, onClose }) {
       footer={
         isSelect ? (
           <>
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="ghost" onClick={handleSafeClose}>
               Annuler
             </Button>
             <Button
@@ -507,6 +522,7 @@ export default function LocmatImportModal({ onDone, onClose }) {
           </div>
         )}
       </div>
+      {ConfirmDialogRenderer}
     </ModalLayout>
   );
 }

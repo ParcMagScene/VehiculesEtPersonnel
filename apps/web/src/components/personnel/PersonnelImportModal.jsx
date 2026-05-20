@@ -21,6 +21,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { Accordion, Button, InlineAlert, ModalLayout, Spinner, Table, Tag } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 
 // Colonnes CSV attendues (séparateur ;)
@@ -90,6 +92,13 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [filterAction, setFilterAction] = useState('all'); // all | create | update | conflict
+
+  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { resetDirty, guardClose } = useDirtyForm(
+    { step, rowsCount: csvData?.rows?.length || 0 },
+    { confirmer: confirm },
+  );
+  const handleSafeClose = guardClose(onClose);
 
   // Stats par type dans le CSV
   const typeStats = useMemo(() => {
@@ -162,6 +171,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
       const result = await api.importPersonnelCsv(csvData.rows, 'import');
       setResult(result);
       setStep('done');
+      resetDirty();
     } catch (err) {
       setError(err.message);
       setStep('preview');
@@ -180,7 +190,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
   return (
     <ModalLayout
       open
-      onClose={onClose}
+      onClose={handleSafeClose}
       title="Import CSV Personnel"
       icon={<Upload size={18} />}
       size="lg"
@@ -189,7 +199,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
       footer={
         <>
           {step === 'upload' && (
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="ghost" onClick={handleSafeClose}>
               Fermer
             </Button>
           )}

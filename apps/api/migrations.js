@@ -21,6 +21,7 @@ import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
 import { runVideoMigrations } from './migrations/video-v1.js';
+import { applyPerfL10Indexes } from './services/perfIndexesL10.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1322,6 +1323,17 @@ export function runPostInitMigrations(db) {
     }
   }
   logger.info(`✅ Perf Equipment Index: ${perfEqOk}/${perfEquipmentIndexes.length} créés/vérifiés`);
+
+  // ═══ PERF L10 (8.1) — Index composites pour les modules L6-L9 ═══
+  try {
+    const perfL10 = applyPerfL10Indexes(db);
+    logger.info(
+      `✅ Perf L10 Index: ${perfL10.succeeded}/${perfL10.attempted} créés/vérifiés` +
+        (perfL10.failed > 0 ? ` (${perfL10.failed} ignorés)` : ''),
+    );
+  } catch (e) {
+    logger.warn('⚠️ Migration Perf L10:', e.message);
+  }
 
   // ANALYZE après ajout d'index pour rafraîchir les stats du planner.
   try {

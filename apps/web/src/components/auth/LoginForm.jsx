@@ -3,7 +3,7 @@ import './LoginForm.css';
 import { ChevronDown, Hash, KeyRound, LogIn, User, UserPlus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Avatar, Button, FormField, InlineAlert, Input } from '@/design-system';
+import { Avatar, Button, FormField, InlineAlert, Input, Modal, ModalBody, ModalFooter, ModalHeader } from '@/design-system';
 
 import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
@@ -400,72 +400,66 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
           />
         )}
 
-        {showSessionConflict && (
-          <div
-            className="login-overlay"
-            onMouseDown={(e) => e.target === e.currentTarget && setShowSessionConflict(false)}
-          >
-            <div
-              className="login-modal-content session-conflict-modal"
-              onClick={(e) => e.stopPropagation()}
+        {/* [P1] Migré vers Modal DS — anciennement wrapper login-overlay + login-modal-content */}
+        <Modal
+          open={showSessionConflict}
+          onClose={() => setShowSessionConflict(false)}
+          size="sm"
+          className="session-conflict-modal"
+        >
+          <ModalHeader onClose={() => setShowSessionConflict(false)}>Session déjà active</ModalHeader>
+          <ModalBody>
+            <p className="login-modal-text">
+              Une session est déjà ouverte avec ces identifiants sur un autre appareil ou
+              navigateur.
+            </p>
+            <p className="login-modal-text-secondary">
+              Vous pouvez fermer les autres sessions et vous connecter ici.
+            </p>
+            {error && <InlineAlert className="login-modal-alert">{error}</InlineAlert>}
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowSessionConflict(false);
+                setConflictUser(null);
+              }}
+              disabled={loading}
             >
-              <div className="modal-header">
-                <h3>Session deja active</h3>
-              </div>
-              <div className="modal-body">
-                <p className="login-modal-text">
-                  Une session est deja ouverte avec ces identifiants sur un autre appareil ou
-                  navigateur.
-                </p>
-                <p className="login-modal-text-secondary">
-                  Vous pouvez fermer les autres sessions et vous connecter ici.
-                </p>
+              Annuler
+            </Button>
+            <Button variant="danger" onClick={handleForceLogin} disabled={loading}>
+              {loading ? 'Connexion...' : 'Fermer les autres sessions et se connecter'}
+            </Button>
+          </ModalFooter>
+        </Modal>
 
-                {error && <InlineAlert className="login-modal-alert">{error}</InlineAlert>}
-
-                <div className="modal-actions login-modal-actions">
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setShowSessionConflict(false);
-                      setConflictUser(null);
-                    }}
-                    disabled={loading}
-                  >
-                    Annuler
-                  </Button>
-                  <Button variant="danger" onClick={handleForceLogin} disabled={loading}>
-                    {loading ? 'Connexion...' : 'Fermer les autres sessions et se connecter'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showResetPassword && (
-          <div
-            className="login-overlay"
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) {
-                setShowResetPassword(false);
-                setResetError('');
-              }
+        {/* [P1] Migré vers Modal DS — anciennement wrapper login-overlay + login-modal-content */}
+        <Modal
+          open={showResetPassword}
+          onClose={() => {
+            setShowResetPassword(false);
+            setResetError('');
+          }}
+          size="sm"
+          className="session-conflict-modal"
+        >
+          <ModalHeader
+            className="login-reset-header"
+            onClose={() => {
+              setShowResetPassword(false);
+              setResetError('');
             }}
           >
-            <div
-              className="login-modal-content session-conflict-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-header login-reset-header">
-                <h3>Réinitialiser le mot de passe</h3>
-              </div>
-              <div className="modal-body">
-                <p className="login-modal-text">
-                  Entrez votre adresse email et un nouveau mot de passe. Si le compte existe, il
-                  sera réinitialisé immédiatement.
-                </p>
-                <form onSubmit={handleSelfResetPassword}>
+            Réinitialiser le mot de passe
+          </ModalHeader>
+          <ModalBody>
+            <p className="login-modal-text">
+              Entrez votre adresse email et un nouveau mot de passe. Si le compte existe, il sera
+              réinitialisé immédiatement.
+            </p>
+            <form onSubmit={handleSelfResetPassword}>
                   <FormField
                     className="form-group login-form-field-spacing-last"
                     label="Adresse email"
@@ -516,39 +510,37 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                       autoComplete="new-password"
                     />
                   </FormField>
-                  {resetError && (
-                    <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>
-                  )}
-                  <div className="modal-actions login-modal-actions">
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      onClick={() => {
-                        setShowResetPassword(false);
-                        setResetError('');
-                      }}
-                      disabled={loading}
-                    >
-                      Annuler
-                    </Button>
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      disabled={
-                        loading ||
-                        !resetFormEmail ||
-                        newPassword.length < 10 ||
-                        newPasswordConfirm !== newPassword
-                      }
-                    >
-                      {loading ? 'Réinitialisation...' : 'Réinitialiser'}
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
+              {resetError && (
+                <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>
+              )}
+              <ModalFooter>
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => {
+                    setShowResetPassword(false);
+                    setResetError('');
+                  }}
+                  disabled={loading}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={
+                    loading ||
+                    !resetFormEmail ||
+                    newPassword.length < 10 ||
+                    newPasswordConfirm !== newPassword
+                  }
+                >
+                  {loading ? 'Réinitialisation...' : 'Réinitialiser'}
+                </Button>
+              </ModalFooter>
+            </form>
+          </ModalBody>
+        </Modal>
       </div>
     </div>
   );

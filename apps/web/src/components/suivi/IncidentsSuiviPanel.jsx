@@ -8,6 +8,7 @@ import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
+import { Input, Select, Textarea } from '@/design-system';
 import EntityCombobox from '../ui/EntityCombobox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '../ui/Modal';
 
@@ -554,7 +555,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
           <div className="si-field-row">
             <label>Semaine</label>
-            <input type="week" value={weekKey} onChange={(e) => setWeekKey(e.target.value)} />
+            <Input type="week" value={weekKey} onChange={(e) => setWeekKey(e.target.value)} />
           </div>
 
           <div className="si-week-list">
@@ -644,17 +645,17 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
             </div>
 
             {synthMode === 'semaine' && (
-              <input type="week" value={synthWeek} onChange={(e) => setSynthWeek(e.target.value)} />
+              <Input type="week" value={synthWeek} onChange={(e) => setSynthWeek(e.target.value)} />
             )}
             {synthMode === 'mois' && (
-              <input
+              <Input
                 type="month"
                 value={synthMonth}
                 onChange={(e) => setSynthMonth(e.target.value)}
               />
             )}
             {synthMode === 'annee' && (
-              <input
+              <Input
                 type="number"
                 min="2020"
                 max="2100"
@@ -778,7 +779,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
           ) : (
             <div className="si-field-row">
               <label>Contexte</label>
-              <select
+              <Select
                 value={selectedContextType}
                 onChange={(e) => handleContextTypeChange(e.target.value)}
                 className="si-context-select"
@@ -788,7 +789,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
                     {opt.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           )}
 
@@ -846,7 +847,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
           <div className="si-field-row">
             <label>Date incident</label>
-            <input
+            <Input
               type="date"
               value={form.incident_date || ''}
               onChange={(e) => setForm((prev) => ({ ...prev, incident_date: e.target.value }))}
@@ -855,7 +856,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
           <div className="si-field-row">
             <label>Notes ticket</label>
-            <textarea
+            <Textarea
               value={form.notes}
               onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
               rows={2}
@@ -874,7 +875,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
             {form.incidents.map((inc, idx) => (
               <div key={idx} className="si-incident-row">
                 <div className="si-incident-row-top">
-                  <select
+                  <Select
                     value={inc.incident_type}
                     onChange={(e) => handleIncidentChange(idx, { incident_type: e.target.value })}
                   >
@@ -883,7 +884,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
                         {opt.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <EntityCombobox
                     value={String(inc.reporter_person_id || '')}
                     onChange={(value) => handleIncidentChange(idx, { reporter_person_id: value })}
@@ -901,7 +902,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
                     <Trash2 size={13} />
                   </Button>
                 </div>
-                <textarea
+                <Textarea
                   rows={2}
                   value={inc.description}
                   onChange={(e) => handleIncidentChange(idx, { description: e.target.value })}

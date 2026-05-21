@@ -1382,7 +1382,7 @@ const AffaireDetailContent = ({
               <label>
                 <Calendar size={12} /> Date début
               </label>
-              <input
+              <Input
                 type="date"
                 value={editForm.dateDebut}
                 onChange={(e) => setEditForm((f) => ({ ...f, dateDebut: e.target.value }))}
@@ -1393,7 +1393,7 @@ const AffaireDetailContent = ({
               <label>
                 <Calendar size={12} /> Date fin
               </label>
-              <input
+              <Input
                 type="date"
                 value={editForm.dateFin}
                 onChange={(e) => setEditForm((f) => ({ ...f, dateFin: e.target.value }))}
@@ -1955,7 +1955,7 @@ const AffaireDetailContent = ({
                       <div className="task-step-fields" onClick={(e) => e.stopPropagation()}>
                         <div className="tsf-row">
                           <label>Date</label>
-                          <input
+                          <Input
                             type="date"
                             value={s.date}
                             onChange={(e) => updateTaskStep(step.key, 'date', e.target.value)}
@@ -1983,13 +1983,13 @@ const AffaireDetailContent = ({
                         </div>
                         <div className="tsf-row">
                           <label>Début</label>
-                          <input
+                          <Input
                             type="time"
                             value={s.time}
                             onChange={(e) => updateTaskStep(step.key, 'time', e.target.value)}
                           />
                           <label>Fin</label>
-                          <input
+                          <Input
                             type="time"
                             value={s.endTime}
                             onChange={(e) => updateTaskStep(step.key, 'endTime', e.target.value)}
@@ -2231,7 +2231,7 @@ const AffaireDetailContent = ({
             }}
             onClick={() => fileInputRef.current?.click()}
           >
-            <input
+            <Input
               ref={fileInputRef}
               type="file"
               multiple

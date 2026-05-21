@@ -28,6 +28,7 @@ import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
+import { Input } from '@/design-system';
 import FicheSuivi from './FicheSuivi';
 import IncidentsSuiviPanel from './IncidentsSuiviPanel';
 import SynthesesPanel from './SynthesesPanel';
@@ -300,7 +301,7 @@ function SuiviPanel({
         >
           <Star size={12} fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
         </button>
-        <input
+        <Input
           type="checkbox"
           className="suivi-person-check"
           checked={selectedSheetIds.has(`${p.id}__${selectedDate}`)}
@@ -538,7 +539,7 @@ function SuiviPanel({
                 {teamAuthMode === 'pin' ? (
                   <div className="suivi-team-auth-field">
                     <label>Code PIN (4 chiffres)</label>
-                    <input
+                    <Input
                       type="password"
                       inputMode="numeric"
                       maxLength={4}
@@ -555,7 +556,7 @@ function SuiviPanel({
                 ) : (
                   <div className="suivi-team-auth-field">
                     <label>Mot de passe</label>
-                    <input
+                    <Input
                       type="password"
                       value={teamPasswordInput}
                       onChange={(e) => setTeamPasswordInput(e.target.value)}
@@ -653,7 +654,7 @@ function SuiviPanel({
                   <div className="suivi-batch-bar">
                     <div className="suivi-batch-options">
                       <label className="suivi-select-all" title="Tout sélectionner">
-                        <input
+                        <Input
                           type="checkbox"
                           checked={
                             visibleKeys.length > 0 && selectedVisibleCount === visibleKeys.length
@@ -663,7 +664,7 @@ function SuiviPanel({
                         <span>Tout</span>
                       </label>
                       <label className="suivi-select-all" title="Sélectionner tous les permanents">
-                        <input
+                        <Input
                           type="checkbox"
                           checked={
                             permanents.length > 0 && selectedPermanentsCount === permanents.length
@@ -673,7 +674,7 @@ function SuiviPanel({
                         <span>Tous permanents</span>
                       </label>
                       <label className="suivi-select-all" title="Afficher uniquement les favoris">
-                        <input
+                        <Input
                           type="checkbox"
                           checked={onlyFavorites}
                           onChange={(e) => setOnlyFavorites(e.target.checked)}
@@ -812,7 +813,7 @@ function SuiviPanel({
 
                 <div className="suivi-date-display">
                   <Calendar size={16} />
-                  <input
+                  <Input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}

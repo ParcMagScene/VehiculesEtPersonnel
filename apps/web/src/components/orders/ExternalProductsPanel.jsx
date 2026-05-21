@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, InlineAlert, ModalLayout, SearchBar, Spinner, Tag } from '@/design-system';
+import { Button, InlineAlert, Input, ModalLayout, SearchBar, Select, Spinner, Tag, Textarea } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
@@ -60,7 +60,7 @@ function ProductForm({ initial = {}, onSave, onCancel, loading }) {
       <div className="eshop-form-grid">
         <div className="eshop-field">
           <label>Nom *</label>
-          <input
+          <Input
             className="eshop-input"
             value={form.name}
             onChange={set('name')}
@@ -70,7 +70,7 @@ function ProductForm({ initial = {}, onSave, onCancel, loading }) {
         </div>
         <div className="eshop-field">
           <label>Catégorie</label>
-          <input
+          <Input
             className="eshop-input"
             value={form.category}
             onChange={set('category')}
@@ -79,7 +79,7 @@ function ProductForm({ initial = {}, onSave, onCancel, loading }) {
         </div>
         <div className="eshop-field eshop-field--full">
           <label>Description</label>
-          <textarea
+          <Textarea
             className="eshop-input"
             value={form.description}
             onChange={set('description')}
@@ -89,7 +89,7 @@ function ProductForm({ initial = {}, onSave, onCancel, loading }) {
         </div>
         <div className="eshop-field eshop-field--full">
           <label>URL image</label>
-          <input
+          <Input
             className="eshop-input"
             value={form.image_url}
             onChange={set('image_url')}
@@ -99,7 +99,7 @@ function ProductForm({ initial = {}, onSave, onCancel, loading }) {
         </div>
         <div className="eshop-field eshop-field--full">
           <label>Notes</label>
-          <textarea className="eshop-input" value={form.notes} onChange={set('notes')} rows={2} />
+          <Textarea className="eshop-input" value={form.notes} onChange={set('notes')} rows={2} />
         </div>
       </div>
       <div className="eshop-modal-actions">
@@ -166,18 +166,18 @@ function SupplierEntryForm({ initial = {}, suppliers = [], onSave, onCancel, loa
       <div className="eshop-form-grid">
         <div className="eshop-field">
           <label>Fournisseur connu (optionnel)</label>
-          <select className="eshop-input" value={form.supplier_id} onChange={handleSupplierChange}>
+          <Select className="eshop-input" value={form.supplier_id} onChange={handleSupplierChange}>
             <option value="">— Nouveau fournisseur —</option>
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="eshop-field">
           <label>Nom affiché *</label>
-          <input
+          <Input
             className="eshop-input"
             value={form.supplier_name}
             onChange={set('supplier_name')}
@@ -187,7 +187,7 @@ function SupplierEntryForm({ initial = {}, suppliers = [], onSave, onCancel, loa
         </div>
         <div className="eshop-field">
           <label>Référence fournisseur</label>
-          <input
+          <Input
             className="eshop-input"
             value={form.supplier_ref}
             onChange={set('supplier_ref')}
@@ -196,7 +196,7 @@ function SupplierEntryForm({ initial = {}, suppliers = [], onSave, onCancel, loa
         </div>
         <div className="eshop-field">
           <label>Prix HT (€)</label>
-          <input
+          <Input
             className="eshop-input"
             type="number"
             min="0"
@@ -208,7 +208,7 @@ function SupplierEntryForm({ initial = {}, suppliers = [], onSave, onCancel, loa
         </div>
         <div className="eshop-field eshop-field--full">
           <label>URL produit</label>
-          <input
+          <Input
             className="eshop-input"
             type="url"
             value={form.external_url}
@@ -218,7 +218,7 @@ function SupplierEntryForm({ initial = {}, suppliers = [], onSave, onCancel, loa
         </div>
         <div className="eshop-field">
           <label>Politique de port</label>
-          <select
+          <Select
             className="eshop-input"
             value={form.shipping_policy}
             onChange={set('shipping_policy')}
@@ -228,13 +228,13 @@ function SupplierEntryForm({ initial = {}, suppliers = [], onSave, onCancel, loa
                 {p.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         {form.shipping_policy !== 'free' && (
           <>
             <div className="eshop-field">
               <label>Port forfait (€)</label>
-              <input
+              <Input
                 className="eshop-input"
                 type="number"
                 min="0"
@@ -246,7 +246,7 @@ function SupplierEntryForm({ initial = {}, suppliers = [], onSave, onCancel, loa
             </div>
             <div className="eshop-field">
               <label>Seuil de franco (€)</label>
-              <input
+              <Input
                 className="eshop-input"
                 type="number"
                 min="0"
@@ -260,7 +260,7 @@ function SupplierEntryForm({ initial = {}, suppliers = [], onSave, onCancel, loa
         )}
         <div className="eshop-field eshop-field--full">
           <label>Notes</label>
-          <input
+          <Input
             className="eshop-input"
             value={form.notes}
             onChange={set('notes')}
@@ -581,7 +581,7 @@ export function ExternalProductsPanel({ currentUser }) {
           placeholder="Rechercher un produit…"
           className="eshop-search"
         />
-        <select
+        <Select
           className="eshop-input eshop-filter-select"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
@@ -592,7 +592,7 @@ export function ExternalProductsPanel({ currentUser }) {
               {c}
             </option>
           ))}
-        </select>
+        </Select>
         <Button variant="ghost" onClick={load} title="Rafraîchir">
           <RefreshCw size={14} />
         </Button>
@@ -818,7 +818,7 @@ export function ExternalProductsPanel({ currentUser }) {
                   <span>{fmt(item.price_ht)} HT</span>
                   <span>+{fmt(item.shipping)} port</span>
                   <span className="eshop-total">{fmt(item.total_ht)}</span>
-                  <input
+                  <Input
                     type="number"
                     min="1"
                     className="eshop-input eshop-qty"

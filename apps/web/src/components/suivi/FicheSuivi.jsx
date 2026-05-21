@@ -18,6 +18,7 @@ import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react'
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
+import { Input, Select, Textarea } from '@/design-system';
 
 function newEntry(period = 'AM', sortOrder = 0) {
   return {
@@ -507,7 +508,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
             <GripVertical size={14} className="grip-icon" />
           </td>
           <td className="fiche-col-task">
-            <input
+            <Input
               type="text"
               value={entry.task}
               onChange={(e) => handleEntryChange(entry._key, 'task', e.target.value)}
@@ -522,7 +523,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
             )}
           </td>
           <td className="fiche-col-time">
-            <select
+            <Select
               value={parseInt(entry.time_spent, 10) || 0}
               onChange={(e) => handleEntryChange(entry._key, 'time_spent', Number(e.target.value))}
               className="fiche-input fiche-input-time"
@@ -533,10 +534,10 @@ function FicheSuivi({ sheet, onSave, saving }) {
                   {o.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </td>
           <td className="fiche-col-comment">
-            <input
+            <Input
               type="text"
               value={entry.comment || ''}
               onChange={(e) => handleEntryChange(entry._key, 'comment', e.target.value)}
@@ -608,20 +609,20 @@ function FicheSuivi({ sheet, onSave, saving }) {
             <td colSpan={6}>
               <div className="fiche-postpone-form">
                 <span className="fiche-postpone-label">Reporter au :</span>
-                <input
+                <Input
                   type="date"
                   className="fiche-input fiche-postpone-date"
                   value={postponeDate}
                   onChange={(e) => setPostponeDate(e.target.value)}
                 />
-                <select
+                <Select
                   className="fiche-input fiche-postpone-period"
                   value={postponePeriod}
                   onChange={(e) => setPostponePeriod(e.target.value)}
                 >
                   <option value="AM">Matin (AM)</option>
                   <option value="PM">Après-midi (PM)</option>
-                </select>
+                </Select>
                 {postponeError && <span className="fiche-postpone-error">{postponeError}</span>}
                 <Button
                   variant="secondary"
@@ -758,7 +759,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
                 {showRecurringForm === period && (
                   <div className="fiche-recurring-dropdown">
                     <div className="fiche-recurring-row">
-                      <input
+                      <Input
                         type="text"
                         className="fiche-recurring-input"
                         placeholder="Titre de la tâche"
@@ -769,7 +770,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
                       />
                     </div>
                     <div className="fiche-recurring-row fiche-recurring-row-grid">
-                      <select
+                      <Select
                         className="fiche-recurring-input"
                         value={recurringForm.recurrence}
                         onChange={(e) =>
@@ -779,8 +780,8 @@ function FicheSuivi({ sheet, onSave, saving }) {
                         <option value="daily">Journalière</option>
                         <option value="weekly">Hebdomadaire</option>
                         <option value="monthly">Mensuelle</option>
-                      </select>
-                      <select
+                      </Select>
+                      <Select
                         className="fiche-recurring-input"
                         value={Number(recurringForm.default_time_spent) || 0}
                         onChange={(e) =>
@@ -795,8 +796,8 @@ function FicheSuivi({ sheet, onSave, saving }) {
                             {o.label}
                           </option>
                         ))}
-                      </select>
-                      <select
+                      </Select>
+                      <Select
                         className="fiche-recurring-input"
                         value={recurringForm.period}
                         onChange={(e) =>
@@ -806,11 +807,11 @@ function FicheSuivi({ sheet, onSave, saving }) {
                       >
                         <option value="AM">Matin (AM)</option>
                         <option value="PM">Après-midi (PM)</option>
-                      </select>
+                      </Select>
                     </div>
                     {recurringForm.recurrence === 'weekly' && (
                       <div className="fiche-recurring-row">
-                        <select
+                        <Select
                           className="fiche-recurring-input"
                           value={recurringForm.day_of_week}
                           onChange={(e) =>
@@ -824,12 +825,12 @@ function FicheSuivi({ sheet, onSave, saving }) {
                           <option value="5">Vendredi</option>
                           <option value="6">Samedi</option>
                           <option value="0">Dimanche</option>
-                        </select>
+                        </Select>
                       </div>
                     )}
                     {recurringForm.recurrence === 'monthly' && (
                       <div className="fiche-recurring-row">
-                        <input
+                        <Input
                           type="number"
                           min={1}
                           max={31}
@@ -842,7 +843,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
                       </div>
                     )}
                     <div className="fiche-recurring-row">
-                      <input
+                      <Input
                         type="text"
                         className="fiche-recurring-input"
                         placeholder="Commentaire par défaut (optionnel)"
@@ -1047,7 +1048,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
       {/* Notes */}
       <div className="fiche-notes">
         <label>Notes de la journée</label>
-        <textarea
+        <Textarea
           value={notes}
           onChange={(e) => {
             setNotes(e.target.value);

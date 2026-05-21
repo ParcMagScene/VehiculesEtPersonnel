@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 
-import { Button, InlineAlert, Spinner } from '@/design-system';
+import { Button, InlineAlert, Input, Select, Spinner, Textarea } from '@/design-system';
 
 import api from '../../utils/api';
 
@@ -180,7 +180,7 @@ export default function SAVTicketDetails({ ticketId, onClose, onSaved }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
         <div>
           <label style={labelStyle}>Statut</label>
-          <select
+          <Select
             value={form.status}
             onChange={(e) => setForm({ ...form, status: e.target.value })}
             style={inputStyle}
@@ -190,11 +190,11 @@ export default function SAVTicketDetails({ ticketId, onClose, onSaved }) {
                 {statusLabels?.[o.value] || o.label}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label style={labelStyle}>Coût (€)</label>
-          <input
+          <Input
             type="number"
             step="0.01"
             value={form.cost}
@@ -204,7 +204,7 @@ export default function SAVTicketDetails({ ticketId, onClose, onSaved }) {
         </div>
         <div style={{ gridColumn: '1 / -1' }}>
           <label style={labelStyle}>Notes internes</label>
-          <textarea
+          <Textarea
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
             rows={3}
@@ -213,7 +213,7 @@ export default function SAVTicketDetails({ ticketId, onClose, onSaved }) {
         </div>
         <div style={{ gridColumn: '1 / -1' }}>
           <label style={labelStyle}>Résolution</label>
-          <textarea
+          <Textarea
             value={form.resolution}
             onChange={(e) => setForm({ ...form, resolution: e.target.value })}
             rows={2}

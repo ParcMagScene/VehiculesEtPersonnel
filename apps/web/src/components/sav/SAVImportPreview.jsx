@@ -18,7 +18,7 @@
 import { CheckCircle, Download, Upload, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, InlineAlert, Spinner } from '@/design-system';
+import { Button, InlineAlert, Input, Select, Spinner } from '@/design-system';
 
 import api from '../../utils/api';
 
@@ -166,7 +166,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
       {/* Options décisions */}
       <div className="u-flex u-gap-4 u-mb-3" style={{ fontSize: 13 }}>
         <label>
-          <input
+          <Input
             type="checkbox"
             checked={acceptNew}
             onChange={(e) => setAcceptNew(e.target.checked)}
@@ -174,7 +174,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
           Créer nouveaux ({counts.new})
         </label>
         <label>
-          <input
+          <Input
             type="checkbox"
             checked={acceptUpdates}
             onChange={(e) => setAcceptUpdates(e.target.checked)}
@@ -182,7 +182,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
           Appliquer mises à jour ({counts.updated})
         </label>
         <label>
-          <input
+          <Input
             type="checkbox"
             checked={acceptClosures}
             onChange={(e) => setAcceptClosures(e.target.checked)}
@@ -262,14 +262,14 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
                     <StatusBadge status={r.locmat_status} statusLabels={statusLabels} />
                   </td>
                   <td style={td}>
-                    <select
+                    <Select
                       value={collisionDecisions[r.existing_ticket_id] || 'keep_emag'}
                       onChange={(e) => setCollision(r.existing_ticket_id, e.target.value)}
                       style={{ fontSize: 11, padding: '2px 4px' }}
                     >
                       <option value="keep_emag">Garder eM@g</option>
                       <option value="force_locmat">Forcer LocMat</option>
-                    </select>
+                    </Select>
                   </td>
                 </tr>
               ))}

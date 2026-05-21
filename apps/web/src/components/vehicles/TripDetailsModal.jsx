@@ -1123,7 +1123,7 @@ const TripDetailsModal = ({
                 </small>
               </FormField>
               <FormField className="form-group" label="Date">
-                <input
+                <Input
                   type="date"
                   name="departureDate"
                   value={formData.departureDate}
@@ -1133,7 +1133,7 @@ const TripDetailsModal = ({
                 />
               </FormField>
               <FormField className="form-group" label="Heure">
-                <input
+                <Input
                   type="time"
                   name="departureTime"
                   value={formData.departureTime}
@@ -1174,7 +1174,7 @@ const TripDetailsModal = ({
                       />
                     </FormField>
                     <FormField className="form-group" label="Heure">
-                      <input
+                      <Input
                         type="time"
                         value={pause.startTime}
                         onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
@@ -1249,7 +1249,7 @@ const TripDetailsModal = ({
                 </small>
               </FormField>
               <FormField className="form-group" label="Date">
-                <input
+                <Input
                   type="date"
                   name="arrivalDate"
                   value={formData.arrivalDate}
@@ -1259,7 +1259,7 @@ const TripDetailsModal = ({
                 />
               </FormField>
               <FormField className="form-group" label="Heure">
-                <input
+                <Input
                   type="time"
                   name="arrivalTime"
                   value={formData.arrivalTime}
@@ -1339,7 +1339,7 @@ const TripDetailsModal = ({
                 </small>
               </FormField>
               <FormField className="form-group" label="Date">
-                <input
+                <Input
                   type="date"
                   name="returnDepartureDate"
                   value={formData.returnDepartureDate}
@@ -1349,7 +1349,7 @@ const TripDetailsModal = ({
                 />
               </FormField>
               <FormField className="form-group" label="Heure">
-                <input
+                <Input
                   type="time"
                   name="returnDepartureTime"
                   value={formData.returnDepartureTime}
@@ -1390,7 +1390,7 @@ const TripDetailsModal = ({
                       />
                     </FormField>
                     <FormField className="form-group" label="Heure">
-                      <input
+                      <Input
                         type="time"
                         value={pause.startTime}
                         onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
@@ -1467,7 +1467,7 @@ const TripDetailsModal = ({
                 </small>
               </FormField>
               <FormField className="form-group" label="Date">
-                <input
+                <Input
                   type="date"
                   name="returnArrivalDate"
                   value={formData.returnArrivalDate}
@@ -1477,7 +1477,7 @@ const TripDetailsModal = ({
                 />
               </FormField>
               <FormField className="form-group" label="Heure">
-                <input
+                <Input
                   type="time"
                   name="returnArrivalTime"
                   value={formData.returnArrivalTime}

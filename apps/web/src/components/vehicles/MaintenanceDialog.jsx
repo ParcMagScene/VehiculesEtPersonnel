@@ -726,7 +726,7 @@ function MaintenanceDialog({
                             {canSchedule && (
                               <>
                                 <label className="mode-option">
-                                  <input
+                                  <Input
                                     type="radio"
                                     checked={!isQuickReport && formData.status === STATUS.SCHEDULED}
                                     onChange={() => {
@@ -738,7 +738,7 @@ function MaintenanceDialog({
                                   <span>📅 Programmer une intervention</span>
                                 </label>
                                 <label className="mode-option">
-                                  <input
+                                  <Input
                                     type="radio"
                                     checked={!isQuickReport && formData.status === STATUS.PENDING}
                                     onChange={() => {
@@ -754,7 +754,7 @@ function MaintenanceDialog({
                               </>
                             )}
                             <label className="mode-option">
-                              <input
+                              <Input
                                 type="radio"
                                 checked={isQuickReport}
                                 onChange={() => {
@@ -882,7 +882,7 @@ function MaintenanceDialog({
                       <div className="form-row">
                         <FormField className="form-group" label="Date de début" required>
                           <div className="u-flex" style={{ gap: '10px' }}>
-                            <input
+                            <Input
                               ref={startDateInputRef}
                               type="date"
                               value={formData.startDate}
@@ -903,7 +903,7 @@ function MaintenanceDialog({
 
                         <FormField className="form-group" label="Date de fin" required>
                           <div className="u-flex" style={{ gap: '10px' }}>
-                            <input
+                            <Input
                               type="date"
                               value={formData.endDate}
                               onChange={(e) => handleChange('endDate', e.target.value)}

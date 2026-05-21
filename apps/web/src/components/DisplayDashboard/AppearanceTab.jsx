@@ -114,7 +114,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
           <div className="dtv-form-group">
             <label>Couleur principale</label>
             <div className="dtv-color-input">
-              <input
+              <Input
                 type="color"
                 value={config.primaryColor}
                 onChange={(e) => handleChange('primaryColor', e.target.value)}
@@ -125,7 +125,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
           <div className="dtv-form-group">
             <label>Couleur secondaire</label>
             <div className="dtv-color-input">
-              <input
+              <Input
                 type="color"
                 value={config.secondaryColor}
                 onChange={(e) => handleChange('secondaryColor', e.target.value)}
@@ -136,7 +136,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
           <div className="dtv-form-group">
             <label>Fond événements</label>
             <div className="dtv-color-input">
-              <input
+              <Input
                 type="color"
                 value={config.eventBgColor}
                 onChange={(e) => handleChange('eventBgColor', e.target.value)}
@@ -147,7 +147,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
           <div className="dtv-form-group">
             <label>Texte événements</label>
             <div className="dtv-color-input">
-              <input
+              <Input
                 type="color"
                 value={config.eventTextColor}
                 onChange={(e) => handleChange('eventTextColor', e.target.value)}
@@ -232,7 +232,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
           {logoPath && <img src={logoPath} alt="Logo actuel" className="dtv-logo-preview" />}
           <div className="dtv-form-group">
             <label>Changer le logo</label>
-            <input type="file" accept="image/*" onChange={handleLogoUpload} />
+            <Input type="file" accept="image/*" onChange={handleLogoUpload} />
           </div>
         </div>
       </div>

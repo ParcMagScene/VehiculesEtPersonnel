@@ -395,7 +395,7 @@ textarea.eshop-input {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 16px rgba(26, 86, 219, 0.4);
-  z-index: 100;
+  z-index: var(--z-dropdown);
   transition: transform 0.15s;
 }
 

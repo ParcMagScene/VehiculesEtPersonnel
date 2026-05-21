@@ -12,7 +12,7 @@
   border-top: 1px solid var(--theme-border-medium);
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
   padding: 4px 0 calc(4px + env(safe-area-inset-bottom, 0px));
-  z-index: var(--z-sticky, 900);
+  z-index: var(--z-sticky);
   /* Hauteur ~ 60px + safe-area */
 }
 

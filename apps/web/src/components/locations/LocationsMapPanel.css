@@ -202,7 +202,7 @@
   position: absolute;
   bottom: 12px;
   left: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: var(--theme-bg-primary, #ffffff);
   padding: 6px 12px;
   border-radius: var(--theme-radius, 8px);
@@ -501,7 +501,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: var(--theme-bg-primary, #ffffff);
   border: 1px solid var(--theme-border, #e2e8f0);
   border-radius: var(--theme-radius, 8px);
@@ -577,7 +577,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   width: 320px;
   max-width: calc(100% - 240px);
 }
@@ -720,7 +720,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
 }
 
 /* Quand le contrôle du rayon est présent (carte locale), décaler le toggle */
@@ -754,7 +754,7 @@
   position: absolute;
   top: 58px;
   right: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   width: 280px;
   background: var(--theme-bg-primary, #ffffff);
   border: 1px solid var(--theme-border, #e2e8f0);
@@ -1206,7 +1206,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--theme-border, #e2e8f0);
   border-radius: 6px;

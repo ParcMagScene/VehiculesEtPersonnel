@@ -2,7 +2,7 @@
 
 /* Overlay — utilise shared-overlay du theme */
 .gen-orders-overlay {
-  z-index: var(--z-overlay, 1000);
+  z-index: var(--z-overlay);
 }
 
 .gen-orders-modal {

@@ -7,7 +7,7 @@
 }
 
 .ui-dropdown-menu {
-  z-index: var(--z-dropdown, 5000);
+  z-index: var(--z-dropdown);
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-lg);

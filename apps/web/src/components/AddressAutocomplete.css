@@ -80,7 +80,7 @@
   box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.15));
   max-height: 280px;
   overflow-y: auto;
-  z-index: var(--z-dropdown, 1000);
+  z-index: var(--z-dropdown);
   padding: 4px;
 }
 

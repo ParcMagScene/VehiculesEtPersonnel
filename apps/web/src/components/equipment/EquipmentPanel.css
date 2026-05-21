@@ -4115,7 +4115,7 @@ tr.eq-sav-row-clickable {
 .eq-sav-equip-field {
   margin-bottom: 1rem;
   position: relative;
-  z-index: 100;
+  z-index: var(--z-dropdown);
 }
 
 .eq-sav-selected-card {
@@ -4159,7 +4159,7 @@ tr.eq-sav-row-clickable {
 
 .eq-sav-search-wrap {
   position: relative;
-  z-index: 100;
+  z-index: var(--z-dropdown);
 }
 
 .eq-sav-search-inner {
@@ -4184,7 +4184,7 @@ tr.eq-sav-row-clickable {
   position: absolute;
   left: 0;
   right: 0;
-  z-index: 200;
+  z-index: var(--z-sticky);
   margin-top: -1px;
   background: var(--theme-bg-card, #fff);
   border: 1px solid var(--theme-border);
@@ -4253,7 +4253,7 @@ tr.eq-sav-row-clickable {
 
 .eq-sav-dropdown-empty {
   position: relative;
-  z-index: 200;
+  z-index: var(--z-sticky);
   margin-top: -1px;
   background: var(--theme-bg-card, #fff);
   border: 1px solid var(--theme-border);

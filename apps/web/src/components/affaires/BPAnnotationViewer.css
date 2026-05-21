@@ -23,7 +23,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-overlay, 1000);
+  z-index: var(--z-overlay);
   animation: bpFadeIn 0.2s ease;
 }
 

@@ -19,6 +19,36 @@
 
 /* .detail-section-title + svg → .shared-section-title (theme.css) */
 
+/* ─── DS rétro-compat : SectionHeader wrapper avec class detail-section-title ─── */
+.ui-section-header.detail-section-title {
+  margin: 0 0 12px 0;
+  padding: 0 0 8px 0;
+  border-bottom: 2px solid var(--theme-bg-indigo-light);
+  gap: 8px;
+}
+.ui-section-header.detail-section-title > h3 {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--theme-primary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.ui-section-header.detail-section-title svg {
+  color: var(--theme-primary);
+}
+.ui-section-header.detail-section-title .ui-section-badge {
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  font-size: var(--font-2xs);
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: var(--radius-md-lg);
+  margin-left: auto;
+}
+.ui-section-header.detail-section-title .ui-section-actions {
+  margin-left: 0;
+}
+
 /* Toggle icon for collapsible sections */
 .section-toggle-icon {
   margin-left: auto;

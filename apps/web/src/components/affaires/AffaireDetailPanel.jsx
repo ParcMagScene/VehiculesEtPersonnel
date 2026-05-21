@@ -50,6 +50,7 @@ import {
   Modal,
   ModalBody,
   ModalHeader,
+  SectionHeader,
   Select,
   Spinner,
   Table,
@@ -1231,9 +1232,11 @@ const AffaireDetailContent = ({
 
       {/* ═══ Section 1 : Détails basiques ═══ */}
       <section className="detail-section">
-        <h3 className="detail-section-title">
-          <Briefcase size={15} /> Détails
-        </h3>
+        <SectionHeader
+          className="detail-section-title"
+          icon={<Briefcase size={15} />}
+          title="Détails"
+        />
         {isEditing && editForm && setEditForm ? (
           <div className="detail-grid edit-mode">
             <div className="detail-field full-width">
@@ -1524,10 +1527,12 @@ const AffaireDetailContent = ({
       {/* ═══ Section 1b : Événements Google Calendar liés ═══ */}
       {googleEventIds && googleEventIds.length > 0 && (
         <section className="detail-section">
-          <h3 className="detail-section-title">
-            <Calendar size={15} /> Événements Google
-            <span className="section-count">{googleEvents.length || googleEventIds.length}</span>
-          </h3>
+        <SectionHeader
+          className="detail-section-title"
+          icon={<Calendar size={15} />}
+          title="Événements Google"
+          count={googleEvents.length || googleEventIds.length}
+        />
           {isLoadingEvents ? (
             <p className="detail-empty">Chargement des événements...</p>
           ) : googleEvents.length === 0 ? (
@@ -1586,10 +1591,12 @@ const AffaireDetailContent = ({
       {/* ═══ Section : BL / BP importés ═══ */}
       {linkedBLImports.length > 0 && (
         <section className="detail-section">
-          <h3 className="detail-section-title">
-            <FileText size={15} /> BL / BP importés
-            <span className="section-count">{linkedBLImports.length}</span>
-          </h3>
+          <SectionHeader
+            className="detail-section-title"
+            icon={<FileText size={15} />}
+            title="BL / BP importés"
+            count={linkedBLImports.length}
+          />
           <div className="bl-imports-list">
             {linkedBLImports.map((bl) => {
               let pd = bl.parsedData || bl.parsed_data;
@@ -1682,22 +1689,26 @@ const AffaireDetailContent = ({
 
       {/* ═══ Section 2 : Réservations liées ═══ */}
       <section className="detail-section">
-        <h3 className="detail-section-title">
-          <Truck size={15} /> Réservations liées
-          <span className="section-count">{linkedReservations.length}</span>
-          {editable && (
-            <Tooltip content="Nouvelle réservation" position="bottom">
-              <Button
-                variant="ghost"
-                className="section-action-btn"
-                onClick={handleOpenReservation}
-                disabled={isLoadingAction}
-              >
-                <Plus size={13} /> Réservation
-              </Button>
-            </Tooltip>
-          )}
-        </h3>
+        <SectionHeader
+          className="detail-section-title"
+          icon={<Truck size={15} />}
+          title="Réservations liées"
+          count={linkedReservations.length}
+          actions={
+            editable && (
+              <Tooltip content="Nouvelle réservation" position="bottom">
+                <Button
+                  variant="ghost"
+                  className="section-action-btn"
+                  onClick={handleOpenReservation}
+                  disabled={isLoadingAction}
+                >
+                  <Plus size={13} /> Réservation
+                </Button>
+              </Tooltip>
+            )
+          }
+        />
         {linkedReservations.length === 0 ? (
           <p className="detail-empty">Aucune réservation liée à cette affaire</p>
         ) : (
@@ -1778,21 +1789,25 @@ const AffaireDetailContent = ({
       {/* ═══ Section 2a : Affaires liées (Tournée) ═══ */}
       {(affaire.type === 'Tournée' || allLinkedAffaires.length > 0) && (
         <section className="detail-section">
-          <h3 className="detail-section-title">
-            <LinkIcon size={15} /> Affaires liées
-            <span className="section-count">{allLinkedAffaires.length}</span>
-            {editable && (
-              <Tooltip content="Lier une affaire" position="bottom">
-                <Button
-                  variant="ghost"
-                  className="section-action-btn"
-                  onClick={() => setShowLinkSearch(!showLinkSearch)}
-                >
-                  <Plus size={13} /> Lier
-                </Button>
-              </Tooltip>
-            )}
-          </h3>
+          <SectionHeader
+            className="detail-section-title"
+            icon={<LinkIcon size={15} />}
+            title="Affaires liées"
+            count={allLinkedAffaires.length}
+            actions={
+              editable && (
+                <Tooltip content="Lier une affaire" position="bottom">
+                  <Button
+                    variant="ghost"
+                    className="section-action-btn"
+                    onClick={() => setShowLinkSearch(!showLinkSearch)}
+                  >
+                    <Plus size={13} /> Lier
+                  </Button>
+                </Tooltip>
+              )
+            }
+          />
           {showLinkSearch && (
             <div className="link-search-wrapper">
               <Input
@@ -2019,25 +2034,29 @@ const AffaireDetailContent = ({
 
       {/* ═══ Section 3 : Personnel affecté ═══ */}
       <section className="detail-section">
-        <h3 className="detail-section-title">
-          <Users size={15} /> Personnel affecté
-          <span className="section-count">{assignedPersonnel.length}</span>
-          {editable && (
-            <Tooltip content="Affecter du personnel" position="bottom">
-              <Button
-                variant="ghost"
-                className="section-action-btn personnel-btn"
-                onClick={async () => {
-                  await loadActionData('personnel');
-                  setShowPersonnelForm(true);
-                }}
-                disabled={isLoadingAction}
-              >
-                <UserPlus size={13} /> Affecter
-              </Button>
-            </Tooltip>
-          )}
-        </h3>
+        <SectionHeader
+          className="detail-section-title"
+          icon={<Users size={15} />}
+          title="Personnel affecté"
+          count={assignedPersonnel.length}
+          actions={
+            editable && (
+              <Tooltip content="Affecter du personnel" position="bottom">
+                <Button
+                  variant="ghost"
+                  className="section-action-btn personnel-btn"
+                  onClick={async () => {
+                    await loadActionData('personnel');
+                    setShowPersonnelForm(true);
+                  }}
+                  disabled={isLoadingAction}
+                >
+                  <UserPlus size={13} /> Affecter
+                </Button>
+              </Tooltip>
+            )
+          }
+        />
         {/* Mini-formulaire d'affectation */}
         {showPersonnelForm && (
           <div className="inline-action-form">
@@ -2178,20 +2197,24 @@ const AffaireDetailContent = ({
 
       {/* ═══ Section : Pièces et liens joints ═══ */}
       <section className="detail-section">
-        <h3 className="detail-section-title">
-          <Paperclip size={15} /> Pièces et liens joints
-          {editable && (
-            <Tooltip content="Importer un fichier" position="bottom">
-              <Button
-                variant="ghost"
-                className="section-action-btn upload-btn"
-                onClick={() => setShowUploadForm((v) => !v)}
-              >
-                <Upload size={13} /> Importer
-              </Button>
-            </Tooltip>
-          )}
-        </h3>
+        <SectionHeader
+          className="detail-section-title"
+          icon={<Paperclip size={15} />}
+          title="Pièces et liens joints"
+          actions={
+            editable && (
+              <Tooltip content="Importer un fichier" position="bottom">
+                <Button
+                  variant="ghost"
+                  className="section-action-btn upload-btn"
+                  onClick={() => setShowUploadForm((v) => !v)}
+                >
+                  <Upload size={13} /> Importer
+                </Button>
+              </Tooltip>
+            )
+          }
+        />
         {/* Zone d'upload */}
         {showUploadForm && (
           <div
@@ -2334,10 +2357,12 @@ const AffaireDetailContent = ({
       {/* ═══ Section 5 : Articles ═══ */}
       {showArticles && (
         <section className="detail-section">
-          <h3 className="detail-section-title">
-            <Package size={15} /> Articles
-            <span className="section-count">{blArticles.length}</span>
-          </h3>
+          <SectionHeader
+            className="detail-section-title"
+            icon={<Package size={15} />}
+            title="Articles"
+            count={blArticles.length}
+          />
           {blArticles.length === 0 ? (
             <>
               <p className="detail-empty">

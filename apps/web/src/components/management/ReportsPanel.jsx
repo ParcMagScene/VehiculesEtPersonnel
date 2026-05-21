@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button, InlineAlert, SectionHeader, Table, Tooltip } from '@/design-system';
+import { Button, InlineAlert, Input, SectionHeader, Table, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
@@ -538,9 +538,9 @@ const ReportsPanel = ({ _currentUser }) => {
       <div className="rp-period-filter">
         <Calendar size={14} />
         <label>Période :</label>
-        <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
+        <Input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
         <span>→</span>
-        <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+        <Input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
         <div className="rp-period-presets">
           <Button
             variant="ghost"

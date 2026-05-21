@@ -29,21 +29,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {
-  Avatar,
-  Button,
-  DetailRow,
-  EmptyState,
-  InlineAlert,
-  Modal,
-  ModalBody,
-  ModalHeader,
-  Tab,
-  TabList,
-  TabPanel,
-  Tabs,
-  Textarea,
-} from '@/design-system';
+import { Avatar, Button, DetailRow, EmptyState, InlineAlert, Input, Modal, ModalBody, ModalHeader, Tab, TabList, TabPanel, Tabs, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
@@ -633,7 +619,7 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
                                     <div className="lvp-decision-dates">
                                       <div className="lvp-decision-field">
                                         <label>Nouvelle date de début</label>
-                                        <input
+                                        <Input
                                           type="date"
                                           value={modifiedStartDate}
                                           onChange={(e) => setModifiedStartDate(e.target.value)}
@@ -642,7 +628,7 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
                                       </div>
                                       <div className="lvp-decision-field">
                                         <label>Nouvelle date de fin</label>
-                                        <input
+                                        <Input
                                           type="date"
                                           value={modifiedEndDate}
                                           onChange={(e) => setModifiedEndDate(e.target.value)}

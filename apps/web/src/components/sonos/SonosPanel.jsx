@@ -65,7 +65,7 @@ function SonosPanel({ currentUser, _currentUser }) {
         <div className="sonos-topbar-actions">
           <div className="sonos-topbar-search">
             <Search size={13} />
-            <input
+            <Input
               type="text"
               placeholder="Rechercher…"
               value={sourceSearch}

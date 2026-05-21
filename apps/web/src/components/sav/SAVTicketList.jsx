@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 
-import { Spinner } from '@/design-system';
+import { Input, Spinner } from '@/design-system';
 
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
@@ -69,7 +69,7 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
       <div className="u-flex u-gap-6 u-mb-3" style={{ alignItems: 'flex-end' }}>
         <div className="u-flex-1">
           <label className="u-font-xs u-text-secondary">Recherche</label>
-          <input
+          <Input
             type="text"
             value={q}
             placeholder="Titre, SN, UID, code LocMat, équipement…"

@@ -6,6 +6,7 @@ import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lu
 import { memo, useEffect, useState } from 'react';
 
 import { formatTime } from '../../hooks/useSonos';
+import { Input } from '@/design-system';
 
 function MobileSonosControls({
   state,
@@ -44,7 +45,7 @@ function MobileSonosControls({
       {duration > 0 && (
         <div className="mobile-sonos-progress">
           <span className="mobile-sonos-progress-time">{formatTime(seekPos)}</span>
-          <input
+          <Input
             type="range"
             min={0}
             max={duration}

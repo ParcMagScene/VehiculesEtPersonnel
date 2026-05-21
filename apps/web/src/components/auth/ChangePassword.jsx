@@ -92,7 +92,7 @@ const ChangePassword = ({ currentUser }) => {
               handleAdminSetPassword();
             }}
           >
-            <input
+            <Input
               type="text"
               autoComplete="username"
               value={currentUser?.email || ''}
@@ -147,7 +147,7 @@ const ChangePassword = ({ currentUser }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="change-password-form">
-        <input
+        <Input
           type="text"
           autoComplete="username"
           value={currentUser?.email || ''}

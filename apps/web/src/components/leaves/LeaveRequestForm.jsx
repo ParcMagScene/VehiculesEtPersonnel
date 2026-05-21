@@ -21,16 +21,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import {
-  Button,
-  InlineAlert,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  Select,
-  Textarea,
-} from '@/design-system';
+import { Button, InlineAlert, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select, Textarea } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
@@ -551,7 +542,7 @@ const LeaveRequestForm = ({
             <div className="lrf-dates-row">
               <div className="lrf-field lrf-date-field">
                 <label className="lrf-label">Date de début</label>
-                <input
+                <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
@@ -580,7 +571,7 @@ const LeaveRequestForm = ({
               <div className="lrf-dates-arrow">→</div>
               <div className="lrf-field lrf-date-field">
                 <label className="lrf-label">Date de fin</label>
-                <input
+                <Input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
@@ -734,7 +725,7 @@ const LeaveRequestForm = ({
                       <span>Choisir un fichier (PDF, image, max 5 Mo)</span>
                     </Button>
                   )}
-                  <input
+                  <Input
                     ref={fileInputRef}
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png,.webp"

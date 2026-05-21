@@ -108,7 +108,7 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
             </div>
             <div className="form-field">
               <label>Date commande</label>
-              <input
+              <Input
                 type="date"
                 value={form.order_date}
                 onChange={(e) => setForm((f) => ({ ...f, order_date: e.target.value }))}
@@ -116,7 +116,7 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
             </div>
             <div className="form-field">
               <label>Date prévue</label>
-              <input
+              <Input
                 type="date"
                 value={form.expected_date}
                 onChange={(e) => setForm((f) => ({ ...f, expected_date: e.target.value }))}
@@ -363,7 +363,7 @@ export const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose
             </div>
             <div className="form-field">
               <label>Date devis</label>
-              <input
+              <Input
                 type="date"
                 value={form.quote_date}
                 onChange={(e) => setForm((f) => ({ ...f, quote_date: e.target.value }))}
@@ -371,7 +371,7 @@ export const QuoteFormModal = React.memo(({ quote, clients = [], onSave, onClose
             </div>
             <div className="form-field">
               <label>Validité</label>
-              <input
+              <Input
                 type="date"
                 value={form.validity_date}
                 onChange={(e) => setForm((f) => ({ ...f, validity_date: e.target.value }))}

@@ -422,7 +422,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                   label="Date du dernier contrôle"
                   htmlFor="ct-date"
                 >
-                  <input
+                  <Input
                     id="ct-date"
                     type="date"
                     value={newControle.date}
@@ -431,7 +431,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                 </FormField>
 
                 <FormField className="form-group" label="Prochaine échéance" htmlFor="ct-deadline">
-                  <input
+                  <Input
                     id="ct-deadline"
                     type="date"
                     value={newControle.deadline}

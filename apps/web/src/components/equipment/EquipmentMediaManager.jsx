@@ -154,7 +154,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
         >
           <Upload size={16} /> {uploading ? 'Upload...' : 'Ajouter des photos'}
         </Button>
-        <input
+        <Input
           ref={fileInputRef}
           type="file"
           accept="image/*"

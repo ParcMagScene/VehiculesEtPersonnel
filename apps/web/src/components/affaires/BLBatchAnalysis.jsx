@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
-import { Button, ModalLayout } from '@/design-system';
+import { Button, Input, ModalLayout } from '@/design-system';
 
 import { CONF_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { batchParsePDFs } from '../../utils/pdfParser';
@@ -139,7 +139,7 @@ export default function BLBatchAnalysis({ onClose }) {
           {files.length > 0
             ? `${files.length} PDF(s) sélectionné(s)`
             : 'Sélectionner des fichiers PDF…'}
-          <input type="file" accept=".pdf" multiple className="u-hidden" onChange={handleFiles} />
+          <Input type="file" accept=".pdf" multiple className="u-hidden" onChange={handleFiles} />
         </label>
         <Button
           variant="ghost"

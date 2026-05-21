@@ -255,7 +255,7 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
               </Button>
             </div>
 
-            <input
+            <Input
               ref={fileInputRef}
               type="file"
               accept="image/*"

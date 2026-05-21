@@ -798,7 +798,7 @@ const AffaireImportModal = ({
                   📦 Lot de PDFs
                 </Button>
               </div>
-              <input
+              <Input
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf"
@@ -1143,7 +1143,7 @@ const AffaireImportModal = ({
 
             <div className="form-row">
               <FormField className="form-group" label="Date de l'affaire" required>
-                <input
+                <Input
                   type="date"
                   value={formData.dateDebut}
                   onChange={(e) => setFormData((prev) => ({ ...prev, dateDebut: e.target.value }))}
@@ -1210,7 +1210,7 @@ const AffaireImportModal = ({
                 <div className="drop-zone-icon">📎</div>
                 <p className="drop-zone-text">Cliquez pour sélectionner un PDF</p>
               </div>
-              <input
+              <Input
                 ref={additionalFileInputRef}
                 type="file"
                 accept=".pdf"

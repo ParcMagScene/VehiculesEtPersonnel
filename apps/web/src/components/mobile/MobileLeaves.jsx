@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, DetailRow, InlineAlert, Textarea } from '@/design-system';
+import { Button, DetailRow, InlineAlert, Input, Textarea } from '@/design-system';
 
 import { ROLES, STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
@@ -502,7 +502,7 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
       {/* Dates */}
       <div className="ml-form-group">
         <label htmlFor="leave-start-date">Date de début</label>
-        <input
+        <Input
           id="leave-start-date"
           type="date"
           value={startDate}
@@ -525,7 +525,7 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
 
       <div className="ml-form-group">
         <label htmlFor="leave-end-date">Date de fin</label>
-        <input
+        <Input
           id="leave-end-date"
           type="date"
           value={endDate}

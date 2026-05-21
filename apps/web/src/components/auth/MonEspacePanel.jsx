@@ -25,15 +25,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import {
-  Button,
-  DetailRow,
-  EmptyState,
-  InlineAlert,
-  Modal,
-  ModalBody,
-  ModalHeader,
-} from '@/design-system';
+import { Button, DetailRow, EmptyState, InlineAlert, Input, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
@@ -290,7 +282,7 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                 {!hasPin && (
                   <div className="mep-pin-field">
                     <label>Mot de passe actuel</label>
-                    <input
+                    <Input
                       type="password"
                       value={pinCurrentPassword}
                       onChange={(e) => setPinCurrentPassword(e.target.value)}
@@ -303,7 +295,7 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                 {hasPin && (
                   <div className="mep-pin-field">
                     <label>PIN actuel (pour modifier)</label>
-                    <input
+                    <Input
                       type="text"
                       inputMode="numeric"
                       maxLength={4}
@@ -319,7 +311,7 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                 )}
                 <div className="mep-pin-field">
                   <label>{hasPin ? 'Nouveau PIN' : 'Code PIN (4 chiffres)'}</label>
-                  <input
+                  <Input
                     type="text"
                     inputMode="numeric"
                     maxLength={4}
@@ -332,7 +324,7 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
                 </div>
                 <div className="mep-pin-field">
                   <label>Confirmer le PIN</label>
-                  <input
+                  <Input
                     type="text"
                     inputMode="numeric"
                     maxLength={4}

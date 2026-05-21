@@ -28,7 +28,7 @@ import {
 import Papa from 'papaparse';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, EmptyState, InlineAlert, ModalLayout, Table } from '@/design-system';
+import { Button, EmptyState, InlineAlert, Input, ModalLayout, Table } from '@/design-system';
 
 import { useConfirmDialog } from '../../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../../hooks/useDirtyForm';
@@ -524,7 +524,7 @@ function FileSlot({ label, icon, file, inputRef, onChange }) {
       <label className="locmat-file-label">
         {icon} {label}
       </label>
-      <input
+      <Input
         ref={inputRef}
         type="file"
         accept=".csv,text/csv"

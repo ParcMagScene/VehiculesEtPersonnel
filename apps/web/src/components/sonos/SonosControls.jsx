@@ -7,6 +7,7 @@ import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lu
 import { memo, useEffect, useState } from 'react';
 
 import { formatTime } from '../../hooks/useSonos';
+import { Input } from '@/design-system';
 
 function SonosControls({
   state,
@@ -99,7 +100,7 @@ function ProgressBar({ position, duration, onSeek }) {
       <span className="sonos-ptime">{formatTime(seekPos)}</span>
       <div className="sonos-ptrack">
         <div className="sonos-pfill" style={{ width: `${pct}%` }} />
-        <input
+        <Input
           type="range"
           min={0}
           max={duration}

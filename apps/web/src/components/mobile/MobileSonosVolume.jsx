@@ -4,6 +4,7 @@
 
 import { Volume2, VolumeX } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
+import { Input } from '@/design-system';
 
 function MobileSonosVolume({ volume, muted, onSetVolume, onMute, onUnmute, busy, isAdmin }) {
   const [vol, setVol] = useState(volume ?? 50);
@@ -32,7 +33,7 @@ function MobileSonosVolume({ volume, muted, onSetVolume, onMute, onUnmute, busy,
       >
         {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
       </button>
-      <input
+      <Input
         type="range"
         min={0}
         max={100}

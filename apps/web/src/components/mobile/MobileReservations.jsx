@@ -5,16 +5,7 @@ import { fr } from 'date-fns/locale';
 import { ArrowLeft, Calendar, Car, Check, ChevronRight, Plus, Users } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 
-import {
-  Button,
-  FormField,
-  InlineAlert,
-  Modal,
-  ModalBody,
-  ModalHeader,
-  Select,
-  Textarea,
-} from '@/design-system';
+import { Button, FormField, InlineAlert, Input, Modal, ModalBody, ModalHeader, Select, Textarea } from '@/design-system';
 
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
@@ -298,7 +289,7 @@ const MobileReservations = forwardRef(
                 }
                 htmlFor="resa-start-date"
               >
-                <input
+                <Input
                   id="resa-start-date"
                   type="date"
                   value={formData.startDate}
@@ -316,7 +307,7 @@ const MobileReservations = forwardRef(
                 }
                 htmlFor="resa-end-date"
               >
-                <input
+                <Input
                   id="resa-end-date"
                   type="date"
                   value={formData.endDate}

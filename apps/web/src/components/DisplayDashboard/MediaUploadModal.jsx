@@ -141,7 +141,7 @@ function MediaUploadModal({ onSave, onClose }) {
           onDragOver={(e) => e.preventDefault()}
           onClick={() => fileInputRef.current?.click()}
         >
-          <input
+          <Input
             ref={fileInputRef}
             type="file"
             accept={ACCEPTED_TYPES}

@@ -648,7 +648,7 @@ export default function AddTaskModal({
             - Journée entière : masque Heure/Période et envoie all_day=1 au backend. */}
           <div className="atm-row">
             <FormField className="atm-field atm-field-half" label="Date">
-              <input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
+              <Input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
             </FormField>
             <div
               className="atm-field atm-field-half"
@@ -663,7 +663,7 @@ export default function AddTaskModal({
                   userSelect: 'none',
                 }}
               >
-                <input
+                <Input
                   type="checkbox"
                   checked={allDay}
                   onChange={(e) => setAllDay(e.target.checked)}
@@ -685,7 +685,7 @@ export default function AddTaskModal({
                   </>
                 }
               >
-                <input
+                <Input
                   type="time"
                   value={time}
                   onChange={(e) => handleTimeChange(e.target.value)}

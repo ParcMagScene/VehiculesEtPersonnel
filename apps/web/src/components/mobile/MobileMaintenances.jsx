@@ -5,7 +5,7 @@ import { fr } from 'date-fns/locale';
 import { AlertTriangle, ArrowLeft, Calendar, MapPin, Plus, Settings } from 'lucide-react';
 import { forwardRef, useImperativeHandle, useState } from 'react';
 
-import { Button, FormField, InlineAlert, Select, Textarea } from '@/design-system';
+import { Button, FormField, InlineAlert, Input, Select, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
@@ -221,7 +221,7 @@ const MobileMaintenances = forwardRef(
                     }
                     htmlFor="maint-start-date"
                   >
-                    <input
+                    <Input
                       id="maint-start-date"
                       type="date"
                       value={formData.startDate}
@@ -239,7 +239,7 @@ const MobileMaintenances = forwardRef(
                     }
                     htmlFor="maint-end-date"
                   >
-                    <input
+                    <Input
                       id="maint-end-date"
                       type="date"
                       value={formData.endDate}

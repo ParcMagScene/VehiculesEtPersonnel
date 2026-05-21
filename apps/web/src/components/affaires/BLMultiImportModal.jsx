@@ -436,7 +436,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
               BL Vente, Bons de Préparation, BL Location… — PDF uniquement — 20 Mo max
             </p>
           )}
-          <input
+          <Input
             ref={fileInputRef}
             type="file"
             accept=".pdf,application/pdf"

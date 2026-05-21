@@ -26,16 +26,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {
-  Button,
-  Dialog,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  Select,
-  Toggle,
-} from '@/design-system';
+import { Button, Dialog, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select, Toggle } from '@/design-system';
 
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { PALETTES } from '../../hooks/useTheme';
@@ -400,7 +391,7 @@ const UserPreferencesModal = ({
                 {prefs.soundVolume > 0 ? <Volume2 size={14} /> : <VolumeX size={14} />} Volume
                 <span className="prefs-volume-val">{prefs.soundVolume}%</span>
               </span>
-              <input
+              <Input
                 type="range"
                 min="0"
                 max="100"

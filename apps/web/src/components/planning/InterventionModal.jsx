@@ -288,7 +288,7 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
           )}
 
           <FormField className="form-group" label="Date de l'intervention" required>
-            <input
+            <Input
               ref={dateInputRef}
               type="date"
               value={formData.date}

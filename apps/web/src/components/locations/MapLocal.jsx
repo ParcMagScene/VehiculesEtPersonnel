@@ -27,6 +27,7 @@ import MapOffScreenIndicators from './MapOffScreenIndicators';
 import MapPopup from './MapPopup';
 import MapRouteControl from './MapRouteControl';
 import MapSearchControl from './MapSearchControl';
+import { Input } from '@/design-system';
 
 const RADIUS_PRESETS = [2, 5, 10, 25, 50, 100];
 const MIN_RADIUS = 500;
@@ -262,7 +263,7 @@ export default function MapLocal({
         <label className="map-radius-label">
           Rayon : <strong>{formatRadius(radius)}</strong>
         </label>
-        <input
+        <Input
           type="range"
           className="map-radius-slider"
           min={MIN_RADIUS}

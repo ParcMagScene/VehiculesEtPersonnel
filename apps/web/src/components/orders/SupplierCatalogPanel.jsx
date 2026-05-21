@@ -22,18 +22,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import {
-  Button,
-  EntityCombobox,
-  InlineAlert,
-  ModalLayout,
-  SearchBar,
-  Select,
-  Spinner,
-  Table,
-  Tag,
-  Tooltip,
-} from '@/design-system';
+import { Button, EntityCombobox, InlineAlert, Input, ModalLayout, SearchBar, Select, Spinner, Table, Tag, Tooltip } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
@@ -773,7 +762,7 @@ function ImportPDFModal({ onDone, onClose }) {
 
             <div className="catalog-form-group">
               <label>Fichier(s) PDF</label>
-              <input
+              <Input
                 type="file"
                 accept=".pdf"
                 multiple

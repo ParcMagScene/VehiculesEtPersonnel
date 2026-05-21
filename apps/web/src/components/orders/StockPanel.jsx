@@ -2105,7 +2105,7 @@ function ImportStockModal({ onDone, onClose }) {
 
               <div className="stock-form-field">
                 <label htmlFor="stock-import-file">Fichier PDF ou CSV</label>
-                <input
+                <Input
                   id="stock-import-file"
                   type="file"
                   accept=".pdf,.csv,.tsv,.txt"
@@ -2144,7 +2144,7 @@ function ImportStockModal({ onDone, onClose }) {
                 <span className="stock-form-group-label">Mode d'import</span>
                 <div className="u-flex u-gap-3">
                   <label className="u-flex-center u-gap-1 u-cursor-pointer">
-                    <input
+                    <Input
                       type="radio"
                       name="importMode"
                       value="upsert"
@@ -2154,7 +2154,7 @@ function ImportStockModal({ onDone, onClose }) {
                     Créer + mettre à jour
                   </label>
                   <label className="u-flex-center u-gap-1 u-cursor-pointer">
-                    <input
+                    <Input
                       type="radio"
                       name="importMode"
                       value="insert_only"

@@ -17,15 +17,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {
-  Button,
-  EmptyState,
-  Modal,
-  ModalBody,
-  ModalHeader,
-  Textarea,
-  Tooltip,
-} from '@/design-system';
+import { Button, EmptyState, Input, Modal, ModalBody, ModalHeader, Textarea, Tooltip } from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api, { getApiUrl } from '../../utils/api';
@@ -526,7 +518,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                   <Paperclip size={18} />
                 </Button>
               </Tooltip>
-              <input
+              <Input
                 ref={fileInputRef}
                 type="file"
                 hidden

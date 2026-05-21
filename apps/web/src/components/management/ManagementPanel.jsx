@@ -1009,7 +1009,7 @@ const ManagementPanel = ({
                     Exporter toutes les données
                   </Button>
 
-                  <input
+                  <Input
                     type="file"
                     ref={fileInputRef}
                     accept=".json"

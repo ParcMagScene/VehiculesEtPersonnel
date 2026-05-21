@@ -6,7 +6,7 @@
 import { Plus, Save, Tag, Trash2 } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 
-import { Button, SectionHeader, Select, Tooltip } from '@/design-system';
+import { Button, Input, SectionHeader, Select, Tooltip } from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -114,7 +114,7 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
           {rules.map((rule, index) => (
             <div key={index} className="dtv-rule-card">
               <div className="dtv-rule-row">
-                <input
+                <Input
                   type="color"
                   value={rule.color}
                   onChange={(e) => handleChange(index, 'color', e.target.value)}

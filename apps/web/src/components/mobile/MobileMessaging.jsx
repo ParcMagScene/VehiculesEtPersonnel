@@ -640,7 +640,7 @@ function MobileMessaging({ currentUser, onBack }) {
           >
             <Paperclip size={20} />
           </Button>
-          <input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
+          <Input ref={fileInputRef} type="file" hidden onChange={handleFileSelect} accept="*/*" />
           <Input
             className="mmsg-input"
             value={inputText}

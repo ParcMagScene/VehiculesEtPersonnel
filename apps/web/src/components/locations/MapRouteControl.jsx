@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Polyline, useMap } from 'react-leaflet';
 
 import { filterGeoLocations, haversineDistance, MAG_SCENE } from './map-utils';
+import { Select } from '@/design-system';
 
 function decodePolyline(encoded) {
   const points = [];
@@ -179,7 +180,7 @@ export default function MapRouteControl({ locations }) {
           <div className="map-route-form">
             <div className="map-route-field">
               <label>Départ</label>
-              <select
+              <Select
                 value={origin}
                 onChange={(e) => {
                   setOrigin(e.target.value);
@@ -192,7 +193,7 @@ export default function MapRouteControl({ locations }) {
                     {loc.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <button type="button" className="map-route-swap" onClick={handleSwap} title="Inverser">
@@ -201,7 +202,7 @@ export default function MapRouteControl({ locations }) {
 
             <div className="map-route-field">
               <label>Arrivée</label>
-              <select
+              <Select
                 value={destination}
                 onChange={(e) => {
                   setDestination(e.target.value);
@@ -214,7 +215,7 @@ export default function MapRouteControl({ locations }) {
                     {loc.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="map-route-actions">

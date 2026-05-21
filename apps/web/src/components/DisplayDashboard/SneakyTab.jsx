@@ -6,7 +6,7 @@
 import { Camera, Clock, Trash2, Upload } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 
-import { Button, SectionHeader, Select } from '@/design-system';
+import { Button, Input, SectionHeader, Select } from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -103,7 +103,7 @@ function SneakyTab({ _currentUser, refreshKey }) {
         <div className="dtv-sneaky-upload">
           <div className="dtv-form-group">
             <label>Sélectionner une photo</label>
-            <input type="file" accept="image/*" onChange={handleFileSelect} />
+            <Input type="file" accept="image/*" onChange={handleFileSelect} />
           </div>
 
           {previewUrl && (

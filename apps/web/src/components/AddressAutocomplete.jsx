@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TIMING } from '../constants';
 import api from '../utils/api';
 import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../utils/googleMapsLoader';
+import { Input } from '@/design-system';
 
 /**
  * Composant reutilisable d'autocompletion d'adresse via Google Places API moderne.
@@ -41,7 +42,7 @@ export default function AddressAutocomplete({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
 
-  // Le dropdown custom n'est utilisé que pour <input> sans `list` externe.
+  // Le dropdown custom n'est utilisé que pour <Input> sans `list` externe.
   const useCustomDropdown = as === 'input' && !list;
 
   const getPrioritySuggestions = useCallback(

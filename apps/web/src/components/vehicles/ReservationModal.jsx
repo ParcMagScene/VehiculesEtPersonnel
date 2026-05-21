@@ -1286,7 +1286,7 @@ const ReservationModal = ({
               {/* Dates et périodes */}
               <div className="form-row">
                 <FormField className="form-group" label="Date de début" htmlFor="date" required>
-                  <input
+                  <Input
                     id="date"
                     type="date"
                     name="date"
@@ -1320,7 +1320,7 @@ const ReservationModal = ({
 
               <div className="form-row">
                 <FormField className="form-group" label="Date de fin" htmlFor="endDate" required>
-                  <input
+                  <Input
                     id="endDate"
                     type="date"
                     name="endDate"

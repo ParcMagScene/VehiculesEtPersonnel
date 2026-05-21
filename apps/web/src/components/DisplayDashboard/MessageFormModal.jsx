@@ -141,14 +141,14 @@ function MessageFormModal({ message, onSave, onClose }) {
         </div>
         <div className="form-row">
           <FormField className="form-group" label="Date début">
-            <input
+            <Input
               type="date"
               value={form.dateStart}
               onChange={(e) => handleChange('dateStart', e.target.value)}
             />
           </FormField>
           <FormField className="form-group" label="Date fin">
-            <input
+            <Input
               type="date"
               value={form.dateEnd}
               onChange={(e) => handleChange('dateEnd', e.target.value)}

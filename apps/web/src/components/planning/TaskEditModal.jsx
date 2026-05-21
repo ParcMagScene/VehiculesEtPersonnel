@@ -449,7 +449,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                 </>
               }
             >
-              <input
+              <Input
                 type="date"
                 value={form.date}
                 onChange={(e) => update('date', e.target.value)}
@@ -473,7 +473,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                 </>
               }
             >
-              <input
+              <Input
                 type="time"
                 value={form.time}
                 onChange={(e) => update('time', e.target.value)}
@@ -487,7 +487,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                 </>
               }
             >
-              <input
+              <Input
                 type="time"
                 value={form.endTime}
                 onChange={(e) => update('endTime', e.target.value)}

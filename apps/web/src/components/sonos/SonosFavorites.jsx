@@ -6,6 +6,7 @@ import { Music, Search, Star } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
 import RadioLogo from './RadioLogo';
+import { Input } from '@/design-system';
 
 function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavorite, nowPlaying }) {
   const [search, setSearch] = useState('');
@@ -33,7 +34,7 @@ function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavori
       {favorites.length > 5 && (
         <div className="sonos-favs-search">
           <Search size={13} />
-          <input
+          <Input
             type="text"
             placeholder="Rechercher…"
             value={search}

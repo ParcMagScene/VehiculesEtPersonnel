@@ -4,6 +4,7 @@
 
 import { Volume1, Volume2, VolumeX } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
+import { Input } from '@/design-system';
 
 function SonosVolumeSlider({ volume, muted, onSetVolume, onMute, onUnmute, busy }) {
   const [vol, setVol] = useState(volume ?? 50);
@@ -32,7 +33,7 @@ function SonosVolumeSlider({ volume, muted, onSetVolume, onMute, onUnmute, busy 
       >
         <VolumeIcon size={16} />
       </button>
-      <input
+      <Input
         type="range"
         min={0}
         max={100}

@@ -591,7 +591,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
               <p className="bl-loc-drop-hint">
                 ou cliquez pour sélectionner — PDF uniquement, 20 Mo max
               </p>
-              <input
+              <Input
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,application/pdf"

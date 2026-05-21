@@ -6,15 +6,7 @@
 import { Film, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 
-import {
-  Button,
-  Modal,
-  ModalBody,
-  ModalHeader,
-  SectionHeader,
-  Select,
-  Tooltip,
-} from '@/design-system';
+import { Button, Input, Modal, ModalBody, ModalHeader, SectionHeader, Select, Tooltip } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
@@ -175,7 +167,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
         />
         <p className="dtv-hint">Uploadez des icônes GIF animés ou PNG avec transparence.</p>
         <div className="dtv-form-group">
-          <input type="file" accept="image/gif,image/png" onChange={handleUploadGif} />
+          <Input type="file" accept="image/gif,image/png" onChange={handleUploadGif} />
         </div>
       </div>
 

@@ -373,14 +373,14 @@ const PeriodCalendarModal = ({
                     <Clock size={14} /> Horaires :
                   </label>
                   <div className="pcm-time-inputs">
-                    <input
+                    <Input
                       type="time"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
                       className="pcm-time-input"
                     />
                     <span className="pcm-time-sep">→</span>
-                    <input
+                    <Input
                       type="time"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}

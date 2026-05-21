@@ -13,19 +13,7 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 
-import {
-  Accordion,
-  Button,
-  Checkbox,
-  Select,
-  Spinner,
-  Tab,
-  Table,
-  TabList,
-  TabPanel,
-  Tabs,
-  Tag,
-} from '@/design-system';
+import { Accordion, Button, Checkbox, Input, Select, Spinner, Tab, TabList, TabPanel, Table, Tabs, Tag } from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
@@ -146,7 +134,7 @@ function ParserLearningTab() {
       <div className="catalog-form-row" style={{ alignItems: 'flex-end' }}>
         <div className="catalog-form-group" style={{ flex: 2 }}>
           <label>Fichier PDF à analyser</label>
-          <input type="file" accept=".pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          <Input type="file" accept=".pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
           {file && (
             <small>
               {file.name} — {(file.size / 1024 / 1024).toFixed(1)} Mo

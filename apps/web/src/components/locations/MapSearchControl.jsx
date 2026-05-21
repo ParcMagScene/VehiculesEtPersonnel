@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
 
 import { filterGeoLocations } from './map-utils';
+import { Input } from '@/design-system';
 
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value);
@@ -125,7 +126,7 @@ export default function MapSearchControl({ locations }) {
     <div className="map-search-control" ref={wrapperRef}>
       <div className="map-search-input-wrapper">
         <Search size={16} className="map-search-icon" />
-        <input
+        <Input
           ref={inputRef}
           type="text"
           className="map-search-input"

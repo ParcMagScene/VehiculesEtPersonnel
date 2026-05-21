@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
-import { Accordion, Button, InlineAlert, ModalLayout, Spinner, Table, Tag } from '@/design-system';
+import { Accordion, Button, InlineAlert, Input, ModalLayout, Spinner, Table, Tag } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -260,7 +260,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
               Format attendu : CSV séparé par <code>;</code>
             </p>
             <p className="eq-import-hint">Colonnes : {EXPECTED_HEADERS.join(', ')}</p>
-            <input
+            <Input
               id="personnel-csv-file-input"
               type="file"
               accept=".csv,text/csv"

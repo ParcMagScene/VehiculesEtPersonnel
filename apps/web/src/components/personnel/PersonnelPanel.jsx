@@ -477,7 +477,7 @@ const PersonnelPanel = ({
                   <label
                     style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                   >
-                    <input
+                    <Input
                       type="checkbox"
                       checked={!!editForm.showInPlanning}
                       onChange={(e) =>

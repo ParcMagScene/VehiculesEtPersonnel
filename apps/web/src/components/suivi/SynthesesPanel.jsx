@@ -19,6 +19,7 @@ import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
+import { Input } from '@/design-system';
 
 // Constante module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
 const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
@@ -216,7 +217,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
           </Button>
 
           {mode === 'semaine' && (
-            <input
+            <Input
               type="week"
               value={semaine}
               onChange={(e) => setSemaine(e.target.value)}
@@ -224,7 +225,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
             />
           )}
           {mode === 'annee' && (
-            <input
+            <Input
               type="number"
               min="2000"
               max="2100"
@@ -235,7 +236,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
             />
           )}
           {mode === 'mois' && (
-            <input
+            <Input
               type="month"
               value={mois}
               onChange={(e) => setMois(e.target.value)}
@@ -264,7 +265,7 @@ function SynthesesPanel({ currentUser: _currentUser }) {
             className="suivi-select-all syntheses-filter-permanents"
             title="Afficher uniquement les permanents, apprentis et stagiaires"
           >
-            <input
+            <Input
               type="checkbox"
               checked={onlyPermanents}
               onChange={(e) => setOnlyPermanents(e.target.checked)}

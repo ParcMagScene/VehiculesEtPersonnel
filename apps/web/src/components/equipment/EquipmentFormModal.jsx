@@ -569,7 +569,7 @@ const EquipmentFormModal = ({
             )}
             <div className="eq-form-field">
               <label>Date d'achat</label>
-              <input
+              <Input
                 type="date"
                 value={form.purchase_date}
                 onChange={(e) => setForm({ ...form, purchase_date: e.target.value })}
@@ -586,7 +586,7 @@ const EquipmentFormModal = ({
             </div>
             <div className="eq-form-field">
               <label>Fin de garantie</label>
-              <input
+              <Input
                 type="date"
                 value={form.warranty_end}
                 onChange={(e) => setForm({ ...form, warranty_end: e.target.value })}

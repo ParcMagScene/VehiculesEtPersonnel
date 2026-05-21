@@ -411,7 +411,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                     <div className="etm-step-fields">
                       <div className="etm-field">
                         <label>Date</label>
-                        <input
+                        <Input
                           type="date"
                           value={s.date}
                           onChange={(e) => updateStep(step.key, 'date', e.target.value)}
@@ -429,7 +429,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                       </div>
                       <div className="etm-field">
                         <label>Heure début</label>
-                        <input
+                        <Input
                           type="time"
                           value={s.time}
                           onChange={(e) => updateStep(step.key, 'time', e.target.value)}
@@ -437,7 +437,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                       </div>
                       <div className="etm-field">
                         <label>Heure fin</label>
-                        <input
+                        <Input
                           type="time"
                           value={s.endTime}
                           onChange={(e) => updateStep(step.key, 'endTime', e.target.value)}

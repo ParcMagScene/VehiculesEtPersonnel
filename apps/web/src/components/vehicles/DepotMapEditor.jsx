@@ -1115,7 +1115,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
               </Button>
               <div className="dep-ed-slider-row">
                 <span>Opacité :</span>
-                <input
+                <Input
                   type="range"
                   min="0"
                   max="100"
@@ -1169,7 +1169,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
               {zonesData.categories.map((cat) => (
                 <div key={cat.id} className="dep-ed-cat-block">
                   <div className="dep-ed-field dep-ed-cat-color">
-                    <input
+                    <Input
                       type="color"
                       value={cat.color}
                       onChange={(e) => {
@@ -1277,7 +1277,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
               </div>
               <div className="dep-ed-field dep-ed-color-field">
                 <span>Couleur</span>
-                <input
+                <Input
                   type="color"
                   value={selectedZone.color}
                   onChange={(e) => {

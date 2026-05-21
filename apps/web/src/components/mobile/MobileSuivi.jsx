@@ -3,7 +3,7 @@ import './MobileSuivi.css';
 import { CheckCircle, ChevronRight, Circle, Clock, FileText, Plus, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, Spinner } from '@/design-system';
+import { Button, Input, Select, Spinner, Textarea } from '@/design-system';
 
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import api from '../../utils/api';
@@ -172,7 +172,7 @@ function MobileSuivi({ currentUser }) {
         <div className="ms-add-form">
           <label className="ms-field">
             <span>Tâche *</span>
-            <input
+            <Input
               type="text"
               value={addTask}
               onChange={(e) => setAddTask(e.target.value)}
@@ -182,15 +182,15 @@ function MobileSuivi({ currentUser }) {
           </label>
           <label className="ms-field">
             <span>Période</span>
-            <select value={addPeriod} onChange={(e) => setAddPeriod(e.target.value)}>
+            <Select value={addPeriod} onChange={(e) => setAddPeriod(e.target.value)}>
               <option value="AM">Matin</option>
               <option value="PM">Après-midi</option>
               <option value="Full">Journée</option>
-            </select>
+            </Select>
           </label>
           <label className="ms-field">
             <span>Temps passé</span>
-            <select value={addTime} onChange={(e) => setAddTime(e.target.value)}>
+            <Select value={addTime} onChange={(e) => setAddTime(e.target.value)}>
               <option value="">—</option>
               <option value="10">10 min</option>
               <option value="15">15 min</option>
@@ -209,11 +209,11 @@ function MobileSuivi({ currentUser }) {
               <option value="360">6 h</option>
               <option value="420">7 h</option>
               <option value="480">8 h</option>
-            </select>
+            </Select>
           </label>
           <label className="ms-field">
             <span>Commentaire</span>
-            <textarea
+            <Textarea
               value={addComment}
               onChange={(e) => setAddComment(e.target.value)}
               placeholder="Notes…"

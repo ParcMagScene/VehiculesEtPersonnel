@@ -208,7 +208,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
               <div className="event-form-row">
                 <div className="event-form-field">
                   <label>Date de début</label>
-                  <input
+                  <Input
                     type="date"
                     value={formData.startDate}
                     onChange={(e) => handleChange('startDate', e.target.value)}
@@ -217,7 +217,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
                 </div>
                 <div className="event-form-field">
                   <label>Date de fin</label>
-                  <input
+                  <Input
                     type="date"
                     value={formData.endDate}
                     onChange={(e) => handleChange('endDate', e.target.value)}
@@ -228,7 +228,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
               <div className="event-form-row">
                 <div className="event-form-field">
                   <label>Début</label>
-                  <input
+                  <Input
                     type="datetime-local"
                     value={formData.startDateTime}
                     onChange={(e) => handleChange('startDateTime', e.target.value)}
@@ -237,7 +237,7 @@ function GoogleEventFormModal({ isOpen, onClose, mode, event, onSave, currentDat
                 </div>
                 <div className="event-form-field">
                   <label>Fin</label>
-                  <input
+                  <Input
                     type="datetime-local"
                     value={formData.endDateTime}
                     onChange={(e) => handleChange('endDateTime', e.target.value)}

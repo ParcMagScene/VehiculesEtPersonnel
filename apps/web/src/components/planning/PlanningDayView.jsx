@@ -231,7 +231,7 @@ const PlanningIcalManager = React.memo(function PlanningIcalManager({
             onChange={(e) => setIcalForm((f) => ({ ...f, url: e.target.value }))}
           />
           <div className="ical-form-row">
-            <input
+            <Input
               type="color"
               value={icalForm.color || STATUS_COLORS.info}
               onChange={(e) => setIcalForm((f) => ({ ...f, color: e.target.value }))}
@@ -399,7 +399,7 @@ const PlanningRecurringPanel = React.memo(function PlanningRecurringPanel({
                 ))}
               </Select>
             )}
-            <input
+            <Input
               type="time"
               value={recurringForm.time || '08:00'}
               onChange={(e) => setRecurringForm((f) => ({ ...f, time: e.target.value }))}

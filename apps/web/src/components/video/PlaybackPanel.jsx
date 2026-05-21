@@ -7,7 +7,7 @@ import './PlaybackPanel.css';
 import { AlertCircle, Calendar, Clock, Film, Loader, Play, Square } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Select, Tooltip } from '@/design-system';
+import { Button, Input, Select, Tooltip } from '@/design-system';
 
 import { TIMING } from '../../constants';
 import api from '../../utils/api';
@@ -216,7 +216,7 @@ const PlaybackPanel = ({ cameras, initialCameraId }) => {
           <label>
             <Calendar size={14} /> Date
           </label>
-          <input
+          <Input
             type="date"
             value={date}
             max={new Date().toISOString().slice(0, 10)}

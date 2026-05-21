@@ -3,7 +3,7 @@ import './ContactsCSVImportDialog.css';
 import { CheckCircle, Download, FileText, Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
-import { Button, InlineAlert, ModalLayout, Spinner, Table } from '@/design-system';
+import { Button, InlineAlert, Input, ModalLayout, Spinner, Table } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -239,7 +239,7 @@ export default function ContactsCSVImportDialog({ onClose, onSuccess, _toast }) 
               Format attendu : <code>Code Libre;Nom Prénom;Téléphone;Portable;E-Mail;</code>
             </p>
           </div>
-          <input
+          <Input
             ref={fileInputRef}
             type="file"
             accept=".csv,text/csv,text/plain"

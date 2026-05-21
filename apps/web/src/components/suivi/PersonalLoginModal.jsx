@@ -9,7 +9,7 @@ import './PersonalLoginModal.css';
 import { Eye, EyeOff, Lock, LogIn } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, Dialog, Input } from '@/design-system';
+import { Button, Dialog, Input, Select } from '@/design-system';
 
 import { usePersonalAuth } from '../../contexts/PersonalAuthContext.jsx';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
@@ -86,7 +86,7 @@ function PersonalLoginModal({ personnel = [], isOpen, onClose }) {
           <label htmlFor="personnel-select" className="form-label">
             Personnel
           </label>
-          <select
+          <Select
             id="personnel-select"
             value={selectedPersonId}
             onChange={(e) => {
@@ -102,7 +102,7 @@ function PersonalLoginModal({ personnel = [], isOpen, onClose }) {
                 {getFavoriteDisplayName(p)}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {selectedPersonName && (

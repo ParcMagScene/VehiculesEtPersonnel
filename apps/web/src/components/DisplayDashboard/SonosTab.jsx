@@ -97,7 +97,7 @@ function PlaybackControls({
       {duration > 0 && (
         <div className="dtv-sonos-progress">
           <span className="dtv-sonos-progress-time">{formatTime(seekPos)}</span>
-          <input
+          <Input
             type="range"
             min={0}
             max={duration}
@@ -192,7 +192,7 @@ function PlaybackControls({
         >
           {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
         </button>
-        <input
+        <Input
           type="range"
           min={0}
           max={100}

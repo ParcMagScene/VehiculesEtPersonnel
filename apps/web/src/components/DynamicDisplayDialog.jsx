@@ -305,7 +305,7 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
               }
               required
             >
-              <input
+              <Input
                 type="date"
                 value={form.date}
                 onChange={(e) => updateField('date', e.target.value)}
@@ -319,7 +319,7 @@ function DynamicDisplayDialog({ event, defaultDate, defaultAffaireId, onSave, on
                 </>
               }
             >
-              <input
+              <Input
                 type="time"
                 value={form.time}
                 onChange={(e) => updateField('time', e.target.value)}

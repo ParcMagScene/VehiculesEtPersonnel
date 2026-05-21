@@ -888,7 +888,7 @@ function EventDetailsModal({
                         >
                           <Plus size={16} />
                           {uploading ? 'Upload...' : 'Joindre fichiers'}
-                          <input
+                          <Input
                             type="file"
                             multiple
                             onChange={handleFileUpload}
@@ -1119,7 +1119,7 @@ function EventDetailsModal({
               <label className="btn-primary">
                 <Plus size={16} />
                 Ajouter fichiers
-                <input
+                <Input
                   type="file"
                   multiple
                   onChange={handleFileUpload}

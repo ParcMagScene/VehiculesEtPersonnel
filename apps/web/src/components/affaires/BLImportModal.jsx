@@ -328,7 +328,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                 Glissez un PDF ici ou <strong>cliquez pour sélectionner</strong>
               </p>
               <p className="drop-hint">PDF uniquement — 20 Mo max</p>
-              <input
+              <Input
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,application/pdf"

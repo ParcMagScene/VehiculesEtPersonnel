@@ -470,7 +470,7 @@ const SavTicketFormModal = ({
                   <div className="sav-search-global" ref={searchRef}>
                     <div className="sav-search-input-wrap">
                       <Search size={16} className="sav-search-icon" />
-                      <input
+                      <Input
                         type="text"
                         className="sav-search-input"
                         placeholder="Rechercher par nom, référence, N° série ou UID…"

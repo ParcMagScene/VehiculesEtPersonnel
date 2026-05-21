@@ -1095,7 +1095,7 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
             <div className="create-personnel-contract-options">
               {CONTRACT_TYPES.map((ct) => (
                 <label key={ct.value} className="contract-type-option">
-                  <input
+                  <Input
                     type="radio"
                     name="contractType"
                     value={ct.value}

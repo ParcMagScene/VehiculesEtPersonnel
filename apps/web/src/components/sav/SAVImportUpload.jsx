@@ -8,7 +8,7 @@
 import { FileText, Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
-import { Button, InlineAlert, Spinner } from '@/design-system';
+import { Button, InlineAlert, Input, Spinner } from '@/design-system';
 
 import api from '../../utils/api';
 
@@ -94,7 +94,7 @@ export default function SAVImportUpload({ onPreviewReady }) {
             'Cliquer ou glisser un fichier CSV ici'
           )}
         </div>
-        <input
+        <Input
           ref={inputRef}
           type="file"
           accept=".csv,text/csv"

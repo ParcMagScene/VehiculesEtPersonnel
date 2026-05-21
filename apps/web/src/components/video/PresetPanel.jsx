@@ -5,7 +5,7 @@
 import { Edit2, ExternalLink, Plus, Save, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, Tooltip } from '@/design-system';
+import { Button, Input, Select, Tooltip } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
@@ -151,7 +151,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
 
           <div className="preset-panel__editor-name">
             <label>Nom</label>
-            <input
+            <Input
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
@@ -215,7 +215,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
       {ConfirmDialogRenderer}
       {/* Barre de sélection / actions */}
       <div className="preset-panel__bar">
-        <select
+        <Select
           className="preset-panel__select"
           value={activePresetId || ''}
           onChange={(e) => {
@@ -228,7 +228,7 @@ const PresetPanel = ({ cameras = [], proxyAvailable = false, onDetach }) => {
               {p.name} ({p.cameraIds.length} cam)
             </option>
           ))}
-        </select>
+        </Select>
         <div className="preset-panel__bar-actions">
           <Tooltip content="Modifier le preset" position="bottom">
             <Button variant="ghost" size="sm" onClick={startEdit} disabled={!activePreset}>

@@ -3,7 +3,7 @@ import './LabelsPrintPanel.css';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, EmptyState, SearchBar, Spinner } from '@/design-system';
+import { Button, EmptyState, Input, SearchBar, Spinner } from '@/design-system';
 import { api } from '@/utils/api';
 import { MAG_NUMBER_RE } from '@/utils/magNumber';
 
@@ -219,7 +219,7 @@ export default function LabelsPrintPanel() {
             style={{ minWidth: 280 }}
           />
           <label className="lpp-filter-toggle">
-            <input
+            <Input
               type="checkbox"
               checked={withoutMag}
               onChange={(e) => setWithoutMag(e.target.checked)}
@@ -259,7 +259,7 @@ export default function LabelsPrintPanel() {
             <thead>
               <tr>
                 <th>
-                  <input
+                  <Input
                     type="checkbox"
                     checked={allPageSelected}
                     onChange={togglePage}
@@ -296,7 +296,7 @@ export default function LabelsPrintPanel() {
                 return (
                   <tr key={it.serial_id} className={checked ? 'lpp-selected' : ''}>
                     <td>
-                      <input
+                      <Input
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleOne(it.serial_id)}
@@ -320,7 +320,7 @@ export default function LabelsPrintPanel() {
                     </td>
                     <td>
                       <div className="lpp-mag-cell">
-                        <input
+                        <Input
                           type="text"
                           className={`lpp-mag-input ${magCls}`}
                           value={magVal}

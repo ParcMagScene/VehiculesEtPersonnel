@@ -1,12 +1,12 @@
 import './VehicleDetailPanel.css';
 
-import { AlertTriangle, Calendar, ExternalLink, Gauge, User, Wrench, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Calendar, ExternalLink, Gauge, User, Wrench } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { Button, Tag } from '@/design-system';
+import { Button, Drawer, Tag } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
-import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
+
 import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
@@ -376,70 +376,42 @@ const VehicleSlidePanel = ({
   onOpenDialog,
   onAction,
 }) => {
-  const panelRef = useRef(null);
-  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(vehicle, onClose, 300);
+  if (!vehicle) return null;
 
-  // Clic extérieur
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) handleClose();
-    };
-    // Utiliser 'click' au lieu de 'mousedown' pour éviter les conflits
-    document.addEventListener('click', handler);
-    return () => document.removeEventListener('click', handler);
-  }, [isOpen, handleClose]);
-
-  if (!isVisible && !vehicle) return null;
-
-  const currentVehicle = vehicle || {};
+  const currentVehicle = vehicle;
 
   return (
-    <div
-      className={`vehicle-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
-      ref={panelRef}
-    >
-      {/* Header */}
-      <div className="vdp-slide-header">
-        <div className="vdp-slide-title-row">
-          <div
-            className="vdp-slide-color"
-            style={{
-              backgroundColor:
-                currentVehicle.displayColor || currentVehicle.color || STATUS_COLORS.info,
-            }}
-          />
-          <div className="vdp-slide-title-info">
-            <span className="vdp-slide-name">{currentVehicle.name}</span>
-            <div className="vdp-slide-badges">
-              {currentVehicle.type && (
-                <span className="vdp-slide-badge">{currentVehicle.type}</span>
-              )}
-              {(currentVehicle.immatriculation || currentVehicle.registration) && (
-                <span className="vdp-slide-badge vdp-slide-reg">
-                  {currentVehicle.immatriculation || currentVehicle.registration}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-        <Button variant="ghost" className="slide-panel-close" onClick={handleClose}>
-          <X size={18} />
-        </Button>
-      </div>
-
-      {/* Body */}
-      <div className="vdp-slide-body">
-        <VehicleDetailContent
-          vehicle={currentVehicle}
-          maintenances={maintenances}
-          currentUser={currentUser}
-          onAction={onAction}
+    <Drawer
+      open={!!vehicle}
+      onClose={onClose}
+      side="right"
+      width={420}
+      className="vehicle-slide-panel"
+      icon={
+        <span
+          className="vdp-slide-color"
+          style={{
+            backgroundColor:
+              currentVehicle.displayColor || currentVehicle.color || STATUS_COLORS.info,
+          }}
         />
-      </div>
-
-      {/* Footer */}
-      <div className="vdp-slide-footer">
+      }
+      title={
+        <span className="vdp-slide-title-info">
+          <span className="vdp-slide-name">{currentVehicle.name}</span>
+          <span className="vdp-slide-badges">
+            {currentVehicle.type && (
+              <span className="vdp-slide-badge">{currentVehicle.type}</span>
+            )}
+            {(currentVehicle.immatriculation || currentVehicle.registration) && (
+              <span className="vdp-slide-badge vdp-slide-reg">
+                {currentVehicle.immatriculation || currentVehicle.registration}
+              </span>
+            )}
+          </span>
+        </span>
+      }
+      footer={
         <Button
           variant="ghost"
           className="vdp-slide-open-btn"
@@ -447,8 +419,15 @@ const VehicleSlidePanel = ({
         >
           <ExternalLink size={14} /> Ouvrir la fiche complète
         </Button>
-      </div>
-    </div>
+      }
+    >
+      <VehicleDetailContent
+        vehicle={currentVehicle}
+        maintenances={maintenances}
+        currentUser={currentUser}
+        onAction={onAction}
+      />
+    </Drawer>
   );
 };
 

@@ -617,7 +617,7 @@
   color: var(--theme-success-dark);
 }
 .maff-resa-status.pending {
-  background: #fef9c3;
+  background: var(--theme-warning-bg);
   color: #a16207;
 }
 

@@ -50,10 +50,10 @@
 }
 
 .ad-card-alert {
-  border-color: #ef4444 !important;
+  border-color: var(--theme-danger) !important;
 }
 .ad-card-alert .ad-card-value {
-  color: #ef4444;
+  color: var(--theme-danger);
 }
 
 .ad-transitions {

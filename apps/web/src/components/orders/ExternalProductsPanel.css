@@ -175,8 +175,8 @@
 
 .eshop-btn-danger:hover {
   background: #fee2e2;
-  border-color: #fca5a5;
-  color: #dc2626;
+  border-color: var(--theme-danger-bg);
+  color: var(--theme-danger);
 }
 
 /* ── Fiche détail ─────────────────────────────────────────────── */
@@ -255,11 +255,11 @@
 }
 
 .eshop-row--best {
-  background: #f0fdf4 !important;
+  background: var(--theme-success-bg) !important;
 }
 
 .eshop-row--best .eshop-total {
-  color: #16a34a;
+  color: var(--theme-success);
   font-weight: 700;
 }
 
@@ -268,7 +268,7 @@
 }
 
 .eshop-star {
-  color: #f59e0b;
+  color: var(--theme-warning);
   margin-left: 4px;
   vertical-align: middle;
 }
@@ -407,7 +407,7 @@ textarea.eshop-input {
   position: absolute;
   top: -4px;
   right: -4px;
-  background: #ef4444;
+  background: var(--theme-danger);
   color: #fff;
   font-size: 0.65rem;
   font-weight: 700;

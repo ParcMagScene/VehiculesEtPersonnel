@@ -224,7 +224,7 @@
   height: 18px;
   border-radius: 50%;
   background: #667eea;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--theme-bg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 
@@ -233,7 +233,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #ffffff;
+  background: var(--theme-bg);
   border: 2px solid #667eea;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
@@ -1037,15 +1037,15 @@
 }
 
 .map-name-tooltip--prestataire.leaflet-tooltip {
-  --map-tooltip-connector-color: #f59e0b;
+  --map-tooltip-connector-color: var(--theme-warning);
 }
 
 .map-name-tooltip--garage.leaflet-tooltip {
-  --map-tooltip-connector-color: #ef4444;
+  --map-tooltip-connector-color: var(--theme-danger);
 }
 
 .map-name-tooltip--autre.leaflet-tooltip {
-  --map-tooltip-connector-color: #94a3b8;
+  --map-tooltip-connector-color: var(--theme-text-muted);
 }
 
 .map-name-tooltip--siege.leaflet-tooltip {

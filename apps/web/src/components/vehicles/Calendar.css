@@ -1043,7 +1043,7 @@
 .reservation-affaire {
   font-weight: 700;
   font-size: 0.7rem;
-  color: #ffffff;
+  color: var(--theme-bg);
   background: rgba(124, 58, 237, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
@@ -1078,7 +1078,7 @@
 .affaire-plus {
   font-size: 0.65rem;
   background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
+  color: var(--theme-bg);
   padding: 0.125rem 0.25rem;
   border-radius: var(--radius-xs);
   margin-left: 0.125rem;
@@ -1517,7 +1517,7 @@
 }
 
 [data-theme='dark'] .reservation-affaire {
-  color: #ffffff;
+  color: var(--theme-bg);
   background: rgba(167, 139, 250, 0.95);
   border-color: rgba(255, 255, 255, 0.5);
 }

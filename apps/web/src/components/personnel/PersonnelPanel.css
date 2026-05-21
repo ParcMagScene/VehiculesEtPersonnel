@@ -608,7 +608,7 @@
   color: var(--theme-success-text);
 }
 .pp-type-badge.type-stagiaire {
-  background: #f3e8ff;
+  background: var(--theme-purple-bg);
   color: var(--theme-primary-hover);
 }
 .pp-type-badge.type-contractuel {
@@ -795,7 +795,7 @@
   color: var(--theme-success-text);
 }
 .person-type-badge.type-stagiaire {
-  background: #f3e8ff;
+  background: var(--theme-purple-bg);
   color: var(--theme-primary-hover);
 }
 .person-type-badge.type-apprenti {

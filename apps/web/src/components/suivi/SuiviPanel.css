@@ -523,7 +523,7 @@
 }
 .suivi-status-draft {
   background: rgba(148, 163, 184, 0.1);
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 .suivi-status-submitted {
@@ -541,7 +541,7 @@
 .suivi-error {
   padding: 10px 14px;
   background: rgba(239, 68, 68, 0.1);
-  color: #f87171;
+  color: var(--theme-danger);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 6px;
   font-size: 13px;
@@ -649,14 +649,14 @@
 }
 
 .fiche-context-status-pending {
-  color: #fbbf24;
+  color: var(--theme-warning);
   border-color: rgba(251, 191, 36, 0.35);
   background: rgba(251, 191, 36, 0.12);
 }
 
 .fiche-context-status-rejected,
 .fiche-mission-status-cancelled {
-  color: #f87171;
+  color: var(--theme-danger);
   border-color: rgba(248, 113, 113, 0.35);
   background: rgba(248, 113, 113, 0.12);
 }
@@ -829,7 +829,7 @@
 .fiche-picker-done-badge {
   font-size: 10px;
   font-weight: 600;
-  color: #16a34a;
+  color: var(--theme-success);
   background: #dcfce7;
   padding: 1px 6px;
   border-radius: 4px;
@@ -862,7 +862,7 @@
 }
 .fiche-picker-badge--tournage {
   background: #3d1a1a;
-  color: #f87171;
+  color: var(--theme-danger);
 }
 .fiche-picker-badge--exposition {
   background: #3d2a1a;
@@ -982,7 +982,7 @@
 }
 .fiche-recurring-error {
   font-size: 11px;
-  color: #f87171;
+  color: var(--theme-danger);
 }
 .fiche-recurring-list {
   list-style: none;
@@ -1013,7 +1013,7 @@
   border-radius: 50%;
   border: 1px solid rgba(248, 113, 113, 0.45);
   background: rgba(248, 113, 113, 0.12);
-  color: #f87171;
+  color: var(--theme-danger);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1027,7 +1027,7 @@
     border-radius: 50%;
     border: 1px solid rgba(251, 191, 36, 0.5);
     background: rgba(251, 191, 36, 0.12);
-    color: #f59e0b;
+    color: var(--theme-warning);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1037,7 +1037,7 @@
   }
   .fiche-postpone-btn.active {
     background: rgba(251, 191, 36, 0.25);
-    border-color: #f59e0b;
+    border-color: var(--theme-warning);
   }
 
   /* Ligne inline du formulaire de report */
@@ -1054,7 +1054,7 @@
   }
   .fiche-postpone-label {
     font-size: 12px;
-    color: #92400e;
+    color: var(--theme-warning-text);
     font-weight: 500;
   }
   .fiche-postpone-date,
@@ -1065,7 +1065,7 @@
   }
   .fiche-postpone-error {
     font-size: 11px;
-    color: #ef4444;
+    color: var(--theme-danger);
   }
   width: 22px;
   height: 22px;
@@ -1162,7 +1162,7 @@
 }
 .fiche-check-btn.not-done {
   background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
+  color: var(--theme-danger);
   border-color: rgba(239, 68, 68, 0.35);
 }
 .fiche-check-btn.unknown {
@@ -1188,7 +1188,7 @@
 }
 .fiche-delete-btn:hover {
   background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
+  color: var(--theme-danger);
 }
 .fiche-empty {
   padding: 16px;
@@ -1426,7 +1426,7 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
-  color: #f87171;
+  color: var(--theme-danger);
   font-size: 0.875rem;
 }
 .suivi-team-auth-submit {
@@ -1554,7 +1554,7 @@
 }
 .synthese-badge-draft {
   background: rgba(148, 163, 184, 0.15);
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 .synthese-badge-submitted {
   background: rgba(59, 130, 246, 0.15);
@@ -1617,7 +1617,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #f87171;
+  color: var(--theme-danger);
   font-size: 13px;
 }
 .syntheses-anomalies ul {

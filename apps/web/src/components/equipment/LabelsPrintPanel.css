@@ -116,7 +116,7 @@
 
 .lpp-mag-input.lpp-mag-saved {
   border-color: var(--success, #388e3c);
-  background: #f5fff5;
+  background: var(--theme-success-bg);
 }
 
 .lpp-mag-input.lpp-mag-suggested {
@@ -134,8 +134,8 @@
   padding: 3px 6px;
   font-size: 0.75rem;
   border: 1px solid var(--warning, #f59e0b);
-  background: #fff3cd;
-  color: #92400e;
+  background: var(--warning-bg);
+  color: var(--theme-warning-text);
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
@@ -143,7 +143,7 @@
 }
 
 .lpp-mag-apply:hover {
-  background: #fde68a;
+  background: var(--theme-warning-bg);
 }
 
 .lpp-suggested-hint {
@@ -189,8 +189,8 @@
 
 .lpp-error {
   padding: 8px 12px;
-  background: #ffebee;
-  color: #b71c1c;
+  background: var(--danger-bg);
+  color: var(--danger-dark);
   border-radius: 6px;
   font-size: 0.85rem;
 }

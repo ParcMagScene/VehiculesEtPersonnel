@@ -263,7 +263,7 @@
 
 [data-theme='dark'] .pi-type-autoentrepreneur {
   background: rgba(236, 72, 153, 0.2);
-  color: #f472b6;
+  color: var(--theme-pink);
 }
 
 /* ---------- RESPONSIVE ---------- */

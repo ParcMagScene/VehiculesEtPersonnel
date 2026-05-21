@@ -162,7 +162,7 @@
 }
 
 .module-card.orders .module-icon {
-  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+  background: linear-gradient(135deg, #fce7f3, var(--theme-pink-bg));
   color: var(--theme-danger);
 }
 

@@ -45,6 +45,7 @@ import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useStat
 import {
   Avatar,
   Button,
+  Drawer,
   Input,
   Modal,
   ModalBody,
@@ -62,7 +63,6 @@ import { useAnnotateBP } from '../../hooks/useAnnotateBP';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
-import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { AFFAIRE_TYPE_SECTIONS, AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import {
   AFFAIRE_STATUS_MAP,
@@ -2840,8 +2840,6 @@ const AffaireSlidePanel = ({
   const [showBLImport, setShowBLImport] = useState(false);
   const [showDisplayDialog, setShowDisplayDialog] = useState(false);
   const [hasBLImports, setHasBLImports] = useState(false);
-  const panelRef = useRef(null);
-  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(affaire, onClose);
 
   // Fetch missions et BL imports quand une affaire est sélectionnée
   useEffect(() => {
@@ -2868,98 +2866,80 @@ const AffaireSlidePanel = ({
     };
   }, [affaire]);
 
-  // Fermer au clic extérieur
-  useEffect(() => {
-    const handler = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) {
-        const row = e.target.closest('.affaire-row');
-        if (!row) handleClose();
-      }
-    };
-    if (affaire && isVisible) {
-      document.addEventListener('mousedown', handler);
-      return () => document.removeEventListener('mousedown', handler);
-    }
-  }, [affaire, isVisible, handleClose]);
+  if (!affaire) return null;
 
-  if (!isVisible && !affaire) return null;
-
-  const currentAffaire = affaire || {};
+  const currentAffaire = affaire;
   const typeInfo = getTypeInfo(currentAffaire.type);
+  const statusInfo = AFFAIRE_STATUS_MAP[currentAffaire.status || 'brouillon'];
 
   return (
-    <div
-      className={`affaire-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
-      ref={panelRef}
-    >
-      <div className="slide-panel-header">
-        <div className="slide-panel-title-row">
+    <Drawer
+      open={!!affaire}
+      onClose={onClose}
+      side="right"
+      width={420}
+      className="affaire-slide-panel"
+      title={
+        <span className="slide-panel-title-row">
           <span className="slide-panel-numero">{currentAffaire.numeroAffaire}</span>
           <span className="slide-panel-type" style={{ background: typeInfo.color }}>
             {typeInfo.label}
           </span>
-          {(() => {
-            const st = AFFAIRE_STATUS_MAP[currentAffaire.status || 'brouillon'];
-            return st ? (
-              <span
-                className="workflow-status-badge"
-                style={{
-                  background: st.color,
-                  color: '#fff',
-                  fontSize: '0.72rem',
-                  padding: '2px 8px',
-                }}
-              >
-                {st.emoji} {st.label}
-              </span>
-            ) : null;
-          })()}
-        </div>
-        <Tooltip content="Fermer">
-          <Button variant="ghost" className="slide-panel-close" onClick={handleClose}>
-            <X size={18} />
+          {statusInfo ? (
+            <span
+              className="workflow-status-badge"
+              style={{
+                background: statusInfo.color,
+                color: '#fff',
+                fontSize: '0.72rem',
+                padding: '2px 8px',
+              }}
+            >
+              {statusInfo.emoji} {statusInfo.label}
+            </span>
+          ) : null}
+        </span>
+      }
+      footer={
+        <>
+          <Button
+            variant="ghost"
+            className="slide-panel-bl-btn"
+            onClick={() => setShowBLImport(true)}
+            title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
+          >
+            {hasBLImports ? (
+              <>
+                <RefreshCw size={14} /> MAJ BL
+              </>
+            ) : (
+              <>
+                <FileText size={14} /> Import BL
+              </>
+            )}
           </Button>
-        </Tooltip>
-      </div>
-      <div className="slide-panel-body">
-        <AffaireDetailContent
-          affaire={currentAffaire}
-          reservations={reservations}
-          missions={missions}
-          googleEventIds={googleEventIds}
-          editable={true}
-          onDataChanged={onRefresh}
-          onNavigateToEntity={onNavigateToEntity}
-          currentUser={currentUser}
-        />
-      </div>
-      <div className="slide-panel-footer">
-        <Button
-          variant="ghost"
-          className="slide-panel-bl-btn"
-          onClick={() => setShowBLImport(true)}
-          title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
-        >
-          {hasBLImports ? (
-            <>
-              <RefreshCw size={14} /> MAJ BL
-            </>
-          ) : (
-            <>
-              <FileText size={14} /> Import BL
-            </>
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          className="slide-panel-open-btn"
-          onClick={() => {
-            if (onOpenDialog) onOpenDialog(currentAffaire);
-          }}
-        >
-          <ExternalLink size={14} /> Ouvrir la fiche
-        </Button>
-      </div>
+          <Button
+            variant="ghost"
+            className="slide-panel-open-btn"
+            onClick={() => {
+              if (onOpenDialog) onOpenDialog(currentAffaire);
+            }}
+          >
+            <ExternalLink size={14} /> Ouvrir la fiche
+          </Button>
+        </>
+      }
+    >
+      <AffaireDetailContent
+        affaire={currentAffaire}
+        reservations={reservations}
+        missions={missions}
+        googleEventIds={googleEventIds}
+        editable={true}
+        onDataChanged={onRefresh}
+        onNavigateToEntity={onNavigateToEntity}
+        currentUser={currentUser}
+      />
       {showBLImport && (
         <Suspense fallback={null}>
           {['Location', 'Prestation'].includes(currentAffaire.type) ? (
@@ -2997,7 +2977,7 @@ const AffaireSlidePanel = ({
           />
         </Suspense>
       )}
-    </div>
+    </Drawer>
   );
 };
 

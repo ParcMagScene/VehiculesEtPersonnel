@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Button,
+  Drawer,
   EmptyState,
   Input,
   ModalLayout,
@@ -29,7 +30,6 @@ import {
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useModalDialogClose } from '../../hooks/useModalDialogClose';
-import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { useToast } from '../../hooks/useToast';
 import { safeDate } from '../../utils/formatUtils';
 import { cleanName, SAV_PRIORITY, SAV_STATUS, SAV_TYPES } from './equipmentConstants';
@@ -962,117 +962,112 @@ const SavSlidePanel = ({
   onOpenDialog,
   onOpenEquipmentDialog,
 }) => {
-  const panelRef = useRef(null);
-  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(ticket, onClose);
+  if (!ticket) return null;
 
-  if (!isVisible && !ticket) return null;
-
-  const t = ticket || {};
+  const t = ticket;
   const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
   const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
   const eq = equipment.find((e) => e.id === t.equipmentId);
 
   return (
-    <div
-      className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
-      ref={panelRef}
-    >
-      <div className="eq-slide-header">
-        <div className="eq-slide-title-row">
+    <Drawer
+      open={!!ticket}
+      onClose={onClose}
+      side="right"
+      width={420}
+      className="eq-slide-panel"
+      title={
+        <span className="eq-slide-title-row">
           <span className="eq-slide-name">🔧 {t.title}</span>
           <span className="eq-slide-status" style={{ background: tst.color }}>
             {tst.label}
           </span>
-        </div>
-        <Tooltip content="Fermer">
-          <Button variant="ghost" className="eq-slide-close" onClick={handleClose}>
-            <X size={18} />
+        </span>
+      }
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => onEdit(t)} className="eq-slide-btn-flex">
+            <Edit2 size={14} /> Modifier
           </Button>
-        </Tooltip>
-      </div>
-      <div className="eq-slide-body">
-        <div className="eq-detail-fields">
-          <div className="eq-detail-field">
-            <span>🎯</span>
-            <span>Priorité</span>
-            <strong style={{ color: pri.color }}>{pri.label}</strong>
-          </div>
-          <div className="eq-detail-field">
-            <span>🔧</span>
-            <span>Type</span>
-            <strong>{SAV_TYPES[t.type] || t.type}</strong>
-          </div>
-          {eq && (
-            <div className="eq-detail-field">
-              <Package size={14} />
-              <span>Matériel</span>
-              <strong
-                className="eq-clickable-link"
-                onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}
+          <Button
+            variant="ghost"
+            className="eq-slide-open-btn eq-slide-btn-flex"
+            onClick={() => onOpenDialog(t)}
+          >
+            <ExternalLink size={14} /> Fiche complète
+          </Button>
+          {onDelete && (
+            <Tooltip content="Supprimer">
+              <Button
+                variant="danger"
+                size="sm"
+                iconOnly
+                onClick={() => onDelete(t.id)}
+                className="eq-slide-btn-compact"
               >
-                {eq.categoryIcon || '📦'} {cleanName(eq.name)}
-              </strong>
-            </div>
+                <Trash2 size={14} />
+              </Button>
+            </Tooltip>
           )}
-          <div className="eq-detail-field">
-            <Calendar size={14} />
-            <span>Créé le</span>
-            <strong>{safeDate(t.createdAt)}</strong>
-          </div>
-          {t.resolvedAt && (
-            <div className="eq-detail-field">
-              <CheckCircle size={14} />
-              <span>Résolu le</span>
-              <strong>{safeDate(t.resolvedAt)}</strong>
-            </div>
-          )}
-          {t.cost != null && t.cost > 0 && (
-            <div className="eq-detail-field">
-              <DollarSign size={14} />
-              <span>Coût</span>
-              <strong>{parseFloat(t.cost).toFixed(2)} €</strong>
-            </div>
-          )}
+        </>
+      }
+    >
+      <div className="eq-detail-fields">
+        <div className="eq-detail-field">
+          <span>🎯</span>
+          <span>Priorité</span>
+          <strong style={{ color: pri.color }}>{pri.label}</strong>
         </div>
-        {t.description && (
-          <div className="eq-detail-notes">
-            <h4>Description</h4>
-            <p>{t.description}</p>
-          </div>
-        )}
-        {t.resolution && (
-          <div className="eq-detail-notes">
-            <h4>✅ Résolution</h4>
-            <p>{t.resolution}</p>
-          </div>
-        )}
-      </div>
-      <div className="eq-slide-footer">
-        <Button variant="secondary" onClick={() => onEdit(t)} className="eq-slide-btn-flex">
-          <Edit2 size={14} /> Modifier
-        </Button>
-        <Button
-          variant="ghost"
-          className="eq-slide-open-btn eq-slide-btn-flex"
-          onClick={() => onOpenDialog(t)}
-        >
-          <ExternalLink size={14} /> Fiche complète
-        </Button>
-        {onDelete && (
-          <Tooltip content="Supprimer">
-            <Button
-              variant="danger"
-              size="sm"
-              iconOnly
-              onClick={() => onDelete(t.id)}
-              className="eq-slide-btn-compact"
+        <div className="eq-detail-field">
+          <span>🔧</span>
+          <span>Type</span>
+          <strong>{SAV_TYPES[t.type] || t.type}</strong>
+        </div>
+        {eq && (
+          <div className="eq-detail-field">
+            <Package size={14} />
+            <span>Matériel</span>
+            <strong
+              className="eq-clickable-link"
+              onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}
             >
-              <Trash2 size={14} />
-            </Button>
-          </Tooltip>
+              {eq.categoryIcon || '📦'} {cleanName(eq.name)}
+            </strong>
+          </div>
+        )}
+        <div className="eq-detail-field">
+          <Calendar size={14} />
+          <span>Créé le</span>
+          <strong>{safeDate(t.createdAt)}</strong>
+        </div>
+        {t.resolvedAt && (
+          <div className="eq-detail-field">
+            <CheckCircle size={14} />
+            <span>Résolu le</span>
+            <strong>{safeDate(t.resolvedAt)}</strong>
+          </div>
+        )}
+        {t.cost != null && t.cost > 0 && (
+          <div className="eq-detail-field">
+            <DollarSign size={14} />
+            <span>Coût</span>
+            <strong>{parseFloat(t.cost).toFixed(2)} €</strong>
+          </div>
         )}
       </div>
-    </div>
+      {t.description && (
+        <div className="eq-detail-notes">
+          <h4>Description</h4>
+          <p>{t.description}</p>
+        </div>
+      )}
+      {t.resolution && (
+        <div className="eq-detail-notes">
+          <h4>✅ Résolution</h4>
+          <p>{t.resolution}</p>
+        </div>
+      )}
+    </Drawer>
   );
 };
 

@@ -28,6 +28,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   Button,
+  Drawer,
   EmptyState,
   EntityCombobox,
   InlineAlert,
@@ -49,7 +50,6 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
-import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency, formatDateTime as formatDate } from '../../utils/formatUtils';
@@ -466,25 +466,9 @@ const StockSlidePanel = ({
   _depotZones,
   _allDepotZones,
 }) => {
-  const panelRef = useRef(null);
-  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(item, onClose);
+  if (!item) return null;
 
-  useEffect(() => {
-    const handler = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) {
-        const row = e.target.closest('.stock-row');
-        if (!row) handleClose();
-      }
-    };
-    if (item && isVisible) {
-      document.addEventListener('mousedown', handler);
-      return () => document.removeEventListener('mousedown', handler);
-    }
-  }, [item, isVisible, handleClose]);
-
-  if (!isVisible && !item) return null;
-
-  const current = item || {};
+  const current = item;
   const isLow = current.min_quantity > 0 && current.quantity <= current.min_quantity;
   const isOut = current.quantity === 0;
   const locationLabel = current.location_zone
@@ -492,116 +476,109 @@ const StockSlidePanel = ({
     : current.location || null;
 
   return (
-    <div
-      className={`stock-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
-      ref={panelRef}
-    >
-      <div className="stock-slide-header">
-        <div className="stock-slide-title-row">
+    <Drawer
+      open={!!item}
+      onClose={onClose}
+      side="right"
+      width={420}
+      className="stock-slide-panel"
+      title={
+        <span className="stock-slide-title-row">
           <span className="stock-slide-name">{current.name}</span>
           <span className="stock-slide-ref">{current.reference}</span>
-        </div>
-        <Tooltip content="Fermer">
-          <Button
-            variant="ghost"
-            className="stock-slide-close"
-            onClick={handleClose}
-            aria-label="Fermer"
-          >
-            <X size={18} />
-          </Button>
-        </Tooltip>
-      </div>
-      <div className="stock-slide-body">
-        {current.category_name && (
-          <span
-            className="stock-cat-badge"
-            style={
-              current.category_color
-                ? {
-                    background: current.category_color + '20',
-                    color: current.category_color,
-                    borderColor: current.category_color,
-                  }
-                : undefined
-            }
-          >
-            {current.category_icon} {current.category_name}
-          </span>
-        )}
-        <div className="stock-slide-qty">
-          <span className={`stock-qty-big ${isOut ? 'rupture' : isLow ? 'low' : 'ok'}`}>
-            {current.quantity} {current.unit}
-          </span>
-          {isLow && !isOut && (
-            <Tag color="warning" size="sm">
-              Stock bas
-            </Tag>
-          )}
-          {isOut && (
-            <Tag color="danger" size="sm">
-              Rupture
-            </Tag>
-          )}
-          {current.min_quantity > 0 && (
-            <small className="stock-slide-min">
-              Seuil : {current.min_quantity} {current.unit}
-            </small>
-          )}
-        </div>
-        <div className="stock-slide-prices">
-          <div>
-            <small>P.U. Achat</small>
-            <span>{formatCurrency(current.unit_price)}</span>
-          </div>
-          <div>
-            <small>P.U. Vente</small>
-            <span>{formatCurrency(current.sell_price)}</span>
-          </div>
-          <div>
-            <small>Valeur stock</small>
-            <span>{formatCurrency(current.quantity * (current.unit_price || 0))}</span>
-          </div>
-        </div>
-        {locationLabel && (
-          <div className="stock-slide-location">
-            <MapPin size={14} /> {locationLabel}
-          </div>
-        )}
-        {current.supplier_name && (
-          <div className="stock-slide-supplier">
-            <Hash size={14} /> {current.supplier_name}
-          </div>
-        )}
-        {current.notes && <p className="stock-slide-notes">{current.notes}</p>}
-      </div>
-      <div className="stock-slide-footer">
-        <Tooltip content="Mouvement" position="bottom">
-          <Button variant="secondary" onClick={() => onMovement()}>
-            <TrendingUp size={14} /> Mouvement
-          </Button>
-        </Tooltip>
-        {isAdmin && (
-          <Tooltip content="Modifier">
-            <Button
-              variant="secondary"
-              onClick={() => onEdit(current)}
-              iconOnly
-              aria-label="Modifier"
-            >
-              <Edit2 size={14} />
+        </span>
+      }
+      footer={
+        <>
+          <Tooltip content="Mouvement" position="bottom">
+            <Button variant="secondary" onClick={() => onMovement()}>
+              <TrendingUp size={14} /> Mouvement
             </Button>
           </Tooltip>
-        )}
-        <Button
-          variant="ghost"
-          className="stock-slide-open-btn"
-          onClick={() => onOpenDialog(current)}
+          {isAdmin && (
+            <Tooltip content="Modifier">
+              <Button
+                variant="secondary"
+                onClick={() => onEdit(current)}
+                iconOnly
+                aria-label="Modifier"
+              >
+                <Edit2 size={14} />
+              </Button>
+            </Tooltip>
+          )}
+          <Button
+            variant="ghost"
+            className="stock-slide-open-btn"
+            onClick={() => onOpenDialog(current)}
+          >
+            <ExternalLink size={14} /> Ouvrir la fiche
+          </Button>
+        </>
+      }
+    >
+      {current.category_name && (
+        <span
+          className="stock-cat-badge"
+          style={
+            current.category_color
+              ? {
+                  background: current.category_color + '20',
+                  color: current.category_color,
+                  borderColor: current.category_color,
+                }
+              : undefined
+          }
         >
-          <ExternalLink size={14} /> Ouvrir la fiche
-        </Button>
+          {current.category_icon} {current.category_name}
+        </span>
+      )}
+      <div className="stock-slide-qty">
+        <span className={`stock-qty-big ${isOut ? 'rupture' : isLow ? 'low' : 'ok'}`}>
+          {current.quantity} {current.unit}
+        </span>
+        {isLow && !isOut && (
+          <Tag color="warning" size="sm">
+            Stock bas
+          </Tag>
+        )}
+        {isOut && (
+          <Tag color="danger" size="sm">
+            Rupture
+          </Tag>
+        )}
+        {current.min_quantity > 0 && (
+          <small className="stock-slide-min">
+            Seuil : {current.min_quantity} {current.unit}
+          </small>
+        )}
       </div>
-    </div>
+      <div className="stock-slide-prices">
+        <div>
+          <small>P.U. Achat</small>
+          <span>{formatCurrency(current.unit_price)}</span>
+        </div>
+        <div>
+          <small>P.U. Vente</small>
+          <span>{formatCurrency(current.sell_price)}</span>
+        </div>
+        <div>
+          <small>Valeur stock</small>
+          <span>{formatCurrency(current.quantity * (current.unit_price || 0))}</span>
+        </div>
+      </div>
+      {locationLabel && (
+        <div className="stock-slide-location">
+          <MapPin size={14} /> {locationLabel}
+        </div>
+      )}
+      {current.supplier_name && (
+        <div className="stock-slide-supplier">
+          <Hash size={14} /> {current.supplier_name}
+        </div>
+      )}
+      {current.notes && <p className="stock-slide-notes">{current.notes}</p>}
+    </Drawer>
   );
 };
 

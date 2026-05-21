@@ -23,10 +23,9 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button, Tooltip } from '@/design-system';
+import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
-import { useModalDialogClose } from '../../hooks/useModalDialogClose';
 import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { safeDate } from '../../utils/formatUtils';
 import { resolveGenericImage } from '../../utils/genericImages';
@@ -507,111 +506,100 @@ const EquipmentDetailDialog = ({
   onSerialize,
   onOpenDepotMap,
 }) => {
-  const { isClosing, handleClose } = useModalDialogClose(eq, onClose);
-
   if (!eq) return null;
 
   const _st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
 
   return (
-    <div
-      className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
-    >
-      <div className="eq-dialog">
-        <div className="eq-dialog-header">
-          <div className="eq-dialog-title-row">
-            <span className="eq-dialog-name">{eq.reference || cleanName(eq.name)}</span>
-            <span
-              className="eq-dialog-cat"
-              style={{ background: eq.categoryColor || eq.category_color || ACCENT_COLORS.indigo }}
-            >
-              {eq.categoryIcon || eq.category_icon || '📦'}{' '}
-              {eq.categoryName || eq.category_name || ''}
-            </span>
-          </div>
-          <Tooltip content="Fermer">
-            <Button variant="ghost" className="eq-dialog-close" onClick={handleClose}>
-              <X size={20} />
+    <Modal open={!!eq} onClose={onClose} size="lg" className="eq-dialog">
+      <ModalHeader
+        onClose={onClose}
+        className="eq-dialog-header"
+        rightContent={
+          <span
+            className="eq-dialog-cat"
+            style={{ background: eq.categoryColor || eq.category_color || ACCENT_COLORS.indigo }}
+          >
+            {eq.categoryIcon || eq.category_icon || '📦'}{' '}
+            {eq.categoryName || eq.category_name || ''}
+          </span>
+        }
+      >
+        <span className="eq-dialog-name">{eq.reference || cleanName(eq.name)}</span>
+      </ModalHeader>
+      <ModalBody className="eq-dialog-body">
+        <EquipmentDetailContent
+          eq={eq}
+          isAdmin={isAdmin}
+          compact={false}
+          photosList={photosList}
+          logosList={logosList}
+          favoriteIds={favoriteIds}
+          watchIds={watchIds}
+          onToggleList={onToggleList}
+          onOpenTicketDialog={onOpenTicketDialog}
+          onOpenDepotMap={onOpenDepotMap}
+          categories={categories}
+        />
+      </ModalBody>
+      <ModalFooter className="eq-dialog-footer">
+        <div className="eq-dialog-actions">
+          <div className="eq-actions-group">
+            <Button variant="primary" onClick={() => onEdit(eq)}>
+              <Edit2 size={14} /> Modifier
             </Button>
-          </Tooltip>
-        </div>
-        <div className="eq-dialog-body">
-          <EquipmentDetailContent
-            eq={eq}
-            isAdmin={isAdmin}
-            compact={false}
-            photosList={photosList}
-            logosList={logosList}
-            favoriteIds={favoriteIds}
-            watchIds={watchIds}
-            onToggleList={onToggleList}
-            onOpenTicketDialog={onOpenTicketDialog}
-            onOpenDepotMap={onOpenDepotMap}
-            categories={categories}
-          />
-        </div>
-        <div className="eq-dialog-footer">
-          <div className="eq-dialog-actions">
-            <div className="eq-actions-group">
-              <Button variant="primary" onClick={() => onEdit(eq)}>
-                <Edit2 size={14} /> Modifier
-              </Button>
-            </div>
-            <div className="eq-actions-group">
-              {onCreateTicket && (
-                <Button variant="secondary" onClick={() => onCreateTicket(eq)}>
-                  <Wrench size={14} /> Ticket SAV
-                </Button>
-              )}
-              {onOpenDepotMap && (
-                <Button
-                  variant="secondary"
-                  onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}
-                >
-                  <MapPin size={14} /> Localisation
-                </Button>
-              )}
-              {onPrintLabel && (
-                <Button variant="secondary" onClick={() => onPrintLabel(eq)}>
-                  <Printer size={14} /> Étiquette
-                </Button>
-              )}
-              {onPrintSheet && (
-                <Button variant="secondary" onClick={() => onPrintSheet(eq)}>
-                  <FileText size={14} /> Fiche
-                </Button>
-              )}
-              {isAdmin &&
-                onSerialize &&
-                ((eq.stockQuantity || eq.stock_quantity || 1) > 1 || !eq.uid) && (
-                  <Button
-                    variant="secondary"
-                    onClick={() => onSerialize(eq)}
-                    title={
-                      (eq.stockQuantity || eq.stock_quantity || 1) > 1
-                        ? `Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`
-                        : 'Attribuer un UID unique à cet équipement'
-                    }
-                  >
-                    <Package size={14} /> Sérialiser
-                    {(eq.stockQuantity || eq.stock_quantity || 1) > 1
-                      ? ` (${eq.stockQuantity || eq.stock_quantity})`
-                      : ''}
-                  </Button>
-                )}
-            </div>
-            {isAdmin && onDelete && (
-              <Button variant="danger" onClick={() => onDelete(eq.id)}>
-                <Trash2 size={14} /> Supprimer
+          </div>
+          <div className="eq-actions-group">
+            {onCreateTicket && (
+              <Button variant="secondary" onClick={() => onCreateTicket(eq)}>
+                <Wrench size={14} /> Ticket SAV
               </Button>
             )}
+            {onOpenDepotMap && (
+              <Button
+                variant="secondary"
+                onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}
+              >
+                <MapPin size={14} /> Localisation
+              </Button>
+            )}
+            {onPrintLabel && (
+              <Button variant="secondary" onClick={() => onPrintLabel(eq)}>
+                <Printer size={14} /> Étiquette
+              </Button>
+            )}
+            {onPrintSheet && (
+              <Button variant="secondary" onClick={() => onPrintSheet(eq)}>
+                <FileText size={14} /> Fiche
+              </Button>
+            )}
+            {isAdmin &&
+              onSerialize &&
+              ((eq.stockQuantity || eq.stock_quantity || 1) > 1 || !eq.uid) && (
+                <Button
+                  variant="secondary"
+                  onClick={() => onSerialize(eq)}
+                  title={
+                    (eq.stockQuantity || eq.stock_quantity || 1) > 1
+                      ? `Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`
+                      : 'Attribuer un UID unique à cet équipement'
+                  }
+                >
+                  <Package size={14} /> Sérialiser
+                  {(eq.stockQuantity || eq.stock_quantity || 1) > 1
+                    ? ` (${eq.stockQuantity || eq.stock_quantity})`
+                    : ''}
+                </Button>
+              )}
           </div>
+          {isAdmin && onDelete && (
+            <Button variant="danger" onClick={() => onDelete(eq.id)}>
+              <Trash2 size={14} /> Supprimer
+            </Button>
+          )}
         </div>
-      </div>
-    </div>
+      </ModalFooter>
+    </Modal>
   );
 };
 

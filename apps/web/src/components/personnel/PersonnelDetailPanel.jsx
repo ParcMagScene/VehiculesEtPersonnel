@@ -11,16 +11,14 @@ import {
   Mail,
   Phone,
   Plus,
-  X,
   XCircle,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import { Avatar, Button, SectionHeader, Tag, Tooltip } from '@/design-system';
+import { Avatar, Button, Drawer, SectionHeader, Tag, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
-import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import api from '../../utils/api';
 import { formatPhoneDisplay } from '../PhoneInput';
 
@@ -338,74 +336,36 @@ const PersonnelSlidePanel = ({
   onEdit,
   onRequestLeave,
 }) => {
-  const panelRef = useRef(null);
-  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(person, onClose);
-
-  // Clic extérieur
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) handleClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [isOpen, handleClose]);
-
-  if (!isVisible && !person) return null;
-
   const currentPerson = person || {};
 
   return (
-    <div
-      className={`personnel-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
-      ref={panelRef}
-    >
-      {/* Header */}
-      <div className="pdp-slide-header">
-        <div className="pdp-slide-title-row">
-          <div className="pdp-slide-avatar">
-            <Avatar name={`${currentPerson.firstName} ${currentPerson.lastName}`} size="xs" />
-          </div>
-          <div className="pdp-slide-title-info">
-            <span className="pdp-slide-name">
-              {currentPerson.firstName} {currentPerson.lastName}
-            </span>
-            <div className="pdp-slide-badges">
-              <Tag color={currentPerson.type === 'permanent' ? 'primary' : 'amber'} size="sm">
-                {currentPerson.type === 'permanent' ? 'Permanent' : 'Contractuel'}
+    <Drawer
+      open={!!person}
+      onClose={onClose}
+      side="right"
+      width={420}
+      className="personnel-slide-panel"
+      icon={<Avatar name={`${currentPerson.firstName} ${currentPerson.lastName}`} size="xs" />}
+      title={
+        <span className="pdp-slide-title-info">
+          <span className="pdp-slide-name">
+            {currentPerson.firstName} {currentPerson.lastName}
+          </span>
+          <span className="pdp-slide-badges">
+            <Tag color={currentPerson.type === 'permanent' ? 'primary' : 'amber'} size="sm">
+              {currentPerson.type === 'permanent' ? 'Permanent' : 'Contractuel'}
+            </Tag>
+            {currentPerson.type === 'contractuel' && currentPerson.contractType && (
+              <Tag color="info" size="sm">
+                {CONTRACT_TYPES.find((c) => c.value === currentPerson.contractType)?.label ||
+                  currentPerson.contractType}
               </Tag>
-              {currentPerson.type === 'contractuel' && currentPerson.contractType && (
-                <Tag color="info" size="sm">
-                  {CONTRACT_TYPES.find((c) => c.value === currentPerson.contractType)?.label ||
-                    currentPerson.contractType}
-                </Tag>
-              )}
-            </div>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          className="slide-panel-close"
-          onClick={handleClose}
-          aria-label="Fermer"
-        >
-          <X size={18} />
-        </Button>
-      </div>
-
-      {/* Body */}
-      <div className="pdp-slide-body">
-        <PersonnelDetailContent
-          person={currentPerson}
-          positions={positions}
-          skills={skills}
-          onRequestLeave={onRequestLeave}
-        />
-      </div>
-
-      {/* Footer */}
-      {onEdit && (
-        <div className="pdp-slide-footer">
+            )}
+          </span>
+        </span>
+      }
+      footer={
+        onEdit ? (
           <Button
             variant="ghost"
             className="pdp-slide-edit-btn"
@@ -413,9 +373,16 @@ const PersonnelSlidePanel = ({
           >
             <ExternalLink size={14} /> Modifier la fiche
           </Button>
-        </div>
-      )}
-    </div>
+        ) : null
+      }
+    >
+      <PersonnelDetailContent
+        person={currentPerson}
+        positions={positions}
+        skills={skills}
+        onRequestLeave={onRequestLeave}
+      />
+    </Drawer>
   );
 };
 

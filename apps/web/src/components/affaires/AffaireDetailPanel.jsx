@@ -42,7 +42,19 @@ import {
 } from 'lucide-react';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Avatar, Button, Input, Select, Spinner, Table, Textarea, Tooltip } from '@/design-system';
+import {
+  Avatar,
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Select,
+  Spinner,
+  Table,
+  Textarea,
+  Tooltip,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
@@ -3161,16 +3173,7 @@ const AffaireDetailDialog = ({
     }, 200);
   }, [onClose, isEditing, cancelEditing]);
 
-  // Fermer avec Escape
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'Escape') handleClose();
-    };
-    if (affaire) {
-      window.addEventListener('keydown', handler);
-      return () => window.removeEventListener('keydown', handler);
-    }
-  }, [affaire, handleClose]);
+  // Fermer avec Escape: géré par <Modal> DS via ModalManager
 
   if (!affaire) return null;
 
@@ -3178,99 +3181,95 @@ const AffaireDetailDialog = ({
 
   return (
     <>
-      <div
-        className={`affaire-dialog-overlay${isClosing ? ' closing' : ''}`}
-        onMouseDown={(e) => {
-          if (e.target === e.currentTarget) handleClose();
-        }}
+      <Modal
+        open={!!affaire}
+        onClose={handleClose}
+        size="xl"
+        className="affaire-dialog"
       >
-        <div className="affaire-dialog">
-          <div className="dialog-header">
-            <div className="dialog-title-row">
-              <span className="dialog-numero">
-                {isEditing && editForm ? editForm.numeroAffaire : affaire.numeroAffaire}
-              </span>
-              <span className="dialog-type" style={{ background: typeInfo.color }}>
-                {typeInfo.label}
-              </span>
-              {!isEditing && (affaire.nom || affaire.client) && (
-                <span className="dialog-client">
-                  {capitalizeText(affaire.nom || affaire.client)}
-                </span>
-              )}
-              {isEditing && (editForm?.nom || editForm?.client) && (
-                <span className="dialog-client">
-                  {capitalizeText(editForm.nom || editForm.client)}
-                </span>
-              )}
-            </div>
-            <div className="dialog-header-actions">
-              {isEditing ? (
-                <>
-                  <Tooltip content="Annuler les modifications" position="bottom">
-                    <Button variant="ghost" className="dialog-cancel-btn" onClick={cancelEditing}>
-                      <X size={15} /> Annuler
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content="Enregistrer les modifications" position="bottom">
-                    <Button
-                      variant="ghost"
-                      className="dialog-save-btn"
-                      onClick={saveEditing}
-                      disabled={isSaving}
-                    >
-                      <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                    </Button>
-                  </Tooltip>
-                </>
-              ) : (
-                <>
-                  <Tooltip content="Modifier les informations de l'affaire" position="bottom">
-                    <Button variant="ghost" className="dialog-edit-btn" onClick={startEditing}>
-                      <Edit3 size={15} /> Modifier
-                    </Button>
-                  </Tooltip>
+        <ModalHeader
+          onClose={handleClose}
+          className="dialog-header"
+          rightContent={
+            isEditing ? (
+              <>
+                <Tooltip content="Annuler les modifications" position="bottom">
+                  <Button variant="ghost" className="dialog-cancel-btn" onClick={cancelEditing}>
+                    <X size={15} /> Annuler
+                  </Button>
+                </Tooltip>
+                <Tooltip content="Enregistrer les modifications" position="bottom">
                   <Button
                     variant="ghost"
-                    className="dialog-bl-btn"
-                    onClick={() => setShowBLImport(true)}
-                    title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
+                    className="dialog-save-btn"
+                    onClick={saveEditing}
+                    disabled={isSaving}
                   >
-                    {hasBLImports ? (
-                      <>
-                        <RefreshCw size={15} /> MAJ BL
-                      </>
-                    ) : (
-                      <>
-                        <FileText size={15} /> Import BL
-                      </>
-                    )}
+                    <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
                   </Button>
-                </>
-              )}
-              <Tooltip content={isEditing ? 'Annuler' : 'Fermer'}>
-                <Button variant="ghost" className="dialog-close" onClick={handleClose}>
-                  <X size={20} />
+                </Tooltip>
+              </>
+            ) : (
+              <>
+                <Tooltip content="Modifier les informations de l'affaire" position="bottom">
+                  <Button variant="ghost" className="dialog-edit-btn" onClick={startEditing}>
+                    <Edit3 size={15} /> Modifier
+                  </Button>
+                </Tooltip>
+                <Button
+                  variant="ghost"
+                  className="dialog-bl-btn"
+                  onClick={() => setShowBLImport(true)}
+                  title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
+                >
+                  {hasBLImports ? (
+                    <>
+                      <RefreshCw size={15} /> MAJ BL
+                    </>
+                  ) : (
+                    <>
+                      <FileText size={15} /> Import BL
+                    </>
+                  )}
                 </Button>
-              </Tooltip>
-            </div>
-          </div>
-          <div className="dialog-body">
-            <AffaireDetailContent
-              affaire={affaire}
-              reservations={reservations}
-              missions={missions}
-              googleEventIds={googleEventIds}
-              editable={!isEditing}
-              onDataChanged={handleDataChanged}
-              onNavigateToEntity={onNavigateToEntity}
-              isEditing={isEditing}
-              editForm={editForm}
-              setEditForm={setEditForm}
-              currentUser={currentUser}
-            />
-          </div>
-        </div>
+              </>
+            )
+          }
+        >
+          <span className="dialog-title-row">
+            <span className="dialog-numero">
+              {isEditing && editForm ? editForm.numeroAffaire : affaire.numeroAffaire}
+            </span>
+            <span className="dialog-type" style={{ background: typeInfo.color }}>
+              {typeInfo.label}
+            </span>
+            {!isEditing && (affaire.nom || affaire.client) && (
+              <span className="dialog-client">
+                {capitalizeText(affaire.nom || affaire.client)}
+              </span>
+            )}
+            {isEditing && (editForm?.nom || editForm?.client) && (
+              <span className="dialog-client">
+                {capitalizeText(editForm.nom || editForm.client)}
+              </span>
+            )}
+          </span>
+        </ModalHeader>
+        <ModalBody className="dialog-body">
+          <AffaireDetailContent
+            affaire={affaire}
+            reservations={reservations}
+            missions={missions}
+            googleEventIds={googleEventIds}
+            editable={!isEditing}
+            onDataChanged={handleDataChanged}
+            onNavigateToEntity={onNavigateToEntity}
+            isEditing={isEditing}
+            editForm={editForm}
+            setEditForm={setEditForm}
+            currentUser={currentUser}
+          />
+        </ModalBody>
 
         {showBLImport && (
           <Suspense fallback={null}>
@@ -3312,7 +3311,7 @@ const AffaireDetailDialog = ({
             />
           </Suspense>
         )}
-      </div>
+      </Modal>
       {DirtyConfirmRenderer}
     </>
   );

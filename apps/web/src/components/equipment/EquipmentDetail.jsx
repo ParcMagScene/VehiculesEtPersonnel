@@ -18,15 +18,13 @@ import {
   Tag,
   Trash2,
   Wrench,
-  X,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
-import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/design-system';
+import { Button, Drawer, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
-import { useSlidePanelClose } from '../../hooks/useSlidePanelClose';
 import { safeDate } from '../../utils/formatUtils';
 import { resolveGenericImage } from '../../utils/genericImages';
 import {
@@ -391,98 +389,80 @@ const EquipmentSlidePanel = ({
   isAdmin,
   onOpenDepotMap,
 }) => {
-  const panelRef = useRef(null);
-  const { isVisible, isOpen, isClosing, handleClose } = useSlidePanelClose(eq, onClose);
+  if (!eq) return null;
 
-  useEffect(() => {
-    const handler = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) {
-        const row = e.target.closest('.eq-table-row');
-        if (!row) handleClose();
-      }
-    };
-    if (eq && isVisible) {
-      document.addEventListener('mousedown', handler);
-      return () => document.removeEventListener('mousedown', handler);
-    }
-  }, [eq, isVisible, handleClose]);
-
-  if (!isVisible && !eq) return null;
-
-  const currentEq = eq || {};
+  const currentEq = eq;
   const _st = EQUIPMENT_STATUS[currentEq.status] || EQUIPMENT_STATUS.available;
 
   return (
-    <div
-      className={`eq-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
-      ref={panelRef}
-    >
-      <div className="eq-slide-header">
-        <div className="eq-slide-title-row">
+    <Drawer
+      open={!!eq}
+      onClose={onClose}
+      side="right"
+      width={420}
+      className="eq-slide-panel"
+      title={
+        <span className="eq-slide-title-row">
           <span className="eq-slide-name">{currentEq.reference || cleanName(currentEq.name)}</span>
           <span className="eq-slide-type">
             {currentEq.categoryIcon || currentEq.category_icon || '📦'}{' '}
             {currentEq.categoryName || currentEq.category_name || ''}
           </span>
-        </div>
-        <Tooltip content="Fermer">
-          <Button variant="ghost" className="eq-slide-close" onClick={handleClose}>
-            <X size={18} />
+        </span>
+      }
+      footer={
+        <>
+          {onPrintLabel && (
+            <Tooltip content="Imprimer étiquette">
+              <Button
+                variant="secondary"
+                className="eq-footer-icon-btn"
+                iconOnly
+                aria-label="Imprimer étiquette"
+                onClick={() => onPrintLabel(currentEq)}
+              >
+                <Printer size={14} />
+              </Button>
+            </Tooltip>
+          )}
+          {onPrintSheet && (
+            <Tooltip content="Imprimer la fiche">
+              <Button
+                variant="secondary"
+                className="eq-footer-icon-btn"
+                iconOnly
+                aria-label="Imprimer la fiche"
+                onClick={() => onPrintSheet(currentEq)}
+              >
+                <FileText size={14} />
+              </Button>
+            </Tooltip>
+          )}
+          <Button
+            variant="ghost"
+            className="eq-slide-open-btn"
+            onClick={() => {
+              if (onOpenDialog) onOpenDialog(currentEq);
+            }}
+          >
+            <ExternalLink size={14} /> Ouvrir la fiche complète
           </Button>
-        </Tooltip>
-      </div>
-      <div className="eq-slide-body">
-        <EquipmentDetailContent
-          eq={currentEq}
-          isAdmin={isAdmin}
-          compact={true}
-          photosList={photosList}
-          logosList={logosList}
-          favoriteIds={favoriteIds}
-          watchIds={watchIds}
-          onToggleList={onToggleList}
-          onOpenDepotMap={onOpenDepotMap}
-          categories={categories}
-        />
-      </div>
-      <div className="eq-slide-footer">
-        {onPrintLabel && (
-          <Tooltip content="Imprimer étiquette">
-            <Button
-              variant="secondary"
-              className="eq-footer-icon-btn"
-              iconOnly
-              aria-label="Imprimer étiquette"
-              onClick={() => onPrintLabel(currentEq)}
-            >
-              <Printer size={14} />
-            </Button>
-          </Tooltip>
-        )}
-        {onPrintSheet && (
-          <Tooltip content="Imprimer la fiche">
-            <Button
-              variant="secondary"
-              className="eq-footer-icon-btn"
-              iconOnly
-              aria-label="Imprimer la fiche"
-              onClick={() => onPrintSheet(currentEq)}
-            >
-              <FileText size={14} />
-            </Button>
-          </Tooltip>
-        )}
-        <Button
-          variant="ghost"
-          className="eq-slide-open-btn"
-          onClick={() => {
-            if (onOpenDialog) onOpenDialog(currentEq);
-          }}
-        >
-          <ExternalLink size={14} /> Ouvrir la fiche complète
-        </Button>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <EquipmentDetailContent
+        eq={currentEq}
+        isAdmin={isAdmin}
+        compact={true}
+        photosList={photosList}
+        logosList={logosList}
+        favoriteIds={favoriteIds}
+        watchIds={watchIds}
+        onToggleList={onToggleList}
+        onOpenDepotMap={onOpenDepotMap}
+        categories={categories}
+      />
+    </Drawer>
   );
 };
 

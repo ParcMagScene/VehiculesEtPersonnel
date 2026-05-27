@@ -10,15 +10,43 @@ import {
 } from '../router/routes.config';
 
 /**
- * Parse le hash courant pour déterminer l'écran mobile actif.
- * Gère le pattern QR : #/mobile/equipment/EMAG-XXXXX
+ * Sérialise un objet params en query string (`?a=1&b=2`), en ignorant les
+ * valeurs nullish ou chaîne vide. Retourne `''` si aucun param exploitable.
+ */
+function buildQuery(params) {
+  if (!params) return '';
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === null || v === undefined || v === '') continue;
+    sp.set(k, String(v));
+  }
+  const str = sp.toString();
+  return str ? '?' + str : '';
+}
+
+/** Parse une query string (sans le `?` initial) en objet plat. */
+function parseQuery(queryStr) {
+  if (!queryStr) return {};
+  const sp = new URLSearchParams(queryStr);
+  const obj = {};
+  for (const [k, v] of sp) obj[k] = v;
+  return obj;
+}
+
+/**
+ * Parse le hash courant pour déterminer l'écran mobile actif + ses params.
+ * Gère le pattern QR : #/mobile/equipment/EMAG-XXXXX(?...)
  */
 function parseHash(hash) {
-  const qrMatch = hash.match(MOBILE_QR_PATTERN);
-  if (qrMatch) return { screen: 'qr-landing', qrUid: qrMatch[1] };
+  const qIndex = hash.indexOf('?');
+  const pathPart = qIndex >= 0 ? hash.slice(0, qIndex) : hash;
+  const params = qIndex >= 0 ? parseQuery(hash.slice(qIndex + 1)) : {};
 
-  const path = hash.replace(/^#/, '') || '/mobile';
-  return { screen: REVERSE[path] || 'home', qrUid: null };
+  const qrMatch = pathPart.match(MOBILE_QR_PATTERN);
+  if (qrMatch) return { screen: 'qr-landing', qrUid: qrMatch[1], params };
+
+  const path = pathPart.replace(/^#/, '') || '/mobile';
+  return { screen: REVERSE[path] || 'home', qrUid: null, params };
 }
 
 /**
@@ -41,7 +69,7 @@ export default function useMobileRouter() {
           if (saved && TAB_SCREENS.has(saved) && saved !== 'home') {
             const path = ROUTES[saved];
             window.history.replaceState(null, '', '#' + path);
-            return { screen: saved, qrUid: null };
+            return { screen: saved, qrUid: null, params: {} };
           }
         } catch {
           /* localStorage indisponible — ignore */
@@ -50,7 +78,7 @@ export default function useMobileRouter() {
       return parsed;
     }
     window.history.replaceState(null, '', '#/mobile');
-    return { screen: 'home', qrUid: null };
+    return { screen: 'home', qrUid: null, params: {} };
   });
 
   useEffect(() => {
@@ -70,10 +98,37 @@ export default function useMobileRouter() {
     }
   }, [state.screen]);
 
-  /** Navigue vers un écran (pousse dans l'historique navigateur) */
-  const navigate = useCallback((screen) => {
+  /**
+   * Navigue vers un écran (pousse dans l'historique navigateur).
+   * Optionnellement, sérialise des query params : `navigate('affaires', { sel: 'AF-1' })`
+   * → `#/mobile/affaires?sel=AF-1`. Les valeurs `null` / `undefined` / `''` sont ignorées.
+   */
+  const navigate = useCallback((screen, params) => {
     const path = ROUTES[screen];
-    if (path) window.location.hash = '#' + path;
+    if (!path) return;
+    window.location.hash = '#' + path + buildQuery(params);
+  }, []);
+
+  /**
+   * Met à jour les query params de l'URL courante (replaceState, pas pushState).
+   * Accepte un objet (merge partiel) ou un updater `(prev) => next`.
+   * Une valeur `null` / `undefined` / `''` supprime la clé.
+   */
+  const setParams = useCallback((updater) => {
+    setState((prev) => {
+      const merged =
+        typeof updater === 'function' ? updater(prev.params) : { ...prev.params, ...updater };
+      const cleaned = {};
+      for (const [k, v] of Object.entries(merged)) {
+        if (v === null || v === undefined || v === '') continue;
+        cleaned[k] = typeof v === 'string' ? v : String(v);
+      }
+      const currentHash = window.location.hash;
+      const qIndex = currentHash.indexOf('?');
+      const pathPart = qIndex >= 0 ? currentHash.slice(0, qIndex) : currentHash;
+      window.history.replaceState(null, '', pathPart + buildQuery(cleaned));
+      return { ...prev, params: cleaned };
+    });
   }, []);
 
   /** Retour à l'écran parent (replaceState pour éviter la pollution historique) */
@@ -82,10 +137,17 @@ export default function useMobileRouter() {
     const target = BACK_TARGET[state.screen] || 'home';
     const path = ROUTES[target];
     window.history.replaceState(null, '', '#' + path);
-    setState({ screen: target, qrUid: null });
+    setState({ screen: target, qrUid: null, params: {} });
   }, [state.screen]);
 
-  return { currentScreen: state.screen, qrUid: state.qrUid, navigate, goBack };
+  return {
+    currentScreen: state.screen,
+    qrUid: state.qrUid,
+    params: state.params,
+    navigate,
+    setParams,
+    goBack,
+  };
 }
 
 /** Routes exportées pour les tests (ré-export depuis routes.config). */

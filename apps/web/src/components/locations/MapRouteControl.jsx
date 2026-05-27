@@ -7,8 +7,9 @@ import { ArrowDown, Clock, Navigation, RotateCcw, Ruler, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Polyline, useMap } from 'react-leaflet';
 
-import { filterGeoLocations, haversineDistance, MAG_SCENE } from './map-utils';
 import { Select } from '@/design-system';
+
+import { filterGeoLocations, haversineDistance, MAG_SCENE } from './map-utils';
 
 function decodePolyline(encoded) {
   const points = [];

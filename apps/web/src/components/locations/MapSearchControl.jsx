@@ -6,8 +6,9 @@ import { Globe, MapPin, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
 
-import { filterGeoLocations } from './map-utils';
 import { Input } from '@/design-system';
+
+import { filterGeoLocations } from './map-utils';
 
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value);

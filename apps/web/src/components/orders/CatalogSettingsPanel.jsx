@@ -21,9 +21,9 @@ import {
   Select,
   Spinner,
   Tab,
+  Table,
   TabList,
   TabPanel,
-  Table,
   Tabs,
   Tag,
 } from '@/design-system';

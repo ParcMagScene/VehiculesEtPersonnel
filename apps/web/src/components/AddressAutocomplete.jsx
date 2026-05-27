@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { TIMING } from '../constants';
 import api from '../utils/api';
 import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../utils/googleMapsLoader';
-import { Input } from '@/design-system';
 
 /**
  * Composant reutilisable d'autocompletion d'adresse via Google Places API moderne.

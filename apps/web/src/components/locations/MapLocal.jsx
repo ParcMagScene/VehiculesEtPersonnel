@@ -14,6 +14,8 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 
+import { Input } from '@/design-system';
+
 import {
   filterNearby,
   getLocationTypeClass,
@@ -27,7 +29,6 @@ import MapOffScreenIndicators from './MapOffScreenIndicators';
 import MapPopup from './MapPopup';
 import MapRouteControl from './MapRouteControl';
 import MapSearchControl from './MapSearchControl';
-import { Input } from '@/design-system';
 
 const RADIUS_PRESETS = [2, 5, 10, 25, 50, 100];
 const MIN_RADIUS = 500;

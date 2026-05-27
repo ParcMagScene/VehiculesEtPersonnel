@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { Button, Drawer, Tag } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
-
 import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';

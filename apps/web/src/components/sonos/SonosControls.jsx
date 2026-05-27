@@ -6,8 +6,9 @@
 import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-import { formatTime } from '../../hooks/useSonos';
 import { Input } from '@/design-system';
+
+import { formatTime } from '../../hooks/useSonos';
 
 function SonosControls({
   state,

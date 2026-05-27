@@ -4,6 +4,7 @@
 
 import { Volume1, Volume2, VolumeX } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
+
 import { Input } from '@/design-system';
 
 function SonosVolumeSlider({ volume, muted, onSetVolume, onMute, onUnmute, busy }) {

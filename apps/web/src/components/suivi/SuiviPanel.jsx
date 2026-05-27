@@ -23,12 +23,13 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Input } from '@/design-system';
+
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
-import { Input } from '@/design-system';
 import FicheSuivi from './FicheSuivi';
 import IncidentsSuiviPanel from './IncidentsSuiviPanel';
 import SynthesesPanel from './SynthesesPanel';

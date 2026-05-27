@@ -3,12 +3,13 @@ import './IncidentsSuiviPanel.css';
 import { Calendar, ClipboardList, Loader2, Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Input, Select, Textarea } from '@/design-system';
+
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
-import { Input, Select, Textarea } from '@/design-system';
 import EntityCombobox from '../ui/EntityCombobox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '../ui/Modal';
 

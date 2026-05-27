@@ -5,8 +5,9 @@
 import { Music, Search, Star } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-import RadioLogo from './RadioLogo';
 import { Input } from '@/design-system';
+
+import RadioLogo from './RadioLogo';
 
 function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavorite, nowPlaying }) {
   const [search, setSearch] = useState('');

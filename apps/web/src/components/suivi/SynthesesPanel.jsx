@@ -16,10 +16,11 @@ import {
 } from 'lucide-react';
 import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react';
 
+import { Input } from '@/design-system';
+
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
-import { Input } from '@/design-system';
 
 // Constante module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
 const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];

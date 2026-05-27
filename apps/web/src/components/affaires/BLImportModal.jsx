@@ -120,7 +120,7 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       const text = await extractTextFromPDF(selectedFile);
       setRawText(text);
 
-      const parsed = smartParse(text);
+      const parsed = smartParse(text, selectedFile?.name || '');
       setParsedData(parsed);
       setDocType(parsed.docType);
 
@@ -131,6 +131,13 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       // Auto-remplir le type si détecté
       if (parsed?.type && !affaireType) {
         setAffaireType(parsed.type);
+      }
+
+      // Alerte si le parsing n'a pas trouvé de numéro d'affaire
+      if (!parsed?.numero && !affaireId) {
+        toast.warning(
+          "Numéro d'affaire non détecté dans le PDF. Veuillez le saisir manuellement avant d'importer.",
+        );
       }
 
       toast.success(`PDF analysé — ${parsed.docTypeLabel}`);

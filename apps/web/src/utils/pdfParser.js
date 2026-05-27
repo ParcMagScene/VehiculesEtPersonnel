@@ -122,10 +122,32 @@ const extractAllDates = (text) => {
   return matches;
 };
 
-/** Extrait un numéro d'affaire (AF + digits) */
+/**
+ * Extrait un numéro d'affaire (formats variés)
+ * - AFxxxxx ou AF xxxxx
+ * - N° Affaire : 32844
+ * - Numéro d'affaire : 32844
+ * - Affaire : 32844
+ * Retourne toujours au format AFxxxxx
+ */
 const extractNumeroAffaire = (text) => {
-  const match = text.match(/\b(AF\s?\d{4,6})\b/i);
-  return match ? match[1].replace(/\s/g, '').toUpperCase() : null;
+  // 1. Classique : AFxxxxx ou AF xxxxx
+  let match = text.match(/\b(AF\s?\d{4,6})\b/i);
+  if (match) return match[1].replace(/\s/g, '').toUpperCase();
+
+  // 2. N° Affaire : 32844 ou Numéro d'affaire : 32844
+  match = text.match(/(?:N[°o]\s*|Num[eé]ro\s+d['’]affaire|Affaire)\s*:?\s*(\d{4,6})\b/i);
+  if (match) return `AF${match[1]}`;
+
+  // 3. Affaire seule : "Affaire 32844"
+  match = text.match(/\bAffaire\s+(\d{4,6})\b/i);
+  if (match) return `AF${match[1]}`;
+
+  // 4. Fallback : 5-6 chiffres seuls précédés d'un label
+  match = text.match(/(?:N[°o]\s*|Num[eé]ro\s+d['’]affaire|Affaire)\s*:?\s*(\d{5,6})/i);
+  if (match) return `AF${match[1]}`;
+
+  return null;
 };
 
 /** Extrait un numéro de téléphone */
@@ -1536,9 +1558,17 @@ const computeFieldConfidence = (result) => {
  * Parse intelligent — détecte le type de document puis applique le parseur spécialisé
  * Retourne un objet APLATI pour usage direct par BLImportModal
  * @param {string} text - Texte extrait du PDF
+ * @param {string} [filename] - Nom du fichier source (fallback pour extraire le n° d'affaire)
  * @returns {Object} Objet aplati avec docType, confidence, et tous les champs extraits
  */
-export const smartParse = (text) => {
+export const extractAFFromFilename = (filename) => {
+  if (!filename || typeof filename !== 'string') return null;
+  // Cherche AF12345 / AF-12345 / AF_12345 / AF 12345 (4 à 6 chiffres)
+  const m = filename.match(/AF[-_\s]?(\d{4,6})/i);
+  return m ? `AF${m[1]}` : null;
+};
+
+export const smartParse = (text, filename = '') => {
   const { docType, confidence, scores } = detectDocumentType(text);
   let info;
 
@@ -1617,6 +1647,15 @@ export const smartParse = (text) => {
     _raw: info,
   };
 
+  // Fallback : si numero non détecté dans le texte, tenter sur le nom de fichier
+  if (!result.numero) {
+    const fromName = extractAFFromFilename(filename);
+    if (fromName) {
+      result.numero = fromName;
+      result._numeroFromFilename = true;
+    }
+  }
+
   // Calculer la confiance par champ
   result._fieldConfidence = computeFieldConfidence(result);
   return result;
@@ -1634,7 +1673,7 @@ export const batchParsePDFs = async (files, onProgress) => {
     const file = files[i];
     try {
       const text = await extractTextFromPDF(file);
-      const parsed = smartParse(text);
+      const parsed = smartParse(text, file.name);
       const result = { file, ...parsed, text, error: null };
       results.push(result);
       if (onProgress) onProgress(i + 1, files.length, result);

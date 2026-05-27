@@ -282,7 +282,7 @@ export default function BLMultiImportModal({ onClose, onImported, defaultAffaire
       const item = newItems[i];
       try {
         const text = await extractTextFromPDF(item.file);
-        const parsed = smartParse(text);
+        const parsed = smartParse(text, item.file?.name || '');
         item.status = 'parsed';
         item.parsedData = parsed;
         item.rawText = text;

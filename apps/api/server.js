@@ -195,6 +195,7 @@ app.use((req, res, next) => {
   const p = req.path || '';
   if (
     p.startsWith('/api/messaging/stream') ||
+    p.startsWith('/api/messaging/sse') ||
     p.startsWith('/api/sse') ||
     p.startsWith('/api/uploads/') ||
     p.startsWith('/api/imports/') ||

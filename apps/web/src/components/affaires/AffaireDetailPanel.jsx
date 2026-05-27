@@ -1527,12 +1527,12 @@ const AffaireDetailContent = ({
       {/* ═══ Section 1b : Événements Google Calendar liés ═══ */}
       {googleEventIds && googleEventIds.length > 0 && (
         <section className="detail-section">
-        <SectionHeader
-          className="detail-section-title"
-          icon={<Calendar size={15} />}
-          title="Événements Google"
-          count={googleEvents.length || googleEventIds.length}
-        />
+          <SectionHeader
+            className="detail-section-title"
+            icon={<Calendar size={15} />}
+            title="Événements Google"
+            count={googleEvents.length || googleEventIds.length}
+          />
           {isLoadingEvents ? (
             <p className="detail-empty">Chargement des événements...</p>
           ) : googleEvents.length === 0 ? (
@@ -3186,12 +3186,7 @@ const AffaireDetailDialog = ({
 
   return (
     <>
-      <Modal
-        open={!!affaire}
-        onClose={handleClose}
-        size="xl"
-        className="affaire-dialog"
-      >
+      <Modal open={!!affaire} onClose={handleClose} size="xl" className="affaire-dialog">
         <ModalHeader
           onClose={handleClose}
           className="dialog-header"
@@ -3249,9 +3244,7 @@ const AffaireDetailDialog = ({
               {typeInfo.label}
             </span>
             {!isEditing && (affaire.nom || affaire.client) && (
-              <span className="dialog-client">
-                {capitalizeText(affaire.nom || affaire.client)}
-              </span>
+              <span className="dialog-client">{capitalizeText(affaire.nom || affaire.client)}</span>
             )}
             {isEditing && (editForm?.nom || editForm?.client) && (
               <span className="dialog-client">

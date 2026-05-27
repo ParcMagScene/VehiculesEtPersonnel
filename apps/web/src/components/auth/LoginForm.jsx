@@ -3,7 +3,17 @@ import './LoginForm.css';
 import { ChevronDown, Hash, KeyRound, LogIn, User, UserPlus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Avatar, Button, FormField, InlineAlert, Input, Modal, ModalBody, ModalFooter, ModalHeader } from '@/design-system';
+import {
+  Avatar,
+  Button,
+  FormField,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from '@/design-system';
 
 import api from '../../utils/api';
 import AccessRequestModal from '../management/AccessRequestModal';
@@ -407,7 +417,9 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
           size="sm"
           className="session-conflict-modal"
         >
-          <ModalHeader onClose={() => setShowSessionConflict(false)}>Session déjà active</ModalHeader>
+          <ModalHeader onClose={() => setShowSessionConflict(false)}>
+            Session déjà active
+          </ModalHeader>
           <ModalBody>
             <p className="login-modal-text">
               Une session est déjà ouverte avec ces identifiants sur un autre appareil ou
@@ -460,59 +472,57 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
               réinitialisé immédiatement.
             </p>
             <form onSubmit={handleSelfResetPassword}>
-                  <FormField
-                    className="form-group login-form-field-spacing-last"
-                    label="Adresse email"
-                    htmlFor="reset-email"
-                  >
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      value={resetFormEmail}
-                      onChange={(e) => setResetFormEmail(e.target.value)}
-                      placeholder="email@exemple.com"
-                      required
-                      autoFocus
-                      className="login-reset-input"
-                    />
-                  </FormField>
-                  <FormField
-                    className="form-group login-form-field-spacing"
-                    label="Nouveau mot de passe"
-                    htmlFor="new-password"
-                  >
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Entrez votre nouveau mot de passe"
-                      minLength={10}
-                      required
-                      className="login-reset-input"
-                      autoComplete="new-password"
-                    />
-                  </FormField>
-                  <FormField
-                    className="form-group login-form-field-spacing-last"
-                    label="Confirmer le mot de passe"
-                    htmlFor="confirm-password"
-                  >
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={newPasswordConfirm}
-                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                      placeholder="Confirmez votre nouveau mot de passe"
-                      minLength={10}
-                      required
-                      className="login-reset-input"
-                      autoComplete="new-password"
-                    />
-                  </FormField>
-              {resetError && (
-                <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>
-              )}
+              <FormField
+                className="form-group login-form-field-spacing-last"
+                label="Adresse email"
+                htmlFor="reset-email"
+              >
+                <Input
+                  id="reset-email"
+                  type="email"
+                  value={resetFormEmail}
+                  onChange={(e) => setResetFormEmail(e.target.value)}
+                  placeholder="email@exemple.com"
+                  required
+                  autoFocus
+                  className="login-reset-input"
+                />
+              </FormField>
+              <FormField
+                className="form-group login-form-field-spacing"
+                label="Nouveau mot de passe"
+                htmlFor="new-password"
+              >
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Entrez votre nouveau mot de passe"
+                  minLength={10}
+                  required
+                  className="login-reset-input"
+                  autoComplete="new-password"
+                />
+              </FormField>
+              <FormField
+                className="form-group login-form-field-spacing-last"
+                label="Confirmer le mot de passe"
+                htmlFor="confirm-password"
+              >
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={newPasswordConfirm}
+                  onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                  placeholder="Confirmez votre nouveau mot de passe"
+                  minLength={10}
+                  required
+                  className="login-reset-input"
+                  autoComplete="new-password"
+                />
+              </FormField>
+              {resetError && <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>}
               <ModalFooter>
                 <Button
                   variant="ghost"

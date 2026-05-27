@@ -400,9 +400,7 @@ const VehicleSlidePanel = ({
         <span className="vdp-slide-title-info">
           <span className="vdp-slide-name">{currentVehicle.name}</span>
           <span className="vdp-slide-badges">
-            {currentVehicle.type && (
-              <span className="vdp-slide-badge">{currentVehicle.type}</span>
-            )}
+            {currentVehicle.type && <span className="vdp-slide-badge">{currentVehicle.type}</span>}
             {(currentVehicle.immatriculation || currentVehicle.registration) && (
               <span className="vdp-slide-badge vdp-slide-reg">
                 {currentVehicle.immatriculation || currentVehicle.registration}

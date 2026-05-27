@@ -318,37 +318,37 @@ export const RequestSlidePanel = React.memo(
           </div>
           <div className="slide-field">
             <span>Destination</span>
-              <strong>
-                {request.destination === 'Autre'
-                  ? request.destination_other || 'Autre'
-                  : request.destination}
-              </strong>
-            </div>
-            <div className="slide-field">
-              <span>Fournisseur</span>
-              <strong>{request.supplier_name || '—'}</strong>
-            </div>
-            <div className="slide-field">
-              <span>Demandeur</span>
-              <strong>{request.requested_by_name || request.requested_by_name_db || '—'}</strong>
-            </div>
-            <div className="slide-field">
-              <span>Affaire</span>
-              <strong>{request.affaire_id || '—'}</strong>
-            </div>
-            {request.order_id && (
-              <div className="slide-field">
-                <span>Commande</span>
-                <strong>#{request.order_id}</strong>
-              </div>
-            )}
+            <strong>
+              {request.destination === 'Autre'
+                ? request.destination_other || 'Autre'
+                : request.destination}
+            </strong>
           </div>
-          {request.notes && (
-            <div className="slide-notes">
-              <h4>Notes</h4>
-              <p>{request.notes}</p>
+          <div className="slide-field">
+            <span>Fournisseur</span>
+            <strong>{request.supplier_name || '—'}</strong>
+          </div>
+          <div className="slide-field">
+            <span>Demandeur</span>
+            <strong>{request.requested_by_name || request.requested_by_name_db || '—'}</strong>
+          </div>
+          <div className="slide-field">
+            <span>Affaire</span>
+            <strong>{request.affaire_id || '—'}</strong>
+          </div>
+          {request.order_id && (
+            <div className="slide-field">
+              <span>Commande</span>
+              <strong>#{request.order_id}</strong>
             </div>
           )}
+        </div>
+        {request.notes && (
+          <div className="slide-notes">
+            <h4>Notes</h4>
+            <p>{request.notes}</p>
+          </div>
+        )}
         {isAdmin && request.status === STATUS.PENDING && (
           <div className="slide-actions">
             <Button

@@ -18,7 +18,16 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
-import { Accordion, Button, InlineAlert, Input, ModalLayout, Spinner, Table, Tag } from '@/design-system';
+import {
+  Accordion,
+  Button,
+  InlineAlert,
+  Input,
+  ModalLayout,
+  Spinner,
+  Table,
+  Tag,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';

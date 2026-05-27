@@ -22,7 +22,19 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, EntityCombobox, InlineAlert, Input, ModalLayout, SearchBar, Select, Spinner, Table, Tag, Tooltip } from '@/design-system';
+import {
+  Button,
+  EntityCombobox,
+  InlineAlert,
+  Input,
+  ModalLayout,
+  SearchBar,
+  Select,
+  Spinner,
+  Table,
+  Tag,
+  Tooltip,
+} from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';

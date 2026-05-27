@@ -22,7 +22,15 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { useState } from 'react';
 
-import { Button, Drawer, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/design-system';
+import {
+  Button,
+  Drawer,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Tooltip,
+} from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { safeDate } from '../../utils/formatUtils';

@@ -13,7 +13,20 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { Accordion, Button, Checkbox, Input, Select, Spinner, Tab, TabList, TabPanel, Table, Tabs, Tag } from '@/design-system';
+import {
+  Accordion,
+  Button,
+  Checkbox,
+  Input,
+  Select,
+  Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  Table,
+  Tabs,
+  Tag,
+} from '@/design-system';
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';

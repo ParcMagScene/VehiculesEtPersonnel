@@ -6,7 +6,16 @@
 import { Film, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 
-import { Button, Input, Modal, ModalBody, ModalHeader, SectionHeader, Select, Tooltip } from '@/design-system';
+import {
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  SectionHeader,
+  Select,
+  Tooltip,
+} from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';

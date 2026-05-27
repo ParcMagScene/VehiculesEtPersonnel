@@ -29,7 +29,22 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Avatar, Button, DetailRow, EmptyState, InlineAlert, Input, Modal, ModalBody, ModalHeader, Tab, TabList, TabPanel, Tabs, Textarea } from '@/design-system';
+import {
+  Avatar,
+  Button,
+  DetailRow,
+  EmptyState,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
+  Textarea,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';

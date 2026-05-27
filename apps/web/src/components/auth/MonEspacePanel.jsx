@@ -25,7 +25,16 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, DetailRow, EmptyState, InlineAlert, Input, Modal, ModalBody, ModalHeader } from '@/design-system';
+import {
+  Button,
+  DetailRow,
+  EmptyState,
+  InlineAlert,
+  Input,
+  Modal,
+  ModalBody,
+  ModalHeader,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';

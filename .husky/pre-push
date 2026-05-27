@@ -1,9 +1,37 @@
 #!/usr/bin/env sh
 # ─────────────────────────────────────────────────────────────
-# pre-push — garde-fou rapide pour éviter les push cassés en CI
-# Lance : Prettier check + ESLint + cohérence docs.
-# Tests et build NE sont PAS rejoués ici (déjà au pre-commit /
-# laissés à la CI) pour garder un push < 30 s.
+# pre-push — garde-fou avant push (cible : < 60 s)
+#
+# Stratégie : on ne re-scanne PAS tout le repo en format:check
+# (le WIP non-staged étranger au push ferait échouer Prettier).
+# Le formatage/lint a déjà été appliqué sur le diff au
+# pre-commit via lint-staged.
+#
+# On valide ici :
+#   1. check:syntax (rapide, full repo)
+#   2. docs:fix puis docs:check (auto-régénération de l'index)
+#   3. tests backend (node --test)
+#   4. tests web (vitest --run) — attrape les régressions type
+#      useMobileRouter qui sinon passent en CI.
+#
 # Bypass exceptionnel : git push --no-verify
+# (urgences uniquement, à documenter dans le message du push)
 # ─────────────────────────────────────────────────────────────
-npm run ci:local:fast
+set -e
+
+echo "▶ check:syntax"
+npm run check:syntax
+
+echo "▶ docs:fix (régénère docs-index.json si décalé)"
+npm run docs:fix
+
+echo "▶ docs:check"
+npm run docs:check
+
+echo "▶ tests backend"
+npm test
+
+echo "▶ tests web (vitest --run)"
+npm run test:web:fast
+
+echo "✅ pre-push OK"

@@ -317,7 +317,7 @@ export function runPostInitMigrations(db) {
         end_time TEXT,
         section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
           'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations', 'prep_tournees',
-          'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+          'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation', 'intervention',
           'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
         )),
         title TEXT,

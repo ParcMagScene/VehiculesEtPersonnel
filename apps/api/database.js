@@ -3782,6 +3782,20 @@ initializeDatabase();
 import { runPostInitMigrations } from './migrations.js';
 runPostInitMigrations(db);
 
+// Index de performance L10/L11 (idempotents) — voir services/perfIndexesL10.js
+import { applyPerfL10Indexes } from './services/perfIndexesL10.js';
+try {
+  const r = applyPerfL10Indexes(db);
+  if (r.failed > 0) {
+    console.warn(
+      `⚠️ Index perf : ${r.succeeded}/${r.attempted} OK, ${r.failed} échec(s)`,
+      r.errors,
+    );
+  }
+} catch (e) {
+  console.warn('⚠️ applyPerfL10Indexes a échoué:', e.message);
+}
+
 // ─────────────────────────────────────────────────────────────
 // [S2-1 step 2] WAL management extrait dans database/wal.js
 // On garde des wrappers locaux qui figent `db` pour rétro-compat

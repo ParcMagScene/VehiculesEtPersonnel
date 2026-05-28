@@ -20,8 +20,6 @@ import {
   FilterBar,
   ModuleContent,
   ModuleLayout,
-  ModuleToolbar,
-  PageHeader,
   Select,
   Spinner,
   StatusBadge,
@@ -63,7 +61,9 @@ export default function ControlsDashboard({ user }) {
   const fetchDashboard = useCallback(async () => {
     const r = await api.getControlsDashboard(filters);
     if (!r?.success) throw new Error(r?.error || 'Erreur');
-    return { items: r.data?.items || [], stats: r.data?.stats || {} };
+    // Le backend renvoie { success, data: rows, stats } — data est directement
+    // la liste des contrôles, stats est au même niveau que data.
+    return { items: r.data || [], stats: r.stats || {} };
   }, [filters]);
 
   // useListResource : state + load au mont/filtres + bus 'controls' (création/édition/suppression ailleurs).
@@ -122,52 +122,60 @@ export default function ControlsDashboard({ user }) {
 
   return (
     <ModuleLayout>
-      <PageHeader title="Contrôles périodiques" subtitle="Équipements & véhicules" />
-
-      <ModuleToolbar>
-        <FilterBar>
-          <Select
-            value={filters.status}
-            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-          >
-            <option value="">Tous statuts</option>
-            <option value="A_FAIRE">À faire</option>
-            <option value="EN_RETARD">En retard</option>
-            <option value="MANQUE">Manqué</option>
-          </Select>
-          <Select
-            value={filters.entity_type}
-            onChange={(e) => setFilters((f) => ({ ...f, entity_type: e.target.value }))}
-          >
-            <option value="">Toutes entités</option>
-            <option value="vehicle">Véhicules</option>
-            <option value="equipment">Équipements</option>
-          </Select>
-          <Select
-            value={filters.type_id}
-            onChange={(e) => setFilters((f) => ({ ...f, type_id: e.target.value }))}
-          >
-            <option value="">Tous types</option>
-            {types.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.code} · {t.name}
-              </option>
-            ))}
-          </Select>
-        </FilterBar>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="ghost" onClick={load} icon={<RefreshCw size={16} />}>
-            Actualiser
-          </Button>
-          {isAdmin && (
-            <Button variant="ghost" onClick={handleRecompute} icon={<RefreshCw size={16} />}>
-              Recalcul global
-            </Button>
-          )}
-        </div>
-      </ModuleToolbar>
-
       <ModuleContent>
+        {/* Filtres + actions (anciennement dans ModuleToolbar — déplacés ici pour
+            libérer l'espace, header & toolbar du module jugés inutiles). */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexWrap: 'wrap',
+            marginBottom: 12,
+          }}
+        >
+          <FilterBar>
+            <Select
+              value={filters.status}
+              onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+            >
+              <option value="">Tous statuts</option>
+              <option value="A_FAIRE">À faire</option>
+              <option value="EN_RETARD">En retard</option>
+              <option value="MANQUE">Manqué</option>
+            </Select>
+            <Select
+              value={filters.entity_type}
+              onChange={(e) => setFilters((f) => ({ ...f, entity_type: e.target.value }))}
+            >
+              <option value="">Toutes entités</option>
+              <option value="vehicle">Véhicules</option>
+              <option value="equipment">Équipements</option>
+            </Select>
+            <Select
+              value={filters.type_id}
+              onChange={(e) => setFilters((f) => ({ ...f, type_id: e.target.value }))}
+            >
+              <option value="">Tous types</option>
+              {types.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.code} · {t.name}
+                </option>
+              ))}
+            </Select>
+          </FilterBar>
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+            <Button variant="ghost" onClick={load} icon={<RefreshCw size={16} />}>
+              Actualiser
+            </Button>
+            {isAdmin && (
+              <Button variant="ghost" onClick={handleRecompute} icon={<RefreshCw size={16} />}>
+                Recalcul global
+              </Button>
+            )}
+          </div>
+        </div>
+
         {/* Stats */}
         <div
           style={{

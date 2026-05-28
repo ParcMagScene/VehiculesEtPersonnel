@@ -149,6 +149,7 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
     '/api/controls/equipment/:entityType/:entityId',
     authenticateToken,
     safe((req, res) => {
+      res.set('Cache-Control', 'no-store');
       const { entityType, entityId } = req.params;
       if (!['vehicle', 'equipment'].includes(entityType)) {
         return res.status(400).json({ success: false, error: 'entity_type invalide' });
@@ -304,6 +305,10 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
     '/api/controls/dashboard',
     authenticateToken,
     safe((req, res) => {
+      // Pas de cache HTTP : le payload évolue dès qu'un contrôle est effectué /
+      // recalculé, et la cache 304 du navigateur conservait d'anciens payloads
+      // sans entity_name/entity_subtitle/type_code après enrichissement du SQL.
+      res.set('Cache-Control', 'no-store');
       const { status, assigned_to, entity_type, type_id } = req.query;
       const where = ['ec.is_active = 1'];
       const params = [];

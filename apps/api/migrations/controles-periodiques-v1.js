@@ -128,6 +128,56 @@ const SEED_TYPES = [
     default_periodicity_days: 365,
     missed_after_days: 30,
   },
+  // ─────────────────────────────────────────────────────────────
+  // Contrôles légaux scéniques (référentiel réglementaire FR).
+  // Sources : Code du travail + arrêtés cités dans le champ "name".
+  // ─────────────────────────────────────────────────────────────
+  {
+    // Vérification générale périodique des appareils de levage.
+    // Réf : Arrêté du 1er mars 2004, art. 22. Périodicité : 12 mois.
+    code: 'VGP_LEVAGE',
+    name: 'VGP appareils de levage (Arr. 01/03/2004 art. 22)',
+    is_vehicle_specific: 0,
+    default_periodicity_days: 365,
+    missed_after_days: 30,
+  },
+  {
+    // Vérification générale périodique des accessoires de levage
+    // (élingues chaîne / textile / câble, manilles, anneaux, crochets).
+    // Réf : Arrêté du 1er mars 2004, art. 23. Périodicité : 12 mois.
+    code: 'VGP_ELINGUE',
+    name: 'VGP accessoires de levage / élingues (Arr. 01/03/2004 art. 23)',
+    is_vehicle_specific: 0,
+    default_periodicity_days: 365,
+    missed_after_days: 30,
+  },
+  {
+    // Pieds de levage / supports de structure : assimilés appareils de levage
+    // pour la VGP annuelle.
+    code: 'VGP_PIED_LEVAGE',
+    name: 'VGP pieds de levage (Arr. 01/03/2004)',
+    is_vehicle_specific: 0,
+    default_periodicity_days: 365,
+    missed_after_days: 30,
+  },
+  {
+    // EPI antichute (harnais, longes, stop-chute, casques).
+    // Réf : Code du travail R4323-99 + recommandations fabricant.
+    code: 'VGP_EPI_ANTICHUTE',
+    name: 'Vérification EPI antichute (CT R4323-99)',
+    is_vehicle_specific: 0,
+    default_periodicity_days: 365,
+    missed_after_days: 30,
+  },
+  {
+    // Vérification des installations électriques (armoires de distribution).
+    // Réf : Arrêté du 14 décembre 2011 (Q18). Périodicité : 12 mois.
+    code: 'Q18_ELECTRIQUE',
+    name: 'Vérification installations électriques (Arr. 14/12/2011 Q18)',
+    is_vehicle_specific: 0,
+    default_periodicity_days: 365,
+    missed_after_days: 30,
+  },
 ];
 
 /**
@@ -429,6 +479,126 @@ export function runControlesPeriodiquesMigrations(db) {
     }
   } catch (e) {
     logger.warn('Contrôles périodiques reclassif:', e.message);
+  }
+
+  // ─── 8. Auto-création des contrôles légaux pour équipements existants ───
+  // Mapping catégorie (nom) → code de contrôle légal. Recherche LIKE
+  // case-insensitive sur le nom de catégorie + héritage récursif.
+  // Idempotence : on saute si un contrôle ACTIF du même type existe déjà
+  // sur l'entité (peu importe le marqueur, pour ne pas dupliquer si l'admin
+  // en a déjà créé un à la main).
+  try {
+    const MAPPING = [
+      { catLike: '%moteur%levage%', code: 'VGP_LEVAGE' },
+      { catLike: '%pied%levage%', code: 'VGP_PIED_LEVAGE' },
+      { catLike: '%élingue%', code: 'VGP_ELINGUE' },
+      { catLike: '%elingue%', code: 'VGP_ELINGUE' }, // fallback sans accent
+      { catLike: '%epi%', code: 'VGP_EPI_ANTICHUTE' },
+      { catLike: '%harnais%', code: 'VGP_EPI_ANTICHUTE' },
+      { catLike: '%armoire%', code: 'Q18_ELECTRIQUE' },
+    ];
+
+    const typeByCode = (code) =>
+      db
+        .prepare(
+          'SELECT id, default_periodicity_days FROM control_types WHERE code = ? AND is_active = 1',
+        )
+        .get(code);
+
+    // Récupère récursivement tous les ids de catégories descendants matchant LIKE.
+    const descendantIds = (likePattern) => {
+      const rows = db
+        .prepare(
+          `WITH RECURSIVE roots(id) AS (
+             SELECT id FROM equipment_categories WHERE LOWER(name) LIKE LOWER(?)
+           ),
+           tree(id) AS (
+             SELECT id FROM roots
+             UNION ALL
+             SELECT c.id FROM equipment_categories c JOIN tree t ON c.parent_id = t.id
+           )
+           SELECT DISTINCT id FROM tree`,
+        )
+        .all(likePattern);
+      return rows.map((r) => r.id);
+    };
+
+    const equipmentsForCats = (catIds) => {
+      if (!catIds.length) return [];
+      const placeholders = catIds.map(() => '?').join(',');
+      return db
+        .prepare(
+          `SELECT id, name, purchase_date FROM equipment WHERE category_id IN (${placeholders})`,
+        )
+        .all(...catIds);
+    };
+
+    const existsCtrl = db.prepare(
+      `SELECT 1 FROM equipment_controls
+        WHERE entity_type = 'equipment'
+          AND entity_id = ?
+          AND control_type_id = ?
+          AND is_active = 1
+        LIMIT 1`,
+    );
+    const insCtrl = db.prepare(`
+      INSERT INTO equipment_controls
+        (entity_type, entity_id, control_type_id, periodicity_days,
+         next_due_date, last_done_date, status, notes)
+      VALUES ('equipment', ?, ?, ?, ?, NULL, ?, ?)
+    `);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const computeDueAndStatus = (purchaseDate, periodicity) => {
+      let due = null;
+      if (purchaseDate) {
+        const iso = toIsoDate(purchaseDate);
+        if (iso) {
+          const d = new Date(iso);
+          d.setDate(d.getDate() + periodicity);
+          due = d.toISOString().slice(0, 10);
+        }
+      }
+      if (!due) due = today; // pas de date achat → contrôle dû dès aujourd'hui
+      const status = due < today ? 'EN_RETARD' : 'A_FAIRE';
+      return { due, status };
+    };
+
+    let created = 0;
+    const seen = new Set(); // dédup (entityId, typeId) au sein d'un même run
+    const tx = db.transaction(() => {
+      for (const { catLike, code } of MAPPING) {
+        const type = typeByCode(code);
+        if (!type) continue;
+        const catIds = descendantIds(catLike);
+        if (!catIds.length) continue;
+        const equipments = equipmentsForCats(catIds);
+        for (const eq of equipments) {
+          const key = `${eq.id}::${type.id}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          if (existsCtrl.get(String(eq.id), type.id)) continue;
+          const period = type.default_periodicity_days || 365;
+          const { due, status } = computeDueAndStatus(eq.purchase_date, period);
+          insCtrl.run(
+            String(eq.id),
+            type.id,
+            period,
+            due,
+            status,
+            `[auto-vgp:v1] ${code} · ${eq.name || ''}`.trim(),
+          );
+          created++;
+        }
+      }
+    });
+    tx();
+    if (created > 0)
+      logger.info(
+        `  ✅ Contrôles périodiques: ${created} contrôles légaux auto-créés sur équipements`,
+      );
+  } catch (e) {
+    logger.warn('Contrôles périodiques auto-création équipements:', e.message);
   }
 
   logger.info('✅ Migration controles-periodiques-v1 terminée');

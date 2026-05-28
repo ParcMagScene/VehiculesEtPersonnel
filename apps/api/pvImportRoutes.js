@@ -28,6 +28,7 @@ import db from './database.js';
 import logger from './logger.js';
 import { uploadPv } from './middleware/upload.js';
 import { computeFileHash, parsePvPdf } from './services/pvParser.js';
+import { addDays } from './services/controlesService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -163,7 +164,11 @@ function applyMapping(pvImport, mapping, user) {
   };
   const dateDone =
     mapping.date_done || parsed.dateControle || new Date().toISOString().slice(0, 10);
-  const nextDue = mapping.next_due_date || parsed.prochainControle || null;
+  // next_due_date : priorité mapping explicite → valeur extraite du PV →
+  // calcul dateDone + périodicité du type (control_types.default_periodicity_days).
+  // Beaucoup de PV n'indiquent que la date d'intervention ; sans ce calcul,
+  // les contrôles seraient créés sans échéance (bug 2026-05-28).
+  let nextDue = mapping.next_due_date || parsed.prochainControle || null;
   const performedBy = user?.username || user?.name || pvImport.created_by || 'import-pv';
   const statusVal =
     (mapping.statut || parsed.statut || 'EFFECTUE') === 'NON_CONFORME' ? 'MANQUE' : 'EFFECTUE';
@@ -179,6 +184,15 @@ function applyMapping(pvImport, mapping, user) {
           .get(mapping.equipment_control_id);
         if (!ctrl) throw new Error('Contrôle cible introuvable');
         const previousDue = ctrl.next_due_date;
+        if (!nextDue) {
+          const periodicity =
+            ctrl.periodicity_days ||
+            db
+              .prepare('SELECT default_periodicity_days FROM control_types WHERE id = ?')
+              .get(ctrl.control_type_id)?.default_periodicity_days ||
+            null;
+          if (periodicity) nextDue = addDays(dateDone, periodicity);
+        }
         db.prepare(
           `UPDATE equipment_controls
               SET last_done_date = ?, next_due_date = COALESCE(?, next_due_date),
@@ -207,17 +221,23 @@ function applyMapping(pvImport, mapping, user) {
         if (!mapping.entity_type || !mapping.entity_id || !mapping.control_type_id) {
           throw new Error('entity_type, entity_id et control_type_id requis pour create_control');
         }
+        const typeRow = db
+          .prepare('SELECT default_periodicity_days FROM control_types WHERE id = ?')
+          .get(mapping.control_type_id);
+        const periodicity = typeRow?.default_periodicity_days || null;
+        if (!nextDue && periodicity) nextDue = addDays(dateDone, periodicity);
         const insRes = db
           .prepare(
             `INSERT INTO equipment_controls
               (entity_type, entity_id, control_type_id, periodicity_days,
                next_due_date, last_done_date, status, notes, is_active, created_by)
-             VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 1, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
           )
           .run(
             mapping.entity_type,
             String(mapping.entity_id),
             mapping.control_type_id,
+            periodicity,
             nextDue,
             dateDone,
             statusVal === 'EFFECTUE' ? 'EFFECTUE' : 'MANQUE',
@@ -262,6 +282,84 @@ function applyMapping(pvImport, mapping, user) {
         );
         matched = 1;
         if (Number(mapping.quantite_non_controlee || 0) > 0) unmatched = 1;
+
+        // Création optionnelle d'un equipment_controls par équipement ciblé.
+        // Nécessite mapping.equipment_ids (Array<number>) + mapping.control_type_id.
+        // Pour chaque équipement : UPSERT du contrôle (entité, type) et entrée
+        // d'historique avec le PDF. La prochaine échéance est calculée à partir
+        // de la date PV + périodicité par défaut du type si non fournie.
+        const eqIds = Array.isArray(mapping.equipment_ids)
+          ? mapping.equipment_ids.filter((x) => x != null && String(x).trim() !== '')
+          : [];
+        if (eqIds.length > 0 && mapping.control_type_id) {
+          const typeRow = db
+            .prepare('SELECT default_periodicity_days FROM control_types WHERE id = ?')
+            .get(mapping.control_type_id);
+          const periodicity = typeRow?.default_periodicity_days || null;
+          const nextDueLot = nextDue || (periodicity ? addDays(dateDone, periodicity) : null);
+          const ctrlStatus = statusVal === 'EFFECTUE' ? 'EFFECTUE' : 'MANQUE';
+
+          const findExisting = db.prepare(
+            `SELECT id, next_due_date FROM equipment_controls
+              WHERE entity_type = 'equipment' AND entity_id = ?
+                AND control_type_id = ? AND is_active = 1
+              LIMIT 1`,
+          );
+          const insCtrl = db.prepare(
+            `INSERT INTO equipment_controls
+              (entity_type, entity_id, control_type_id, periodicity_days,
+               next_due_date, last_done_date, status, notes, is_active, created_by)
+             VALUES ('equipment', ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+          );
+          const updCtrl = db.prepare(
+            `UPDATE equipment_controls
+                SET last_done_date = ?, next_due_date = COALESCE(?, next_due_date),
+                    periodicity_days = COALESCE(periodicity_days, ?),
+                    status = ?, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ?`,
+          );
+          const insHist = db.prepare(
+            `INSERT INTO control_history
+              (equipment_control_id, performed_at, performed_by, status,
+               previous_due_date, next_due_date, notes, documents)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          );
+
+          for (const rawId of eqIds) {
+            const eqId = String(rawId);
+            const existing = findExisting.get(eqId, mapping.control_type_id);
+            let ctrlId;
+            let previousDue = null;
+            if (existing) {
+              previousDue = existing.next_due_date;
+              updCtrl.run(dateDone, nextDueLot, periodicity, ctrlStatus, existing.id);
+              ctrlId = existing.id;
+            } else {
+              const r = insCtrl.run(
+                eqId,
+                mapping.control_type_id,
+                periodicity,
+                nextDueLot,
+                dateDone,
+                ctrlStatus,
+                mapping.notes || parsed.organisme || null,
+                performedBy,
+              );
+              ctrlId = r.lastInsertRowid;
+            }
+            insHist.run(
+              ctrlId,
+              dateDone,
+              performedBy,
+              statusVal,
+              previousDue,
+              nextDueLot,
+              mapping.notes || parsed.organisme || null,
+              JSON.stringify([docEntry]),
+            );
+          }
+          matched = eqIds.length;
+        }
         break;
       }
       case 'ignore':

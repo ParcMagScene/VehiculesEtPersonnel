@@ -52,7 +52,7 @@ const STATS_CARDS = [
 ];
 
 export default function ControlsDashboard({ user }) {
-  const isAdmin = !!user?.is_admin || user?.role === 'admin';
+  const isAdmin = !!user?.isAdmin || !!user?.is_admin || user?.role === 'admin';
   const [types, setTypes] = useState([]);
   const [filters, setFilters] = useState({
     status: '',

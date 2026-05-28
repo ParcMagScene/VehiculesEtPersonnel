@@ -102,7 +102,22 @@ export default function PvImportPanel({ open, onClose }) {
         api.getVehicles().catch(() => ({ data: [] })),
         api.getControlTypes(true).catch(() => ({ data: [] })),
       ]);
-      setImports(imp?.data || []);
+      // La liste renvoie { items, total } (sans parsed_data). Pour chaque PV
+      // en attente de résolution on enrichit avec le détail (parsed_data)
+      // afin d'afficher les champs extraits sans clic supplémentaire.
+      const items = imp?.items || imp?.data || [];
+      const enriched = await Promise.all(
+        items.map(async (it) => {
+          if (it.status !== 'pending_resolution') return it;
+          try {
+            const detail = await api.getPvImport(it.id);
+            return { ...it, ...(detail?.pv_import || {}) };
+          } catch {
+            return it;
+          }
+        }),
+      );
+      setImports(enriched);
       setEquipments(eq?.data || eq?.equipment || []);
       setVehicles(vh?.data || vh?.vehicles || []);
       setControlTypes(ct?.data || []);
@@ -180,12 +195,13 @@ export default function PvImportPanel({ open, onClose }) {
         valid.push(f);
       }
       if (!valid.length) return;
-      const formData = new FormData();
-      valid.forEach((f) => formData.append('files', f));
-      const res = await api.uploadPvImports(formData);
+      const res = await api.uploadPvImports(valid);
       if (!res?.success) throw new Error(res?.error || 'Upload échoué');
-      const count = res.data?.length || valid.length;
-      toast.success(`${count} PV importé(s)`);
+      const count = (res.created?.length ?? res.data?.length) || valid.length;
+      const skipped = res.skipped?.length || 0;
+      toast.success(
+        `${count} PV importé(s)${skipped > 0 ? ` · ${skipped} doublon(s) ignoré(s)` : ''}`,
+      );
       await loadAll();
     } catch (err) {
       toast.error('Erreur upload : ' + err.message);
@@ -408,47 +424,126 @@ export default function PvImportPanel({ open, onClose }) {
                       </div>
 
                       {m.action === 'lot' && (
-                        <div className="pv-resolution-row">
-                          <label className="pv-field">
-                            <span className="pv-label">Équipement modèle (optionnel)</span>
-                            <Select
-                              size="sm"
-                              value={m.equipment_id || ''}
-                              onChange={(e) =>
-                                updateMapping(imp.id, { equipment_id: e.target.value })
-                              }
-                            >
-                              <option value="">— Aucun (lot libre) —</option>
-                              {equipmentOptions.map((o) => (
-                                <option key={o.id} value={o.id}>
-                                  {o.label}
-                                </option>
-                              ))}
-                            </Select>
-                          </label>
-                          <label className="pv-field pv-field-sm">
-                            <span className="pv-label">Qté contrôlée</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={m.quantite_controlee}
-                              onChange={(e) =>
-                                updateMapping(imp.id, { quantite_controlee: e.target.value })
-                              }
-                            />
-                          </label>
-                          <label className="pv-field pv-field-sm">
-                            <span className="pv-label">Qté non contrôlée</span>
-                            <Input
-                              type="number"
-                              min="0"
-                              value={m.quantite_non_controlee}
-                              onChange={(e) =>
-                                updateMapping(imp.id, { quantite_non_controlee: e.target.value })
-                              }
-                            />
-                          </label>
-                        </div>
+                        <>
+                          <div className="pv-resolution-row">
+                            <label className="pv-field">
+                              <span className="pv-label">Équipement modèle (optionnel)</span>
+                              <Select
+                                size="sm"
+                                value={m.equipment_id || ''}
+                                onChange={(e) =>
+                                  updateMapping(imp.id, { equipment_id: e.target.value })
+                                }
+                              >
+                                <option value="">— Aucun (lot libre) —</option>
+                                {equipmentOptions.map((o) => (
+                                  <option key={o.id} value={o.id}>
+                                    {o.label}
+                                  </option>
+                                ))}
+                              </Select>
+                            </label>
+                            <label className="pv-field pv-field-sm">
+                              <span className="pv-label">Qté contrôlée</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={m.quantite_controlee}
+                                onChange={(e) =>
+                                  updateMapping(imp.id, { quantite_controlee: e.target.value })
+                                }
+                              />
+                            </label>
+                            <label className="pv-field pv-field-sm">
+                              <span className="pv-label">Qté non contrôlée</span>
+                              <Input
+                                type="number"
+                                min="0"
+                                value={m.quantite_non_controlee}
+                                onChange={(e) =>
+                                  updateMapping(imp.id, { quantite_non_controlee: e.target.value })
+                                }
+                              />
+                            </label>
+                          </div>
+                          <div className="pv-resolution-row">
+                            <label className="pv-field">
+                              <span className="pv-label">
+                                Créer un contrôle par équipement (optionnel)
+                              </span>
+                              <Select
+                                size="sm"
+                                value={m.control_type_id || ''}
+                                onChange={(e) =>
+                                  updateMapping(imp.id, { control_type_id: e.target.value })
+                                }
+                              >
+                                <option value="">— Aucun (lot seul) —</option>
+                                {controlTypes
+                                  .filter((t) => t.is_vehicle_specific === 0)
+                                  .map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                      {t.code} · {t.name}
+                                    </option>
+                                  ))}
+                              </Select>
+                            </label>
+                            <label className="pv-field" style={{ flex: 2 }}>
+                              <span className="pv-label">
+                                Équipements ciblés ({(m.equipment_ids || []).length}
+                                {parsed.equipmentCandidates?.length
+                                  ? ` · ${parsed.equipmentCandidates.length} candidat(s) PV`
+                                  : ''}
+                                )
+                              </span>
+                              <select
+                                multiple
+                                size={Math.min(
+                                  6,
+                                  Math.max(3, (parsed.equipmentCandidates?.length || 0) + 1),
+                                )}
+                                disabled={!m.control_type_id}
+                                value={(m.equipment_ids || []).map(String)}
+                                onChange={(e) =>
+                                  updateMapping(imp.id, {
+                                    equipment_ids: Array.from(
+                                      e.target.selectedOptions,
+                                      (o) => o.value,
+                                    ),
+                                  })
+                                }
+                                style={{
+                                  width: '100%',
+                                  fontSize: 12,
+                                  padding: 4,
+                                  borderRadius: 6,
+                                  border: '1px solid var(--theme-border)',
+                                }}
+                              >
+                                {/* Candidats détectés en priorité */}
+                                {(parsed.equipmentCandidates || []).map((c) => (
+                                  <option key={`cand-${c.id}`} value={c.id}>
+                                    ★ {c.name || c.reference || c.id}
+                                    {c.serial_number ? ` (SN ${c.serial_number})` : ''}
+                                  </option>
+                                ))}
+                                {/* Tous les autres équipements */}
+                                {equipmentOptions
+                                  .filter(
+                                    (o) =>
+                                      !(parsed.equipmentCandidates || []).some(
+                                        (c) => String(c.id) === String(o.id),
+                                      ),
+                                  )
+                                  .map((o) => (
+                                    <option key={o.id} value={o.id}>
+                                      {o.label}
+                                    </option>
+                                  ))}
+                              </select>
+                            </label>
+                          </div>
+                        </>
                       )}
 
                       {m.action === 'create_control' && (

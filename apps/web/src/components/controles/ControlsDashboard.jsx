@@ -15,8 +15,9 @@ import {
   ShieldAlert,
   Trash2,
   Truck,
+  Upload,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   Button,
@@ -36,6 +37,10 @@ import ControlEditorModal from './ControlEditorModal';
 import ControlHistoryModal from './ControlHistoryModal';
 import './ControlsDashboard.css';
 import { formatDateFR, formatRelativeDays, STATUS_COLORS, STATUS_LABELS } from './utils';
+
+// Lazy : le panneau d'import PV n'est utile qu'aux admins, on n'embarque pas
+// son bundle (drop-zone, parser, etc.) pour les utilisateurs standards.
+const PvImportPanel = lazy(() => import('../pv-import/PvImportPanel'));
 
 const STATS_CARDS = [
   { key: 'total', label: 'Total', icon: ShieldAlert, color: '#0f172a' },
@@ -65,6 +70,7 @@ export default function ControlsDashboard({ user }) {
   const [sort, setSort] = useState({ key: 'next_due_date', dir: 'asc' });
   const [history, setHistory] = useState(null);
   const [editor, setEditor] = useState(null); // { control } pour éditer
+  const [pvImportOpen, setPvImportOpen] = useState(false);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const fetchDashboard = useCallback(async () => {
@@ -291,6 +297,18 @@ export default function ControlsDashboard({ user }) {
               <option value="upcoming">À venir</option>
             </Select>
           </div>
+          {isAdmin && (
+            <div className="ctrl-toolbar-actions">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setPvImportOpen(true)}
+                title="Importer un PV PDF (rapport de contrôle)"
+              >
+                <Upload size={14} /> Importer PV PDF
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -572,6 +590,17 @@ export default function ControlsDashboard({ user }) {
         />
       )}
       {ConfirmDialogRenderer}
+      {pvImportOpen && (
+        <Suspense fallback={null}>
+          <PvImportPanel
+            open={pvImportOpen}
+            onClose={() => {
+              setPvImportOpen(false);
+              load();
+            }}
+          />
+        </Suspense>
+      )}
     </ModuleLayout>
   );
 }

@@ -363,6 +363,39 @@ export class ApiClient {
       throw createServiceUnavailableError();
     }
 
+    // Dédup in-flight (GET « plain » uniquement) : si une requête identique
+    // est déjà en vol — typique au mount initial où plusieurs composants
+    // demandent la même ressource — on partage la Promise au lieu d'émettre
+    // un second fetch. Réseau économisé + cohérence des states React.
+    //
+    // Conditions strictes pour rester safe :
+    //   - méthode GET (par défaut ou explicite)
+    //   - pas un retry interne (chemin 401 → refresh → relance)
+    //   - aucune option qui changerait sémantique : body, signal d'abort,
+    //     headers custom, skipCamelCase (chacune peut différer entre callers).
+    const method = (options.method || 'GET').toUpperCase();
+    const canDedup =
+      method === 'GET' &&
+      !_isRetry &&
+      !options.body &&
+      !options.signal &&
+      !options.headers &&
+      !options.skipCamelCase;
+    if (canDedup) {
+      if (!this._inFlightGets) this._inFlightGets = new Map();
+      const existing = this._inFlightGets.get(endpoint);
+      if (existing) return existing;
+      const promise = this._executeRequest(endpoint, options, _isRetry).finally(() => {
+        if (this._inFlightGets.get(endpoint) === promise) this._inFlightGets.delete(endpoint);
+      });
+      this._inFlightGets.set(endpoint, promise);
+      return promise;
+    }
+
+    return this._executeRequest(endpoint, options, _isRetry);
+  }
+
+  async _executeRequest(endpoint, options = {}, _isRetry = false) {
     const skipCamelCase = options.skipCamelCase;
     if (skipCamelCase) delete options.skipCamelCase;
 

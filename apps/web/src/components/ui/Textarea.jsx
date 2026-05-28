@@ -10,8 +10,16 @@ import { forwardRef } from 'react';
  *
  * Mode bare : sans size → rend un <textarea> nu (compatible CSS existant)
  * Mode styled : avec size → applique les styles DS complets
+ *
+ * ⚠️ Sans `size`, le style est minimal. Préférez explicitement `size="sm|md|lg"`.
  */
 const Textarea = forwardRef(({ size, error = false, className = '', ...props }, ref) => {
+  if (import.meta.env?.DEV && size === undefined) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[DS][Textarea] Composant rendu en mode bare (sans `size`). Ajoutez size="sm|md|lg" pour obtenir le style DS complet.',
+    );
+  }
   const classes = [
     'ui-textarea',
     size && `ui-textarea--${size}`,

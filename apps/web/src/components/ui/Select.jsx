@@ -10,6 +10,9 @@ import { forwardRef } from 'react';
  *
  * Mode bare     : avec children → rend un <select> nu (pas de wrapper)
  * Mode options  : avec options prop → wrapper div + chevron
+ *
+ * ⚠️ Sans `size`, le style est minimal (pas de bordure ni chevron).
+ *    Préférez explicitement `size="sm|md|lg"`.
  */
 const Select = forwardRef(
   (
@@ -25,6 +28,12 @@ const Select = forwardRef(
     },
     ref,
   ) => {
+    if (import.meta.env?.DEV && size === undefined && children) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[DS][Select] Composant rendu en mode bare (sans `size`). Ajoutez size="sm|md|lg" pour obtenir le style DS complet.',
+      );
+    }
     /* ─── Mode bare (children pass-through) ─── */
     if (children) {
       const classes = [

@@ -481,6 +481,8 @@ const StockSlidePanel = ({
       onClose={onClose}
       side="right"
       width={420}
+      inline
+      overlay={false}
       className="stock-slide-panel"
       title={
         <span className="stock-slide-title-row">

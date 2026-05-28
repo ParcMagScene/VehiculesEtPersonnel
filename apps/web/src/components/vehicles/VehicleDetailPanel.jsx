@@ -385,6 +385,8 @@ const VehicleSlidePanel = ({
       onClose={onClose}
       side="right"
       width={420}
+      inline
+      overlay={false}
       className="vehicle-slide-panel"
       icon={
         <span

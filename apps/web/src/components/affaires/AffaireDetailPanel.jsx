@@ -2903,6 +2903,8 @@ const AffaireSlidePanel = ({
       onClose={onClose}
       side="right"
       width={420}
+      inline
+      overlay={false}
       className="affaire-slide-panel"
       title={
         <span className="slide-panel-title-row">

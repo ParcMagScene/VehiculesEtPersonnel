@@ -971,20 +971,18 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  overflow: hidden;
   animation: taskFieldsExpand 0.15s ease-out;
+  transform-origin: top;
 }
 
 @keyframes taskFieldsExpand {
   from {
-    max-height: 0;
     opacity: 0;
-    margin-top: 0;
-    padding-top: 0;
+    transform: scaleY(0.92) translateY(-4px);
   }
   to {
-    max-height: 200px;
     opacity: 1;
+    transform: none;
   }
 }
 

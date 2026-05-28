@@ -11,9 +11,14 @@ import { getModalRoot, pop, push, zIndexFor } from '../../utils/modalManager';
  * Centralise le pattern instancié dans PersonnelSlidePanel, VehicleDetailPanel,
  * AffaireDetailPanel, StockSlidePanel, OrderSlidePanel, etc.
  *
- * Intégré au ModalManager (#emag-modal-root) : pile partagée avec <Modal>,
- * z-index dynamique, scroll-lock unique. Plus de conflit quand un Drawer et
- * un Modal sont ouverts simultanément.
+ * Modes :
+ *  - Modal (défaut) : portail #emag-modal-root, position: fixed plein écran,
+ *    backdrop, intégré au ModalManager (z-index dynamique, scroll-lock).
+ *  - Docked (`inline=true`) : rendu en place dans le parent flex (à côté de
+ *    la liste/tableau), prend la hauteur du conteneur, pas de backdrop,
+ *    n'occulte pas les toolbars/banners/header de l'app. Le conteneur parent
+ *    doit être `display: flex` et la liste adjacente `flex: 1; min-width: 0`
+ *    pour que sa largeur s'adapte à l'ouverture du volet.
  */
 function Drawer({
   open,
@@ -25,9 +30,13 @@ function Drawer({
   headerActions,
   footer,
   overlay = true,
+  inline = false,
   className = '',
   children,
 }) {
+  // En mode docked, on désactive systématiquement l'overlay et le portail :
+  // le volet vit dans le flux flex du parent.
+  const useOverlay = overlay && !inline;
   const [visible, setVisible] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [stackToken, setStackToken] = useState(null);
@@ -58,17 +67,17 @@ function Drawer({
   }, [open, onClose]);
 
   /* ── Inscription ModalManager (pile + scroll-lock unifiés) ──
-   * Quand `overlay=false`, le Drawer reste non-bloquant : on ne pousse pas sur
-   * la pile (pas de scroll-lock global, pas de backdrop). */
+   * Quand `useOverlay=false` (mode docked ou non-bloquant) : on ne pousse pas
+   * sur la pile (pas de scroll-lock global, pas de backdrop). */
   useEffect(() => {
-    if (!open || !overlay) return undefined;
+    if (!open || !useOverlay) return undefined;
     const token = push();
     setStackToken(token);
     return () => {
       pop(token);
       setStackToken(null);
     };
-  }, [open, overlay]);
+  }, [open, useOverlay]);
 
   const handleOverlayClick = useCallback(
     (e) => {
@@ -79,47 +88,63 @@ function Drawer({
 
   if (!visible) return null;
 
-  const cls = ['ui-drawer', `ui-drawer--${side}`, animating && 'ui-drawer--open', className]
+  const cls = [
+    'ui-drawer',
+    `ui-drawer--${side}`,
+    animating && 'ui-drawer--open',
+    inline && 'ui-drawer--inline',
+    className,
+  ]
     .filter(Boolean)
     .join(' ');
 
   const style = { width: typeof width === 'number' ? `${width}px` : width };
 
   // Z-index pilotés par le ModalManager (overlay 9000+i*10, dialog 10000+i*10).
-  // Si overlay=false (mode non-bloquant) → fallback aux valeurs CSS d'origine.
+  // Mode docked ou overlay=false → fallback aux valeurs CSS d'origine.
   const z = stackToken ? zIndexFor(stackToken) : null;
+
+  const panel = (
+    <aside className={cls} ref={panelRef} style={z ? { ...style, zIndex: z.dialog } : style}>
+      {title && (
+        <div className="ui-drawer-header">
+          <div className="ui-drawer-title">
+            {icon && <span className="ui-drawer-icon">{icon}</span>}
+            <h3>{title}</h3>
+          </div>
+          <div className="ui-drawer-header-actions">
+            {headerActions}
+            {onClose && (
+              <button
+                className="ui-drawer-close"
+                onClick={onClose}
+                aria-label="Fermer"
+                type="button"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="ui-drawer-body">{children}</div>
+      {footer && <div className="ui-drawer-footer">{footer}</div>}
+    </aside>
+  );
+
+  // Mode docked : rendu en place, pas de portail, pas de backdrop. Le parent
+  // doit être un flex container ; le panel devient un flex item à droite.
+  if (inline) {
+    return panel;
+  }
 
   const content = (
     <div
       className={`ui-drawer-backdrop ${animating ? 'ui-drawer-backdrop--visible' : ''}`}
-      onMouseDown={overlay ? handleOverlayClick : undefined}
+      onMouseDown={useOverlay ? handleOverlayClick : undefined}
       style={z ? { zIndex: z.overlay } : undefined}
     >
-      <aside className={cls} ref={panelRef} style={z ? { ...style, zIndex: z.dialog } : style}>
-        {title && (
-          <div className="ui-drawer-header">
-            <div className="ui-drawer-title">
-              {icon && <span className="ui-drawer-icon">{icon}</span>}
-              <h3>{title}</h3>
-            </div>
-            <div className="ui-drawer-header-actions">
-              {headerActions}
-              {onClose && (
-                <button
-                  className="ui-drawer-close"
-                  onClick={onClose}
-                  aria-label="Fermer"
-                  type="button"
-                >
-                  <X size={18} />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-        <div className="ui-drawer-body">{children}</div>
-        {footer && <div className="ui-drawer-footer">{footer}</div>}
-      </aside>
+      {panel}
     </div>
   );
 

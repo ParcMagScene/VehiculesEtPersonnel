@@ -9,6 +9,7 @@ import { Button, Tooltip } from '@/design-system';
 import { STATUS } from '../constants';
 import { useToast } from '../hooks/useToast';
 import { DESKTOP_MODULES } from '../router/routes.config';
+import { preloadModule } from '../router/moduleLoaders';
 import api from '../utils/api';
 import { isApiCoolingDown } from '../utils/api/base';
 import { getPeriodTimestamp } from '../utils/dateUtils';
@@ -327,6 +328,8 @@ const Header = ({
                       key={tab.id}
                       className={`module-tab ${activeModule === tab.id ? 'active' : ''}`}
                       onClick={() => setActiveModule(tab.id)}
+                      onMouseEnter={() => preloadModule(tab.id)}
+                      onFocus={() => preloadModule(tab.id)}
                       role="tab"
                       aria-selected={activeModule === tab.id}
                     >

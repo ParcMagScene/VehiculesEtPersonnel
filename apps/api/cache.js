@@ -275,10 +275,33 @@ function getAllCacheStats() {
   return ALL_CACHES.map((c) => c.stats());
 }
 
+/**
+ * Middleware Express : pose les en-têtes HTTP qui permettent au navigateur de
+ * conditionner ses GET via If-None-Match / ETag.
+ *
+ * Express génère déjà l'ETag automatiquement sur `res.json(...)`. Ce middleware
+ * ajoute simplement `Cache-Control: private, no-cache` qui :
+ *   - autorise le browser à mettre la réponse en cache MAIS
+ *   - l'oblige à revalider à chaque requête (envoie If-None-Match)
+ *   - si l'ETag matche, Express renvoie 304 No-Content (économie réseau réelle).
+ *
+ * Sûr à appliquer sur les collections de référence (clients, garages, locations…)
+ * dont les invalidations server-side restent gérées par `listCache`/`invalidateOnSuccess`.
+ *
+ * @returns {function} Express middleware
+ */
+function browserRevalidate() {
+  return (_req, res, next) => {
+    res.set('Cache-Control', 'private, no-cache');
+    next();
+  };
+}
+
 export {
   ALL_CACHES,
   annuaireRefCache,
   authCache,
+  browserRevalidate,
   cacheMiddleware,
   configCache,
   createCache,

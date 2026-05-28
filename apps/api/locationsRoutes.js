@@ -1,6 +1,6 @@
 // [P1-15] Extrait depuis apps/api/routes.js — LIEUX
 
-import { cacheMiddleware, listCache } from './cache.js';
+import { browserRevalidate, cacheMiddleware, listCache } from './cache.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 
@@ -59,6 +59,7 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
   app.get(
     '/api/locations',
     authenticateToken,
+    browserRevalidate(),
     cacheMiddleware(listCache, () => 'locations', 60_000),
     (req, res) => {
       try {

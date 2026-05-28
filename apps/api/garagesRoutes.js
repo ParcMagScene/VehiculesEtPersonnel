@@ -1,6 +1,6 @@
 // [P1-15] Extrait depuis apps/api/routes.js — GARAGES
 
-import { cacheMiddleware, listCache } from './cache.js';
+import { browserRevalidate, cacheMiddleware, listCache } from './cache.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 
@@ -8,6 +8,7 @@ export function setupGaragesRoutes(app, authenticateToken, requireAdmin) {
   app.get(
     '/api/garages',
     authenticateToken,
+    browserRevalidate(),
     cacheMiddleware(listCache, () => 'garages', 60_000),
     (req, res) => {
       try {

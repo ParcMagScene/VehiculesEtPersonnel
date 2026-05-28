@@ -50,17 +50,25 @@ export default function ControlEditorModal({
   const handleSafeClose = guardClose(onClose);
 
   useEffect(() => {
-    (async () => {
-      const [tRes, uRes] = await Promise.all([
-        api.getControlTypes(true),
-        api.request?.('/admin/users') ?? Promise.resolve({ success: true, data: [] }),
-      ]);
-      const tList = (tRes?.data || []).filter((t) =>
-        entityType === 'vehicle' ? true : t.is_vehicle_specific === 0,
-      );
-      setTypes(tList);
-      setUsers(uRes?.data || uRes?.users || []);
-    })();
+    // Chargements indépendants : si /admin/users échoue (non admin), on
+    // garde quand même les types. Bug 2026-05-28 : Promise.all rejetait
+    // silencieusement → select Type de contrôle vide.
+    api
+      .getControlTypes(true)
+      .then((tRes) => {
+        const tList = (tRes?.data || []).filter((t) =>
+          entityType === 'vehicle' ? true : t.is_vehicle_specific === 0,
+        );
+        setTypes(tList);
+      })
+      .catch((e) => {
+        // eslint-disable-next-line no-console
+        console.warn('[ControlEditorModal] getControlTypes échec:', e?.message);
+        setTypes([]);
+      });
+    (api.request?.('/admin/users') ?? Promise.resolve({ success: true, data: [] }))
+      .then((uRes) => setUsers(uRes?.data || uRes?.users || []))
+      .catch(() => setUsers([]));
   }, [entityType]);
 
   useEffect(() => {
@@ -111,7 +119,7 @@ export default function ControlEditorModal({
       </ModalHeader>
       <ModalBody>
         <FormField label="Type de contrôle" required>
-          <Select value={typeId} onChange={(e) => setTypeId(e.target.value)}>
+          <Select size="md" fullWidth value={typeId} onChange={(e) => setTypeId(e.target.value)}>
             <option value="">— Choisir —</option>
             {types.map((t) => (
               <option key={t.id} value={t.id}>
@@ -122,6 +130,7 @@ export default function ControlEditorModal({
         </FormField>
         <FormField label="Périodicité (jours)" required>
           <Input
+            size="md"
             type="number"
             min={1}
             value={periodicity}
@@ -129,13 +138,28 @@ export default function ControlEditorModal({
           />
         </FormField>
         <FormField label="Prochaine échéance" required>
-          <Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
+          <Input
+            size="md"
+            type="date"
+            value={nextDue}
+            onChange={(e) => setNextDue(e.target.value)}
+          />
         </FormField>
         <FormField label="Dernière exécution (optionnel)">
-          <Input type="date" value={lastDone} onChange={(e) => setLastDone(e.target.value)} />
+          <Input
+            size="md"
+            type="date"
+            value={lastDone}
+            onChange={(e) => setLastDone(e.target.value)}
+          />
         </FormField>
         <FormField label="Responsable (optionnel)">
-          <Select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
+          <Select
+            size="md"
+            fullWidth
+            value={assignedTo}
+            onChange={(e) => setAssignedTo(e.target.value)}
+          >
             <option value="">— Aucun —</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>
@@ -145,7 +169,7 @@ export default function ControlEditorModal({
           </Select>
         </FormField>
         <FormField label="Notes">
-          <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Textarea size="md" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </FormField>
         {error && (
           <div style={{ color: '#991b1b', background: '#fee2e2', padding: 8, borderRadius: 6 }}>

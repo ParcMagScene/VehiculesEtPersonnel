@@ -1,6 +1,8 @@
 import { ChevronDown } from 'lucide-react';
 import { forwardRef } from 'react';
 
+import { warnBareOnce } from './_warnBareOnce';
+
 /**
  * Select — Composant atomique Design System
  *
@@ -29,10 +31,7 @@ const Select = forwardRef(
     ref,
   ) => {
     if (import.meta.env?.DEV && size === undefined && children) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[DS][Select] Composant rendu en mode bare (sans `size`). Ajoutez size="sm|md|lg" pour obtenir le style DS complet.',
-      );
+      warnBareOnce('Select');
     }
     /* ─── Mode bare (children pass-through) ─── */
     if (children) {

@@ -1,5 +1,7 @@
 import { forwardRef } from 'react';
 
+import { warnBareOnce } from './_warnBareOnce';
+
 /**
  * Input — Composant atomique Design System
  *
@@ -16,10 +18,7 @@ import { forwardRef } from 'react';
 const Input = forwardRef(
   ({ size, error = false, prefix, suffix, className = '', ...props }, ref) => {
     if (import.meta.env?.DEV && size === undefined && !prefix && !suffix) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        '[DS][Input] Composant rendu en mode bare (sans `size`). Ajoutez size="sm|md|lg" pour obtenir le style DS complet.',
-      );
+      warnBareOnce('Input');
     }
     /* ─── Mode bare (pas de wrapper) ─── */
     if (!prefix && !suffix) {

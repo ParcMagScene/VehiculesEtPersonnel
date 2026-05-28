@@ -2,6 +2,8 @@ import './Textarea.css';
 
 import { forwardRef } from 'react';
 
+import { warnBareOnce } from './_warnBareOnce';
+
 /**
  * Textarea — Composant atomique Design System
  *
@@ -15,10 +17,7 @@ import { forwardRef } from 'react';
  */
 const Textarea = forwardRef(({ size, error = false, className = '', ...props }, ref) => {
   if (import.meta.env?.DEV && size === undefined) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      '[DS][Textarea] Composant rendu en mode bare (sans `size`). Ajoutez size="sm|md|lg" pour obtenir le style DS complet.',
-    );
+    warnBareOnce('Textarea');
   }
   const classes = [
     'ui-textarea',

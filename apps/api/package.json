@@ -28,6 +28,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^8.0.1",
     "otpauth": "^9.5.0",
+    "pdf-parse": "^2.4.5",
     "pdfkit": "^0.17.2",
     "pngjs": "^7.0.0",
     "qrcode": "^1.5.4",

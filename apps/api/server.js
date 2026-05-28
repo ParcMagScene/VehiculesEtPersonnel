@@ -58,6 +58,7 @@ import {
 } from './config/rateLimiter.js';
 import { setupConfigRoutes } from './configRoutes.js';
 import { setupControlesPeriodiquesRoutes } from './controlesPeriodiquesRoutes.js';
+import { setupPvImportRoutes } from './pvImportRoutes.js';
 import db, { checkpointDatabase, closeDatabase } from './database.js';
 import { setupDisplayRoutes } from './displayRoutes.js';
 import { setupDriversRoutes } from './driversRoutes.js';
@@ -305,6 +306,11 @@ app.use(
   express.static(path.join(__dirname, '..', '..', 'public', 'bl-imports'), { maxAge: '1h' }),
 );
 
+// Servir les PV (Procès-Verbaux de contrôle) — sensibles, protégés
+const pvPath = path.join(__dirname, '..', '..', 'public', 'pv');
+if (!fs.existsSync(pvPath)) fs.mkdirSync(pvPath, { recursive: true });
+app.use('/pv', authenticateToken, express.static(pvPath, { maxAge: '1h' }));
+
 // Servir les avatars
 const avatarsPath = path.join(__dirname, '..', '..', 'public', 'avatars');
 if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
@@ -473,6 +479,7 @@ setupVehicleRoutes(
   requireNotReadOnly,
 );
 setupControlesPeriodiquesRoutes(app, authenticateToken, requireAdmin);
+setupPvImportRoutes(app, authenticateToken, requireAdmin);
 setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS });
 setupTOTPRoutes(app, authenticateToken, requireAdmin);
 setupAffairesRoutes(app, authenticateToken, requireAdmin);

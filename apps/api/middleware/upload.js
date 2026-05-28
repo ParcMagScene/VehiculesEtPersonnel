@@ -113,3 +113,18 @@ export const uploadMessaging = multer({
 });
 
 export { createStorage };
+
+/**
+ * Upload PV — Procès-Verbaux de contrôle (PDF uniquement)
+ * Stockés dans public/pv/ et servis derrière authenticateToken.
+ */
+export const uploadPv = multer({
+  storage: createStorage('pv', 'pv'),
+  limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB
+  fileFilter: (_req, file, cb) => {
+    const isPdfExt = /\.pdf$/i.test(path.extname(file.originalname));
+    const isPdfMime = file.mimetype === 'application/pdf';
+    if (isPdfExt && isPdfMime) cb(null, true);
+    else cb(new Error('Seuls les fichiers PDF sont acceptés pour les PV'));
+  },
+});

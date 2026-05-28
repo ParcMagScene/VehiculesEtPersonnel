@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
 import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
+import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
 import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
 import { runEquipmentSerialsMagNumberMigration } from './migrations/equipment-serials-mag-number-v1.js';
 import { runEquipmentSerialsUidMigration } from './migrations/equipment-serials-uid-v1.js';
@@ -873,6 +874,9 @@ export function runPostInitMigrations(db) {
 
   // ═══ Module Contrôles Périodiques (équipements + véhicules) ═══
   runControlesPeriodiquesMigrations(db);
+
+  // ═══ Module Import PV (Procès-Verbaux PDF) ═══
+  runPvImportsMigrations(db);
 
   // ═══ Import intelligent Locmat (Locations + Serialise) ═══
   runLocmatImportMigrations(db);

@@ -346,7 +346,14 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
                  WHEN ec.entity_type='vehicle' THEN
                    TRIM(COALESCE(v.type,'') || ' · ' || COALESCE(v.brand,'') || ' ' || COALESCE(v.model,''))
                  WHEN ec.entity_type='equipment' THEN cat.name
-               END AS entity_subtitle
+               END AS entity_subtitle,
+               -- Photo : nom de fichier brut. Le frontend préfixe
+               -- /Photos/ (véhicule) ou /Photos/Matériel/ (équipement).
+               -- NULL ou valeur "generic:..." traités côté UI comme placeholder.
+               CASE
+                 WHEN ec.entity_type='vehicle'  THEN v.photo
+                 WHEN ec.entity_type='equipment' THEN e.photo
+               END AS entity_photo
           FROM equipment_controls ec
           JOIN control_types ct ON ct.id = ec.control_type_id
      LEFT JOIN users u  ON u.id = ec.assigned_to

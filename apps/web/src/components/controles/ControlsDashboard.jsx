@@ -3,26 +3,28 @@
 // ═══════════════════════════════════════════════════════════════
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   CheckCircle2,
   Clock,
+  ExternalLink,
   History,
+  Package,
   Pencil,
-  RefreshCw,
   ShieldAlert,
   Trash2,
+  Truck,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   Button,
-  Card,
   EmptyState,
-  FilterBar,
   ModuleContent,
   ModuleLayout,
   Select,
   Spinner,
-  StatusBadge,
   Table,
 } from '@/design-system';
 
@@ -32,7 +34,7 @@ import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import ControlEditorModal from './ControlEditorModal';
 import ControlHistoryModal from './ControlHistoryModal';
-import ControlPerformModal from './ControlPerformModal';
+import './ControlsDashboard.css';
 import { formatDateFR, formatRelativeDays, STATUS_COLORS, STATUS_LABELS } from './utils';
 
 const STATS_CARDS = [
@@ -53,7 +55,14 @@ export default function ControlsDashboard({ user }) {
     type_id: '',
     assigned_to: '',
   });
-  const [perform, setPerform] = useState(null);
+  // Filtres appliqués côté client (le backend renvoie déjà la liste filtrée
+  // par status/entity_type/type_id ; ces deux-là sont purement UX et évitent
+  // un aller-retour réseau).
+  const [dueWindow, setDueWindow] = useState(''); // '', 'overdue', 'within_7', 'within_30', 'upcoming'
+  const [subtype, setSubtype] = useState('');
+  // Tri par clic sur les en-têtes. Valeur initiale = échéance croissante (ordre
+  // SQL d'origine), pour ne pas surprendre l'utilisateur.
+  const [sort, setSort] = useState({ key: 'next_due_date', dir: 'asc' });
   const [history, setHistory] = useState(null);
   const [editor, setEditor] = useState(null); // { control } pour éditer
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
@@ -80,7 +89,121 @@ export default function ControlsDashboard({ user }) {
     api.getControlTypes(true).then((r) => setTypes(r?.data || []));
   }, []);
 
-  const items = useMemo(() => data.items, [data]);
+  // Rafraîchissement automatique :
+  //   - quand l'onglet/fenêtre redevient visible (retour depuis un autre
+  //     workspace, un autre onglet navigateur, ou levée du screensaver) ;
+  //   - quand la fenêtre reprend le focus (changement d'app macOS).
+  // Évite d'avoir un bouton « Actualiser » manuel : les données restent
+  // toujours fraîches sans action utilisateur.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load();
+    };
+    const onFocus = () => load();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [load]);
+
+  // Helper : extrait la sous-catégorie d'un contrôle (type véhicule ou
+  // catégorie équipement) à partir du sous-titre fourni par le backend.
+  // Véhicule : « TYPE · BRAND MODEL » → on garde le « TYPE ».
+  // Équipement : sous-titre = nom catégorie feuille (gardé tel quel).
+  const subtypeOf = (c) => {
+    const raw = (c.entity_subtitle || '').trim();
+    if (!raw) return '';
+    if (c.entity_type === 'vehicle') {
+      const head = raw.split('·')[0].trim();
+      return head || raw;
+    }
+    return raw;
+  };
+
+  const allItems = data.items;
+
+  // Liste distincte des sous-catégories présentes (utilisée pour peupler le
+  // Select). Calculée sur l'ensemble brut pour ne pas se vider quand on filtre.
+  const subtypeOptions = useMemo(() => {
+    const set = new Set();
+    for (const c of allItems) {
+      const s = subtypeOf(c);
+      if (s) set.add(s);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [allItems]);
+
+  const items = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const filtered =
+      !dueWindow && !subtype
+        ? allItems
+        : allItems.filter((c) => {
+            if (subtype && subtypeOf(c) !== subtype) return false;
+            if (dueWindow) {
+              const isLate = c.status === 'EN_RETARD' || c.status === 'MANQUE';
+              if (dueWindow === 'overdue') {
+                if (!isLate) return false;
+              } else {
+                if (isLate) return false;
+                if (!c.next_due_date) return false;
+                const due = new Date(c.next_due_date + 'T00:00:00');
+                const days = Math.round((due.getTime() - today.getTime()) / 86400000);
+                if (dueWindow === 'within_7' && !(days >= 0 && days <= 7)) return false;
+                if (dueWindow === 'within_30' && !(days >= 0 && days <= 30)) return false;
+                if (dueWindow === 'upcoming' && !(days >= 0)) return false;
+              }
+            }
+            return true;
+          });
+
+    // Tri : accesseur par clé + comparateur générique (string localeCompare,
+    // dates ISO comparables lexicographiquement, null toujours en queue).
+    const accessors = {
+      entity_name: (c) => (c.entity_name || c.entity_id || '').toString().toLowerCase(),
+      type_code: (c) => (c.type_code || '').toString().toLowerCase(),
+      next_due_date: (c) => c.next_due_date || '',
+      status: (c) => c.status || '',
+      assigned_name: (c) => (c.assigned_name || '').toString().toLowerCase(),
+      last_done_date: (c) => c.last_done_date || '',
+    };
+    const accessor = accessors[sort.key];
+    if (!accessor) return filtered;
+    const dir = sort.dir === 'desc' ? -1 : 1;
+    return [...filtered].sort((a, b) => {
+      const va = accessor(a);
+      const vb = accessor(b);
+      // Vides toujours en bas, indépendamment du sens.
+      if (!va && vb) return 1;
+      if (va && !vb) return -1;
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+  }, [allItems, dueWindow, subtype, sort]);
+
+  const toggleSort = (key) => {
+    setSort((s) => {
+      if (s.key !== key) return { key, dir: 'asc' };
+      return { key, dir: s.dir === 'asc' ? 'desc' : 'asc' };
+    });
+  };
+
+  // Helper rendu icône de tri. Volontairement nommé en minuscule + appelé
+  // comme une fonction (pas un composant) pour éviter la règle eslint-plugin-
+  // react « Cannot create components during render » qui interdit la
+  // déclaration d'un composant à l'intérieur d'un autre composant.
+  const renderSortIcon = (k) => {
+    if (sort.key !== k) return <ArrowUpDown size={12} className="ctrl-th-sort-icon" />;
+    return sort.dir === 'asc' ? (
+      <ArrowUp size={12} className="ctrl-th-sort-icon is-active" />
+    ) : (
+      <ArrowDown size={12} className="ctrl-th-sort-icon is-active" />
+    );
+  };
 
   const handleDelete = (ctrl) => {
     confirm({
@@ -100,42 +223,17 @@ export default function ControlsDashboard({ user }) {
     });
   };
 
-  const handleRecompute = () => {
-    confirm({
-      title: 'Recalculer les statuts',
-      message: 'Relancer le calcul des statuts pour tous les contrôles actifs ?',
-      confirmLabel: 'Recalculer',
-      onConfirm: async () => {
-        const r = await api.recomputeControls();
-        if (r?.success) {
-          window.alert(
-            `Recalcul OK — ${r.data?.changed || 0} statut(s) mis à jour, ${r.data?.missed || 0} manqué(s).`,
-          );
-          refreshBus.publish('controls');
-          load();
-        } else {
-          window.alert(r?.error || 'Erreur');
-        }
-      },
-    });
-  };
-
   return (
     <ModuleLayout>
       <ModuleContent>
-        {/* Filtres + actions (anciennement dans ModuleToolbar — déplacés ici pour
-            libérer l'espace, header & toolbar du module jugés inutiles). */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            flexWrap: 'wrap',
-            marginBottom: 12,
-          }}
-        >
-          <FilterBar>
+        {/* Filtres uniquement. Les actions « Actualiser » / « Recalcul global »
+            ont été retirées : le rechargement est automatique au retour sur
+            l'onglet/fenêtre et après toute mutation via refreshBus. */}
+        <div className="ctrl-toolbar">
+          <div className="ctrl-filters">
             <Select
+              size="sm"
+              fullWidth
               value={filters.status}
               onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
             >
@@ -145,6 +243,8 @@ export default function ControlsDashboard({ user }) {
               <option value="MANQUE">Manqué</option>
             </Select>
             <Select
+              size="sm"
+              fullWidth
               value={filters.entity_type}
               onChange={(e) => setFilters((f) => ({ ...f, entity_type: e.target.value }))}
             >
@@ -153,54 +253,60 @@ export default function ControlsDashboard({ user }) {
               <option value="equipment">Équipements</option>
             </Select>
             <Select
+              size="sm"
+              fullWidth
               value={filters.type_id}
               onChange={(e) => setFilters((f) => ({ ...f, type_id: e.target.value }))}
             >
-              <option value="">Tous types</option>
+              <option value="">Tous types contrôle</option>
               {types.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.code} · {t.name}
                 </option>
               ))}
             </Select>
-          </FilterBar>
-          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-            <Button variant="ghost" onClick={load} icon={<RefreshCw size={16} />}>
-              Actualiser
-            </Button>
-            {isAdmin && (
-              <Button variant="ghost" onClick={handleRecompute} icon={<RefreshCw size={16} />}>
-                Recalcul global
-              </Button>
-            )}
+            <Select
+              size="sm"
+              fullWidth
+              value={subtype}
+              onChange={(e) => setSubtype(e.target.value)}
+            >
+              <option value="">Toutes catégories</option>
+              {subtypeOptions.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
+            <Select
+              size="sm"
+              fullWidth
+              value={dueWindow}
+              onChange={(e) => setDueWindow(e.target.value)}
+            >
+              <option value="">Toutes échéances</option>
+              <option value="overdue">Dépassée</option>
+              <option value="within_7">Sous 7 j</option>
+              <option value="within_30">Sous 30 j</option>
+              <option value="upcoming">À venir</option>
+            </Select>
           </div>
         </div>
 
         {/* Stats */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))',
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
+        <div className="ctrl-stats-grid">
           {STATS_CARDS.map(({ key, label, icon: Icon, color }) => (
-            <Card key={key} style={{ padding: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color }}>
-                <Icon size={18} />
-                <span style={{ fontSize: 12, opacity: 0.7 }}>{label}</span>
+            <div key={key} className="ctrl-stat-card" style={{ '--ctrl-accent': color }}>
+              <div className="ctrl-stat-header">
+                <Icon size={14} />
+                <span>{label}</span>
               </div>
-              <div style={{ fontSize: 24, fontWeight: 700, color }}>{data.stats?.[key] ?? 0}</div>
-            </Card>
+              <div className="ctrl-stat-value">{data.stats?.[key] ?? 0}</div>
+            </div>
           ))}
         </div>
 
-        {error && (
-          <div style={{ background: '#fee2e2', color: '#991b1b', padding: 10, borderRadius: 6 }}>
-            {error.message}
-          </div>
-        )}
+        {error && <div className="ctrl-error">{error.message}</div>}
 
         {loading && <Spinner />}
 
@@ -213,116 +319,240 @@ export default function ControlsDashboard({ user }) {
         )}
 
         {!loading && items.length > 0 && (
-          <Table>
-            <thead>
-              <tr>
-                <th>Entité</th>
-                <th>Type</th>
-                <th>Échéance</th>
-                <th>Statut</th>
-                <th>Responsable</th>
-                <th>Dernière</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((c) => {
-                const colors = STATUS_COLORS[c.status] || STATUS_COLORS.A_FAIRE;
-                const isVehicle = c.entity_type === 'vehicle';
-                const entityKind = isVehicle ? 'Véhicule' : 'Équipement';
-                // Sous-titre fourni par le backend (type véhicule + brand/model, ou catégorie eq).
-                const subtitle = (c.entity_subtitle || '').trim().replace(/^· /, '').trim();
-                const dueRel = formatRelativeDays(c.next_due_date);
-                const dueColor =
-                  c.status === 'EN_RETARD' || c.status === 'MANQUE' ? '#991b1b' : '#0f172a';
-                return (
-                  <tr key={c.id}>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{c.entity_name || c.entity_id}</div>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>
-                        {entityKind}
-                        {subtitle ? ` · ${subtitle}` : ''}
-                        {c.entity_uid ? ` · ${c.entity_uid}` : ''}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600 }}>{c.type_code}</div>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>{c.type_name}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600, color: dueColor }}>
-                        {formatDateFR(c.next_due_date)}
-                      </div>
-                      {dueRel && (
-                        <div style={{ fontSize: 11, color: dueColor, opacity: 0.8 }}>{dueRel}</div>
-                      )}
-                    </td>
-                    <td>
-                      <StatusBadge
-                        style={{
-                          background: colors.bg,
-                          color: colors.fg,
-                          border: `1px solid ${colors.border}`,
-                        }}
-                      >
-                        {STATUS_LABELS[c.status] || c.status}
-                      </StatusBadge>
-                    </td>
-                    <td>{c.assigned_name || '—'}</td>
-                    <td>
-                      <div>{formatDateFR(c.last_done_date)}</div>
-                      {c.last_done_date && (
-                        <div style={{ fontSize: 11, color: '#64748b' }}>
-                          {formatRelativeDays(c.last_done_date)}
+          <div className="ctrl-table-wrap">
+            <Table className="ctrl-table">
+              <thead>
+                <tr>
+                  <th
+                    className="is-sortable"
+                    onClick={() => toggleSort('entity_name')}
+                    aria-sort={
+                      sort.key === 'entity_name'
+                        ? sort.dir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                  >
+                    Entité {renderSortIcon('entity_name')}
+                  </th>
+                  <th
+                    className="is-sortable"
+                    onClick={() => toggleSort('type_code')}
+                    aria-sort={
+                      sort.key === 'type_code'
+                        ? sort.dir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                  >
+                    Type {renderSortIcon('type_code')}
+                  </th>
+                  <th
+                    className="is-sortable"
+                    onClick={() => toggleSort('next_due_date')}
+                    aria-sort={
+                      sort.key === 'next_due_date'
+                        ? sort.dir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                  >
+                    Échéance {renderSortIcon('next_due_date')}
+                  </th>
+                  <th
+                    className="is-sortable"
+                    onClick={() => toggleSort('status')}
+                    aria-sort={
+                      sort.key === 'status'
+                        ? sort.dir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                  >
+                    Statut {renderSortIcon('status')}
+                  </th>
+                  <th
+                    className="is-sortable"
+                    onClick={() => toggleSort('assigned_name')}
+                    aria-sort={
+                      sort.key === 'assigned_name'
+                        ? sort.dir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                  >
+                    Responsable {renderSortIcon('assigned_name')}
+                  </th>
+                  <th
+                    className="is-sortable"
+                    onClick={() => toggleSort('last_done_date')}
+                    aria-sort={
+                      sort.key === 'last_done_date'
+                        ? sort.dir === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                    }
+                  >
+                    Dernière {renderSortIcon('last_done_date')}
+                  </th>
+                  <th className="ctrl-th-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((c) => {
+                  const colors = STATUS_COLORS[c.status] || STATUS_COLORS.A_FAIRE;
+                  const isVehicle = c.entity_type === 'vehicle';
+                  const entityKind = isVehicle ? 'Véhicule' : 'Équipement';
+                  // Sous-titre fourni par le backend (type véhicule + brand/model, ou catégorie eq).
+                  const subtitle = (c.entity_subtitle || '').trim().replace(/^· /, '').trim();
+                  const dueRel = formatRelativeDays(c.next_due_date);
+                  const isLate = c.status === 'EN_RETARD' || c.status === 'MANQUE';
+                  // "Sous 7 j" → warning amber.
+                  let isSoon = false;
+                  if (!isLate && c.next_due_date) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const due = new Date(c.next_due_date + 'T00:00:00');
+                    const days = Math.round((due.getTime() - today.getTime()) / 86400000);
+                    isSoon = days >= 0 && days <= 7;
+                  }
+                  const dueCls = `ctrl-due${isLate ? ' is-late' : isSoon ? ' is-soon' : ''}`;
+                  const dueRelCls = `ctrl-due-rel${isLate ? ' is-late' : isSoon ? ' is-soon' : ''}`;
+                  // Photo : construit l'URL selon entity_type. Les valeurs
+                  // « generic:… » (catégorie équipement) sont ignorées :
+                  // pas de miniature, on retombe sur le placeholder.
+                  let photoUrl = null;
+                  if (c.entity_photo && !c.entity_photo.startsWith('generic:')) {
+                    photoUrl = isVehicle
+                      ? `/Photos/${c.entity_photo}`
+                      : `/Photos/Matériel/${c.entity_photo}`;
+                  }
+                  return (
+                    <tr key={c.id}>
+                      <td>
+                        <div className="ctrl-entity-cell">
+                          {photoUrl ? (
+                            <img
+                              className="ctrl-entity-thumb"
+                              src={photoUrl}
+                              alt=""
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.style.removeProperty('display');
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="ctrl-entity-thumb ctrl-entity-thumb-placeholder"
+                            style={photoUrl ? { display: 'none' } : undefined}
+                            aria-hidden="true"
+                          >
+                            {isVehicle ? <Truck size={18} /> : <Package size={18} />}
+                          </div>
+                          <div className="ctrl-entity-info">
+                            <div className="ctrl-entity-name" title={c.entity_name || c.entity_id}>
+                              {c.entity_name || c.entity_id}
+                            </div>
+                            <div className="ctrl-entity-meta">
+                              <span className={`ctrl-kind-pill${isVehicle ? ' is-vehicle' : ''}`}>
+                                {entityKind}
+                              </span>
+                              {subtitle && <span>{subtitle}</span>}
+                              {c.entity_uid && <span className="ctrl-uid">{c.entity_uid}</span>}
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => setPerform(c)}
-                        icon={<CheckCircle2 size={14} />}
-                      >
-                        Effectuer
-                      </Button>{' '}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setHistory(c)}
-                        icon={<History size={14} />}
-                        aria-label="Historique"
-                      />
-                      {isAdmin && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setEditor({ control: c })}
-                            icon={<Pencil size={14} />}
-                            aria-label="Modifier"
-                          />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleDelete(c)}
-                            icon={<Trash2 size={14} />}
-                            aria-label="Supprimer"
-                          />
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </Table>
+                      </td>
+                      <td>
+                        <div className="ctrl-type-code">{c.type_code}</div>
+                        <div className="ctrl-type-name">{c.type_name}</div>
+                      </td>
+                      <td>
+                        <div className={dueCls}>{formatDateFR(c.next_due_date)}</div>
+                        {dueRel && <div className={dueRelCls}>{dueRel}</div>}
+                      </td>
+                      <td>
+                        <span
+                          className="ctrl-status-pill"
+                          style={{
+                            background: colors.bg,
+                            color: colors.fg,
+                            borderColor: colors.border,
+                          }}
+                        >
+                          {STATUS_LABELS[c.status] || c.status}
+                        </span>
+                      </td>
+                      <td>{c.assigned_name || <span className="ctrl-muted">—</span>}</td>
+                      <td>
+                        {c.last_done_date ? (
+                          <>
+                            <div className="ctrl-last">{formatDateFR(c.last_done_date)}</div>
+                            <div className="ctrl-last-rel">
+                              {formatRelativeDays(c.last_done_date)}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="ctrl-muted">—</span>
+                        )}
+                      </td>
+                      <td className="ctrl-actions-cell">
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() =>
+                            window.dispatchEvent(
+                              new CustomEvent('emag:open-entity', {
+                                detail: { type: c.entity_type, id: c.entity_id },
+                              }),
+                            )
+                          }
+                          icon={<ExternalLink size={14} />}
+                        >
+                          Ouvrir
+                        </Button>{' '}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setHistory(c)}
+                          icon={<History size={14} />}
+                          aria-label="Historique"
+                        />
+                        {isAdmin && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditor({ control: c })}
+                              icon={<Pencil size={14} />}
+                              aria-label="Modifier"
+                            />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDelete(c)}
+                              icon={<Trash2 size={14} />}
+                              aria-label="Supprimer"
+                            />
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </div>
         )}
       </ModuleContent>
 
-      {perform && (
-        <ControlPerformModal control={perform} onClose={() => setPerform(null)} onDone={load} />
-      )}
       {history && <ControlHistoryModal control={history} onClose={() => setHistory(null)} />}
       {editor && (
         <ControlEditorModal

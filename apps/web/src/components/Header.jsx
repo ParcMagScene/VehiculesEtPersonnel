@@ -12,6 +12,7 @@ import { DESKTOP_MODULES } from '../router/routes.config';
 import api from '../utils/api';
 import { isApiCoolingDown } from '../utils/api/base';
 import { getPeriodTimestamp } from '../utils/dateUtils';
+import { refreshBus } from '../utils/refresh-bus';
 import HeaderActions from './header/HeaderActions';
 import HeaderNotifications from './header/HeaderNotifications';
 import OverdueInterventionModal from './planning/OverdueInterventionModal';
@@ -59,6 +60,9 @@ const Header = ({
   const [pendingReservationRequests, setPendingReservationRequests] = useState([]);
   // #8 Notifications onglets : compteur demandes matériel en attente (badge sur l'onglet Commandes)
   const [pendingMaterialRequests, setPendingMaterialRequests] = useState(0);
+  // Badge sur l'onglet Contrôles : rouge = au moins un contrôle dépassé (EN_RETARD/MANQUE),
+  // orange = sinon « sous 7 j ». Visible à tous les utilisateurs (pas uniquement admin).
+  const [controlsBadge, setControlsBadge] = useState({ late: 0, soon: 0 });
 
   // [PERF Sprint 2] Fusion de deux setInterval(30s) en un seul, avec Promise.all
   // pour grouper les requêtes (compteur demandes interventions/réservations + compteur
@@ -88,6 +92,35 @@ const Header = ({
     const interval = setInterval(loadAdminBadges, 30000);
     return () => clearInterval(interval);
   }, [currentUser, maintenances]);
+
+  // Badge onglet Contrôles : rechargé à l'ouverture, périodiquement, et sur
+  // événement refreshBus('controls') publié après création/édition/effectuation.
+  useEffect(() => {
+    let cancelled = false;
+    const loadControlsBadge = async () => {
+      if (!currentUser) return;
+      if (isApiCoolingDown()) return;
+      try {
+        const r = await api.getControlsDashboard();
+        if (cancelled || !r?.success) return;
+        const s = r.stats || {};
+        setControlsBadge({
+          late: (Number(s.en_retard) || 0) + (Number(s.manque) || 0),
+          soon: Number(s.within_7) || 0,
+        });
+      } catch {
+        // silencieux : badge inchangé
+      }
+    };
+    loadControlsBadge();
+    const interval = setInterval(loadControlsBadge, 60000);
+    const unsub = refreshBus.subscribe('controls', loadControlsBadge);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      unsub();
+    };
+  }, [currentUser]);
 
   // Charger les demandes de réservation en attente (au démarrage + quand un popup s'ouvre)
   useEffect(() => {
@@ -273,9 +306,21 @@ const Header = ({
                       orders: pendingMaterialRequests || 0,
                     }
                   : {};
+                // Badge onglet Contrôles (tous utilisateurs) : rouge si
+                // échéances dépassées, sinon orange si échéances dans 7 jours.
+                const controlsCount =
+                  controlsBadge.late > 0 ? controlsBadge.late : controlsBadge.soon;
+                const controlsVariant = controlsBadge.late > 0 ? 'is-late' : 'is-soon';
                 return orderedTabs.map((tab) => {
                   const Icon = tab.icon;
                   const badgeCount = tabBadges[tab.id] || 0;
+                  const isControls = tab.id === 'controles';
+                  const ctrlBadge = isControls && controlsCount > 0;
+                  const ctrlTitle = isControls
+                    ? controlsBadge.late > 0
+                      ? `${controlsBadge.late} contrôle(s) dépassé(s)`
+                      : `${controlsBadge.soon} contrôle(s) sous 7 jours`
+                    : '';
                   return (
                     <Button
                       variant="ghost"
@@ -294,6 +339,15 @@ const Header = ({
                           title={`${badgeCount} demande(s) en attente`}
                         >
                           {badgeCount > 9 ? '9+' : badgeCount}
+                        </span>
+                      )}
+                      {ctrlBadge && (
+                        <span
+                          className={`module-tab-badge ${controlsVariant}`}
+                          aria-label={ctrlTitle}
+                          title={ctrlTitle}
+                        >
+                          {controlsCount > 9 ? '9+' : controlsCount}
                         </span>
                       )}
                     </Button>

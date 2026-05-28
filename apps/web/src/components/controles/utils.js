@@ -35,3 +35,20 @@ export function formatDueLabel(isoDate) {
   if (d > 0) return `${isoDate} · dans ${d} j`;
   return `${isoDate} · ${-d} j en retard`;
 }
+
+// Date FR jj/mm/aaaa (renvoie '—' si vide / invalide).
+export function formatDateFR(isoDate) {
+  if (!isoDate) return '—';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDate);
+  if (!m) return isoDate;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+// Libellé relatif court (ex. "dans 12 j", "il y a 47 j", "aujourd'hui").
+export function formatRelativeDays(isoDate) {
+  const d = diffDaysFromToday(isoDate);
+  if (d === null) return '';
+  if (d === 0) return "aujourd'hui";
+  if (d > 0) return `dans ${d} j`;
+  return `il y a ${-d} j`;
+}

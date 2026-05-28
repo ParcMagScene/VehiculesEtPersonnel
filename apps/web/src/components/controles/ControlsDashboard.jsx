@@ -33,7 +33,7 @@ import { refreshBus } from '../../utils/refresh-bus';
 import ControlEditorModal from './ControlEditorModal';
 import ControlHistoryModal from './ControlHistoryModal';
 import ControlPerformModal from './ControlPerformModal';
-import { formatDueLabel, STATUS_COLORS, STATUS_LABELS } from './utils';
+import { formatDateFR, formatRelativeDays, STATUS_COLORS, STATUS_LABELS } from './utils';
 
 const STATS_CARDS = [
   { key: 'total', label: 'Total', icon: ShieldAlert, color: '#0f172a' },
@@ -228,19 +228,35 @@ export default function ControlsDashboard({ user }) {
             <tbody>
               {items.map((c) => {
                 const colors = STATUS_COLORS[c.status] || STATUS_COLORS.A_FAIRE;
+                const isVehicle = c.entity_type === 'vehicle';
+                const entityKind = isVehicle ? 'Véhicule' : 'Équipement';
+                // Sous-titre fourni par le backend (type véhicule + brand/model, ou catégorie eq).
+                const subtitle = (c.entity_subtitle || '').trim().replace(/^· /, '').trim();
+                const dueRel = formatRelativeDays(c.next_due_date);
+                const dueColor =
+                  c.status === 'EN_RETARD' || c.status === 'MANQUE' ? '#991b1b' : '#0f172a';
                 return (
                   <tr key={c.id}>
                     <td>
                       <div style={{ fontWeight: 600 }}>{c.entity_name || c.entity_id}</div>
                       <div style={{ fontSize: 11, color: '#64748b' }}>
-                        {c.entity_type === 'vehicle' ? 'Véhicule' : 'Équipement'}
+                        {entityKind}
+                        {subtitle ? ` · ${subtitle}` : ''}
+                        {c.entity_uid ? ` · ${c.entity_uid}` : ''}
                       </div>
                     </td>
                     <td>
                       <div style={{ fontWeight: 600 }}>{c.type_code}</div>
                       <div style={{ fontSize: 11, color: '#64748b' }}>{c.type_name}</div>
                     </td>
-                    <td>{formatDueLabel(c.next_due_date)}</td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: dueColor }}>
+                        {formatDateFR(c.next_due_date)}
+                      </div>
+                      {dueRel && (
+                        <div style={{ fontSize: 11, color: dueColor, opacity: 0.8 }}>{dueRel}</div>
+                      )}
+                    </td>
                     <td>
                       <StatusBadge
                         style={{
@@ -253,7 +269,14 @@ export default function ControlsDashboard({ user }) {
                       </StatusBadge>
                     </td>
                     <td>{c.assigned_name || '—'}</td>
-                    <td>{c.last_done_date || '—'}</td>
+                    <td>
+                      <div>{formatDateFR(c.last_done_date)}</div>
+                      {c.last_done_date && (
+                        <div style={{ fontSize: 11, color: '#64748b' }}>
+                          {formatRelativeDays(c.last_done_date)}
+                        </div>
+                      )}
+                    </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <Button
                         size="sm"

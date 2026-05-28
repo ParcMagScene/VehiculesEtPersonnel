@@ -507,13 +507,21 @@ export default function ControlsDashboard({ user }) {
                         <Button
                           size="sm"
                           variant="primary"
-                          onClick={() =>
-                            window.dispatchEvent(
-                              new CustomEvent('emag:open-entity', {
-                                detail: { type: c.entity_type, id: c.entity_id },
-                              }),
-                            )
-                          }
+                          onClick={() => {
+                            // Équipement : ouvre directement l'éditeur de
+                            // contrôle (mode édition, pas de bascule module).
+                            // Véhicule : déclenche le modal KM & CT (édition
+                            // des contrôles techniques) géré au niveau App.jsx.
+                            if (c.entity_type === 'equipment') {
+                              setEditor({ control: c });
+                            } else {
+                              window.dispatchEvent(
+                                new CustomEvent('emag:open-entity', {
+                                  detail: { type: c.entity_type, id: c.entity_id },
+                                }),
+                              );
+                            }
+                          }}
                           icon={<ExternalLink size={14} />}
                         >
                           Ouvrir

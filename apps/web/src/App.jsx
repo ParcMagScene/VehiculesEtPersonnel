@@ -219,14 +219,9 @@ function AppContent() {
     useState(null);
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
   const [globalAffaireDialog, setGlobalAffaireDialog] = useState(null);
-  // Demande d'ouverture cross-module depuis le tableau Contrôles :
-  // ControlsDashboard dispatche `emag:open-entity` { type, id } ; on bascule le
-  // module concerné et on mémorise l'id en attendant que le panneau cible le
-  // récupère. EquipmentPanel reçoit `pendingOpenEquipmentId`, le panneau
-  // véhicule est ouvert directement via setSelectedVehicleForDetails dans un
-  // effet qui attend que data.vehicles soit chargé.
-  const [pendingOpenEquipmentId, setPendingOpenEquipmentId] = useState(null);
-  const [pendingOpenVehicleId, setPendingOpenVehicleId] = useState(null);
+  // Demande d'ouverture du modal KM & CT (édition contrôles véhicule) depuis
+  // le tableau Contrôles. Les modals d'édition sont rendus au niveau App donc
+  // pas besoin de basculer de module.
   const openEventDetailsModalRef = useRef(null);
   const sonosDetachedWindowRef = useRef(null);
 
@@ -236,38 +231,22 @@ function AppContent() {
     });
   }, []);
 
-  // Cross-module : ouverture d'une entité depuis le tableau Contrôles.
-  // Listener global qui bascule le module concerné puis délègue l'ouverture
-  // effective au panneau cible (cf. effets/props plus bas).
+  // Cross-module : ouverture demandée depuis le tableau Contrôles via
+  // CustomEvent `emag:open-entity` { type: 'vehicle' | 'equipment', id }.
+  // - Véhicule : ouvre directement le modal KM & CT (édition des contrôles).
+  //   Le modal est full-screen donc pas besoin de basculer de module.
+  // - Équipement : géré localement par ControlsDashboard (ControlEditorModal),
+  //   pas traité ici.
   useEffect(() => {
     const onOpen = (e) => {
       const { type, id } = e.detail || {};
-      if (!type || id == null) return;
-      if (type === 'vehicle') {
-        setPendingOpenVehicleId(String(id));
-        setActiveModule('vehicles');
-      } else if (type === 'equipment') {
-        setPendingOpenEquipmentId(String(id));
-        setActiveModule('equipment');
-      }
+      if (type !== 'vehicle' || id == null) return;
+      const target = data?.vehicles?.find((v) => String(v.id) === String(id));
+      if (target) setSelectedVehicleForKilometrageControl(target);
     };
     window.addEventListener('emag:open-entity', onOpen);
     return () => window.removeEventListener('emag:open-entity', onOpen);
-  }, [setActiveModule]);
-
-  // Quand le module véhicules est actif et qu'une demande d'ouverture est en
-  // attente, on cherche le véhicule dans la liste chargée et on ouvre le slide
-  // panel de détail. La demande est consommée (réinitialisée) après ouverture.
-  useEffect(() => {
-    if (activeModule !== 'vehicles' || !pendingOpenVehicleId) return;
-    const vehicles = data?.vehicles;
-    if (!vehicles || vehicles.length === 0) return;
-    const target = vehicles.find((v) => String(v.id) === pendingOpenVehicleId);
-    if (target) {
-      setSelectedVehicleForDetails(target);
-      setPendingOpenVehicleId(null);
-    }
-  }, [activeModule, pendingOpenVehicleId, data?.vehicles]);
+  }, [data?.vehicles]);
 
   const handleDetachSonos = useCallback(() => {
     const sonosUrl = `${window.location.origin}${window.location.pathname}?module=sonos&detached=1`;
@@ -910,8 +889,6 @@ function AppContent() {
                       showManagement={showEquipmentManagement}
                       onOpenManagement={() => setShowEquipmentManagement(true)}
                       onCloseManagement={() => setShowEquipmentManagement(false)}
-                      pendingOpenEquipmentId={pendingOpenEquipmentId}
-                      onPendingOpenEquipmentHandled={() => setPendingOpenEquipmentId(null)}
                     />
                   </Suspense>
                 </ErrorBoundary>

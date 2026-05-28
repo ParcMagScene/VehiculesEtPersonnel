@@ -75,8 +75,6 @@ const EquipmentPanel = ({
   onCloseManagement,
   initialTab,
   isMobile,
-  pendingOpenEquipmentId,
-  onPendingOpenEquipmentHandled,
 }) => {
   const toast = useToast();
   const [exportFamilyId, setExportFamilyId] = React.useState('');
@@ -184,19 +182,6 @@ const EquipmentPanel = ({
     confirm,
     ConfirmDialogRenderer,
   } = useEquipment({ currentUser, initialTab });
-
-  // Cross-module : ouvre la fiche détail d'un équipement demandée depuis le
-  // tableau Contrôles. On attend que la liste soit chargée, on cherche par id
-  // (comparaison string-safe) puis on délègue à setSelectedEquipment et on
-  // signale au parent que la demande a été consommée.
-  React.useEffect(() => {
-    if (!pendingOpenEquipmentId || !equipment || equipment.length === 0) return;
-    const target = equipment.find((eq) => String(eq.id) === String(pendingOpenEquipmentId));
-    if (target) {
-      setSelectedEquipment(target);
-      if (onPendingOpenEquipmentHandled) onPendingOpenEquipmentHandled();
-    }
-  }, [pendingOpenEquipmentId, equipment, setSelectedEquipment, onPendingOpenEquipmentHandled]);
 
   // ═══ RENDU ═══
   if (loading && equipment.length === 0) {

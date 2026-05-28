@@ -89,6 +89,36 @@ function smartCacheHeaders() {
   };
 }
 
+// Helper : durcissement du proxy `vite preview` (prod backend HTTPS:3443).
+// Pendant un déploiement le backend peut être indisponible 1-2s ; sans handler
+// explicite http-proxy renvoie un socket hangup et le frontend voit "Failed to
+// fetch" pour TOUTES les requêtes en cours. Avec ce handler on logue clairement
+// et on renvoie un 503 propre (le client peut retry / le user peut reload).
+function previewProxyHardening(label) {
+  return (proxy /* , _options */) => {
+    proxy.on('error', (err, _req, res) => {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[preview-proxy:${label}] ${err.code || err.name || 'ERR'} ${err.message || ''}`,
+      );
+      if (res && !res.headersSent && typeof res.writeHead === 'function') {
+        try {
+          res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+          res.end(
+            JSON.stringify({
+              error: 'backend_unavailable',
+              code: err.code || 'EPROXY',
+              message: 'Backend temporairement indisponible. Réessayez dans quelques secondes.',
+            }),
+          );
+        } catch (_e) {
+          /* socket déjà fermé, rien à faire */
+        }
+      }
+    });
+  };
+}
+
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
@@ -171,6 +201,11 @@ export default defineConfig(({ mode }) => ({
     host: '0.0.0.0',
     port: 4173,
     allowedHosts: true,
+    // Handler global appliqué à tous les proxys ci-dessous via `configure`.
+    // Résout l'incident "500 partout après deploy" : pendant le restart du backend,
+    // http-proxy peut tomber sur un ECONNREFUSED puis "rester planté". Avec ce
+    // handler, chaque erreur est loguée + renvoie un 503 explicite (au lieu d'un
+    // socket hangup) et le pool reste sain pour la requête suivante.
     headers: {
       Pragma: 'no-cache',
       Expires: '0',
@@ -194,16 +229,19 @@ export default defineConfig(({ mode }) => ({
         target: 'https://localhost:3443',
         changeOrigin: true,
         secure: false,
+        configure: previewProxyHardening('/api'),
       },
       '/tv-client': {
         target: 'https://localhost:3443',
         changeOrigin: true,
         secure: false,
+        configure: previewProxyHardening('/tv-client'),
       },
       '/catalogues': {
         target: 'https://localhost:3443',
         changeOrigin: true,
         secure: false,
+        configure: previewProxyHardening('/catalogues'),
       },
     },
   },

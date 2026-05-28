@@ -9,6 +9,7 @@ import { STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
+import PvDocumentsSection from '../pv-import/PvDocumentsSection';
 
 /* ═══════════════════════════════════════════════
    Contenu partagé : infos véhicule
@@ -320,6 +321,9 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
           </div>
         </section>
       )}
+
+      {/* PV de contrôle importés (rapports DEKRA / Apave / Socotec…) */}
+      <PvDocumentsSection entityType="vehicle" entityId={vehicle?.id} />
 
       {/* Historique des interventions */}
       <section className="vdp-section">

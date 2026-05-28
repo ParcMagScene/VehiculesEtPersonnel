@@ -43,6 +43,7 @@ import {
   STATUS_COLORS as CONTROL_STATUS_COLORS,
   STATUS_LABELS as CONTROL_STATUS_LABELS,
 } from '../controles/utils';
+import PvDocumentsSection from '../pv-import/PvDocumentsSection';
 import {
   APP_BASE_URL,
   cleanName,
@@ -369,6 +370,9 @@ const EquipmentDetailContent = ({
 
       {/* Contrôles périodiques (VGP levage, EPI, Q18 électrique, etc.) */}
       <EquipmentControlsSection equipmentId={eq.id} />
+
+      {/* PV de contrôle importés (rapports DEKRA / Apave / Socotec…) */}
+      <PvDocumentsSection entityType="equipment" entityId={eq.id} />
 
       {/* Interventions SAV */}
       {(() => {

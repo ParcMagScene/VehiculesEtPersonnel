@@ -3,7 +3,7 @@ import './Calendar.css';
 import { format, isSameDay, isSameMonth, isSameWeek, isSameYear, setMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Link, Truck } from 'lucide-react';
-import React, { startTransition, useCallback, useEffect, useState } from 'react';
+import React, { startTransition, useCallback, useEffect, useReducer, useState } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
 
@@ -23,6 +23,24 @@ import TripDetailsModal from './TripDetailsModal';
 import useCalendarData from './useCalendarData';
 import useCalendarDrag from './useCalendarDrag';
 import useCalendarTrips from './useCalendarTrips';
+
+// [PERF Phase 4.G3] Reducer pour les 3 selecteurs de date (mutuellement
+// exclusifs visuellement : un seul peut etre ouvert a la fois). Remplace
+// 3 useState booleens qui pouvaient en theorie etre tous true simultanement.
+// Une seule transition atomique pour open/close, et une seule subscription
+// React aux changements d'etat.
+const SELECTOR_INITIAL = { open: null }; // 'month' | 'week' | 'year' | null
+function selectorReducer(state, action) {
+  switch (action.type) {
+    case 'open':
+      // No-op si deja ouvert sur la meme cible (evite re-render inutile)
+      return state.open === action.target ? state : { open: action.target };
+    case 'close':
+      return state.open === null ? state : SELECTOR_INITIAL;
+    default:
+      return state;
+  }
+}
 
 const Calendar = ({
   view,
@@ -61,9 +79,11 @@ const Calendar = ({
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [collapsedSections, setCollapsedSections] = useState({ company: false, location: false });
   const [tooltipState, setTooltipState] = useState({ visible: false, block: null, x: 0, y: 0 });
-  const [showMonthSelector, setShowMonthSelector] = useState(false);
-  const [showWeekSelector, setShowWeekSelector] = useState(false);
-  const [showYearSelector, setShowYearSelector] = useState(false);
+  const [selectorState, selectorDispatch] = useReducer(selectorReducer, SELECTOR_INITIAL);
+  const showMonthSelector = selectorState.open === 'month';
+  const showWeekSelector = selectorState.open === 'week';
+  const showYearSelector = selectorState.open === 'year';
+  const closeSelector = useCallback(() => selectorDispatch({ type: 'close' }), []);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const windowWidth = useWindowWidth();
 
@@ -442,9 +462,9 @@ const Calendar = ({
           <span
             className="cal-nav-label clickable"
             onClick={() => {
-              if (view === 'day') setShowWeekSelector(true);
-              if (view === 'month') setShowMonthSelector(true);
-              if (view === 'week') setShowWeekSelector(true);
+              if (view === 'day') selectorDispatch({ type: 'open', target: 'week' });
+              if (view === 'month') selectorDispatch({ type: 'open', target: 'month' });
+              if (view === 'week') selectorDispatch({ type: 'open', target: 'week' });
             }}
             title={
               view === 'day'
@@ -742,9 +762,9 @@ const Calendar = ({
           currentDate={currentDate}
           onSelectMonth={(date) => {
             setCurrentDate(date);
-            setShowMonthSelector(false);
+            closeSelector();
           }}
-          onClose={() => setShowMonthSelector(false)}
+          onClose={closeSelector}
         />
       )}
       {showWeekSelector && (
@@ -752,9 +772,9 @@ const Calendar = ({
           currentDate={currentDate}
           onSelectWeek={(date) => {
             setCurrentDate(date);
-            setShowWeekSelector(false);
+            closeSelector();
           }}
-          onClose={() => setShowWeekSelector(false)}
+          onClose={closeSelector}
         />
       )}
       {showYearSelector && (
@@ -762,9 +782,9 @@ const Calendar = ({
           currentDate={currentDate}
           onSelectYear={(date) => {
             setCurrentDate(date);
-            setShowYearSelector(false);
+            closeSelector();
           }}
-          onClose={() => setShowYearSelector(false)}
+          onClose={closeSelector}
         />
       )}
       {ConfirmDialogRenderer}

@@ -53,6 +53,7 @@ export function useConfirmDialog() {
       onConfirm={handleConfirm}
       confirmLabel={config.confirmLabel || 'Confirmer'}
       cancelLabel={config.cancelLabel || 'Annuler'}
+      destructive={!!config.destructive}
     >
       {config.message}
     </Dialog>

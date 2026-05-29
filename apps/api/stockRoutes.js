@@ -1,5 +1,6 @@
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
+import { setCacheControl } from './middleware/cacheControl.js';
 import { stockImportSchema, validate } from './schemas/imports.js';
 
 // ═══════════════════════════════════════════════════════════════
@@ -7,7 +8,8 @@ import { stockImportSchema, validate } from './schemas/imports.js';
 // ═══════════════════════════════════════════════════════════════
 export function setupStockCategoriesRoutes(app, authenticateToken, requireAdmin) {
   // Liste des catégories
-  app.get('/api/stock/categories', authenticateToken, (req, res) => {
+  // [PERF Phase 4.P] Cache HTTP 1h — référence stable.
+  app.get('/api/stock/categories', authenticateToken, setCacheControl(3600), (req, res) => {
     try {
       const categories = db
         .prepare(

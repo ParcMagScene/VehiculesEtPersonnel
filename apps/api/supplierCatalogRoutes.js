@@ -14,6 +14,7 @@ import {
 } from './brandHelpers.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
+import { setCacheControl } from './middleware/cacheControl.js';
 import { supplierImportSchema, validate } from './schemas/imports.js';
 import {
   analyzeSchema,
@@ -849,7 +850,9 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   // ============ BRANDS API ============
 
   // GET /api/brands — Liste des marques avec stats
-  app.get('/api/brands', authenticateToken, (req, res) => {
+  // [PERF Phase 4.P] Cache HTTP 1h — référence stable, invalidée
+  // côté serveur via invalidateBrandCache sur mutations.
+  app.get('/api/brands', authenticateToken, setCacheControl(3600), (req, res) => {
     try {
       const brands = listBrandsWithStats();
       res.json(brands);

@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import db, { addToHistory } from './database.js';
 import { alertLeaveCreated, alertLeaveDecision } from './emailService.js';
 import logger from './logger.js';
+import { setCacheControl } from './middleware/cacheControl.js';
 import { validate } from './schemas/imports.js';
 import {
   balanceUpdateSchema,
@@ -254,7 +255,8 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   // ──────────────────────────────────────
 
   // GET /api/leaves/types — Liste des types de congés
-  app.get('/api/leaves/types', authenticateToken, (req, res) => {
+  // [PERF Phase 4.P] Cache HTTP 24h — constantes en mémoire, jamais mutées.
+  app.get('/api/leaves/types', authenticateToken, setCacheControl(86400), (req, res) => {
     res.json({
       leaveTypes: LEAVE_TYPES,
       exceptionalTypes: EXCEPTIONAL_LEAVE_DURATIONS,
@@ -262,7 +264,8 @@ export function setupLeaveRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // GET /api/leaves/holidays — Jours fériés
-  app.get('/api/leaves/holidays', authenticateToken, (req, res) => {
+  // [PERF Phase 4.P] Cache HTTP 1h — mutable via routes admin mais très rare.
+  app.get('/api/leaves/holidays', authenticateToken, setCacheControl(3600), (req, res) => {
     try {
       const { year } = req.query;
       let holidays;

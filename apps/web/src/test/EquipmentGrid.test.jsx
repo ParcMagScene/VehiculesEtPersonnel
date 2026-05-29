@@ -4,6 +4,30 @@ import { describe, expect, it, vi } from 'vitest';
 
 import EquipmentGrid from '../components/equipment/EquipmentGrid';
 
+// react-virtuoso ne peut pas mesurer sa hauteur dans jsdom (offsetHeight=0).
+// On mocke TableVirtuoso pour rendre toutes les lignes de maniere synchrone.
+vi.mock('react-virtuoso', () => ({
+  TableVirtuoso: ({ data, fixedHeaderContent, itemContent, components, context }) => {
+    const Table = components?.Table || 'table';
+    const TableHead = components?.TableHead || 'thead';
+    const TableBody = components?.TableBody || 'tbody';
+    const TableRow =
+      components?.TableRow || (({ children, ...props }) => <tr {...props}>{children}</tr>);
+    return (
+      <Table>
+        <TableHead>{fixedHeaderContent()}</TableHead>
+        <TableBody>
+          {data.map((item, index) => (
+            <TableRow key={item.id ?? index} item={item} context={context}>
+              {itemContent(index, item)}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  },
+}));
+
 // Mock des utilitaires et constants
 vi.mock('../components/equipment/equipmentUtils', () => ({
   matchPhotoToEquipment: () => null,

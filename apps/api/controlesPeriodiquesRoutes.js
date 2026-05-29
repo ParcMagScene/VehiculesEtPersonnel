@@ -358,7 +358,9 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
           JOIN control_types ct ON ct.id = ec.control_type_id
      LEFT JOIN users u  ON u.id = ec.assigned_to
      LEFT JOIN vehicles v  ON ec.entity_type='vehicle'  AND v.id  = ec.entity_id
-     LEFT JOIN equipment e ON ec.entity_type='equipment' AND CAST(e.id AS TEXT) = ec.entity_id
+     -- Cast côté entity_id (TEXT -> INTEGER) pour permettre l'usage du PRIMARY KEY equipment.id
+     -- (sinon CAST(e.id AS TEXT) bloque l'index et SCAN complet de equipment, ~340x plus lent).
+     LEFT JOIN equipment e ON ec.entity_type='equipment' AND e.id = CAST(ec.entity_id AS INTEGER)
      LEFT JOIN equipment_categories cat ON cat.id = e.category_id
          WHERE ${where.join(' AND ')}
          ORDER BY ec.next_due_date ASC

@@ -1487,8 +1487,10 @@ function initializeDatabase() {
       }
       if (!eqCols.includes('uid')) {
         db.prepare('ALTER TABLE equipment ADD COLUMN uid TEXT').run();
-        // SQLite ne supporte pas ADD COLUMN UNIQUE, on crée un index séparé
-        db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_uid ON equipment(uid)').run();
+        // SQLite ne supporte pas ADD COLUMN UNIQUE.
+        // [PERF Phase 4.M] L'index unique partiel `idx_equipment_uid_unique`
+        // (WHERE uid IS NOT NULL) est créé par locmat-import-v1.js — plus économe
+        // car n'indexe pas les NULLs. Ne pas recréer `idx_equipment_uid` ici.
         logger.info('✅ Migration: uid ajouté à equipment');
         // Générer les UID pour les équipements existants
         const existingEq = db.prepare('SELECT id FROM equipment WHERE uid IS NULL').all();
@@ -2322,7 +2324,8 @@ function initializeDatabase() {
       )
     `);
 
-    db.exec('CREATE INDEX IF NOT EXISTS idx_bl_affaire ON bl_imports(affaire_id)');
+    // [PERF Phase 4.M] idx_bl_affaire supprimé (doublon de idx_bl_imports_affaire
+    // créé par migrations.js perfSprint1Indexes). Voir 0003_drop_duplicate_indexes.sql.
     db.exec('CREATE INDEX IF NOT EXISTS idx_bl_status ON bl_imports(status)');
 
     db.exec(`
@@ -3745,10 +3748,11 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_maintenances_type ON maintenances(type);
   `);
   // Historique des modifications (audit logs)
+  // [PERF Phase 4.M] idx_history_entity et idx_history_timestamp supprimés
+  // (doublons de idx_modification_history_entity / idx_modhist_timestamp DESC
+  // créés par migrations.js perfSprint1Indexes).
   db.exec(`
-    CREATE INDEX IF NOT EXISTS idx_history_entity ON modification_history(entity_type, entity_id);
     CREATE INDEX IF NOT EXISTS idx_history_user ON modification_history(user_id);
-    CREATE INDEX IF NOT EXISTS idx_history_timestamp ON modification_history(timestamp);
   `);
   // Référentiels (clients, conducteurs, lieux, garages)
   db.exec(`
@@ -3756,10 +3760,11 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_reservation_requests_status ON reservation_requests(status);
   `);
   // Sessions actives
+  // [PERF Phase 4.M] idx_sessions_expires et idx_sessions_token supprimés
+  // (doublons de idx_active_sessions_expires / idx_active_sessions_token_hash
+  // créés par migrations.js perfSprint1Indexes).
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_sessions_user ON active_sessions(user_id);
-    CREATE INDEX IF NOT EXISTS idx_sessions_expires ON active_sessions(expires_at);
-    CREATE INDEX IF NOT EXISTS idx_sessions_token ON active_sessions(token_hash);
   `);
 
   // Index critiques auth & lookup

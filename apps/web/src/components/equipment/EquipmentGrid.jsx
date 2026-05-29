@@ -7,7 +7,12 @@ import { EmptyState, Tooltip } from '@/design-system';
 import { ACCENT_COLORS } from '../../constants/colors';
 import { resolveGenericImage } from '../../utils/genericImages';
 import { cleanName, EQUIPMENT_STATUS } from './equipmentConstants';
-import { findZone, getCategoryHierarchy, matchPhotoToEquipment } from './equipmentUtils';
+import {
+  findZone,
+  getCategoryHierarchy,
+  matchPhotoToEquipment,
+  toThumbUrl,
+} from './equipmentUtils';
 
 const SortIcon = ({ col, sortCol, sortDir }) => {
   if (sortCol !== col) return <ChevronDown size={11} className="sort-icon" />;
@@ -322,7 +327,7 @@ const EquipmentGrid = ({
         <td className="eq-table-thumb">
           {photo || genericImg ? (
             <img
-              src={photo || genericImg}
+              src={photo ? toThumbUrl(photo, 80) : genericImg}
               alt=""
               loading="lazy"
               className={`eq-table-photo${!photo && genericImg ? ' eq-generic' : ''}`}

@@ -78,6 +78,7 @@ import { setupInventoryRoutes } from './inventoryRoutes.js';
 import { setupLabelsRoutes } from './labelsRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupLocationsRoutes } from './locationsRoutes.js';
+import { setupPhotoThumbRoutes } from './photoThumbRoutes.js';
 import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
 import logger from './logger.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
@@ -424,6 +425,10 @@ setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMain
 // Module SAV unifié (Phase 3 — synchro LocMat)
 setupSavRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
+// Vignettes WebP à la volée pour /Photos/ (cache disque)
+setupPhotoThumbRoutes(app);
+// Vignettes WebP à la volée pour /Photos/ (cache disque)
+setupPhotoThumbRoutes(app);
 
 // Routes Commandes & Ventes
 setupSuppliersRoutes(app, authenticateToken, requireAdmin);

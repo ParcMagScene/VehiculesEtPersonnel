@@ -770,17 +770,11 @@ export function setupAdminRoutes(
 
   // Vérifier si un compte nécessite une réinitialisation
   // [SEC FIX] Ne renvoie que le strict nécessaire (pas id/name) pour limiter l'info leak
-  app.post('/api/auth/check-reset', async (req, res) => {
+  app.post('/api/auth/check-reset', validate(checkEmailSchema), async (req, res) => {
     try {
       const { email } = req.body;
 
-      if (!email) {
-        return res.status(400).json({ success: false, error: 'Email requis' });
-      }
-
-      const stmt = db.prepare(
-        'SELECT id, name, password_reset_required FROM users WHERE email = ?',
-      );
+      const stmt = db.prepare('SELECT id, password_reset_required FROM users WHERE email = ?');
       const user = stmt.get(email);
 
       if (!user) {
@@ -788,9 +782,9 @@ export function setupAdminRoutes(
         return res.json({ resetRequired: false });
       }
 
+      // [SEC] Ne pas exposer user.name (énumération partielle CWE-204)
       res.json({
         resetRequired: user.password_reset_required === 1,
-        user: { name: user.name },
       });
     } catch (error) {
       logger.error('Erreur check reset:', error);

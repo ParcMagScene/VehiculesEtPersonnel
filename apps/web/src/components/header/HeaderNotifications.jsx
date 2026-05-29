@@ -26,149 +26,158 @@ import { getPeriodTimestamp } from '../../utils/dateUtils';
 import { getModalRoot } from '../../utils/modalManager';
 
 // ─── Shared internal card for reservation requests (used in both popups) ───
-const ReservationRequestCard = ({
-  request,
-  conflicts,
-  isRejecting,
-  rejectionReason,
-  setRejectionReason,
-  onApprove,
-  onReject,
-  onCancelReject,
-  onConfirmReject,
-  keyPrefix: _keyPrefix,
-  approveLabel = 'Approuver',
-  confirmRejectIcon = false,
-  cancelRejectClassName = 'cancel-reject',
-}) => {
-  const periodLabel = (p) => (p === 'AM' ? 'Matin' : 'Après-midi');
+// [PERF Phase 4.G] Memo : la card est rendue par .map() x N (jusqu'à ~20
+// demandes en attente) depuis HeaderNotifications. Sans memo, chaque
+// re-render du parent (frappe textarea, ouverture popup, MAJ liste)
+// reconstruit toutes les cartes.
+const ReservationRequestCard = React.memo(
+  ({
+    request,
+    conflicts,
+    isRejecting,
+    rejectionReason,
+    setRejectionReason,
+    onApprove,
+    onReject,
+    onCancelReject,
+    onConfirmReject,
+    keyPrefix: _keyPrefix,
+    approveLabel = 'Approuver',
+    confirmRejectIcon = false,
+    cancelRejectClassName = 'cancel-reject',
+  }) => {
+    const periodLabel = (p) => (p === 'AM' ? 'Matin' : 'Après-midi');
 
-  return (
-    <div
-      className={`notification-item reservation-request ${conflicts.length > 0 ? 'has-conflict' : ''}`}
-    >
-      <div className="notification-item-header">
-        <span className="notification-vehicle-name">
-          {request.vehicleName || 'Véhicule inconnu'}
-        </span>
-        <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
-          {conflicts.length > 0
-            ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}`
-            : 'En attente'}
-        </span>
-      </div>
-      {/* Demandeur */}
-      {request.requesterName && (
-        <div className="notification-requester-line">
-          <Users size={13} /> Demandé par <strong>{request.requesterName}</strong>
-        </div>
-      )}
-      {/* Période demandée */}
-      {request.startDate && (
-        <div className="request-period-info">
-          <Calendar size={13} className="request-period-icon" />
-          <span className="request-period-dates">
-            {request.startDate === request.endDate ? (
-              <>
-                <strong>
-                  {format(new Date(request.startDate), 'EEEE d MMMM yyyy', { locale: fr })}
-                </strong>
-                <span className="request-period-tag">
-                  {periodLabel(request.startPeriod)}
-                  {request.startPeriod !== request.endPeriod
-                    ? ` → ${periodLabel(request.endPeriod)}`
-                    : ''}
-                </span>
-              </>
-            ) : (
-              <>
-                <strong>{format(new Date(request.startDate), 'EEE d MMM', { locale: fr })}</strong>
-                <span className="request-period-tag">{periodLabel(request.startPeriod)}</span>
-                <span className="request-period-arrow">→</span>
-                <strong>
-                  {format(new Date(request.endDate), 'EEE d MMM yyyy', { locale: fr })}
-                </strong>
-                <span className="request-period-tag">{periodLabel(request.endPeriod)}</span>
-              </>
-            )}
+    return (
+      <div
+        className={`notification-item reservation-request ${conflicts.length > 0 ? 'has-conflict' : ''}`}
+      >
+        <div className="notification-item-header">
+          <span className="notification-vehicle-name">
+            {request.vehicleName || 'Véhicule inconnu'}
+          </span>
+          <span className={`notification-status ${conflicts.length > 0 ? 'conflict' : 'pending'}`}>
+            {conflicts.length > 0
+              ? `⚠️ ${conflicts.length} conflit${conflicts.length > 1 ? 's' : ''}`
+              : 'En attente'}
           </span>
         </div>
-      )}
-      {/* Conflits détectés */}
-      {conflicts.length > 0 && (
-        <div className="request-conflicts-box">
-          <div className="request-conflicts-title">
-            <AlertTriangle size={13} /> Conflits avec réservations existantes :
+        {/* Demandeur */}
+        {request.requesterName && (
+          <div className="notification-requester-line">
+            <Users size={13} /> Demandé par <strong>{request.requesterName}</strong>
           </div>
-          {conflicts.slice(0, 3).map((c, ci) => (
-            <div key={ci} className="request-conflict-item">
-              <span className="conflict-client">
-                {c.clientName || c.prestationName || 'Réservation'}
-              </span>
-              <span className="conflict-dates">
-                {format(new Date(c.startDate), 'dd/MM')} {c.startPeriod}
-                {c.endDate && c.endDate !== c.startDate
-                  ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}`
-                  : ''}
-              </span>
+        )}
+        {/* Période demandée */}
+        {request.startDate && (
+          <div className="request-period-info">
+            <Calendar size={13} className="request-period-icon" />
+            <span className="request-period-dates">
+              {request.startDate === request.endDate ? (
+                <>
+                  <strong>
+                    {format(new Date(request.startDate), 'EEEE d MMMM yyyy', { locale: fr })}
+                  </strong>
+                  <span className="request-period-tag">
+                    {periodLabel(request.startPeriod)}
+                    {request.startPeriod !== request.endPeriod
+                      ? ` → ${periodLabel(request.endPeriod)}`
+                      : ''}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <strong>
+                    {format(new Date(request.startDate), 'EEE d MMM', { locale: fr })}
+                  </strong>
+                  <span className="request-period-tag">{periodLabel(request.startPeriod)}</span>
+                  <span className="request-period-arrow">→</span>
+                  <strong>
+                    {format(new Date(request.endDate), 'EEE d MMM yyyy', { locale: fr })}
+                  </strong>
+                  <span className="request-period-tag">{periodLabel(request.endPeriod)}</span>
+                </>
+              )}
+            </span>
+          </div>
+        )}
+        {/* Conflits détectés */}
+        {conflicts.length > 0 && (
+          <div className="request-conflicts-box">
+            <div className="request-conflicts-title">
+              <AlertTriangle size={13} /> Conflits avec réservations existantes :
             </div>
-          ))}
-          {conflicts.length > 3 && (
-            <span className="conflict-more">+ {conflicts.length - 3} autre(s)…</span>
-          )}
-        </div>
-      )}
-      <p className="notification-description">
-        {request.clientName && `Client: ${request.clientName}`}
-        {request.prestationName && ` • ${request.prestationName}`}
-      </p>
-      {request.registration && (
-        <span className="notification-registration">{request.registration}</span>
-      )}
-      {isRejecting ? (
-        <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
-          <Textarea
-            className="reject-reason-input"
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-            placeholder="Motif du refus..."
-            aria-label="Motif du refus"
-            rows={2}
-            autoFocus
-          />
-          <div className="reject-form-buttons">
-            <Button
-              variant="ghost"
-              className="notif-action-btn confirm-reject"
-              disabled={!rejectionReason.trim()}
-              onClick={onConfirmReject}
-            >
-              {confirmRejectIcon && <X size={14} />} Confirmer le refus
+            {conflicts.slice(0, 3).map((c, ci) => (
+              <div key={ci} className="request-conflict-item">
+                <span className="conflict-client">
+                  {c.clientName || c.prestationName || 'Réservation'}
+                </span>
+                <span className="conflict-dates">
+                  {format(new Date(c.startDate), 'dd/MM')} {c.startPeriod}
+                  {c.endDate && c.endDate !== c.startDate
+                    ? ` → ${format(new Date(c.endDate), 'dd/MM')} ${c.endPeriod}`
+                    : ''}
+                </span>
+              </div>
+            ))}
+            {conflicts.length > 3 && (
+              <span className="conflict-more">+ {conflicts.length - 3} autre(s)…</span>
+            )}
+          </div>
+        )}
+        <p className="notification-description">
+          {request.clientName && `Client: ${request.clientName}`}
+          {request.prestationName && ` • ${request.prestationName}`}
+        </p>
+        {request.registration && (
+          <span className="notification-registration">{request.registration}</span>
+        )}
+        {isRejecting ? (
+          <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
+            <Textarea
+              className="reject-reason-input"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Motif du refus..."
+              aria-label="Motif du refus"
+              rows={2}
+              autoFocus
+            />
+            <div className="reject-form-buttons">
+              <Button
+                variant="ghost"
+                className="notif-action-btn confirm-reject"
+                disabled={!rejectionReason.trim()}
+                onClick={onConfirmReject}
+              >
+                {confirmRejectIcon && <X size={14} />} Confirmer le refus
+              </Button>
+              <Button
+                variant="ghost"
+                className={`notif-action-btn ${cancelRejectClassName}`}
+                onClick={onCancelReject}
+              >
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" className="notif-action-btn approve" onClick={onApprove}>
+              <Check size={14} />
+              {approveLabel}
             </Button>
-            <Button
-              variant="ghost"
-              className={`notif-action-btn ${cancelRejectClassName}`}
-              onClick={onCancelReject}
-            >
-              Annuler
+            <Button variant="ghost" className="notif-action-btn reject" onClick={onReject}>
+              <X size={14} />
+              Refuser
             </Button>
           </div>
-        </div>
-      ) : (
-        <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" className="notif-action-btn approve" onClick={onApprove}>
-            <Check size={14} />
-            {approveLabel}
-          </Button>
-          <Button variant="ghost" className="notif-action-btn reject" onClick={onReject}>
-            <X size={14} />
-            Refuser
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  },
+);
+ReservationRequestCard.displayName = 'ReservationRequestCard';
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const HeaderNotifications = ({

@@ -4,7 +4,7 @@
    d'un personnel spécifique via PIN ou mot de passe
    ═══════════════════════════════════════════════════════════════ */
 
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 import api from '../utils/api/index.js';
 
@@ -80,23 +80,42 @@ export function PersonalAuthProvider({ children }) {
   /**
    * Obtenir l'ID de la personne authentifiée
    */
-  const getAuthenticatedPersonId = () => authenticatedPerson?.id || null;
+  const getAuthenticatedPersonId = useCallback(
+    () => authenticatedPerson?.id || null,
+    [authenticatedPerson],
+  );
 
-  const value = {
-    // État
-    authenticatedPerson,
-    authError,
-    authLoading,
-    isPersonalAuthenticated,
+  const clearError = useCallback(() => setAuthError(null), []);
 
-    // Actions
-    authenticatePersonal,
-    logoutPersonal,
-    getAuthenticatedPersonId,
+  // [PERF Phase 4.G] Mémoïser la value : sans ça, tous les subscribers de
+  // usePersonalAuth() re-rendent à chaque render du Provider parent.
+  const value = useMemo(
+    () => ({
+      // État
+      authenticatedPerson,
+      authError,
+      authLoading,
+      isPersonalAuthenticated,
 
-    // Utilitaires
-    clearError: () => setAuthError(null),
-  };
+      // Actions
+      authenticatePersonal,
+      logoutPersonal,
+      getAuthenticatedPersonId,
+
+      // Utilitaires
+      clearError,
+    }),
+    [
+      authenticatedPerson,
+      authError,
+      authLoading,
+      isPersonalAuthenticated,
+      authenticatePersonal,
+      logoutPersonal,
+      getAuthenticatedPersonId,
+      clearError,
+    ],
+  );
 
   return <PersonalAuthContext.Provider value={value}>{children}</PersonalAuthContext.Provider>;
 }

@@ -8,6 +8,7 @@ import {
   getEvents,
   getGoogleServiceAccountStatus,
 } from './GoogleCalendarServiceAccount.js';
+import { cacheMiddleware, googleCalendarCache } from './cache.js';
 import logger from './logger.js';
 
 const gcalRoute = (fn) => async (req, res) => {
@@ -51,6 +52,24 @@ function normalizeEventsQuery(query) {
   };
 }
 
+// Clé de cache déterministe pour /api/calendar/events :
+// le résultat ne dépend que des query params (Service Account côté serveur,
+// donc identique pour tous les utilisateurs authentifiés).
+function eventsCacheKey(req) {
+  const q = normalizeEventsQuery(req.query);
+  return [
+    'gcal-events',
+    q.calendarId || '',
+    q.timeMin || '',
+    q.timeMax || '',
+    q.singleEvents ? '1' : '0',
+    q.maxResults || '',
+    q.orderBy || '',
+    q.q || '',
+    q.pageToken || '',
+  ].join('|');
+}
+
 function oauthRemovedResponse(res) {
   return res.status(410).json({
     success: false,
@@ -73,6 +92,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
   app.get(
     '/api/calendar/events',
     authenticateToken,
+    cacheMiddleware(googleCalendarCache, eventsCacheKey),
     gcalRoute(async (req, res) => {
       const data = await getEvents(normalizeEventsQuery(req.query));
       res.json(data);
@@ -113,6 +133,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
   app.get(
     '/api/google/events',
     authenticateToken,
+    cacheMiddleware(googleCalendarCache, eventsCacheKey),
     gcalRoute(async (req, res) => {
       const data = await getEvents(normalizeEventsQuery(req.query));
       res.json(data);

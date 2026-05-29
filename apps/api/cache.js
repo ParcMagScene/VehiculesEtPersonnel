@@ -150,6 +150,9 @@ const listCache = new LRUCache({ maxSize: 200, ttl: 30_000, name: 'lists' });
 /** Cache pour les données iCal externes : TTL 5 min */
 const icalCache = new LRUCache({ maxSize: 50, ttl: 5 * 60_000, name: 'ical' });
 
+/** Cache pour Google Calendar (API externe lente, ~700ms) : TTL 60s */
+const googleCalendarCache = new LRUCache({ maxSize: 100, ttl: 60_000, name: 'google-calendar' });
+
 /** Cache pour la config (Google keys, etc.) : TTL 10 min */
 const configCache = new LRUCache({ maxSize: 50, ttl: 10 * 60_000, name: 'config' });
 
@@ -175,6 +178,7 @@ const ALL_CACHES = [
   statsCache,
   listCache,
   icalCache,
+  googleCalendarCache,
   configCache,
   equipmentTreeCache,
   equipmentListCache,
@@ -308,6 +312,7 @@ export {
   equipmentListCache,
   equipmentTreeCache,
   getAllCacheStats,
+  googleCalendarCache,
   icalCache,
   invalidateEntity,
   invalidateOnSuccess,

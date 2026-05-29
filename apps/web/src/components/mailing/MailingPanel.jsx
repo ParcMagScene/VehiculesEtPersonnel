@@ -27,6 +27,13 @@ const VirtuosoTplItem = forwardRef(function VirtuosoTplItem({ className, ...prop
 const VIRTUOSO_TPL_COMPONENTS = { Item: VirtuosoTplItem };
 const TEMPLATES_VIRTUALIZE_THRESHOLD = 50;
 
+// [PERF Phase 4.H] Seuil de virtualisation pour l'historique d'envois.
+// L'historique peut grossir indefiniment (potentiellement des milliers
+// d'entrees au fil du temps); virtualiser au-dela de 50 evite de monter
+// tout le DOM. En dessous, garder le rendu classique pour preserver
+// l'experience native (scroll fluide, find-in-page, accessibility).
+const HISTORY_VIRTUALIZE_THRESHOLD = 50;
+
 import {
   Button,
   Checkbox,
@@ -745,29 +752,53 @@ export default function MailingPanel({ isOpen, onClose }) {
                     <EmptyState icon={<Clock size={32} />} title="Aucun email envoyé." />
                   )}
 
-                  {history.map((h) => (
-                    <div key={h.id} className={`mailing-history-item ${h.status}`}>
-                      <div className="mailing-hist-main">
-                        <span className={`mailing-hist-status status-${h.status}`}>
-                          {h.status === 'sent' ? '✅' : '❌'}
-                        </span>
-                        <div className="mailing-hist-info">
-                          <span className="mailing-hist-subject">{h.subject}</span>
-                          <span className="mailing-hist-to">→ {h.recipients}</span>
+                  {history.length > 0 &&
+                    (() => {
+                      // [PERF Phase 4.H] Contenu interne factorise: identique entre
+                      // la branche virtualisee (Virtuoso) et la branche map().
+                      const renderHistoryInner = (h) => (
+                        <>
+                          <div className="mailing-hist-main">
+                            <span className={`mailing-hist-status status-${h.status}`}>
+                              {h.status === 'sent' ? '✅' : '❌'}
+                            </span>
+                            <div className="mailing-hist-info">
+                              <span className="mailing-hist-subject">{h.subject}</span>
+                              <span className="mailing-hist-to">→ {h.recipients}</span>
+                            </div>
+                          </div>
+                          <div className="mailing-hist-meta">
+                            <span>{h.sent_by_name || '—'}</span>
+                            <span>{new Date(h.sent_at).toLocaleString('fr-FR')}</span>
+                            {h.template_name && (
+                              <span className="mailing-hist-tpl">📄 {h.template_name}</span>
+                            )}
+                          </div>
+                          {h.error_message && (
+                            <div className="mailing-hist-error">{h.error_message}</div>
+                          )}
+                        </>
+                      );
+                      if (history.length > HISTORY_VIRTUALIZE_THRESHOLD) {
+                        return (
+                          <Virtuoso
+                            style={{ height: 600 }}
+                            data={history}
+                            computeItemKey={(_i, h) => h.id}
+                            itemContent={(_i, h) => (
+                              <div className={`mailing-history-item ${h.status}`}>
+                                {renderHistoryInner(h)}
+                              </div>
+                            )}
+                          />
+                        );
+                      }
+                      return history.map((h) => (
+                        <div key={h.id} className={`mailing-history-item ${h.status}`}>
+                          {renderHistoryInner(h)}
                         </div>
-                      </div>
-                      <div className="mailing-hist-meta">
-                        <span>{h.sent_by_name || '—'}</span>
-                        <span>{new Date(h.sent_at).toLocaleString('fr-FR')}</span>
-                        {h.template_name && (
-                          <span className="mailing-hist-tpl">📄 {h.template_name}</span>
-                        )}
-                      </div>
-                      {h.error_message && (
-                        <div className="mailing-hist-error">{h.error_message}</div>
-                      )}
-                    </div>
-                  ))}
+                      ));
+                    })()}
                 </div>
               )}
             </TabPanel>

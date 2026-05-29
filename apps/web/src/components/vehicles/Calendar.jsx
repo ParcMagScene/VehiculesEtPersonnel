@@ -11,6 +11,7 @@ import { TIMING } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import useWindowWidth from '../../hooks/useWindowWidth';
 import { formatDateSimple } from '../../utils/formatUtils';
+import AffaireLegend from '../AffaireLegend';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import YearSelector from '../YearSelector';
@@ -487,6 +488,7 @@ const Calendar = ({
             <Truck size={16} /> Gestion
           </Button>
         )}
+        <AffaireLegend className="cal-legend-btn" />
       </div>
 
       <div className="calendar">

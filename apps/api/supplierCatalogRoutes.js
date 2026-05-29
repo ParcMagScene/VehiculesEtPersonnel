@@ -100,7 +100,10 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   });
 
   // GET /api/supplier-articles/filters — Valeurs distinctes pour filtres
-  app.get('/api/supplier-articles/filters', authenticateToken, (req, res) => {
+  // [PERF Phase 4.Q] Cache HTTP 5 min — mutable via import PDF / refresh-brands,
+  // TTL court pour limiter le decalage. ETag 304 garde le payload courant si rien
+  // n'a change cote serveur.
+  app.get('/api/supplier-articles/filters', authenticateToken, setCacheControl(300), (req, res) => {
     try {
       const { supplier_id } = req.query;
       const cond = supplier_id ? ' WHERE supplier_id = ?' : '';
@@ -150,7 +153,8 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
   });
 
   // GET /api/supplier-articles/stats — Stats globales
-  app.get('/api/supplier-articles/stats', authenticateToken, (req, res) => {
+  // [PERF Phase 4.Q] Cache HTTP 5 min (complète le statsCache serveur 20s)
+  app.get('/api/supplier-articles/stats', authenticateToken, setCacheControl(300), (req, res) => {
     try {
       const totalArticles = db.prepare('SELECT COUNT(*) as c FROM supplier_articles').get().c;
       const totalImports = db.prepare('SELECT COUNT(*) as c FROM catalog_imports').get().c;
@@ -350,11 +354,16 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
 
   // GET /api/supplier-articles/taxonomy — Analyse des familles/catégories existantes
   // NOTE: doit être AVANT /:id sinon Express capture "taxonomy" comme un id
-  app.get('/api/supplier-articles/taxonomy', authenticateToken, (req, res) => {
-    try {
-      const families = db
-        .prepare(
-          `
+  // [PERF Phase 4.Q] Cache HTTP 5 min — mutable via POST refresh-brands
+  app.get(
+    '/api/supplier-articles/taxonomy',
+    authenticateToken,
+    setCacheControl(300),
+    (req, res) => {
+      try {
+        const families = db
+          .prepare(
+            `
         SELECT family as name, COUNT(*) as count,
           GROUP_CONCAT(DISTINCT s.name) as suppliers
         FROM supplier_articles sa
@@ -362,12 +371,12 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
         WHERE family IS NOT NULL AND family != ''
         GROUP BY family ORDER BY count DESC
       `,
-        )
-        .all();
+          )
+          .all();
 
-      const categories = db
-        .prepare(
-          `
+        const categories = db
+          .prepare(
+            `
         SELECT category as name, COUNT(*) as count,
           GROUP_CONCAT(DISTINCT s.name) as suppliers
         FROM supplier_articles sa
@@ -375,33 +384,34 @@ export function setupSupplierCatalogRoutes(app, authenticateToken, requireWriteA
         WHERE category IS NOT NULL AND category != ''
         GROUP BY category ORDER BY count DESC
       `,
-        )
-        .all();
-
-      const familyGroups = suggestGroups(families);
-      const categoryGroups = suggestGroups(categories);
-
-      res.json({
-        families,
-        categories,
-        suggestions: { familyGroups, categoryGroups },
-        totalArticles: db.prepare('SELECT COUNT(*) as c FROM supplier_articles').get().c,
-        withFamily: db
-          .prepare(
-            "SELECT COUNT(*) as c FROM supplier_articles WHERE family IS NOT NULL AND family != ''",
           )
-          .get().c,
-        withCategory: db
-          .prepare(
-            "SELECT COUNT(*) as c FROM supplier_articles WHERE category IS NOT NULL AND category != ''",
-          )
-          .get().c,
-      });
-    } catch (error) {
-      logger.error('Erreur GET supplier-articles/taxonomy:', error.message);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+          .all();
+
+        const familyGroups = suggestGroups(families);
+        const categoryGroups = suggestGroups(categories);
+
+        res.json({
+          families,
+          categories,
+          suggestions: { familyGroups, categoryGroups },
+          totalArticles: db.prepare('SELECT COUNT(*) as c FROM supplier_articles').get().c,
+          withFamily: db
+            .prepare(
+              "SELECT COUNT(*) as c FROM supplier_articles WHERE family IS NOT NULL AND family != ''",
+            )
+            .get().c,
+          withCategory: db
+            .prepare(
+              "SELECT COUNT(*) as c FROM supplier_articles WHERE category IS NOT NULL AND category != ''",
+            )
+            .get().c,
+        });
+      } catch (error) {
+        logger.error('Erreur GET supplier-articles/taxonomy:', error.message);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // GET /api/supplier-articles/:id
   app.get('/api/supplier-articles/:id', authenticateToken, (req, res) => {

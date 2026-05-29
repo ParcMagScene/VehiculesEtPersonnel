@@ -2295,7 +2295,9 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     }
   });
   // ═══ GET /api/equipment-location-stats — Stats localisation par zone ═══
-  app.get('/api/equipment-location-stats', authenticateToken, (req, res) => {
+  // [PERF Phase 4.Q] Cache HTTP 5 min — stats mises a jour lors des changements
+  // d'equipement, TTL court suffit pour les vues admin.
+  app.get('/api/equipment-location-stats', authenticateToken, setCacheControl(300), (req, res) => {
     try {
       const depot = req.query.depot || null;
       let statsQuery = `
@@ -2324,7 +2326,6 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
-
   // ═══ PUT /api/equipment-depot-zones — Sauvegarder les zones modifiées (admin) ═══
   app.put('/api/equipment-depot-zones', authenticateToken, requireAdmin, (req, res) => {
     try {

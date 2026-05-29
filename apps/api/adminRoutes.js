@@ -12,6 +12,11 @@ import {
   getSlowRequestsAggregated,
   getSlowRequestStats,
 } from './middleware/httpLogger.js';
+import {
+  getSlowSqlAggregated,
+  getSlowSqlEntries,
+  getSqlSlowLogStats,
+} from './middleware/sqlSlowLog.js';
 import { validatePassword } from './passwordPolicy.js';
 import {
   accessRequestSchema,
@@ -1138,6 +1143,25 @@ export function setupAdminRoutes(
     res.json({
       stats: getSlowRequestStats(),
       routes: getSlowRequestsAggregated(),
+    });
+  });
+
+  // ─── Slow SQL log endpoints (admin only) ───
+  // [PERF Phase 4.N] Instrumentation au niveau db.prepare() — voir middleware/sqlSlowLog.js.
+  app.get('/api/_perf/slow-sql', authenticateToken, requireAdmin, (req, res) => {
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+    const minDuration = Math.max(0, Number(req.query.minDuration) || 0);
+    res.json({
+      stats: getSqlSlowLogStats(),
+      items: getSlowSqlEntries({ limit, minDuration }),
+    });
+  });
+  app.get('/api/_perf/slow-sql/aggregated', authenticateToken, requireAdmin, (req, res) => {
+    const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 50));
+    const sortBy = String(req.query.sortBy || 'totalMs');
+    res.json({
+      stats: getSqlSlowLogStats(),
+      queries: getSlowSqlAggregated({ limit, sortBy }),
     });
   });
 } // end setupAdminRoutes

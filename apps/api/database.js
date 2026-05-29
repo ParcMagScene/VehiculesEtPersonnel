@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 // [S2-1] Helper extrait dans un module pur — voir database/_helpers.js
 import { safeAddColumn as safeAddColumnImpl } from './database/_helpers.js';
 import logger from './logger.js';
+// [PERF Phase 4.N] Instrumentation slow log SQL au niveau requête.
+import { instrumentDb } from './middleware/sqlSlowLog.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,6 +46,11 @@ db.pragma('wal_autocheckpoint = 1000');
 
 // [PHASE 4] Timeout 5s si la DB est verrouillée par un autre writer
 db.pragma('busy_timeout = 5000');
+
+// [PERF Phase 4.N] Patche db.prepare() pour mesurer la durée de chaque
+// .run/.get/.all et alimenter le ring buffer + agrégat (lecture via
+// /api/_perf/slow-sql, admin only). Désactivable: ENABLE_SQL_SLOW_LOG=0.
+instrumentDb(db);
 
 // [PERF Sprint 1] Tuning supplémentaires :
 // - cache_size négatif = en KiB (ici 50 Mo de cache pages)

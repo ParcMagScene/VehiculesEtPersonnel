@@ -1292,8 +1292,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 12px 16px;
+  margin: 0 -16px -16px; /* déborde sur le padding du .suivi-main pour coller aux bords */
   border-top: 1px solid var(--border-color, #334155);
+  position: sticky;
+  bottom: -16px; /* compense le padding-bottom du parent scrollable */
+  background: var(--bg-primary, #0f172a);
+  z-index: 5;
+  backdrop-filter: blur(4px);
 }
 .fiche-summary {
   display: flex;

@@ -1221,7 +1221,8 @@
   color: var(--theme-warning);
 }
 .pp-planning-fav-btn.active {
-  background: var(--theme-warning-bg);
+  /* B5: fond jaune retire pour reduire le bruit visuel.
+     L'etat actif reste lisible via border + couleur du texte. */
   border-color: var(--theme-warning);
   color: var(--theme-warning-dark);
 }
@@ -1248,9 +1249,8 @@
 .pp-fav-star.active {
   color: var(--theme-warning);
 }
-.pp-person-cell.pp-person-favorite {
-  background: var(--theme-warning-bg);
-}
+/* B5: fond jaune sur la ligne personne favorite retire.
+   L'etoile jaune pleine (pp-fav-star.active) suffit a signaler le statut. */
 
 /* ── Headers row — même pattern que Calendar ── */
 .pp-headers-row {

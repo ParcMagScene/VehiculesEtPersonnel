@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/inject-sw-version.mjs",
     "preview": "vite preview",
     "lint": "eslint . --max-warnings=22",
     "lint:fix": "eslint . --fix",

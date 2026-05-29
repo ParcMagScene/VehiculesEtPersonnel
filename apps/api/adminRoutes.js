@@ -7,6 +7,11 @@ import { ALL_CACHES, getAllCacheStats } from './cache.js';
 import db from './database.js';
 import { alertAccessRequest, getTransporter, initEmailTransporter } from './emailService.js';
 import logger from './logger.js';
+import {
+  getSlowRequests,
+  getSlowRequestsAggregated,
+  getSlowRequestStats,
+} from './middleware/httpLogger.js';
 import { validatePassword } from './passwordPolicy.js';
 import {
   accessRequestSchema,
@@ -1116,5 +1121,23 @@ export function setupAdminRoutes(
       req,
     });
     res.json({ success: true, message: name ? `Cache '${name}' vidé` : 'Tous les caches vidés' });
+  });
+
+  // ─── Slow request log endpoints (admin only) ───
+  // Ring buffer in-memory : utile pour identifier les hot paths sans
+  // ouvrir les logs serveur. Vidé au restart.
+  app.get('/api/_perf/slow-requests', authenticateToken, requireAdmin, (req, res) => {
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+    const minDuration = Math.max(0, Number(req.query.minDuration) || 0);
+    res.json({
+      stats: getSlowRequestStats(),
+      items: getSlowRequests({ limit, minDuration }),
+    });
+  });
+  app.get('/api/_perf/slow-requests/aggregated', authenticateToken, requireAdmin, (req, res) => {
+    res.json({
+      stats: getSlowRequestStats(),
+      routes: getSlowRequestsAggregated(),
+    });
   });
 } // end setupAdminRoutes

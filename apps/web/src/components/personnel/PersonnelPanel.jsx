@@ -2761,7 +2761,7 @@ const PlanningTab = ({
         <SearchBar
           value={planningSearch}
           onChange={setPlanningSearch}
-          placeholder="Rechercher un personnel..."
+          placeholder="Rechercher un membre du personnel..."
           size="sm"
         />
         <div className="pp-planning-filters">

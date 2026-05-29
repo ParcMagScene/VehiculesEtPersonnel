@@ -890,7 +890,7 @@ const AssignmentDialog = ({
                   <Input
                     type="text"
                     className="asd-person-search"
-                    placeholder="Rechercher un personnel…"
+                    placeholder="Rechercher un membre du personnel…"
                     value={personSearch}
                     onChange={(e) => setPersonSearch(e.target.value)}
                     autoFocus
@@ -999,7 +999,7 @@ const AssignmentDialog = ({
                     <Input
                       type="text"
                       className="asd-person-search"
-                      placeholder="Rechercher un personnel…"
+                      placeholder="Rechercher un membre du personnel…"
                       value={addPersonSearch}
                       onChange={(e) => setAddPersonSearch(e.target.value)}
                       autoFocus

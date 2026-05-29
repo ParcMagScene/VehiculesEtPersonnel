@@ -1,9 +1,27 @@
 import './IncidentsSuiviPanel.css';
 
 import { Calendar, ClipboardList, Loader2, Pencil, Plus, Save, Trash2 } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 
 import { Input, Select, Textarea } from '@/design-system';
+
+// [PERF Phase 4.G2] Composants Virtuoso pour la liste des tickets de la semaine.
+// Definis au module pour eviter remount a chaque render du parent.
+// On force les classes CSS metier (si-ticket-list / si-ticket-item) pour conserver
+// le style et la semantique (ul/li).
+const VirtuosoTicketList = forwardRef(function VirtuosoTicketList({ className, ...props }, ref) {
+  return <ul ref={ref} {...props} className={`si-ticket-list ${className || ''}`.trim()} />;
+});
+const VirtuosoTicketItem = forwardRef(function VirtuosoTicketItem({ className, ...props }, ref) {
+  return <li ref={ref} {...props} className={`si-ticket-item ${className || ''}`.trim()} />;
+});
+const VIRTUOSO_TICKET_COMPONENTS = {
+  List: VirtuosoTicketList,
+  Item: VirtuosoTicketItem,
+};
+// Seuil: en dessous, le map natif est plus rapide que l'overhead Virtuoso.
+const TICKETS_VIRTUALIZE_THRESHOLD = 50;
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
@@ -568,9 +586,11 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
             ) : tickets.length === 0 ? (
               <div className="si-empty">Aucun ticket cette semaine</div>
             ) : (
-              <ul className="si-ticket-list">
-                {tickets.map((t) => (
-                  <li key={t.id} className="si-ticket-item">
+              (() => {
+                // [PERF Phase 4.G2] Rendu d'un ticket extrait pour reutilisation
+                // entre le mode <ul>.map() (petit jeu) et le mode Virtuoso (grand jeu).
+                const renderTicketInner = (t) => (
+                  <>
                     <button
                       type="button"
                       className="si-ticket-pick"
@@ -609,9 +629,30 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
                         )}
                       </Button>
                     </div>
-                  </li>
-                ))}
-              </ul>
+                  </>
+                );
+
+                if (tickets.length > TICKETS_VIRTUALIZE_THRESHOLD) {
+                  return (
+                    <Virtuoso
+                      style={{ height: 480 }}
+                      data={tickets}
+                      components={VIRTUOSO_TICKET_COMPONENTS}
+                      computeItemKey={(_idx, t) => t.id}
+                      itemContent={(_idx, t) => renderTicketInner(t)}
+                    />
+                  );
+                }
+                return (
+                  <ul className="si-ticket-list">
+                    {tickets.map((t) => (
+                      <li key={t.id} className="si-ticket-item">
+                        {renderTicketInner(t)}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()
             )}
           </div>
         </section>

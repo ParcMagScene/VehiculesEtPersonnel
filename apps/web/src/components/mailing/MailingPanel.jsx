@@ -16,7 +16,16 @@ import {
   Settings,
   Trash2,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
+import { Virtuoso } from 'react-virtuoso';
+
+// [PERF Phase 4.G2] Composant Item Virtuoso pour la liste templates.
+// Force la classe metier mailing-template-card sur le wrapper genere par Virtuoso.
+const VirtuosoTplItem = forwardRef(function VirtuosoTplItem({ className, ...props }, ref) {
+  return <div ref={ref} {...props} className={`mailing-template-card ${className || ''}`.trim()} />;
+});
+const VIRTUOSO_TPL_COMPONENTS = { Item: VirtuosoTplItem };
+const TEMPLATES_VIRTUALIZE_THRESHOLD = 50;
 
 import {
   Button,
@@ -573,47 +582,68 @@ export default function MailingPanel({ isOpen, onClose }) {
                   )}
 
                   {!editingTemplate &&
-                    templates.map((tpl) => (
-                      <div key={tpl.id} className="mailing-template-card">
-                        <div className="mailing-tpl-info">
-                          <span className="mailing-tpl-name">{tpl.name}</span>
-                          <span className="mailing-tpl-subject">
-                            {tpl.subject || '(sans sujet)'}
-                          </span>
-                          <span className={`mailing-tpl-cat cat-${tpl.category}`}>
-                            {TEMPLATE_CATEGORIES.find((c) => c.value === tpl.category)?.label ||
-                              tpl.category}
-                          </span>
+                    (() => {
+                      // [PERF Phase 4.G2] Rendu d'une template card extrait pour partage
+                      // entre le mode map() (peu de templates) et le mode Virtuoso (beaucoup).
+                      const renderTplInner = (tpl) => (
+                        <>
+                          <div className="mailing-tpl-info">
+                            <span className="mailing-tpl-name">{tpl.name}</span>
+                            <span className="mailing-tpl-subject">
+                              {tpl.subject || '(sans sujet)'}
+                            </span>
+                            <span className={`mailing-tpl-cat cat-${tpl.category}`}>
+                              {TEMPLATE_CATEGORIES.find((c) => c.value === tpl.category)?.label ||
+                                tpl.category}
+                            </span>
+                          </div>
+                          <div className="mailing-tpl-actions">
+                            <Tooltip content="Modifier">
+                              <Button variant="ghost" onClick={() => openTemplateEditor(tpl)}>
+                                <Edit3 size={14} />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Utiliser">
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  handleSelectTemplate(tpl);
+                                  setActiveTab('compose');
+                                }}
+                              >
+                                <Send size={14} />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Supprimer">
+                              <Button
+                                variant="ghost"
+                                onClick={() => deleteTemplate(tpl.id)}
+                                className="danger"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </>
+                      );
+
+                      if (templates.length > TEMPLATES_VIRTUALIZE_THRESHOLD) {
+                        return (
+                          <Virtuoso
+                            style={{ height: 520 }}
+                            data={templates}
+                            components={VIRTUOSO_TPL_COMPONENTS}
+                            computeItemKey={(_idx, tpl) => tpl.id}
+                            itemContent={(_idx, tpl) => renderTplInner(tpl)}
+                          />
+                        );
+                      }
+                      return templates.map((tpl) => (
+                        <div key={tpl.id} className="mailing-template-card">
+                          {renderTplInner(tpl)}
                         </div>
-                        <div className="mailing-tpl-actions">
-                          <Tooltip content="Modifier">
-                            <Button variant="ghost" onClick={() => openTemplateEditor(tpl)}>
-                              <Edit3 size={14} />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Utiliser">
-                            <Button
-                              variant="ghost"
-                              onClick={() => {
-                                handleSelectTemplate(tpl);
-                                setActiveTab('compose');
-                              }}
-                            >
-                              <Send size={14} />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Supprimer">
-                            <Button
-                              variant="ghost"
-                              onClick={() => deleteTemplate(tpl.id)}
-                              className="danger"
-                            >
-                              <Trash2 size={14} />
-                            </Button>
-                          </Tooltip>
-                        </div>
-                      </div>
-                    ))}
+                      ));
+                    })()}
 
                   {/* Template editor */}
                   {editingTemplate && (

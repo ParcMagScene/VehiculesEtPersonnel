@@ -120,8 +120,8 @@
 }
 
 .lpp-mag-input.lpp-mag-suggested {
-  border-color: var(--warning, #f59e0b);
-  background: #fffbeb;
+  border-color: var(--theme-warning);
+  background: var(--theme-warning-bg);
 }
 
 .lpp-mag-cell {

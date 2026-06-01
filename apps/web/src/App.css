@@ -260,7 +260,7 @@
   background: #dc2626;
 }
 .header-title-container .module-tab .module-tab-badge.is-soon {
-  background: #f59e0b;
+  background: var(--theme-warning);
   color: #1f2937;
 }
 

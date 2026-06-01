@@ -258,7 +258,7 @@
 
 .resa-status.status-pending {
   background: var(--theme-warning-bg);
-  color: #ca8a04;
+  color: var(--theme-warning-text);
 }
 
 /* Clickable items (réservations, événements) */

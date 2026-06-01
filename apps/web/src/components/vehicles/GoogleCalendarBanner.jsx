@@ -275,6 +275,15 @@ function GoogleCalendarBanner({
         if (bannerScroll.style.paddingRight !== px) {
           bannerScroll.style.paddingRight = px;
         }
+        // Appliquer le meme gutter au scroll-area des headers (labels Lundi/Mardi/...)
+        // pour qu'ils s'alignent avec les slots de la grille principale ET le banner.
+        // Parc: .calendar-headers-scroll-area | Planning: .pp-headers-scroll
+        const headersScroll =
+          document.querySelector('.pp-headers-scroll') ||
+          document.querySelector('.calendar-headers-scroll-area');
+        if (headersScroll && headersScroll.style.paddingRight !== px) {
+          headersScroll.style.paddingRight = px;
+        }
       }
     };
 

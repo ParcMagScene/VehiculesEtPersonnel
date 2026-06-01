@@ -1551,19 +1551,20 @@
     inset -2px 0 0 var(--success-tint-strong);
 }
 
-/* Cellule AM/PM */
+/* Cellule AM/PM — sous-ligne dense, fond subtil */
 .pp-header-cell.period-cell {
-  font-size: 0.65rem;
-  padding: 0.4rem 0.25rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--theme-purple-accent) 0%, var(--theme-accent) 100%);
-  color: var(--theme-text-inverse);
-  height: 1.8rem;
-  border-right: 1px solid var(--close-btn-hover-bg);
+  font-size: 0.6rem;
+  padding: 0.15rem 0.25rem;
+  font-weight: 600;
+  background: var(--theme-purple-bg);
+  color: var(--theme-purple-accent);
+  height: 1.4rem;
+  border-right: 1px solid var(--theme-border-light);
 }
 
 .pp-header-cell.period-cell.weekend {
-  background: linear-gradient(135deg, var(--theme-purple-accent) 0%, var(--theme-accent) 100%);
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
 }
 
 .pp-header-cell.period-cell.today {

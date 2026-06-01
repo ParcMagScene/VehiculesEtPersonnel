@@ -28,7 +28,13 @@ export async function fetchAffaires() {
     const data = await api.getAffaires();
     const list = Array.isArray(data) ? data : [];
     // Best-effort : on n'attend pas la sauvegarde IDB et on n'échoue pas si elle plante.
-    saveToIndexedDB(STORES.affaires, list).catch((err) => {
+    // Note: l'API renvoie aussi des affaires "auto-détectées" depuis les réservations
+    // avec id=null (source: 'auto'). Elles ne peuvent pas être stockées en IDB
+    // (keyPath = 'id') et n'ont de sens qu'en mode online (recalculées côté backend).
+    // On les filtre du cache pour éviter le spam de warnings, mais on les conserve
+    // dans la liste retournée à l'UI.
+    const cacheable = list.filter((a) => a && a.id != null);
+    saveToIndexedDB(STORES.affaires, cacheable).catch((err) => {
       logger.warn('saveToIndexedDB(affaires) a échoué:', err);
     });
     return { affaires: list, fromCache: false, error: null };

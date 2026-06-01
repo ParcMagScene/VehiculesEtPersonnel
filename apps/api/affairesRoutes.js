@@ -10,6 +10,47 @@ import db from './database.js';
 import logger from './logger.js';
 import { affaireSchema, validate } from './schemas/imports.js';
 
+// Mapping affaire.type → section des tâches de préparation associées.
+// Quand le type d'une affaire change, les tâches en `prep_*` liées
+// (via task_assignments.affaire_num) sont resynchronisées.
+const AFFAIRE_TYPE_TO_PREP_SECTION = {
+  Prestation: 'prep_prestations',
+  Location: 'prep_locations',
+  Vente: 'prep_ventes',
+  Installation: 'prep_installations',
+  Tournée: 'prep_tournees',
+};
+const PREP_SECTIONS = Object.values(AFFAIRE_TYPE_TO_PREP_SECTION);
+
+/**
+ * Resynchronise la `section` des tâches de préparation liées à une affaire
+ * quand son `type` change. Ne touche QUE les tâches dont la section est
+ * déjà une section de préparation (prep_*) — les autres sections
+ * (chargement, courses, montage…) restent inchangées.
+ *
+ * @param {string} numeroAffaire - Numéro d'affaire (clé de jointure)
+ * @param {string} newType - Nouveau type d'affaire
+ * @param {number} userId - ID utilisateur pour l'audit (modified_by)
+ * @returns {number} Nombre de tâches mises à jour
+ */
+function syncPrepTasksToAffaireType(numeroAffaire, newType, userId) {
+  if (!numeroAffaire || !newType) return 0;
+  const newSection = AFFAIRE_TYPE_TO_PREP_SECTION[newType];
+  if (!newSection) return 0;
+  const placeholders = PREP_SECTIONS.map(() => '?').join(',');
+  const result = db
+    .prepare(
+      `UPDATE task_assignments
+          SET section = ?, modified_by = ?, modified_at = datetime('now')
+        WHERE affaire_num = ?
+          AND section IN (${placeholders})
+          AND section != ?
+          AND deleted_at IS NULL`,
+    )
+    .run(newSection, userId, numeroAffaire, ...PREP_SECTIONS, newSection);
+  return result.changes;
+}
+
 export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/affaires — Liste des affaires enrichies (DB + auto-détection depuis réservations) [PERF] Cache 30s
   app.get(
@@ -398,9 +439,10 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
     try {
       const a = req.body;
 
-      // Vérifier si l'affaire existe déjà
+      // Vérifier si l'affaire existe déjà (et récupérer son type actuel pour
+      // détecter un changement et resynchroniser les tâches de préparation)
       const existing = db
-        .prepare('SELECT id FROM affaires WHERE numero_affaire = ?')
+        .prepare('SELECT id, type FROM affaires WHERE numero_affaire = ?')
         .get(a.numero_affaire);
 
       if (existing) {
@@ -435,6 +477,21 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
         const updated = db
           .prepare('SELECT * FROM affaires WHERE numero_affaire = ?')
           .get(a.numero_affaire);
+        // Si le type a changé, resynchroniser la section des tâches de préparation
+        if (existing.type && updated.type && existing.type !== updated.type) {
+          const changed = syncPrepTasksToAffaireType(
+            updated.numero_affaire,
+            updated.type,
+            req.user.id,
+          );
+          if (changed > 0) {
+            logger.info(
+              `Affaire ${updated.numero_affaire}: type ${existing.type} -> ${updated.type}, ${changed} tâches de préparation resynchronisées`,
+            );
+            invalidateEntity('affaires');
+            listCache.invalidatePattern(/^planning-affaires/);
+          }
+        }
         res.json({ ...updated, id: updated.id });
       } else {
         // Création
@@ -485,6 +542,10 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
       const { id } = req.params;
       const a = req.body;
 
+      // Lire l'état actuel pour détecter un changement de type et
+      // resynchroniser les tâches de préparation après l'update.
+      const before = db.prepare('SELECT numero_affaire, type FROM affaires WHERE id = ?').get(id);
+
       db.prepare(
         `
       UPDATE affaires SET
@@ -515,6 +576,22 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
       );
       const updated = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
       if (!updated) return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
+      // Si le type a changé, resynchroniser la section des tâches de préparation.
+      // On utilise l'ancien numero_affaire pour cibler les tâches existantes
+      // (cas marginal où numero_affaire changerait aussi : les tâches restent
+      // indexées sur l'ancien numéro à ce moment-là).
+      if (before && before.type && updated.type && before.type !== updated.type) {
+        const changed = syncPrepTasksToAffaireType(
+          before.numero_affaire,
+          updated.type,
+          req.user.id,
+        );
+        if (changed > 0) {
+          logger.info(
+            `Affaire ${updated.numero_affaire}: type ${before.type} -> ${updated.type}, ${changed} tâches de préparation resynchronisées`,
+          );
+        }
+      }
       invalidateEntity('affaires');
       listCache.invalidatePattern(/^planning-affaires/);
       res.json(updated);

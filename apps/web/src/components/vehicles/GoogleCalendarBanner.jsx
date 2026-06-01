@@ -239,6 +239,19 @@ function GoogleCalendarBanner({
           lastGridColumnsRef.current = gridColumns;
           bannerGrid.style.gridTemplateColumns = gridColumns;
         }
+
+        // Forcer la largeur totale du banner-grid a etre identique a celle de
+        // la grille principale. Sans cela, des differences subtiles (scrollbar,
+        // padding parent, max-width) decalent les colonnes 1fr cote banner.
+        const calWidth = Math.round(calendarGrid.getBoundingClientRect().width);
+        if (calWidth > 0) {
+          const px = `${calWidth}px`;
+          if (bannerGrid.style.width !== px) {
+            bannerGrid.style.width = px;
+            bannerGrid.style.minWidth = px;
+            bannerGrid.style.maxWidth = px;
+          }
+        }
       }
 
       // Synchroniser la largeur de la colonne fixe a gauche
@@ -255,19 +268,6 @@ function GoogleCalendarBanner({
             bannerLeftCol.style.minWidth = px;
             bannerLeftCol.style.flexShrink = '0';
           }
-        }
-      }
-
-      // Compenser la scrollbar verticale de la grille principale pour aligner les colonnes
-      const mainScroll =
-        document.querySelector('.pp-scroll-area') ||
-        document.querySelector('.calendar-scroll-area');
-      const bannerScroll = document.querySelector('.banner-scroll-area');
-      if (mainScroll && bannerScroll) {
-        const scrollbarW = Math.max(0, mainScroll.offsetWidth - mainScroll.clientWidth);
-        const px = `${scrollbarW}px`;
-        if (bannerScroll.style.paddingRight !== px) {
-          bannerScroll.style.paddingRight = px;
         }
       }
     };

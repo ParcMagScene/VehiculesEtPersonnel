@@ -231,16 +231,44 @@ function GoogleCalendarBanner({
       const { calendarGrid, bannerGrid } = resolveGridEls();
 
       if (calendarGrid && bannerGrid) {
-        // Copier les colonnes calculées du calendrier pour toutes les vues
+        // Copier les colonnes calculees du calendrier pour toutes les vues
         const gridComputedStyle = window.getComputedStyle(calendarGrid);
         const gridColumns = gridComputedStyle.gridTemplateColumns;
 
-        if (!gridColumns || gridColumns === lastGridColumnsRef.current) {
-          return;
+        if (gridColumns && gridColumns !== lastGridColumnsRef.current) {
+          lastGridColumnsRef.current = gridColumns;
+          bannerGrid.style.gridTemplateColumns = gridColumns;
         }
+      }
 
-        lastGridColumnsRef.current = gridColumns;
-        bannerGrid.style.gridTemplateColumns = gridColumns;
+      // Synchroniser la largeur de la colonne fixe a gauche
+      // Parc: .vehicle-column (250px) | Planning: .pp-person-column (redimensionnable)
+      const leftCol =
+        document.querySelector('.pp-person-column') || document.querySelector('.vehicle-column');
+      const bannerLeftCol = document.querySelector('.banner-vehicle-column');
+      if (leftCol && bannerLeftCol) {
+        const w = Math.round(leftCol.getBoundingClientRect().width);
+        if (w > 0) {
+          const px = `${w}px`;
+          if (bannerLeftCol.style.width !== px) {
+            bannerLeftCol.style.width = px;
+            bannerLeftCol.style.minWidth = px;
+            bannerLeftCol.style.flexShrink = '0';
+          }
+        }
+      }
+
+      // Compenser la scrollbar verticale de la grille principale pour aligner les colonnes
+      const mainScroll =
+        document.querySelector('.pp-scroll-area') ||
+        document.querySelector('.calendar-scroll-area');
+      const bannerScroll = document.querySelector('.banner-scroll-area');
+      if (mainScroll && bannerScroll) {
+        const scrollbarW = Math.max(0, mainScroll.offsetWidth - mainScroll.clientWidth);
+        const px = `${scrollbarW}px`;
+        if (bannerScroll.style.paddingRight !== px) {
+          bannerScroll.style.paddingRight = px;
+        }
       }
     };
 
@@ -275,6 +303,15 @@ function GoogleCalendarBanner({
     if (calendarGrid) {
       resizeObserver = new ResizeObserver(scheduleWidthSync);
       resizeObserver.observe(calendarGrid);
+      // Observer aussi la colonne fixe (redimensionnable cote Planning) et la scroll-area
+      // pour reagir a l'apparition/disparition de la scrollbar verticale.
+      const leftCol =
+        document.querySelector('.pp-person-column') || document.querySelector('.vehicle-column');
+      if (leftCol) resizeObserver.observe(leftCol);
+      const mainScroll =
+        document.querySelector('.pp-scroll-area') ||
+        document.querySelector('.calendar-scroll-area');
+      if (mainScroll) resizeObserver.observe(mainScroll);
     }
 
     // Synchroniser lors du resize de la fenêtre

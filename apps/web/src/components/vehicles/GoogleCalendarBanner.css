@@ -126,6 +126,16 @@
   min-width: 0;
 }
 
+/* Compensation du border:1px solid de .pp-calendar-container cote Planning :
+   le contenu interne du Planning est shifte d'1px a droite et reduit d'1px
+   a droite. On applique le meme decalage au banner pour garder l'alignement
+   parfait des colonnes de jours avec la grille du Planning. */
+.calendar-banner.calendar-banner--personnel {
+  border-left: 1px solid transparent;
+  border-right: 1px solid transparent;
+  box-sizing: border-box;
+}
+
 /* Colonne véhicule fixe à gauche */
 .banner-vehicle-column {
   width: 250px;

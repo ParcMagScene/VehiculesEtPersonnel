@@ -242,14 +242,13 @@ function GoogleCalendarBanner({
       }
 
       // Synchroniser la largeur de la colonne fixe a gauche
-      // Parc: .vehicle-column (250px) | Planning: .pp-column-header (250px, dans .pp-calendar-container avec border 1px)
+      // Parc: .vehicle-column (250px) | Planning: .pp-column-header (250px)
       const leftCol =
         document.querySelector('.pp-column-header') ||
         document.querySelector('.vehicle-column-header') ||
         document.querySelector('.pp-person-column') ||
         document.querySelector('.vehicle-column');
       const bannerLeftCol = document.querySelector('.banner-vehicle-column');
-      const calendarBanner = document.querySelector('.calendar-banner');
       if (leftCol && bannerLeftCol) {
         const w = Math.round(leftCol.getBoundingClientRect().width);
         if (w > 0) {
@@ -259,18 +258,6 @@ function GoogleCalendarBanner({
             bannerLeftCol.style.minWidth = px;
             bannerLeftCol.style.flexShrink = '0';
           }
-        }
-      }
-      // Aligner aussi la position horizontale du banner avec celle de la
-      // colonne fixe (Planning a un .pp-calendar-container avec border:1px qui
-      // shifte tout d'1px a droite).
-      if (leftCol && calendarBanner && bannerLeftCol) {
-        const leftColX = leftCol.getBoundingClientRect().left;
-        const bannerX = calendarBanner.getBoundingClientRect().left;
-        const delta = Math.max(0, Math.round(leftColX - bannerX));
-        const px = `${delta}px`;
-        if (calendarBanner.style.paddingLeft !== px) {
-          calendarBanner.style.paddingLeft = px;
         }
       }
 
@@ -819,7 +806,9 @@ function GoogleCalendarBanner({
   return (
     <>
       <div className={`google-calendar-banner-grid ${displayMode}`}>
-        <div className="calendar-banner">
+        <div
+          className={`calendar-banner${activeModule === 'personnel' ? ' calendar-banner--personnel' : ''}`}
+        >
           {/* Colonne véhicules fixe à gauche */}
           <div className="banner-vehicle-column">
             <div className="banner-vehicle-header">

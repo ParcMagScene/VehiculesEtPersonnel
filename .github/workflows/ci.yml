@@ -26,12 +26,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-deps
 
       - name: Vérifier les messages de commit
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
@@ -46,12 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-deps
 
       - name: ESLint — génération rapport HTML (non bloquant)
         # Toujours produire un rapport, même si le lint plus bas échoue.
@@ -83,12 +73,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-deps
 
       - name: Vérifier la cohérence docs ↔ code
         run: npm run docs:check
@@ -100,12 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-deps
 
       # ─── L1 stabilisation : check syntaxique strict ────
       # Bloque accolades non fermées, blocs incomplets, fragments orphelins
@@ -141,12 +121,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-deps
 
       - name: Tests Vitest avec coverage
         run: npm run test:coverage --workspace=apps/web
@@ -182,12 +157,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-deps
 
       # FIX CI : cache du répertoire .vite pour accélérer les rebuilds.
       - name: Cache Vite

@@ -4,6 +4,9 @@
   "private": true,
   "description": "eM@g - Interface web React",
   "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/inject-sw-version.mjs",

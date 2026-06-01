@@ -4,6 +4,9 @@
   "description": "Backend API pour le système de réservation de véhicules",
   "main": "server.js",
   "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "NODE_ENV=development nodemon server.js -- --dev",

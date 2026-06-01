@@ -1,7 +1,8 @@
-name: ✅ CI main
+name: ✅ Validation main
 
 # Déclenché quand un push arrive sur main (après merge PR dev → main).
-# Le déploiement réel est effectué localement via `npm run deploy`.
+# Ce workflow ne déploie PAS : le déploiement réel est effectué localement
+# via `npm run deploy` (PM2). Il sert de filet de sécurité post-merge.
 on:
   push:
     branches: [main]
@@ -10,23 +11,17 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-main
+  group: validate-main
   cancel-in-progress: false
 
 jobs:
-  # ─── Validation post-merge sur main ───────────────────
   validate:
     name: ✅ Validation post-merge
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
+      - uses: ./.github/actions/setup-node-deps
 
       - name: ESLint + Prettier
         run: |

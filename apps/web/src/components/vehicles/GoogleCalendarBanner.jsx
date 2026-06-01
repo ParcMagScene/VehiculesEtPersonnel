@@ -239,19 +239,6 @@ function GoogleCalendarBanner({
           lastGridColumnsRef.current = gridColumns;
           bannerGrid.style.gridTemplateColumns = gridColumns;
         }
-
-        // Forcer la largeur totale du banner-grid a etre identique a celle de
-        // la grille principale. Sans cela, des differences subtiles (scrollbar,
-        // padding parent, max-width) decalent les colonnes 1fr cote banner.
-        const calWidth = Math.round(calendarGrid.getBoundingClientRect().width);
-        if (calWidth > 0) {
-          const px = `${calWidth}px`;
-          if (bannerGrid.style.width !== px) {
-            bannerGrid.style.width = px;
-            bannerGrid.style.minWidth = px;
-            bannerGrid.style.maxWidth = px;
-          }
-        }
       }
 
       // Synchroniser la largeur de la colonne fixe a gauche
@@ -268,6 +255,25 @@ function GoogleCalendarBanner({
             bannerLeftCol.style.minWidth = px;
             bannerLeftCol.style.flexShrink = '0';
           }
+        }
+      }
+
+      // Compenser le scrollbar-gutter de la grille principale.
+      // .calendar-scroll-area utilise scrollbar-gutter:stable qui reserve ~11-16px
+      // meme quand la scrollbar n'est pas visible. .banner-scroll-area n'a pas de
+      // gutter (overflow-y:hidden), donc son grid s'etale sur toute la largeur.
+      // On mesure le delta reel entre le scroll-area et son grid pour le compenser.
+      const mainScroll =
+        document.querySelector('.pp-scroll-area') ||
+        document.querySelector('.calendar-scroll-area');
+      const bannerScroll = document.querySelector('.banner-scroll-area');
+      if (mainScroll && calendarGrid && bannerScroll) {
+        const mainW = mainScroll.getBoundingClientRect().width;
+        const gridW = calendarGrid.getBoundingClientRect().width;
+        const gutter = Math.max(0, Math.round(mainW - gridW));
+        const px = `${gutter}px`;
+        if (bannerScroll.style.paddingRight !== px) {
+          bannerScroll.style.paddingRight = px;
         }
       }
     };
@@ -292,6 +298,9 @@ function GoogleCalendarBanner({
     };
 
     // Attendre que le DOM soit complètement rendu après changement de vue
+    // Reset du cache pour garantir une re-application meme si la valeur calculee
+    // n'a pas change (ex: switch Parc <-> Planning au meme nb de colonnes).
+    lastGridColumnsRef.current = '';
     scheduleWidthSync();
     const timer1 = setTimeout(scheduleWidthSync, 50);
     const timer2 = setTimeout(scheduleWidthSync, 150);
@@ -327,7 +336,7 @@ function GoogleCalendarBanner({
       if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener('resize', scheduleWidthSync);
     };
-  }, [view, currentDate]);
+  }, [view, currentDate, activeModule]);
 
   // Synchroniser le scroll entre le calendrier et le banner
   useEffect(() => {

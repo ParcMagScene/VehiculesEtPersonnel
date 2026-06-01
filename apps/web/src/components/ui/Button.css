@@ -32,12 +32,6 @@
 }
 
 /* ─── Sizes ─── */
-.ui-btn--xs {
-  height: var(--btn-height-xs);
-  padding: var(--btn-padding-xs);
-  font-size: var(--btn-font-size-xs);
-  gap: 4px;
-}
 .ui-btn--sm {
   height: var(--btn-height-sm);
   padding: var(--btn-padding-sm);
@@ -50,28 +44,16 @@
   font-size: var(--btn-font-size-md);
   gap: 8px;
 }
-.ui-btn--lg {
-  height: var(--btn-height-lg);
-  padding: var(--btn-padding-lg);
-  font-size: var(--btn-font-size-lg);
-  gap: 10px;
-}
 
 /* ─── Icon-only (square) ─── */
 .ui-btn--icon-only {
   padding: 0;
-}
-.ui-btn--icon-only.ui-btn--xs {
-  width: var(--btn-icon-size-sm);
 }
 .ui-btn--icon-only.ui-btn--sm {
   width: var(--btn-icon-size-sm);
 }
 .ui-btn--icon-only.ui-btn--md {
   width: var(--btn-icon-size);
-}
-.ui-btn--icon-only.ui-btn--lg {
-  width: var(--btn-icon-size-lg);
 }
 
 /* ─── Variant: primary ─── */
@@ -119,16 +101,6 @@
   background: var(--btn-success-hover-bg);
 }
 
-/* ─── Variant: warning ─── */
-.ui-btn--warning {
-  background: var(--btn-warning-bg);
-  color: var(--btn-warning-color);
-  border: var(--btn-warning-border);
-}
-.ui-btn--warning:hover:not(:disabled) {
-  background: var(--btn-warning-hover-bg);
-}
-
 /* ─── Variant: ghost ─── */
 .ui-btn--ghost {
   background: transparent;
@@ -164,18 +136,11 @@
   .ui-btn--md {
     min-height: 44px;
   }
-  .ui-btn--lg {
-    min-height: 48px;
-  }
 }
 
 @media (pointer: coarse) {
   .ui-btn {
     min-height: 44px;
     min-width: 44px;
-  }
-  .ui-btn--xs {
-    min-height: 36px;
-    min-width: 36px;
   }
 }

@@ -153,4 +153,21 @@ export default [
       'jsx-a11y/media-has-caption': 'off',
     },
   },
+
+  // Scripts Node ESM (.mjs) — environnement Node, pas de browser globals,
+  // console/process autorisés (ce sont des scripts CLI de build).
+  {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.es2021,
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
 ];

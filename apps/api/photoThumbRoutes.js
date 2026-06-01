@@ -3,9 +3,8 @@
 // Endpoint public (les photos sources le sont déjà via Caddy/static).
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
 import sharp from 'sharp';
+import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
 

@@ -10,7 +10,6 @@ import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
 import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
-import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
 import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
 import { runEquipmentSerialsMagNumberMigration } from './migrations/equipment-serials-mag-number-v1.js';
 import { runEquipmentSerialsUidMigration } from './migrations/equipment-serials-uid-v1.js';
@@ -18,6 +17,7 @@ import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serial
 import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
+import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';

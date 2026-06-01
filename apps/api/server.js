@@ -58,7 +58,6 @@ import {
 } from './config/rateLimiter.js';
 import { setupConfigRoutes } from './configRoutes.js';
 import { setupControlesPeriodiquesRoutes } from './controlesPeriodiquesRoutes.js';
-import { setupPvImportRoutes } from './pvImportRoutes.js';
 import db, { checkpointDatabase, closeDatabase } from './database.js';
 import { setupDisplayRoutes } from './displayRoutes.js';
 import { setupDriversRoutes } from './driversRoutes.js';
@@ -78,7 +77,6 @@ import { setupInventoryRoutes } from './inventoryRoutes.js';
 import { setupLabelsRoutes } from './labelsRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
 import { setupLocationsRoutes } from './locationsRoutes.js';
-import { setupPhotoThumbRoutes } from './photoThumbRoutes.js';
 import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
 import logger from './logger.js';
 import { setupMailingRoutes } from './mailingRoutes.js';
@@ -110,9 +108,11 @@ import {
   setupPersonsRoutes,
   setupSkillsRoutes,
 } from './personnelRoutes.js';
+import { setupPhotoThumbRoutes } from './photoThumbRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { stopPlanningRolloverCron } from './planningRoutes.js';
 import { setupProfileRoutes } from './profileRoutes.js';
+import { setupPvImportRoutes } from './pvImportRoutes.js';
 import { setupSavRoutes } from './savRoutes.js';
 import { logSecurityEvent } from './securityLog.js';
 import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';

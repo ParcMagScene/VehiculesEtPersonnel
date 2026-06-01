@@ -3,12 +3,12 @@
 // Flux serveur→Google, sans OAuth utilisateur ni popup frontend.
 // ═══════════════════════════════════════════════════════════════
 
+import { cacheMiddleware, googleCalendarCache } from './cache.js';
 import {
   getEventById,
   getEvents,
   getGoogleServiceAccountStatus,
 } from './GoogleCalendarServiceAccount.js';
-import { cacheMiddleware, googleCalendarCache } from './cache.js';
 import logger from './logger.js';
 
 const gcalRoute = (fn) => async (req, res) => {

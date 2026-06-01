@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   Bell,
+  Briefcase,
   CalendarCheck,
   ClipboardList,
   Clock,
@@ -12,7 +13,7 @@ import {
   UserCog,
   XCircle,
 } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Avatar, Button, Tooltip } from '@/design-system';
@@ -20,6 +21,8 @@ import { Avatar, Button, Tooltip } from '@/design-system';
 import { STATUS_COLORS } from '../../constants/colors';
 import { getModalRoot } from '../../utils/modalManager';
 import ProfileEditModal from '../auth/ProfileEditModal';
+
+const MonEspacePanel = lazy(() => import('../auth/MonEspacePanel'));
 
 const HeaderActions = ({
   currentUser,
@@ -44,6 +47,7 @@ const HeaderActions = ({
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showMonEspaceModal, setShowMonEspaceModal] = useState(false);
   const avatarTriggerRef = useRef(null);
   const [userMenuPos, setUserMenuPos] = useState({ top: 0, right: 0 });
 
@@ -300,6 +304,18 @@ const HeaderActions = ({
                         className="user-menu-btn"
                         onClick={() => {
                           setShowUserMenu(false);
+                          setShowMonEspaceModal(true);
+                        }}
+                      >
+                        <Briefcase size={16} />
+                        Mon espace
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        className="user-menu-btn"
+                        onClick={() => {
+                          setShowUserMenu(false);
                           if (onOpenPreferences) onOpenPreferences();
                         }}
                       >
@@ -356,6 +372,12 @@ const HeaderActions = ({
             setShowProfileModal(false);
           }}
         />
+      )}
+
+      {showMonEspaceModal && (
+        <Suspense fallback={null}>
+          <MonEspacePanel currentUser={currentUser} onClose={() => setShowMonEspaceModal(false)} />
+        </Suspense>
       )}
     </>
   );

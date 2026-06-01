@@ -148,6 +148,10 @@
 
 .suivi-person-list {
   flex: 1;
+  /* min-height:0 est requis pour qu'un enfant flex:1 en flex-direction:column
+     respecte overflow-y:auto au lieu de gonfler avec son contenu. Sans ca,
+     la liste deborde la sidebar et le scroll devient impossible. */
+  min-height: 0;
   overflow-y: auto;
   padding: 4px;
 }

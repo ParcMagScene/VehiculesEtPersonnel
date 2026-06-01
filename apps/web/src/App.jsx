@@ -79,9 +79,9 @@ const LocationsTab = lazy(() => import('./components/annuaire/LocationsTab'));
 const VideoPanel = lazy(() => import('./components/video/VideoPanel'));
 const SonosPanel = lazy(() => import('./components/sonos/SonosPanel'));
 const ControlsDashboard = lazy(() => import('./components/controles/ControlsDashboard'));
-const AffaireDetailDialog = lazy(() =>
+const AffaireDetailModal = lazy(() =>
   import('./components/affaires/AffaireDetailPanel').then((m) => ({
-    default: m.AffaireDetailDialog,
+    default: m.AffaireDetailModal,
   })),
 );
 const UserPreferencesModal = lazy(() => import('./components/auth/UserPreferencesModal'));
@@ -1195,7 +1195,7 @@ function AppContent() {
               {globalAffaireDialog && (
                 <ErrorBoundary moduleName="Détail Affaire">
                   <Suspense fallback={null}>
-                    <AffaireDetailDialog
+                    <AffaireDetailModal
                       affaire={globalAffaireDialog}
                       reservations={data.reservations}
                       onClose={() => setGlobalAffaireDialog(null)}

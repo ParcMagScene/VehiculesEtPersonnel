@@ -3012,7 +3012,7 @@ const AffaireSlidePanel = ({
 // Dialog (modal plein écran)
 // ═══════════════════════════════════════
 
-const AffaireDetailDialog = ({
+const AffaireDetailModal = ({
   affaire,
   reservations,
   googleEventIds = [],
@@ -3317,5 +3317,5 @@ const AffaireDetailDialog = ({
   );
 };
 
-export { AffaireDetailDialog, AffaireSlidePanel };
+export { AffaireDetailModal, AffaireSlidePanel };
 export default React.memo(AffaireSlidePanel);

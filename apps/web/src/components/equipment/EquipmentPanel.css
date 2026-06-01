@@ -2865,7 +2865,7 @@
 
 /* ═══════════════════════════════════════════════════
    MODAL DÉTAIL COMPLET (DIALOG) – double-clic
-   Aligné sur le style AffaireDetailDialog
+   Aligné sur le style AffaireDetailModal
    ═══════════════════════════════════════════════════ */
 .eq-dialog-overlay {
   position: fixed;

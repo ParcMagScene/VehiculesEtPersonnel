@@ -175,8 +175,12 @@
 }
 
 .suivi-group-body {
-  overflow-y: auto;
-  min-height: 0;
+  /* Pas d'overflow ici : le scroll est gere par .suivi-person-list (parent).
+     Un overflow-y:auto sans hauteur contrainte cree un conteneur scrollable
+     qui intercepte le wheel et empeche le scroll global de fonctionner sur
+     les sections (notamment Contractuels). */
+  display: flex;
+  flex-direction: column;
 }
 
 .suivi-group-resizer {

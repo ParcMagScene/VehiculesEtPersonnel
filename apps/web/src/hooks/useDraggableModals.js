@@ -36,6 +36,18 @@ const HEADER_SELECTORS = ['[class*="-header"]', '.modal-header', '.dialog-header
 // Classes à NE PAS traiter (ex: notification toasts, tooltips, etc.)
 const IGNORE_CLASSES = ['toast', 'tooltip', 'popover', 'dropdown', 'snackbar'];
 
+// Classes de sous-éléments d'un modal qui matchent MODAL_SELECTORS par accident
+// (ex: "ui-modal-body", "dialog-body", "task-step-header") — il faut les ignorer
+// dans le walk pour ne JAMAIS prendre un sous-élément comme container draggable.
+const SUBPART_RE =
+  /-(body|footer|header|close|actions|title|name|cat|content|row|item|list|cell|grid|field|input|panel|toolbar|tab|tabs)\b/;
+
+function isModalSubpart(el) {
+  if (!el || !el.className) return false;
+  const cls = typeof el.className === 'string' ? el.className : el.className?.baseVal || '';
+  return SUBPART_RE.test(cls.toLowerCase());
+}
+
 /* ------------------------------------------------------------------ */
 /*  Logique de drag                                                    */
 /* ------------------------------------------------------------------ */
@@ -64,11 +76,13 @@ function onDragStart(e) {
   // 1) Chercher un header (drag handle préféré)
   const header = e.target.closest(HEADER_SELECTORS);
   if (header) {
-    // Remonter depuis le PARENT du header pour trouver le vrai container modal
-    // (ne pas utiliser header.closest() car le header lui-même peut matcher MODAL_SELECTORS)
+    // Remonter depuis le PARENT du header pour trouver le vrai container modal.
+    // STRICT : on n'accepte qu'un élément marqué data-draggable-enhanced (posé par
+    // enhanceModal). Cela évite que le walk prenne par accident un sous-élément
+    // dont la className contient -modal/-dialog (ui-modal-body, dialog-body, etc.).
     let candidate = header.parentElement;
     while (candidate) {
-      if (candidate.dataset?.draggableEnhanced || candidate.matches?.(MODAL_SELECTORS)) {
+      if (candidate.dataset?.draggableEnhanced && !isModalSubpart(candidate)) {
         modal = candidate;
         break;
       }
@@ -81,14 +95,19 @@ function onDragStart(e) {
   // 2) Fallback : si pas de header, permettre le drag depuis le container modal
   //    mais seulement si le click est directement sur le modal ou un wrapper haut-niveau
   if (!modal) {
-    const directModal = e.target.closest(MODAL_SELECTORS);
-    if (directModal && directModal.dataset.draggableEnhanced) {
-      // Seulement si le click n'est pas dans le body/content du modal
-      const body = directModal.querySelector(
-        '[class*="body"], [class*="content"], [class*="actions"], [class*="footer"], form, table, ul, ol',
-      );
-      if (body && body.contains(e.target)) return;
-      modal = directModal;
+    // Remonter en chaîne jusqu'au premier modal enhancé (et non sous-élément).
+    let cur = e.target;
+    while (cur && cur !== document.body) {
+      if (cur.dataset?.draggableEnhanced && !isModalSubpart(cur)) {
+        // Seulement si le click n'est pas dans le body/content du modal
+        const body = cur.querySelector(
+          '[class*="body"], [class*="content"], [class*="actions"], [class*="footer"], form, table, ul, ol',
+        );
+        if (body && body.contains(e.target)) return;
+        modal = cur;
+        break;
+      }
+      cur = cur.parentElement;
     }
   }
 
@@ -426,7 +445,7 @@ function onDblClick(e) {
   let modal = null;
   let candidate = header.parentElement;
   while (candidate) {
-    if (candidate.dataset?.draggableEnhanced || candidate.matches?.(MODAL_SELECTORS)) {
+    if (candidate.dataset?.draggableEnhanced && !isModalSubpart(candidate)) {
       modal = candidate;
       break;
     }

@@ -242,10 +242,14 @@ function GoogleCalendarBanner({
       }
 
       // Synchroniser la largeur de la colonne fixe a gauche
-      // Parc: .vehicle-column (250px) | Planning: .pp-person-column (redimensionnable)
+      // Parc: .vehicle-column (250px) | Planning: .pp-column-header (250px, dans .pp-calendar-container avec border 1px)
       const leftCol =
-        document.querySelector('.pp-person-column') || document.querySelector('.vehicle-column');
+        document.querySelector('.pp-column-header') ||
+        document.querySelector('.vehicle-column-header') ||
+        document.querySelector('.pp-person-column') ||
+        document.querySelector('.vehicle-column');
       const bannerLeftCol = document.querySelector('.banner-vehicle-column');
+      const calendarBanner = document.querySelector('.calendar-banner');
       if (leftCol && bannerLeftCol) {
         const w = Math.round(leftCol.getBoundingClientRect().width);
         if (w > 0) {
@@ -255,6 +259,18 @@ function GoogleCalendarBanner({
             bannerLeftCol.style.minWidth = px;
             bannerLeftCol.style.flexShrink = '0';
           }
+        }
+      }
+      // Aligner aussi la position horizontale du banner avec celle de la
+      // colonne fixe (Planning a un .pp-calendar-container avec border:1px qui
+      // shifte tout d'1px a droite).
+      if (leftCol && calendarBanner && bannerLeftCol) {
+        const leftColX = leftCol.getBoundingClientRect().left;
+        const bannerX = calendarBanner.getBoundingClientRect().left;
+        const delta = Math.max(0, Math.round(leftColX - bannerX));
+        const px = `${delta}px`;
+        if (calendarBanner.style.paddingLeft !== px) {
+          calendarBanner.style.paddingLeft = px;
         }
       }
 
@@ -315,7 +331,10 @@ function GoogleCalendarBanner({
       // Observer aussi la colonne fixe (redimensionnable cote Planning) et la scroll-area
       // pour reagir a l'apparition/disparition de la scrollbar verticale.
       const leftCol =
-        document.querySelector('.pp-person-column') || document.querySelector('.vehicle-column');
+        document.querySelector('.pp-column-header') ||
+        document.querySelector('.vehicle-column-header') ||
+        document.querySelector('.pp-person-column') ||
+        document.querySelector('.vehicle-column');
       if (leftCol) resizeObserver.observe(leftCol);
       const mainScroll =
         document.querySelector('.pp-scroll-area') ||

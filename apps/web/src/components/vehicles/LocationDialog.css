@@ -130,7 +130,7 @@
 .coordinates-badge small {
   color: var(--btn-success-color);
   font-size: var(--font-sm);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .help-text.warning {
@@ -243,7 +243,7 @@
   background: var(--shadow-sm);
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-xs);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
 }
 

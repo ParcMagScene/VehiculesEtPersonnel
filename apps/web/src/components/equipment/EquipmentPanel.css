@@ -882,7 +882,7 @@
 }
 
 .eq-table-ref {
-  font-family: 'SF Mono', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--theme-text-secondary) !important;
 }
@@ -898,7 +898,7 @@
 }
 
 .eq-table-serial {
-  font-family: 'SF Mono', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--theme-text-secondary) !important;
 }
@@ -1817,7 +1817,7 @@
   background: var(--theme-bg-page);
   padding: 1px 5px;
   border-radius: 3px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
 }
 .sav-search-separator {
@@ -3148,7 +3148,7 @@
   background: var(--info-tint-light);
   padding: var(--space-0-5) var(--space-1-5);
   border-radius: var(--radius-xs);
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
 }
 
 /* TABLE — Nom avec icônes listes */
@@ -3261,7 +3261,7 @@
   background: var(--info-tint-light);
   padding: 3px var(--space-2-5);
   border-radius: var(--radius-sm);
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0.5px;
 }

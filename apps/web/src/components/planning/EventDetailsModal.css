@@ -263,7 +263,7 @@ section h3 {
 }
 
 .event-details-modal .link-reservation-item-dates {
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .event-details-modal .link-reservation-item-badge {
@@ -327,7 +327,7 @@ section h3 {
 .event-details-modal .reservation-dates {
   font-size: var(--font-base);
   color: var(--text-subtle);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 /* ============ Section Liens Google Drive ============ */
@@ -579,7 +579,7 @@ section h3 {
 .event-details-modal .file-size {
   font-size: var(--font-sm);
   color: var(--text-subtle);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .event-details-modal .btn-delete-attachment {
@@ -627,7 +627,7 @@ section h3 {
   background: var(--border-default);
   padding: 2px 6px;
   border-radius: var(--radius-xs);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
 }
 

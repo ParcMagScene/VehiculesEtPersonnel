@@ -124,7 +124,7 @@
   background: var(--theme-bg-card);
   border-radius: var(--radius-sm);
   border: 1px solid var(--theme-border-muted);
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-base);
   color: var(--theme-info);
   word-break: break-all;

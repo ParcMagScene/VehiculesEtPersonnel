@@ -108,7 +108,7 @@
 }
 
 .detail-numero {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-weight: 800;
   font-size: 15px !important;
   color: var(--theme-text-primary) !important;
@@ -223,7 +223,7 @@
 }
 
 .resa-immat {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
   background: var(--theme-border);
   padding: 1px 6px;
@@ -554,7 +554,7 @@
 }
 
 .slide-panel-numero {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-md);
   font-weight: 800;
   color: var(--theme-text-inverse);
@@ -659,7 +659,7 @@
 }
 
 .dialog-numero {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xl);
   font-weight: 800;
   color: var(--theme-text-inverse);
@@ -1291,7 +1291,7 @@
   align-items: center;
   gap: 4px;
   color: var(--theme-text-secondary);
-  font-family: 'SF Mono', 'Menlo', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
 }
 

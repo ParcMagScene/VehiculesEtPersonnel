@@ -96,7 +96,7 @@
 }
 
 .vdp-slide-reg {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   letter-spacing: 1px;
   background: var(--close-btn-bg);
   border: 1px solid var(--close-btn-border);

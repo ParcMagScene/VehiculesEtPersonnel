@@ -891,7 +891,7 @@
   flex-shrink: 1;
   min-width: 60px;
   font-weight: 700;
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-base);
   color: var(--theme-text-primary);
   letter-spacing: 0.3px;

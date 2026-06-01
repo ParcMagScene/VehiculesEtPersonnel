@@ -289,7 +289,7 @@
   display: inline-block;
   padding: 2px 7px;
   font-size: 0.7rem;
-  font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+  font-family: var(--font-mono);
   background: var(--theme-border);
   color: var(--theme-text-subtle);
   border-radius: var(--radius-sm);

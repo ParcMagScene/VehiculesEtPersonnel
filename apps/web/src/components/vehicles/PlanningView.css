@@ -81,7 +81,7 @@
 .planning-vehicle-registration {
   font-size: var(--font-base);
   color: var(--theme-text-gray);
-  font-family: 'Monaco', monospace;
+  font-family: var(--font-mono);
 }
 
 /* Grille scrollable */

@@ -65,7 +65,7 @@
 .maintenance-dialog-header .vehicle-registration {
   background: var(--close-btn-border);
   color: var(--theme-text-inverse);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   letter-spacing: 1px;
 }
 

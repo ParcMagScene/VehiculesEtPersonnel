@@ -74,7 +74,7 @@
   background: var(--theme-bg-card);
   padding: 6px 12px;
   border-radius: var(--radius-sm);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-base);
   color: var(--btn-success-color);
   border: 1px solid var(--theme-success-border);
@@ -198,7 +198,7 @@
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   color: var(--theme-text-dark);
   background: var(--theme-bg-card);
   transition: border-color 0.15s;
@@ -453,7 +453,7 @@
   background: var(--theme-bg-card);
   padding: 2px 6px;
   border-radius: var(--radius-xs);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--theme-info-dark);
   border: 1px solid var(--theme-info-border);

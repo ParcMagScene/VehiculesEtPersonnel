@@ -1001,7 +1001,7 @@
   padding: 0.2rem 0.4rem;
   border-radius: var(--radius-xs);
   font-size: var(--font-base);
-  font-family: monospace;
+  font-family: var(--font-mono);
   display: inline-block;
   margin: 0.25rem 0;
 }
@@ -1012,7 +1012,7 @@
   padding: 0.75rem;
   border-radius: var(--radius-sm);
   margin: 0.5rem 0;
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-base);
   border: 2px solid var(--theme-success-alt);
 }
@@ -1051,7 +1051,7 @@
 
 .coordinates {
   color: var(--theme-text-gray);
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
 }
 

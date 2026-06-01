@@ -211,7 +211,7 @@
   color: var(--text-primary, var(--theme-text-body));
 }
 .si-ref {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   max-width: 110px;
   overflow: hidden;

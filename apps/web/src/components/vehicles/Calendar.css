@@ -782,7 +782,7 @@
   font-size: var(--font-base);
   font-weight: 900;
   color: var(--theme-primary-light);
-  font-family: monospace;
+  font-family: var(--font-mono);
   flex-shrink: 0;
   background: none;
   border-radius: 0;

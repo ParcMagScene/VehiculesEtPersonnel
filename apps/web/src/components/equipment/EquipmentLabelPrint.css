@@ -148,7 +148,7 @@
 .elp-label-uid {
   font-size: 9px;
   color: var(--theme-text-secondary);
-  font-family: monospace;
+  font-family: var(--font-mono);
   white-space: nowrap;
 }
 

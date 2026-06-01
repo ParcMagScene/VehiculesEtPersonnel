@@ -258,6 +258,12 @@
   --font-xl: 1.25rem;
   --font-2xl: 1.5rem;
   --font-3xl: 1.875rem;
+  /* Stack monospace unifiee (B17) — utilisee pour code, ids,
+     numeros techniques, donnees tabulaires alignees. Inclut les
+     polices preferees mac/iOS/Win/Android + fallbacks systeme. */
+  --font-mono:
+    ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Monaco, 'Cascadia Code', 'Fira Code', Consolas,
+    'Courier New', monospace;
   --leading-tight: 1.25;
   --leading-snug: 1.375;
   --leading-normal: 1.5;

@@ -1011,7 +1011,7 @@
 }
 
 .ref-code {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--theme-text-tertiary);
 }
@@ -1559,7 +1559,7 @@
   font-size: 0.78rem;
 }
 .catalog-picker-ref {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
   color: var(--theme-text-secondary);
   white-space: nowrap;

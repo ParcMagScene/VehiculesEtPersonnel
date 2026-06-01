@@ -279,7 +279,7 @@
 .vehicle-registration {
   font-size: var(--font-base);
   color: var(--theme-text-gray);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .reserve-button {

@@ -200,7 +200,7 @@
 .mobile-vehicle-registration {
   font-size: var(--font-2xs);
   color: var(--theme-text-gray);
-  font-family: 'Monaco', monospace;
+  font-family: var(--font-mono);
   background: var(--theme-bg-card);
   padding: var(--space-0-5) var(--space-1-5);
   border-radius: var(--radius-xs);

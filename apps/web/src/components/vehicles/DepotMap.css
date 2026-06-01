@@ -277,7 +277,7 @@
 
 .depot-tooltip-code {
   font-size: 0.65rem;
-  font-family: 'Monaco', monospace;
+  font-family: var(--font-mono);
   background: var(--theme-text-dark);
   color: var(--theme-text-secondary);
   padding: 1px 6px;
@@ -310,7 +310,7 @@
 }
 
 .tooltip-item-ref {
-  font-family: 'Monaco', monospace;
+  font-family: var(--font-mono);
   color: var(--theme-info);
   font-weight: 500;
   flex-shrink: 0;

@@ -223,7 +223,7 @@
 .vehicle-picker-reg {
   font-size: var(--font-sm);
   color: var(--theme-text-secondary);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .vehicle-picker-chevron {
@@ -391,7 +391,7 @@
 .vehicle-picker-item-reg {
   font-size: var(--font-sm);
   color: var(--theme-text-secondary);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .vehicle-picker-check {
@@ -474,7 +474,7 @@
   font-size: var(--font-sm);
   font-weight: 700;
   width: fit-content;
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .mobile-reservations .reservation-dates {

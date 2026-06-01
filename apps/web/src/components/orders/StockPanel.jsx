@@ -2137,7 +2137,7 @@ function ImportStockModal({ onDone, onClose }) {
                     placeholder={
                       'Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17'
                     }
-                    style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}
                   />
                 </div>
               )}
@@ -2222,7 +2222,7 @@ function ImportStockModal({ onDone, onClose }) {
                   <tbody>
                     {parsedItems.slice(0, 30).map((item, i) => (
                       <tr key={i}>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
                           {item.reference || '—'}
                         </td>
                         <td>{item.name}</td>

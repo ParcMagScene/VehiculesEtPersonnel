@@ -104,7 +104,7 @@
   padding: 3px 6px;
   border: 1px solid var(--border, #ccc);
   border-radius: 4px;
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   text-transform: uppercase;
 }
@@ -139,7 +139,7 @@
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .lpp-mag-apply:hover {

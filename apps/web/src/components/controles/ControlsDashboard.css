@@ -253,7 +253,7 @@
 }
 
 .ctrl-uid {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   color: var(--theme-text-muted);
   background: var(--theme-border-light);
@@ -263,7 +263,7 @@
 
 /* Colonne Type — code en mono + libellé */
 .ctrl-type-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: var(--font-sm);
   color: var(--theme-text-primary);

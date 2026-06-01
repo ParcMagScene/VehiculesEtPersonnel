@@ -244,14 +244,14 @@
 }
 
 .ebl-uid {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-weight: 600;
   color: var(--theme-primary);
   white-space: nowrap;
 }
 
 .ebl-sn {
-  font-family: monospace;
+  font-family: var(--font-mono);
   color: var(--theme-text-secondary);
   white-space: nowrap;
 }
@@ -294,7 +294,7 @@
 .ebl-mini-uid {
   font-size: 6px;
   color: var(--theme-text-secondary);
-  font-family: monospace;
+  font-family: var(--font-mono);
   white-space: nowrap;
 }
 

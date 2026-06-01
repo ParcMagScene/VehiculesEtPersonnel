@@ -610,7 +610,7 @@
   font-size: var(--font-sm);
   color: var(--theme-text-gray);
   white-space: nowrap;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .event-title {

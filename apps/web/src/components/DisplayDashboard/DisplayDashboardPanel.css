@@ -1520,7 +1520,7 @@
 
 .dtv-color-input span {
   font-size: 0.78rem;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   color: var(--theme-text-secondary);
 }
 
@@ -2839,7 +2839,7 @@
   display: inline-block;
   font-size: 1.4cqi;
   font-weight: 700;
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   letter-spacing: 0.02em;
   padding: 0.1cqi 0.6cqi;
   border-radius: 0.4cqi;

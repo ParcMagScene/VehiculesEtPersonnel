@@ -283,7 +283,7 @@
 }
 
 .eshop-mono {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--color-text-muted, #6b7280);
 }

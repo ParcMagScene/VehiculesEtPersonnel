@@ -252,7 +252,7 @@
 }
 
 .mr-mono {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
   color: var(--theme-text-gray);
 }

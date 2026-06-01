@@ -78,7 +78,7 @@
 
 .vehicle-maintenance-modal .modal-header .vehicle-registration {
   background: var(--close-btn-border);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   letter-spacing: 1px;
 }
 

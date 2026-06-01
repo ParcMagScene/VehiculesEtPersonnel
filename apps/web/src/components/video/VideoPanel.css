@@ -217,7 +217,7 @@
   z-index: var(--z-base);
 }
 .video-panel__table code {
-  font-family: 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   background: var(--bg-accent, var(--theme-border-light));
   padding: 1px 4px;

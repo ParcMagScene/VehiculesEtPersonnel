@@ -549,7 +549,7 @@
   flex-shrink: 0;
   font-size: var(--font-xs);
   color: var(--theme-text-secondary);
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
 }
 
 .bl-loc-col-desc {
@@ -620,7 +620,7 @@
   padding: 12px;
   background: var(--theme-bg-tertiary);
   border-radius: var(--radius-md);
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: 0.78rem;
   color: var(--theme-text-secondary);
   white-space: pre-wrap;

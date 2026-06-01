@@ -111,7 +111,7 @@
 }
 
 .qr-landing-uid {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-base);
   color: var(--theme-text-secondary);
   background: var(--theme-border-light);

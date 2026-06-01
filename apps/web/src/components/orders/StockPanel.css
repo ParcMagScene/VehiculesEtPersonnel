@@ -505,7 +505,7 @@
 }
 
 .stock-ref {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--theme-primary);
   font-weight: 500;
@@ -698,7 +698,7 @@
 }
 
 .stock-detail-ref {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-base);
   color: var(--theme-primary);
   background: var(--theme-bg-hover);
@@ -847,7 +847,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
   white-space: nowrap;
 }
@@ -927,7 +927,7 @@
 }
 
 .stock-movements-view .movement-change {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.82rem;
   color: var(--theme-text-secondary);
 }
@@ -1593,7 +1593,7 @@
 .stock-slide-ref {
   font-size: var(--font-sm);
   color: var(--theme-text-secondary);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .stock-slide-close {

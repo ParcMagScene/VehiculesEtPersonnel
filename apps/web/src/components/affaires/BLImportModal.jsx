@@ -50,6 +50,26 @@ const formatFileSize = (bytes) => {
 const AFFAIRE_TYPE_OPTIONS = AFFAIRE_TYPES;
 
 // ═══ Composant Principal ═══
+/**
+ * BLImportModal — Import generique de Bon de Livraison / BL Vente.
+ *
+ * Modal d'import de documents PDF (drag & drop ou selection) qui :
+ *  - extrait le texte du PDF cote client (parsing),
+ *  - detecte le type de document (BL Location, BL Vente, etc.),
+ *  - permet de rattacher le document a une affaire (id + type),
+ *  - bloque l'import si combinaison interdite (ex: BL Vente sur affaire
+ *    Location ou Prestation, cf. BL_VENTE_FORBIDDEN_TYPES),
+ *  - genere ensuite des lignes/postes via l'API.
+ *
+ * Cas d'usage : workflow generaliste, hors flux Location/Prestation pure
+ *   (qui passe par BLImportLocPrestaModal).
+ *
+ * @param {Object} props
+ * @param {() => void} props.onClose - Ferme la modal (avec garde dirty form).
+ * @param {(result: any) => void} props.onImported - Callback apres import OK.
+ * @param {string} [props.defaultAffaireId] - Affaire pre-selectionnee.
+ * @param {string} [props.defaultAffaireType] - Type d'affaire pre-selectionne.
+ */
 function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireType }) {
   const toast = useToast();
   const fileInputRef = useRef(null);

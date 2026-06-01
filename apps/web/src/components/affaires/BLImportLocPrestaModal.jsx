@@ -206,6 +206,26 @@ const formatFileSize = (bytes) => {
 };
 
 // ═══ Composant Principal ═══
+/**
+ * BLImportLocPrestaModal — Import specialise Bon de Preparation Location/Prestation.
+ *
+ * Variante de BLImportModal dediee au flux Location & Prestation :
+ *  - n'accepte que les types d'affaire dans ALLOWED_TYPES (Location, Prestation),
+ *  - attend un document de type Bon de Preparation (DOC_TYPES.BON_PREPARATION) :
+ *    affiche un avertissement si autre type detecte (isWrongDocType),
+ *  - rapproche les lignes extraites avec le catalogue (catalogMatches) pour
+ *    suggerer les references existantes,
+ *  - permet le pliage/depliage par section (expandedSections) pour les BL longs.
+ *
+ * Pour les BL Vente / generiques, utiliser BLImportModal a la place.
+ *
+ * @param {Object} props
+ * @param {() => void} props.onClose - Ferme la modal (avec garde dirty form).
+ * @param {(result: any) => void} props.onImported - Callback apres import OK.
+ * @param {string} [props.defaultAffaireId] - Affaire pre-selectionnee.
+ * @param {string} [props.defaultAffaireType] - Type d'affaire pre-selectionne
+ *   (ignore si non present dans ALLOWED_TYPES).
+ */
 function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, defaultAffaireType }) {
   const toast = useToast();
   const fileInputRef = useRef(null);

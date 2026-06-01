@@ -2706,13 +2706,6 @@ const PlanningTab = ({
               >
                 Mois
               </Button>
-              <Button
-                variant="ghost"
-                className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`}
-                onClick={() => setView('year')}
-              >
-                Année
-              </Button>
             </div>
             <div className="cal-nav-date">
               <Button
@@ -2856,9 +2849,9 @@ const PlanningTab = ({
                           key={i}
                           className={`pp-header-cell day-header${isWeekendFn(day) ? ' weekend' : ''}${isToday(day) ? ' today' : ''}`}
                         >
-                          <div className="pp-day-name">{format(day, 'EEE', { locale: fr })}</div>
+                          <div className="pp-day-name">{format(day, 'EEEE', { locale: fr })}</div>
                           <div className="pp-day-number">
-                            {format(day, 'd MMM', { locale: fr })}
+                            {format(day, 'd MMMM', { locale: fr })}
                           </div>
                         </div>
                       ))}

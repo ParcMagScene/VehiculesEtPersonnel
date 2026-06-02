@@ -65,7 +65,12 @@
 .google-calendar-banner-grid.compact .banner-scroll-area {
   overflow-y: auto;
   border-bottom: none;
-  flex: 0 0 auto;
+  /* NE PAS poser flex: 0 0 auto ici : .calendar-banner est display:flex en
+     direction row, donc cette regle ferait dimensionner banner-scroll-area
+     a sa taille intrinseque (largeur du contenu) au lieu de remplir
+     l'espace restant (parent - banner-vehicle-column). Resultat : banner
+     plus large que la grille du Planning, decalage des colonnes de jours.
+     On laisse le flex:1 de la regle de base s'appliquer. */
 }
 
 .resize-handle {

@@ -263,37 +263,12 @@ function GoogleCalendarBanner({
         }
       }
 
-      // Compenser le scrollbar-gutter de la grille principale.
-      // .calendar-scroll-area utilise scrollbar-gutter:stable qui reserve ~11-16px
-      // meme quand la scrollbar n'est pas visible. .banner-scroll-area n'a pas de
-      // gutter (overflow-y:hidden), donc son grid s'etale sur toute la largeur.
-      // On mesure le delta reel entre la scroll-area et la grille de contenu
-      // (qui inclut le gutter) pour le compenser. Cote Planning : utiliser
-      // .pp-grid (contenu) car .pp-headers-grid n'a pas de gutter.
-      // Garde-fou : un scrollbar fait au plus ~24px ; au-dela on a mesure
-      // pendant une phase intermediaire (contenu pas encore stretche), on
-      // ignore pour eviter d'ecraser le banner.
-      const mainScroll =
-        document.querySelector('.pp-scroll-area') ||
-        document.querySelector('.calendar-scroll-area');
-      const contentGrid =
-        activeModule === 'planning'
-          ? document.querySelector('.pp-grid')
-          : document.querySelector('.calendar-grid');
-      const bannerScroll = document.querySelector('.banner-scroll-area');
-      if (mainScroll && contentGrid && bannerScroll) {
-        const mainW = mainScroll.getBoundingClientRect().width;
-        const gridW = contentGrid.getBoundingClientRect().width;
-        const rawGutter = Math.round(mainW - gridW);
-        // Si delta > 24px : mesure non fiable (contentGrid pas encore stretche
-        // a 100%, e.g. .pp-grid avec min-width:max-content au mount). On
-        // applique 0 plutot que d'ecraser le banner avec un grand padding.
-        const gutter = rawGutter > 0 && rawGutter <= 24 ? rawGutter : 0;
-        const px = `${gutter}px`;
-        if (bannerScroll.style.paddingRight !== px) {
-          bannerScroll.style.paddingRight = px;
-        }
-      }
+      // Compensation du scrollbar-gutter : NON necessaire en JS.
+      // .banner-scroll-area utilise desormais EXACTEMENT le meme couple
+      // CSS que les grilles principales : scrollbar-width:thin +
+      // scrollbar-gutter:stable + overflow-y:auto. Le navigateur reserve
+      // le meme espace, l'alignement est garanti par CSS, pas par mesure.
+      // Voir GoogleCalendarBanner.css ligne ~377.
     };
 
     const scheduleWidthSync = () => {

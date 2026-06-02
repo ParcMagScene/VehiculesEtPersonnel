@@ -374,20 +374,27 @@ body:has(.pp-calendar-container) .calendar-banner {
   transform: scale(1.1);
 }
 
-/* Zone scrollable à droite */
+/* Zone scrollable a droite.
+   IMPORTANT : le scrollbar-gutter / scrollbar-width DOIVENT etre identiques
+   a ceux des grilles principales (.pp-scroll-area, .calendar-scroll-area)
+   pour que les colonnes soient alignees pixel-perfect. Sinon le banner
+   s'etale ~11-16px plus large que la grille principale. */
 .banner-scroll-area {
   flex: 1;
-  max-width: calc(100vw - 250px);
   min-width: 0;
   overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
   position: relative;
   min-height: 0;
 }
 
-.banner-scroll-area::-webkit-scrollbar {
-  display: none;
+/* Masque le track vertical (le banner n'a pas de contenu vertical a scroller)
+   tout en preservant l'espace reserve par scrollbar-gutter:stable. */
+.banner-scroll-area::-webkit-scrollbar:vertical {
+  width: 0;
+  background: transparent;
 }
 
 /* Grille */

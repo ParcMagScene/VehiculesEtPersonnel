@@ -219,11 +219,14 @@ function GoogleCalendarBanner({
       if (!calendarGridEl || !calendarGridEl.isConnected) {
         // Selectionner explicitement selon le module actif pour eviter de
         // copier la grille du Parc (14 col) sur le banner du Planning (7 col).
+        // En Planning : cibler .pp-headers-grid (reference visuelle des jours,
+        // largeur stable) plutot que .pp-grid (qui a min-width:max-content
+        // et peut etre plus etroite selon le contenu).
         if (activeModule === 'personnel') {
-          calendarGridEl = document.querySelector('.pp-grid');
-        } else {
           calendarGridEl =
-            document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+            document.querySelector('.pp-headers-grid') || document.querySelector('.pp-grid');
+        } else {
+          calendarGridEl = document.querySelector('.calendar-grid');
         }
       }
       if (!bannerGridEl || !bannerGridEl.isConnected) {
@@ -270,14 +273,20 @@ function GoogleCalendarBanner({
       // .calendar-scroll-area utilise scrollbar-gutter:stable qui reserve ~11-16px
       // meme quand la scrollbar n'est pas visible. .banner-scroll-area n'a pas de
       // gutter (overflow-y:hidden), donc son grid s'etale sur toute la largeur.
-      // On mesure le delta reel entre le scroll-area et son grid pour le compenser.
+      // On mesure le delta reel entre la scroll-area et la grille de contenu
+      // (qui inclut le gutter) pour le compenser. Cote Planning : utiliser
+      // .pp-grid (contenu) car .pp-headers-grid n'a pas de gutter.
       const mainScroll =
         document.querySelector('.pp-scroll-area') ||
         document.querySelector('.calendar-scroll-area');
+      const contentGrid =
+        activeModule === 'personnel'
+          ? document.querySelector('.pp-grid')
+          : document.querySelector('.calendar-grid');
       const bannerScroll = document.querySelector('.banner-scroll-area');
-      if (mainScroll && calendarGrid && bannerScroll) {
+      if (mainScroll && contentGrid && bannerScroll) {
         const mainW = mainScroll.getBoundingClientRect().width;
-        const gridW = calendarGrid.getBoundingClientRect().width;
+        const gridW = contentGrid.getBoundingClientRect().width;
         const gutter = Math.max(0, Math.round(mainW - gridW));
         const px = `${gutter}px`;
         if (bannerScroll.style.paddingRight !== px) {
@@ -338,8 +347,8 @@ function GoogleCalendarBanner({
       mutationObserver = new MutationObserver(() => {
         const grid =
           activeModule === 'personnel'
-            ? document.querySelector('.pp-grid')
-            : document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+            ? document.querySelector('.pp-headers-grid') || document.querySelector('.pp-grid')
+            : document.querySelector('.calendar-grid');
         if (grid) {
           calendarGrid = grid;
           attachResizeObserver();

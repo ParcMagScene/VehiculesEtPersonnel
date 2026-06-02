@@ -212,7 +212,6 @@ function GoogleCalendarBanner({
 
   // Synchroniser les largeurs avec le calendrier principal (ou le planning personnel)
   useEffect(() => {
-    const MIN_WIDTH_SYNC_INTERVAL_MS = 120;
     let calendarGridEl = null;
     let bannerGridEl = null;
 
@@ -231,12 +230,12 @@ function GoogleCalendarBanner({
       const { calendarGrid, bannerGrid } = resolveGridEls();
 
       if (calendarGrid && bannerGrid) {
-        // Copier les colonnes calculees du calendrier pour toutes les vues
+        // Copier les colonnes calculees en pixels (toujours, sans cache)
+        // pour garantir l'alignement meme si la grille principale change de
+        // taille apres le mount (lazy load, fonts, scrollbar, etc).
         const gridComputedStyle = window.getComputedStyle(calendarGrid);
         const gridColumns = gridComputedStyle.gridTemplateColumns;
-
-        if (gridColumns && gridColumns !== lastGridColumnsRef.current) {
-          lastGridColumnsRef.current = gridColumns;
+        if (gridColumns && gridColumns !== bannerGrid.style.gridTemplateColumns) {
           bannerGrid.style.gridTemplateColumns = gridColumns;
         }
       }
@@ -283,17 +282,9 @@ function GoogleCalendarBanner({
 
     const scheduleWidthSync = () => {
       if (document.hidden) return;
-
-      const now = Date.now();
-      if (now - lastWidthSyncAtRef.current < MIN_WIDTH_SYNC_INTERVAL_MS) {
-        return;
-      }
-      lastWidthSyncAtRef.current = now;
-
       if (widthSyncFrameRef.current) {
         cancelAnimationFrame(widthSyncFrameRef.current);
       }
-
       widthSyncFrameRef.current = requestAnimationFrame(() => {
         widthSyncFrameRef.current = null;
         applyWidths();
@@ -305,18 +296,22 @@ function GoogleCalendarBanner({
     // n'a pas change (ex: switch Parc <-> Planning au meme nb de colonnes).
     lastGridColumnsRef.current = '';
     scheduleWidthSync();
-    const timer1 = setTimeout(scheduleWidthSync, 50);
-    const timer2 = setTimeout(scheduleWidthSync, 150);
+    // Au mount initial, la grille principale peut ne pas avoir sa taille finale
+    // (lazy-load PersonnelPanel/PlanningView, fonts, scrollbar apparait apres).
+    // On rejoue la sync plusieurs fois sur ~2.5s pour attraper la stabilisation.
+    const retryDelays = [16, 50, 100, 200, 350, 600, 1000, 1500, 2500];
+    const retryTimers = retryDelays.map((d) => setTimeout(scheduleWidthSync, d));
 
     // Observer les changements de taille du calendrier ou du planning personnel
-    const { calendarGrid } = resolveGridEls();
+    let { calendarGrid } = resolveGridEls();
     let resizeObserver;
+    let mutationObserver;
 
-    if (calendarGrid) {
+    const attachResizeObserver = () => {
+      if (resizeObserver) resizeObserver.disconnect();
       resizeObserver = new ResizeObserver(scheduleWidthSync);
-      resizeObserver.observe(calendarGrid);
-      // Observer aussi la colonne fixe (redimensionnable cote Planning) et la scroll-area
-      // pour reagir a l'apparition/disparition de la scrollbar verticale.
+      const grid = resolveGridEls().calendarGrid;
+      if (grid) resizeObserver.observe(grid);
       const leftCol =
         document.querySelector('.pp-column-header') ||
         document.querySelector('.vehicle-column-header') ||
@@ -327,19 +322,37 @@ function GoogleCalendarBanner({
         document.querySelector('.pp-scroll-area') ||
         document.querySelector('.calendar-scroll-area');
       if (mainScroll) resizeObserver.observe(mainScroll);
+    };
+
+    if (calendarGrid) {
+      attachResizeObserver();
+    } else {
+      // Si la grille n'est pas encore montee (lazy load), observer le DOM
+      // jusqu'a son apparition pour attacher le ResizeObserver et resync.
+      mutationObserver = new MutationObserver(() => {
+        const grid = document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+        if (grid) {
+          calendarGrid = grid;
+          attachResizeObserver();
+          scheduleWidthSync();
+          mutationObserver.disconnect();
+          mutationObserver = null;
+        }
+      });
+      mutationObserver.observe(document.body, { childList: true, subtree: true });
     }
 
     // Synchroniser lors du resize de la fenêtre
     window.addEventListener('resize', scheduleWidthSync);
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      retryTimers.forEach(clearTimeout);
       if (widthSyncFrameRef.current) {
         cancelAnimationFrame(widthSyncFrameRef.current);
         widthSyncFrameRef.current = null;
       }
       if (resizeObserver) resizeObserver.disconnect();
+      if (mutationObserver) mutationObserver.disconnect();
       window.removeEventListener('resize', scheduleWidthSync);
     };
   }, [view, currentDate, activeModule]);

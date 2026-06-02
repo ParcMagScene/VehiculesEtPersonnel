@@ -239,13 +239,21 @@ function GoogleCalendarBanner({
       const { calendarGrid, bannerGrid } = resolveGridEls();
 
       if (calendarGrid && bannerGrid) {
-        // Copier les colonnes calculees en pixels (toujours, sans cache)
-        // pour garantir l'alignement meme si la grille principale change de
-        // taille apres le mount (lazy load, fonts, scrollbar, etc).
+        // Determiner le nombre de colonnes a partir de la grille de reference
+        // et l'appliquer en `repeat(N, 1fr)` au banner. Approche robuste car
+        // independante de la largeur mesuree au moment de l'application
+        // (qui peut etre intermediaire au mount/refresh). Le banner-grid
+        // s'adapte ensuite automatiquement a toute redimension via le flex.
         const gridComputedStyle = window.getComputedStyle(calendarGrid);
         const gridColumns = gridComputedStyle.gridTemplateColumns;
-        if (gridColumns && gridColumns !== bannerGrid.style.gridTemplateColumns) {
-          bannerGrid.style.gridTemplateColumns = gridColumns;
+        if (gridColumns && gridColumns !== 'none') {
+          const colCount = gridColumns.trim().split(/\s+/).length;
+          if (colCount > 0) {
+            const target = `repeat(${colCount}, 1fr)`;
+            if (bannerGrid.style.gridTemplateColumns !== target) {
+              bannerGrid.style.gridTemplateColumns = target;
+            }
+          }
         }
       }
 

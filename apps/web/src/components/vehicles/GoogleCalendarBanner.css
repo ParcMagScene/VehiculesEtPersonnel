@@ -129,8 +129,11 @@
 /* Compensation du border:1px solid de .pp-calendar-container cote Planning :
    le contenu interne du Planning est shifte d'1px a droite et reduit d'1px
    a droite. On applique le meme decalage au banner pour garder l'alignement
-   parfait des colonnes de jours avec la grille du Planning. */
-.calendar-banner.calendar-banner--personnel {
+   parfait des colonnes de jours avec la grille du Planning. Detection via
+   :has() pour ne dependre que du DOM (et pas d'une prop activeModule
+   potentiellement absente au mount). */
+.calendar-banner.calendar-banner--personnel,
+body:has(.pp-calendar-container) .calendar-banner {
   border-left: 1px solid transparent;
   border-right: 1px solid transparent;
   box-sizing: border-box;

@@ -236,26 +236,10 @@ function GoogleCalendarBanner({
     };
 
     const applyWidths = () => {
-      const { calendarGrid, bannerGrid } = resolveGridEls();
-
-      if (calendarGrid && bannerGrid) {
-        // Determiner le nombre de colonnes a partir de la grille de reference
-        // et l'appliquer en `repeat(N, 1fr)` au banner. Approche robuste car
-        // independante de la largeur mesuree au moment de l'application
-        // (qui peut etre intermediaire au mount/refresh). Le banner-grid
-        // s'adapte ensuite automatiquement a toute redimension via le flex.
-        const gridComputedStyle = window.getComputedStyle(calendarGrid);
-        const gridColumns = gridComputedStyle.gridTemplateColumns;
-        if (gridColumns && gridColumns !== 'none') {
-          const colCount = gridColumns.trim().split(/\s+/).length;
-          if (colCount > 0) {
-            const target = `repeat(${colCount}, 1fr)`;
-            if (bannerGrid.style.gridTemplateColumns !== target) {
-              bannerGrid.style.gridTemplateColumns = target;
-            }
-          }
-        }
-      }
+      // Le nombre de colonnes du banner-grid est desormais defini en JSX a
+      // partir des props (view, activeModule, days.length). Il ne reste a
+      // synchroniser ici que la colonne fixe de gauche et la compensation
+      // du scrollbar-gutter de la grille principale.
 
       // Synchroniser la largeur de la colonne fixe a gauche
       // Parc: .vehicle-column (250px) | Planning: .pp-column-header (250px)
@@ -918,7 +902,27 @@ function GoogleCalendarBanner({
             onScroll={handleScroll}
             style={displayMode === 'compact' ? { height: `${bannerHeight}px` } : undefined}
           >
-            <div className={`banner-grid ${view}-view`}>
+            <div
+              className={`banner-grid ${view}-view`}
+              style={{
+                // Calcul deterministe du nombre de colonnes a partir des
+                // props (pas de DOM scraping ni timing). Aligne avec la
+                // grille principale (Parc: 14 col en semaine pour AM/PM,
+                // Planning: 7 col uniformes).
+                gridTemplateColumns:
+                  view === 'year'
+                    ? 'repeat(12, 1fr)'
+                    : view === 'week'
+                      ? activeModule === 'personnel'
+                        ? 'repeat(7, 1fr)'
+                        : 'repeat(14, 1fr)'
+                      : view === 'month'
+                        ? `repeat(${
+                            activeModule === 'personnel' ? days.length : days.length * 2
+                          }, 1fr)`
+                        : undefined,
+              }}
+            >
               {/* Lignes de séparation alignées sur les colonnes */}
               <div className="banner-grid-lines">
                 {view === 'week' &&

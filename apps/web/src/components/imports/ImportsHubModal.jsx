@@ -1,26 +1,22 @@
 /**
  * ImportsHubModal — Point d'entree centralise pour tous les imports
- * (PDF + CSV) de l'application : Affaires, Catalogues, Stocks, Controles,
- * Vehicules, Personnel.
+ * (PDF + CSV) de l'application. Le hub n'embarque AUCUNE logique de
+ * parsing : il se contente de lancer les modals d'import existants
+ * (lazy-loades). Une seule modale enfant active a la fois.
  *
- * Architecture :
- *   - Le hub n'embarque AUCUNE logique de parsing ; il se contente de lancer
- *     les modals d'import existants (lazy-loades) ou d'afficher "Bientot
- *     disponible" pour les categories non encore implementees.
- *   - Une seule modale d'import est active a la fois.
- *
- * Lots futurs :
- *   - L5 : brancher AffaireImportModal, BLImportLocPrestaModal
- *   - L6 : creer modale catalogues fournisseurs / interne (CSV)
- *   - L7 : brancher EquipmentImportModal, LocmatImportModal (stocks)
- *   - L8 : brancher PvImportPanel (PV controles)
- *   - L9 : creer modale CT vehicules (PDF)
+ * Reste en "Bientot" :
+ *   - Catalogues fournisseurs : la modale d'import vit a l'interieur du
+ *     panneau Commandes (state local de SupplierCatalogPanel), pas un
+ *     composant autonome. Ouvrir le module Commandes pour l'instant.
+ *   - CT vehicules : pas de parser PDF dedie a ce jour.
+ *   - Commandes fournisseurs / demandes clients : non implemente.
  */
 import './ImportsHubModal.css';
 
 import {
   Briefcase,
   ClipboardCheck,
+  Contact,
   FileText,
   Layers,
   Package,
@@ -33,14 +29,18 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 const BLMultiImportModal = lazy(() => import('../affaires/BLMultiImportModal'));
+const BLImportLocPrestaModal = lazy(() => import('../affaires/BLImportLocPrestaModal'));
 const PersonnelImportModal = lazy(() => import('../personnel/PersonnelImportModal'));
+const EquipmentImportModal = lazy(() => import('../equipment/EquipmentImportModal'));
+const LocmatImportModal = lazy(() => import('../equipment/import/LocmatImportModal'));
+const PvImportPanel = lazy(() => import('../pv-import/PvImportPanel'));
+const ContactsCSVImportDialog = lazy(() => import('../annuaire/ContactsCSVImportDialog'));
 
 /**
- * Definition declarative des categories. Chaque entree definit :
- *   - id : cle unique
- *   - label / description / icon
- *   - items : sous-imports avec un handler `launch` (renvoie un id de modal)
- *     ou `comingSoon: true`.
+ * Definition declarative des categories. Chaque entree :
+ *   - id, label, description, icon (visuel)
+ *   - items[] : { id, label, target | comingSoon }
+ * `target` est l'id de la modale enfant a monter.
  */
 function buildSections() {
   return [
@@ -48,9 +48,10 @@ function buildSections() {
       id: 'affaires',
       label: 'Affaires',
       icon: Briefcase,
-      description: 'Bons de livraison, bons de preparation, commandes fournisseurs.',
+      description: 'Bons de livraison, bons de preparation, locations, prestations.',
       items: [
         { id: 'bl-bp', label: 'Import BL / BP (PDF)', target: 'bl-multi' },
+        { id: 'bl-loc-presta', label: 'BL Location / Prestation (PDF)', target: 'bl-loc-presta' },
         { id: 'cmd-fourn', label: 'Commandes fournisseurs (PDF)', comingSoon: true },
         { id: 'demandes', label: 'Demandes clients (CSV)', comingSoon: true },
       ],
@@ -61,7 +62,7 @@ function buildSections() {
       icon: Layers,
       description: 'References produits fournisseurs et internes.',
       items: [
-        { id: 'cat-fourn', label: 'Catalogue fournisseurs (CSV)', comingSoon: true },
+        { id: 'cat-fourn', label: 'Catalogue fournisseurs (PDF)', comingSoon: true },
         { id: 'cat-interne', label: 'Catalogue interne (CSV)', comingSoon: true },
       ],
     },
@@ -69,10 +70,10 @@ function buildSections() {
       id: 'stocks',
       label: 'Stocks',
       icon: Package,
-      description: 'Inventaires et fiches equipements (UID, QR codes).',
+      description: 'Equipements (UID, QR codes), locations / serialise.',
       items: [
-        { id: 'inventaires', label: 'Inventaires (CSV)', comingSoon: true },
-        { id: 'equipements', label: 'Equipements (CSV)', comingSoon: true },
+        { id: 'equipements', label: 'Equipements (CSV)', target: 'equipment' },
+        { id: 'locmat', label: 'Locations + Serialise (CSV)', target: 'locmat' },
       ],
     },
     {
@@ -80,7 +81,7 @@ function buildSections() {
       label: 'Controles',
       icon: ShieldCheck,
       description: 'PV de controle (elingues, EPI, levage, electrique).',
-      items: [{ id: 'pv-controles', label: 'PV de controle (PDF)', comingSoon: true }],
+      items: [{ id: 'pv-controles', label: 'PV de controle (PDF)', target: 'pv' }],
     },
     {
       id: 'vehicules',
@@ -96,6 +97,13 @@ function buildSections() {
       description: 'Fiches personnel et donnees RH.',
       items: [{ id: 'personnel-csv', label: 'Personnel (CSV)', target: 'personnel' }],
     },
+    {
+      id: 'annuaire',
+      label: 'Annuaire',
+      icon: Contact,
+      description: 'Contacts (clients, fournisseurs, prestataires).',
+      items: [{ id: 'contacts-csv', label: 'Contacts (CSV)', target: 'contacts' }],
+    },
   ];
 }
 
@@ -109,9 +117,6 @@ function ImportsHubModal({ onClose, onImported }) {
     onImported?.(...args);
   };
 
-  // Quand une modale enfant est ouverte, on masque visuellement le hub
-  // (mais on le garde monte pour conserver l'etat). Une seule modale active
-  // a la fois pour ne pas empiler les overlays.
   return (
     <>
       <Modal open={!activeImport} onClose={onClose} size="lg" className="imports-hub-modal">
@@ -170,9 +175,34 @@ function ImportsHubModal({ onClose, onImported }) {
           <BLMultiImportModal onClose={closeChild} onImported={handleChildImported} />
         </Suspense>
       )}
+      {activeImport === 'bl-loc-presta' && (
+        <Suspense fallback={null}>
+          <BLImportLocPrestaModal onClose={closeChild} onImported={handleChildImported} />
+        </Suspense>
+      )}
       {activeImport === 'personnel' && (
         <Suspense fallback={null}>
           <PersonnelImportModal onClose={closeChild} onImportDone={handleChildImported} />
+        </Suspense>
+      )}
+      {activeImport === 'equipment' && (
+        <Suspense fallback={null}>
+          <EquipmentImportModal onClose={closeChild} onImportDone={handleChildImported} />
+        </Suspense>
+      )}
+      {activeImport === 'locmat' && (
+        <Suspense fallback={null}>
+          <LocmatImportModal onClose={closeChild} onDone={handleChildImported} />
+        </Suspense>
+      )}
+      {activeImport === 'pv' && (
+        <Suspense fallback={null}>
+          <PvImportPanel open onClose={closeChild} />
+        </Suspense>
+      )}
+      {activeImport === 'contacts' && (
+        <Suspense fallback={null}>
+          <ContactsCSVImportDialog onClose={closeChild} onSuccess={handleChildImported} />
         </Suspense>
       )}
     </>

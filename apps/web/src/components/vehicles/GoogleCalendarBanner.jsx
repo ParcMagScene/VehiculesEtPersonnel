@@ -243,13 +243,17 @@ function GoogleCalendarBanner({
       // synchroniser ici que la colonne fixe de gauche et la compensation
       // du scrollbar-gutter de la grille principale.
 
-      // Synchroniser la largeur de la colonne fixe a gauche
-      // Parc: .vehicle-column (250px) | Planning: .pp-column-header (250px)
+      // Synchroniser la largeur de la colonne fixe a gauche.
+      // IMPORTANT : prioriser la VRAIE colonne de la grille de contenu
+      // (.pp-person-column en Planning, .vehicle-column en Parc) car en
+      // Planning elle est redimensionnable (state React, 150-420px) alors
+      // que .pp-column-header reste fige a 250px en CSS. Si on s'aligne
+      // sur le header, la grille des jours sera decalee.
       const leftCol =
-        document.querySelector('.pp-column-header') ||
-        document.querySelector('.vehicle-column-header') ||
         document.querySelector('.pp-person-column') ||
-        document.querySelector('.vehicle-column');
+        document.querySelector('.vehicle-column') ||
+        document.querySelector('.pp-column-header') ||
+        document.querySelector('.vehicle-column-header');
       const bannerLeftCol = document.querySelector('.banner-vehicle-column');
       if (leftCol && bannerLeftCol) {
         const w = Math.round(leftCol.getBoundingClientRect().width);
@@ -263,12 +267,25 @@ function GoogleCalendarBanner({
         }
       }
 
-      // Compensation du scrollbar-gutter : NON necessaire en JS.
-      // .banner-scroll-area utilise desormais EXACTEMENT le meme couple
-      // CSS que les grilles principales : scrollbar-width:thin +
-      // scrollbar-gutter:stable + overflow-y:auto. Le navigateur reserve
-      // le meme espace, l'alignement est garanti par CSS, pas par mesure.
-      // Voir GoogleCalendarBanner.css ligne ~377.
+      // Compensation EXACTE de la scrollbar verticale de la grille.
+      // Les grilles principales (.pp-scroll-area, .calendar-scroll-area)
+      // n'utilisent plus scrollbar-gutter:stable : elles s'etalent edge-to-edge
+      // quand pas de scroll, mais perdent ~8px (largeur scrollbar) quand le
+      // contenu deborde verticalement. Le banner doit alors compenser pour
+      // que ses colonnes restent alignees pixel-perfect sur celles de la grille.
+      // offsetWidth - clientWidth donne EXACTEMENT la largeur de la scrollbar
+      // visible (0 si absente), c'est mesurable de facon stable des le mount.
+      const mainScroll =
+        document.querySelector('.pp-scroll-area') ||
+        document.querySelector('.calendar-scroll-area');
+      const bannerScroll = document.querySelector('.banner-scroll-area');
+      if (mainScroll && bannerScroll) {
+        const sbWidth = Math.max(0, mainScroll.offsetWidth - mainScroll.clientWidth);
+        const px = `${sbWidth}px`;
+        if (bannerScroll.style.paddingRight !== px) {
+          bannerScroll.style.paddingRight = px;
+        }
+      }
     };
 
     const scheduleWidthSync = () => {
@@ -304,10 +321,10 @@ function GoogleCalendarBanner({
       const grid = resolveGridEls().calendarGrid;
       if (grid) resizeObserver.observe(grid);
       const leftCol =
-        document.querySelector('.pp-column-header') ||
-        document.querySelector('.vehicle-column-header') ||
         document.querySelector('.pp-person-column') ||
-        document.querySelector('.vehicle-column');
+        document.querySelector('.vehicle-column') ||
+        document.querySelector('.pp-column-header') ||
+        document.querySelector('.vehicle-column-header');
       if (leftCol) resizeObserver.observe(leftCol);
       const mainScroll =
         document.querySelector('.pp-scroll-area') ||

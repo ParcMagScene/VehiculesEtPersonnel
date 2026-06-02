@@ -1,10 +1,12 @@
 import './Header.css';
 
 import { format } from 'date-fns';
-import { HelpCircle, Moon, Sun } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { HelpCircle, Moon, Sun, Upload } from 'lucide-react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
+
+const ImportsHubModal = lazy(() => import('./imports/ImportsHubModal'));
 
 import { STATUS } from '../constants';
 import { useToast } from '../hooks/useToast';
@@ -51,6 +53,7 @@ const Header = ({
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all');
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
+  const [showImportsHub, setShowImportsHub] = useState(false);
   const [showRequestsPopup, setShowRequestsPopup] = useState(false);
   const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
   const [pendingRequestsCounts, setPendingRequestsCounts] = useState({
@@ -275,6 +278,17 @@ const Header = ({
                   <span>Aide</span>
                 </Button>
               </Tooltip>
+              <Tooltip content="Imports & Documents" position="bottom">
+                <Button
+                  variant="ghost"
+                  className="help-trigger-btn"
+                  onClick={() => setShowImportsHub(true)}
+                  aria-label="Ouvrir le hub d'imports"
+                >
+                  <Upload size={18} />
+                  <span>Imports</span>
+                </Button>
+              </Tooltip>
               <Button
                 variant="ghost"
                 className="theme-toggle-btn"
@@ -418,6 +432,12 @@ const Header = ({
           onMarkPending={handleMarkPending}
           onReschedule={handleReschedule}
         />
+      )}
+
+      {showImportsHub && (
+        <Suspense fallback={null}>
+          <ImportsHubModal onClose={() => setShowImportsHub(false)} />
+        </Suspense>
       )}
     </>
   );

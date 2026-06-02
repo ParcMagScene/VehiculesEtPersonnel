@@ -25,9 +25,11 @@ import { TIMING } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useGoogleSync } from '../../hooks/useGoogleSync';
 import { useToast } from '../../hooks/useToast';
+import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
 import { isApiCoolingDown } from '../../utils/api/base';
 import { capitalizeText } from '../../utils/dateUtils';
+import { computeGridColumnsCss } from '../../utils/planningGridColumns';
 import EventDetailsModal from '../planning/EventDetailsModal';
 
 // Code splitting - Lazy loading
@@ -645,6 +647,22 @@ function GoogleCalendarBanner({
     return [];
   }, [view, currentDate]);
 
+  // Source de verite UNIQUE pour gridTemplateColumns. Le banner partage
+  // exactement la meme logique que les grilles principales (Parc et
+  // Planning) via utils/planningGridColumns.js. Garantit l'alignement
+  // pixel-perfect : memes minmax, meme nombre de colonnes, meme arrondi.
+  const windowWidth = useWindowWidth();
+  const gridColumns = useMemo(
+    () =>
+      computeGridColumnsCss({
+        view,
+        days,
+        module: activeModule,
+        windowWidth,
+      }),
+    [view, days, activeModule, windowWidth],
+  );
+
   const eventBlocks = useMemo(() => {
     const isPersonnelMode = activeModule === 'planning';
     const eventBlocks = [];
@@ -904,24 +922,7 @@ function GoogleCalendarBanner({
           >
             <div
               className={`banner-grid ${view}-view`}
-              style={{
-                // Calcul deterministe du nombre de colonnes a partir des
-                // props (pas de DOM scraping ni timing). Aligne avec la
-                // grille principale (Parc: 14 col en semaine pour AM/PM,
-                // Planning: 7 col uniformes).
-                gridTemplateColumns:
-                  view === 'year'
-                    ? 'repeat(12, 1fr)'
-                    : view === 'week'
-                      ? activeModule === 'planning'
-                        ? 'repeat(7, 1fr)'
-                        : 'repeat(14, 1fr)'
-                      : view === 'month'
-                        ? `repeat(${
-                            activeModule === 'planning' ? days.length : days.length * 2
-                          }, 1fr)`
-                        : undefined,
-              }}
+              style={{ gridTemplateColumns: gridColumns }}
             >
               {/* Lignes de séparation alignées sur les colonnes */}
               <div className="banner-grid-lines">

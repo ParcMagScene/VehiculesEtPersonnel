@@ -66,7 +66,9 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
+import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
+import { computeGridColumnsCss } from '../../utils/planningGridColumns';
 import { refreshBus } from '../../utils/refresh-bus';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
 import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
@@ -2019,12 +2021,14 @@ const PlanningTab = ({
     [missionSpans],
   );
 
-  // Grid columns CSS
-  const gridColumns = useMemo(() => {
-    if (view === 'year') return `repeat(12, minmax(120px, 1fr))`;
-    const minWidth = view === 'week' ? 120 : 56;
-    return `repeat(${days.length}, minmax(${minWidth}px, 1fr))`;
-  }, [view, days.length]);
+  // Grid columns CSS — source de verite UNIQUE partagee avec le banner
+  // Google Calendar et le module Parc, via utils/planningGridColumns.
+  // Garantit l'alignement pixel-perfect entre banner et grille.
+  const windowWidth = useWindowWidth();
+  const gridColumns = useMemo(
+    () => computeGridColumnsCss({ view, days, module: 'planning', windowWidth }),
+    [view, days, windowWidth],
+  );
 
   // Scroll synchronisé
   useEffect(() => {

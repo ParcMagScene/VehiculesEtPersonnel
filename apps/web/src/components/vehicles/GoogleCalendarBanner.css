@@ -399,13 +399,11 @@ body:has(.pp-calendar-container) .calendar-banner {
   background: var(--theme-bg-card);
 }
 
-.banner-grid.week-view {
-  grid-template-columns: repeat(14, minmax(100px, 1fr));
-}
-
-.banner-grid.month-view {
-  grid-template-columns: repeat(62, minmax(55px, 1fr));
-}
+/* NB: gridTemplateColumns est defini en inline style depuis le composant
+   React, via utils/planningGridColumns.js, partage avec les grilles
+   principales (Parc + Planning) pour un alignement pixel-perfect. Les
+   anciens fallbacks .banner-grid.week-view / .month-view ont ete
+   supprimes car ils interferaient avec la source de verite unique. */
 
 /* Lignes de grille avec subgrid */
 .banner-grid-lines {

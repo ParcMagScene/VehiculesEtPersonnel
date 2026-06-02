@@ -482,7 +482,13 @@ body:has(.pp-calendar-container) .calendar-banner {
   align-items: stretch;
 }
 
-/* Bloc d'événement qui s'étend sur plusieurs colonnes */
+/* Bloc d'événement qui s'étend sur plusieurs colonnes.
+   IMPORTANT : min-width:0 est obligatoire pour empecher le min-content du
+   texte (white-space:nowrap) de remonter dans le track-sizing du grid
+   parent. Sans ca, un evenement qui span 7 cols avec un texte de 1898px
+   force chaque colonne a au moins 1898/7 ≈ 271px, donc la grille (et le
+   banner-scroll-area en flex:1) deborde sa largeur disponible et perd
+   l'alignement avec la grille principale (Parc/Planning). */
 .event-block-span {
   padding: 2px 6px;
   margin: 0;
@@ -492,6 +498,7 @@ body:has(.pp-calendar-container) .calendar-banner {
   align-items: center;
   gap: 8px;
   min-height: 20px;
+  min-width: 0;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;

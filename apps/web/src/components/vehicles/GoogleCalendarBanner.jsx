@@ -217,8 +217,14 @@ function GoogleCalendarBanner({
 
     const resolveGridEls = () => {
       if (!calendarGridEl || !calendarGridEl.isConnected) {
-        calendarGridEl =
-          document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+        // Selectionner explicitement selon le module actif pour eviter de
+        // copier la grille du Parc (14 col) sur le banner du Planning (7 col).
+        if (activeModule === 'personnel') {
+          calendarGridEl = document.querySelector('.pp-grid');
+        } else {
+          calendarGridEl =
+            document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+        }
       }
       if (!bannerGridEl || !bannerGridEl.isConnected) {
         bannerGridEl = document.querySelector('.banner-grid');
@@ -330,7 +336,10 @@ function GoogleCalendarBanner({
       // Si la grille n'est pas encore montee (lazy load), observer le DOM
       // jusqu'a son apparition pour attacher le ResizeObserver et resync.
       mutationObserver = new MutationObserver(() => {
-        const grid = document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+        const grid =
+          activeModule === 'personnel'
+            ? document.querySelector('.pp-grid')
+            : document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
         if (grid) {
           calendarGrid = grid;
           attachResizeObserver();

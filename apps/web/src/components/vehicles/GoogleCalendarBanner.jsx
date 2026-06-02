@@ -284,6 +284,9 @@ function GoogleCalendarBanner({
       // On mesure le delta reel entre la scroll-area et la grille de contenu
       // (qui inclut le gutter) pour le compenser. Cote Planning : utiliser
       // .pp-grid (contenu) car .pp-headers-grid n'a pas de gutter.
+      // Garde-fou : un scrollbar fait au plus ~24px ; au-dela on a mesure
+      // pendant une phase intermediaire (contenu pas encore stretche), on
+      // ignore pour eviter d'ecraser le banner.
       const mainScroll =
         document.querySelector('.pp-scroll-area') ||
         document.querySelector('.calendar-scroll-area');
@@ -295,7 +298,11 @@ function GoogleCalendarBanner({
       if (mainScroll && contentGrid && bannerScroll) {
         const mainW = mainScroll.getBoundingClientRect().width;
         const gridW = contentGrid.getBoundingClientRect().width;
-        const gutter = Math.max(0, Math.round(mainW - gridW));
+        const rawGutter = Math.round(mainW - gridW);
+        // Si delta > 24px : mesure non fiable (contentGrid pas encore stretche
+        // a 100%, e.g. .pp-grid avec min-width:max-content au mount). On
+        // applique 0 plutot que d'ecraser le banner avec un grand padding.
+        const gutter = rawGutter > 0 && rawGutter <= 24 ? rawGutter : 0;
         const px = `${gutter}px`;
         if (bannerScroll.style.paddingRight !== px) {
           bannerScroll.style.paddingRight = px;

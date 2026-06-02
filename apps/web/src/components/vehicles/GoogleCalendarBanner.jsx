@@ -222,7 +222,7 @@ function GoogleCalendarBanner({
         // En Planning : cibler .pp-headers-grid (reference visuelle des jours,
         // largeur stable) plutot que .pp-grid (qui a min-width:max-content
         // et peut etre plus etroite selon le contenu).
-        if (activeModule === 'personnel') {
+        if (activeModule === 'planning') {
           calendarGridEl =
             document.querySelector('.pp-headers-grid') || document.querySelector('.pp-grid');
         } else {
@@ -275,7 +275,7 @@ function GoogleCalendarBanner({
         document.querySelector('.pp-scroll-area') ||
         document.querySelector('.calendar-scroll-area');
       const contentGrid =
-        activeModule === 'personnel'
+        activeModule === 'planning'
           ? document.querySelector('.pp-grid')
           : document.querySelector('.calendar-grid');
       const bannerScroll = document.querySelector('.banner-scroll-area');
@@ -345,7 +345,7 @@ function GoogleCalendarBanner({
       // jusqu'a son apparition pour attacher le ResizeObserver et resync.
       mutationObserver = new MutationObserver(() => {
         const grid =
-          activeModule === 'personnel'
+          activeModule === 'planning'
             ? document.querySelector('.pp-headers-grid') || document.querySelector('.pp-grid')
             : document.querySelector('.calendar-grid');
         if (grid) {
@@ -646,7 +646,7 @@ function GoogleCalendarBanner({
   }, [view, currentDate]);
 
   const eventBlocks = useMemo(() => {
-    const isPersonnelMode = activeModule === 'personnel';
+    const isPersonnelMode = activeModule === 'planning';
     const eventBlocks = [];
     const processedEvents = new Set();
 
@@ -837,7 +837,7 @@ function GoogleCalendarBanner({
     <>
       <div className={`google-calendar-banner-grid ${displayMode}`}>
         <div
-          className={`calendar-banner${activeModule === 'personnel' ? ' calendar-banner--personnel' : ''}`}
+          className={`calendar-banner${activeModule === 'planning' ? ' calendar-banner--personnel' : ''}`}
         >
           {/* Colonne véhicules fixe à gauche */}
           <div className="banner-vehicle-column">
@@ -860,14 +860,14 @@ function GoogleCalendarBanner({
                 onClick={
                   activeModule === 'affaires'
                     ? onNewAffaire
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? onNewAssignment
                       : onNewReservation
                 }
                 title={
                   activeModule === 'affaires'
                     ? 'Nouvelle affaire'
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? 'Nouvelle affectation'
                       : 'Nouvelle réservation'
                 }
@@ -876,7 +876,7 @@ function GoogleCalendarBanner({
                 <span>
                   {activeModule === 'affaires'
                     ? 'Nouvelle affaire'
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? 'Nouvelle affectation'
                       : 'Nouvelle réservation'}
                 </span>
@@ -913,12 +913,12 @@ function GoogleCalendarBanner({
                   view === 'year'
                     ? 'repeat(12, 1fr)'
                     : view === 'week'
-                      ? activeModule === 'personnel'
+                      ? activeModule === 'planning'
                         ? 'repeat(7, 1fr)'
                         : 'repeat(14, 1fr)'
                       : view === 'month'
                         ? `repeat(${
-                            activeModule === 'personnel' ? days.length : days.length * 2
+                            activeModule === 'planning' ? days.length : days.length * 2
                           }, 1fr)`
                         : undefined,
               }}
@@ -928,7 +928,7 @@ function GoogleCalendarBanner({
                 {view === 'week' &&
                   days.flatMap((day, dayIndex) => {
                     const dayIsToday = isToday(day);
-                    if (activeModule === 'personnel') {
+                    if (activeModule === 'planning') {
                       return [
                         <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />,
                       ];
@@ -947,7 +947,7 @@ function GoogleCalendarBanner({
                 {view === 'month' &&
                   days.flatMap((day, dayIndex) => {
                     const dayIsToday = isToday(day);
-                    if (activeModule === 'personnel') {
+                    if (activeModule === 'planning') {
                       return [
                         <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />,
                       ];

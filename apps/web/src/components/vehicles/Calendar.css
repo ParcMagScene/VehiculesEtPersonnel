@@ -388,14 +388,16 @@
   filter: brightness(1.15);
 }
 
-/* Zone scrollable à droite */
+/* Zone scrollable à droite.
+   Pas de scrollbar-gutter:stable : on prefere etaler edge-to-edge en
+   coherence avec le banner Google Calendar au-dessus. La scrollbar
+   apparait seulement en cas de debordement vertical reel. */
 .calendar-scroll-area {
   flex: 1;
   overflow: auto;
   position: relative;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-gutter: stable;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }

@@ -1471,7 +1471,6 @@
   overflow-x: hidden;
   overflow-y: auto;
   pointer-events: none;
-  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }
@@ -1659,13 +1658,14 @@
   text-overflow: ellipsis;
 }
 
-/* ── Scroll area + grid ── */
+/* ── Scroll area + grid ──
+   Pas de scrollbar-gutter:stable : alignement visuel edge-to-edge avec
+   le banner Google Calendar (qui n'a pas de gutter non plus). */
 .pp-scroll-area {
   flex: 1;
   overflow: auto;
   min-width: 0;
   scrollbar-width: thin;
-  scrollbar-gutter: stable;
   isolation: isolate;
   position: relative;
 }

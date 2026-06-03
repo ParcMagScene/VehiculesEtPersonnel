@@ -956,6 +956,11 @@
   background: var(--surface-tertiary, var(--shadow-sm));
   color: var(--text-muted);
 }
+.task-planning-panel .ev-col-time .period-badge.period-allday {
+  background: var(--accent-tint-light, rgba(59, 130, 246, 0.1));
+  color: var(--interactive-primary, #2563eb);
+  letter-spacing: 0.2px;
+}
 /* Badge type course (Enlèvement, Livraison, Retour, Récupération…) */
 .task-planning-panel .course-type-badge {
   display: inline-flex;
@@ -1155,6 +1160,19 @@
   gap: 3px;
   flex-wrap: wrap;
   max-width: 180px;
+}
+
+/* En multi-affectation (>=3 pers), on serre les chips et on autorise un
+   peu plus de largeur tout en gardant tout sur une ligne autant que possible. */
+.task-planning-panel .multi-assign-chips.compact {
+  max-width: 240px;
+  gap: 2px;
+}
+
+.task-planning-panel .multi-assign-chips.compact .task-person.assigned {
+  padding: 1px 4px;
+  font-size: 0.7rem;
+  letter-spacing: 0;
 }
 
 .task-planning-panel .btn-assign {

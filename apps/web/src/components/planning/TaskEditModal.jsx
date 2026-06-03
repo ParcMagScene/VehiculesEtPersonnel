@@ -173,6 +173,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     status: task.status || 'pending',
     affaireNum: task.affaireNum || task.affaire_num || '',
     locationAddress: task.locationAddress || task.location_address || '',
+    allDay: task.allDay === 1 || task.all_day === 1,
   });
 
   // Charger les affaires
@@ -242,6 +243,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       status: task.status || 'pending',
       affaireNum: task.affaireNum || task.affaire_num || '',
       locationAddress: task.locationAddress || task.location_address || '',
+      allDay: task.allDay === 1 || task.all_day === 1,
     });
   }, [task]);
 
@@ -348,9 +350,10 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       await api.updateTask(task.id, {
         title: finalTitle,
         date: form.date,
-        period: form.period || null,
-        time: form.time || null,
-        end_time: form.endTime || null,
+        period: form.allDay ? 'AM' : form.period || null,
+        time: form.allDay ? null : form.time || null,
+        end_time: form.allDay ? null : form.endTime || null,
+        all_day: form.allDay ? 1 : 0,
         notes: form.notes || '',
         person_id: form.personId || null,
         section: form.section,
@@ -456,44 +459,70 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               />
             </FormField>
             <FormField className="tem-field" label="Période">
-              <Select value={form.period} onChange={(e) => update('period', e.target.value)}>
+              <Select
+                value={form.period}
+                onChange={(e) => update('period', e.target.value)}
+                disabled={form.allDay}
+              >
                 <option value="AM">Matin (AM)</option>
                 <option value="PM">Après-midi (PM)</option>
               </Select>
             </FormField>
           </div>
 
+          {/* Journée entière */}
+          <FormField className="tem-field full" label="">
+            <label
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={form.allDay}
+                onChange={(e) => update('allDay', e.target.checked)}
+              />
+              Journée entière (masque l&apos;heure et la période)
+            </label>
+          </FormField>
+
           {/* Heure début / fin */}
-          <div className="tem-row">
-            <FormField
-              className="tem-field"
-              label={
-                <>
-                  <Clock size={13} /> Heure début
-                </>
-              }
-            >
-              <Input
-                type="time"
-                value={form.time}
-                onChange={(e) => update('time', e.target.value)}
-              />
-            </FormField>
-            <FormField
-              className="tem-field"
-              label={
-                <>
-                  <Clock size={13} /> Heure fin
-                </>
-              }
-            >
-              <Input
-                type="time"
-                value={form.endTime}
-                onChange={(e) => update('endTime', e.target.value)}
-              />
-            </FormField>
-          </div>
+          {!form.allDay && (
+            <div className="tem-row">
+              <FormField
+                className="tem-field"
+                label={
+                  <>
+                    <Clock size={13} /> Heure début
+                  </>
+                }
+              >
+                <Input
+                  type="time"
+                  value={form.time}
+                  onChange={(e) => update('time', e.target.value)}
+                />
+              </FormField>
+              <FormField
+                className="tem-field"
+                label={
+                  <>
+                    <Clock size={13} /> Heure fin
+                  </>
+                }
+              >
+                <Input
+                  type="time"
+                  value={form.endTime}
+                  onChange={(e) => update('endTime', e.target.value)}
+                />
+              </FormField>
+            </div>
+          )}
 
           {/* Personnel */}
           <FormField

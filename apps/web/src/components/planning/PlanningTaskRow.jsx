@@ -290,7 +290,9 @@ export const PlanningTaskRow = React.memo(
         )}
 
         <span className="ev-col ev-col-time">
-          {task.time ? (
+          {task.allDay === 1 || task.all_day === 1 ? (
+            <span className="period-badge period-allday">Journée</span>
+          ) : task.time ? (
             <>
               <Clock size={11} /> {task.time}
               {task.endTime ? ` → ${task.endTime}` : ''}

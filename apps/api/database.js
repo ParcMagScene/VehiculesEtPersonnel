@@ -2309,6 +2309,10 @@ function initializeDatabase() {
       db.exec('ALTER TABLE task_assignments ADD COLUMN location_lng REAL');
       logger.info('  + task_assignments.location_lng');
     }
+    if (!taColNames.includes('all_day')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN all_day INTEGER DEFAULT 0');
+      logger.info('  + task_assignments.all_day');
+    }
 
     // Migration : corriger le CHECK constraint section pour inclure rdv et prep_installations
     try {

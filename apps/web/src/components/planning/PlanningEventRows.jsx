@@ -26,22 +26,32 @@ export const MultiAssignWidget = React.memo(function MultiAssignWidget({
   const isOpen = assigningEntity === key;
   const hasAssignments = assignments.length > 0;
   const isTask = entityType === 'task';
+  // En multi-affectation (>=3 pers), on raccourcit pour eviter le clipping :
+  // initiales seulement (J.D.) au lieu du prenom complet.
+  const compactChips = assignments.length >= 3;
 
   return (
     <div className="event-assign-container">
-      <div className="multi-assign-chips">
-        {assignments.map((a) => (
-          <span
-            key={a.id}
-            className="task-person assigned"
-            role="button"
-            tabIndex={0}
-            onClick={() => setAssigningEntity(isOpen ? null : key)}
-          >
-            <User size={11} />
-            {a.firstName} {a.lastName?.charAt(0)}.
-          </span>
-        ))}
+      <div className={`multi-assign-chips${compactChips ? ' compact' : ''}`}>
+        {assignments.map((a) => {
+          const fullLabel =
+            `${a.firstName || ''} ${a.lastName?.charAt(0) || ''}${a.lastName ? '.' : ''}`.trim();
+          const compactLabel = `${(a.firstName || '?').charAt(0)}.${(a.lastName || '').charAt(0)}${a.lastName ? '.' : ''}`;
+          const label = compactChips ? compactLabel : fullLabel;
+          return (
+            <span
+              key={a.id}
+              className="task-person assigned"
+              role="button"
+              tabIndex={0}
+              title={fullLabel}
+              onClick={() => setAssigningEntity(isOpen ? null : key)}
+            >
+              <User size={11} />
+              {label}
+            </span>
+          );
+        })}
         <Tooltip content="Affecter du personnel">
           <Button
             variant="primary"

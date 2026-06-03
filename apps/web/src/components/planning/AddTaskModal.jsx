@@ -379,48 +379,6 @@ export default function AddTaskModal({
         </ModalHeader>
 
         <ModalBody className="atm-body">
-          {/* Section / Type de tâche */}
-          <FormField className="atm-field" label="Type de tâche">
-            <Select
-              value={section}
-              onChange={(e) => {
-                const key = e.target.value;
-                setSection(key);
-                if (key === COURSE_SECTION) {
-                  // Pré-sélection 'livraison' par défaut pour que le badge
-                  // apparaisse même si l'utilisateur ne touche pas au sous-type.
-                  setCourseType((prev) => prev || 'livraison');
-                } else {
-                  setCourseType('');
-                }
-                if (!VEHICLE_SECTIONS.has(key)) {
-                  setReservationId('');
-                  setVehicleId('');
-                }
-                if (key !== COURSE_SECTION) setLocationAddress('');
-              }}
-            >
-              {Object.entries(SECTIONS).map(([key, info]) => (
-                <option key={key} value={key}>
-                  {info.emoji} {info.label}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-
-          {/* Course type (sous-type) */}
-          {showCourseType && (
-            <FormField className="atm-field" label="Type de course">
-              <Select value={courseType} onChange={(e) => setCourseType(e.target.value)}>
-                {Object.entries(EVENT_TYPES).map(([key, info]) => (
-                  <option key={key} value={key}>
-                    {info.emoji} {info.label}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-          )}
-
           {/* Titre */}
           <FormField className="atm-field" label="Titre" required>
             <Input
@@ -442,7 +400,83 @@ export default function AddTaskModal({
             />
           </FormField>
 
-          {/* Affaire */}
+          {/* Date + Période */}
+          <div className="atm-row">
+            <FormField className="atm-field atm-field-half" label="Date">
+              <Input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
+            </FormField>
+            <FormField className="atm-field atm-field-half" label="Période">
+              <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                <option value="AM">Matin (AM)</option>
+                <option value="PM">Après-midi (PM)</option>
+                <option value="JOURNEE">Journée (toute la journée)</option>
+              </Select>
+            </FormField>
+          </div>
+
+          {/* Heure début / fin (masquées si Journée) */}
+          {!isAllDay && (
+            <div className="atm-row">
+              <FormField
+                className="atm-field atm-field-half"
+                label={
+                  <>
+                    <Clock size={13} /> Heure début
+                  </>
+                }
+              >
+                <Input
+                  type="time"
+                  value={time}
+                  onChange={(e) => handleTimeChange(e.target.value)}
+                />
+              </FormField>
+              <div className="atm-field atm-field-half" />
+            </div>
+          )}
+
+          {/* Personnel */}
+          <FormField
+            className="atm-field"
+            label={
+              <>
+                <User size={13} /> Personnel assigné
+              </>
+            }
+          >
+            <Select value={personId} onChange={(e) => setPersonId(e.target.value)}>
+              <option value="">— Aucun —</option>
+              {sortedPersons.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {getFavoriteDisplayName(p)}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          {/* Client */}
+          <FormField className="atm-field" label="Client">
+            <Input
+              type="text"
+              value={client}
+              onChange={(e) => setClient(e.target.value)}
+              placeholder={
+                selectedAffaire?.client
+                  ? `${selectedAffaire.client} (affaire liée)`
+                  : 'Nom du client...'
+              }
+              list="atm-client-suggestions"
+            />
+            {clientSuggestions.length > 0 && (
+              <datalist id="atm-client-suggestions">
+                {clientSuggestions.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+            )}
+          </FormField>
+
+          {/* Affaire liée */}
           <div className="atm-field" ref={affaireRef}>
             <label>
               <Briefcase size={13} /> Affaire
@@ -492,7 +526,7 @@ export default function AddTaskModal({
                           onClick={() => {
                             setAffaireNum(a.numeroAffaire);
                             setGoogleEventId('');
-                            setClient(a.client || '');
+                            setClient((prev) => (prev?.trim() ? prev : a.client || ''));
                             if (!title) setTitle(a.nom || a.event_name || '');
                             setAffaireSearch('');
                             setAffaireOpen(false);
@@ -509,7 +543,7 @@ export default function AddTaskModal({
             )}
           </div>
 
-          {/* Google / iCal Event */}
+          {/* Événement Google / iCal associé */}
           {allEvents.length > 0 && (
             <FormField className="atm-field" label="Événement associé">
               <Select
@@ -560,7 +594,56 @@ export default function AddTaskModal({
             </FormField>
           )}
 
-          {/* Lieu (courses) */}
+          {/* Type de tâche */}
+          <FormField
+            className="atm-field"
+            label={
+              <>
+                <Briefcase size={13} /> Type
+              </>
+            }
+          >
+            <Select
+              value={section}
+              onChange={(e) => {
+                const key = e.target.value;
+                setSection(key);
+                if (key === COURSE_SECTION) {
+                  // Pré-sélection 'livraison' par défaut pour que le badge
+                  // apparaisse même si l'utilisateur ne touche pas au sous-type.
+                  setCourseType((prev) => prev || 'livraison');
+                } else {
+                  setCourseType('');
+                }
+                if (!VEHICLE_SECTIONS.has(key)) {
+                  setReservationId('');
+                  setVehicleId('');
+                }
+                if (key !== COURSE_SECTION) setLocationAddress('');
+              }}
+            >
+              {Object.entries(SECTIONS).map(([key, info]) => (
+                <option key={key} value={key}>
+                  {info.emoji} {info.label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
+          {/* Type de course (sous-type, si section "courses") */}
+          {showCourseType && (
+            <FormField className="atm-field" label="Type de course">
+              <Select value={courseType} onChange={(e) => setCourseType(e.target.value)}>
+                {Object.entries(EVENT_TYPES).map(([key, info]) => (
+                  <option key={key} value={key}>
+                    {info.emoji} {info.label}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
+          )}
+
+          {/* Lieu (courses / véhicule) */}
           {showLocation && (
             <div className="atm-field atm-field-location" ref={locationRef}>
               <label>
@@ -576,44 +659,7 @@ export default function AddTaskModal({
             </div>
           )}
 
-          {/* Personnel + Client (row) */}
-          <div className="atm-row">
-            <FormField
-              className="atm-field atm-field-half"
-              label={
-                <>
-                  <User size={13} /> Personnel assigné
-                </>
-              }
-            >
-              <Select value={personId} onChange={(e) => setPersonId(e.target.value)}>
-                <option value="">— Aucun —</option>
-                {sortedPersons.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {getFavoriteDisplayName(p)}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
-            <FormField className="atm-field atm-field-half" label="Client">
-              <Input
-                type="text"
-                value={client}
-                onChange={(e) => setClient(e.target.value)}
-                placeholder="Client..."
-                list="atm-client-suggestions"
-              />
-              {clientSuggestions.length > 0 && (
-                <datalist id="atm-client-suggestions">
-                  {clientSuggestions.map((name) => (
-                    <option key={name} value={name} />
-                  ))}
-                </datalist>
-              )}
-            </FormField>
-          </div>
-
-          {/* Véhicule (si section compatible) */}
+          {/* Réservation véhicule (si section compatible) */}
           {showVehicle && (
             <FormField
               className="atm-field"
@@ -654,43 +700,6 @@ export default function AddTaskModal({
                 </Select>
               )}
             </FormField>
-          )}
-
-          {/* Date + Heure + Periode
-            - Date : permet de cibler un autre jour que celui ouvert dans le planning.
-            - Periode 'Journee' : envoie all_day=1 et masque l'heure. */}
-          <div className="atm-row">
-            <FormField className="atm-field atm-field-half" label="Date">
-              <Input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
-            </FormField>
-            <FormField className="atm-field atm-field-half" label="Période">
-              <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                <option value="AM">Matin (AM)</option>
-                <option value="PM">Après-midi (PM)</option>
-                <option value="JOURNEE">Journée (toute la journée)</option>
-              </Select>
-            </FormField>
-          </div>
-
-          {/* Heure (masquee si Journee) */}
-          {!isAllDay && (
-            <div className="atm-row">
-              <FormField
-                className="atm-field atm-field-half"
-                label={
-                  <>
-                    <Clock size={13} /> Heure début
-                  </>
-                }
-              >
-                <Input
-                  type="time"
-                  value={time}
-                  onChange={(e) => handleTimeChange(e.target.value)}
-                />
-              </FormField>
-              <div className="atm-field atm-field-half" />
-            </div>
           )}
         </ModalBody>
 

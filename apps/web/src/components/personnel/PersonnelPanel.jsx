@@ -151,6 +151,7 @@ const PersonnelPanel = ({
   quickAssignmentSlot,
   onQuickAssignmentHandled,
   onOpenSuivi,
+  googleBanner = null,
 }) => {
   const toast = useToast();
   const [subTab, setSubTab] = useState(mode === 'planning' ? 'planning' : 'persons');
@@ -384,6 +385,7 @@ const PersonnelPanel = ({
           onQuickAssignmentHandled={onQuickAssignmentHandled}
           currentUser={currentUser}
           onOpenSuivi={onOpenSuivi}
+          googleBanner={googleBanner}
         />
         {editFormVisible && (
           <ModalLayout
@@ -1642,6 +1644,7 @@ const PlanningTab = ({
   onQuickAssignmentHandled,
   currentUser,
   onOpenSuivi,
+  googleBanner = null,
 }) => {
   const toast = useToast();
   const { confirm: confirmDelete, ConfirmDialogRenderer: DeleteConfirmRenderer } =
@@ -2808,6 +2811,8 @@ const PlanningTab = ({
           Favoris
         </Button>
       </div>
+
+      {googleBanner}
 
       {filteredPersons.length === 0 ? (
         <EmptyState

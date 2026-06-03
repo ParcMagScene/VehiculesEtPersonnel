@@ -576,7 +576,7 @@ function AppContent() {
   );
 
   const showGoogleBanner = useMemo(
-    () => ['planning', 'vehicles', 'parc', 'google'].includes(activeModule),
+    () => ['vehicles', 'parc', 'google'].includes(activeModule),
     [activeModule],
   );
 
@@ -1080,6 +1080,11 @@ function AppContent() {
                         onNavigateToPersonHandled={() => setNavigateToPersonId(null)}
                         quickAssignmentSlot={quickAssignmentSlot}
                         onQuickAssignmentHandled={() => setQuickAssignmentSlot(null)}
+                        googleBanner={
+                          <Suspense fallback={null}>
+                            <GoogleCalendarBanner {...googleBannerProps} />
+                          </Suspense>
+                        }
                       />
                     </Suspense>
                   </PlanningModalProvider>

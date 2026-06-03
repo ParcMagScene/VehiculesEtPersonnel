@@ -30,6 +30,7 @@ function PlanningPanel({
   onNavigateToPersonHandled,
   quickAssignmentSlot,
   onQuickAssignmentHandled,
+  googleBanner = null,
 }) {
   const _toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState('personnel');
@@ -126,6 +127,7 @@ function PlanningPanel({
                   quickAssignmentSlot={quickAssignmentSlot}
                   onQuickAssignmentHandled={onQuickAssignmentHandled}
                   onOpenSuivi={handleOpenSuivi}
+                  googleBanner={googleBanner}
                 />
               </Suspense>
             </ErrorBoundary>

@@ -281,12 +281,11 @@ const Header = ({
               <Tooltip content="Imports & Documents" position="bottom">
                 <Button
                   variant="ghost"
-                  className="help-trigger-btn"
+                  className="header-imports-btn"
                   onClick={() => setShowImportsHub(true)}
                   aria-label="Ouvrir le hub d'imports"
                 >
                   <Upload size={18} />
-                  <span>Imports</span>
                 </Button>
               </Tooltip>
               <Button

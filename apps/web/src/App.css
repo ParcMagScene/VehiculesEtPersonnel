@@ -197,6 +197,29 @@
   color: var(--theme-warning);
 }
 
+/* Bouton hub d'imports (icone seule, tooltip "Imports & Documents") */
+.header-imports-btn {
+  background: linear-gradient(135deg, var(--theme-bg-hover), var(--theme-purple-bg, #f5f3ff));
+  border: 1px solid var(--theme-bg-indigo-lighter);
+  color: var(--theme-indigo);
+  padding: 0.35rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.header-imports-btn:hover {
+  background: linear-gradient(135deg, var(--theme-bg-indigo-light), var(--theme-purple-bg));
+  color: var(--theme-primary-dark);
+  border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px var(--accent-tint-vivid);
+}
+
 /* Module tabs (dans le header-title-container) */
 .header-title-container .module-tabs {
   display: flex;

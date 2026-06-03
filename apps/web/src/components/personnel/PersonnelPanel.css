@@ -1260,6 +1260,23 @@
   border-bottom: 2px solid var(--theme-border-medium);
 }
 
+/* ── Recherche personnel (alignée avec la colonne, style Suivi) ── */
+.pp-planning-search-row {
+  display: flex;
+  flex-shrink: 0;
+  background: var(--theme-bg-card);
+  border-bottom: 1px solid var(--theme-border-medium);
+}
+.pp-planning-search-wrap {
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border-right: 2px solid var(--theme-border-medium);
+  box-sizing: border-box;
+}
+.pp-planning-search-wrap > * {
+  width: 100%;
+}
+
 .pp-column-header {
   width: 250px;
   flex-shrink: 0;

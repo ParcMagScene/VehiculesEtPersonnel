@@ -2780,12 +2780,6 @@ const PlanningTab = ({
             </div>
           </div>
         )}
-        <SearchBar
-          value={planningSearch}
-          onChange={setPlanningSearch}
-          placeholder="Rechercher un membre du personnel..."
-          size="sm"
-        />
         <div className="pp-planning-filters">
           <Filter size={14} />
           <Select
@@ -2829,6 +2823,17 @@ const PlanningTab = ({
       ) : (
         <div className="pp-planning-with-panel">
           <div className="pp-calendar-container">
+            {/* Recherche personnel (alignée avec la colonne) */}
+            <div className="pp-planning-search-row">
+              <div className="pp-planning-search-wrap" style={{ width: personColumnWidth }}>
+                <SearchBar
+                  value={planningSearch}
+                  onChange={setPlanningSearch}
+                  placeholder="Rechercher un personnel…"
+                  size="sm"
+                />
+              </div>
+            </div>
             {/* Ligne d'en-têtes */}
             <div className="pp-headers-row">
               <div className="pp-column-header">

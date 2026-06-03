@@ -576,13 +576,13 @@ export default function AddTaskModal({
             </div>
           )}
 
-          {/* Responsable + Client (row) */}
+          {/* Personnel + Client (row) */}
           <div className="atm-row">
             <FormField
               className="atm-field atm-field-half"
               label={
                 <>
-                  <User size={13} /> Responsable
+                  <User size={13} /> Personnel assigné
                 </>
               }
             >
@@ -665,8 +665,8 @@ export default function AddTaskModal({
             </FormField>
             <FormField className="atm-field atm-field-half" label="Période">
               <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                <option value="AM">AM (Matin)</option>
-                <option value="PM">PM (Après-midi)</option>
+                <option value="AM">Matin (AM)</option>
+                <option value="PM">Après-midi (PM)</option>
                 <option value="JOURNEE">Journée (toute la journée)</option>
               </Select>
             </FormField>
@@ -679,7 +679,7 @@ export default function AddTaskModal({
                 className="atm-field atm-field-half"
                 label={
                   <>
-                    <Clock size={13} /> Heure
+                    <Clock size={13} /> Heure début
                   </>
                 }
               >

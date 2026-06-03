@@ -80,46 +80,49 @@
 .atm-field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 .atm-field label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-secondary, var(--text-muted));
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 .atm-required {
   color: var(--theme-danger);
 }
 
 .atm-field input,
-.atm-field select {
-  padding: 8px 10px;
-  border: 1px solid var(--border-color, var(--border-default));
+.atm-field select,
+.atm-field textarea {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
+  background: var(--surface-secondary);
+  color: var(--text-body);
   font-size: 0.88rem;
-  color: var(--text-primary, var(--text-body));
-  background: var(--bg-input, var(--surface-primary));
   transition: border-color 0.15s;
+  font-family: inherit;
 }
 .atm-field input:focus,
-.atm-field select:focus {
+.atm-field select:focus,
+.atm-field textarea:focus {
   outline: none;
-  border-color: var(--primary, var(--interactive-primary));
-  box-shadow: 0 0 0 3px var(--primary-tint-light);
+  border-color: var(--interactive-primary);
+  box-shadow: var(--focus-ring);
 }
 
-/* Row */
+/* Row : grid 2 colonnes (alignement coherent avec TaskEditModal) */
 .atm-row {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
 }
 .atm-field-half {
-  flex: 1;
+  /* utilise le placement implicite du grid parent */
 }
 
 /* ═══ Location dropdown ═══ */

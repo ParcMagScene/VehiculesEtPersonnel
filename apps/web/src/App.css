@@ -136,7 +136,7 @@
   /* Padding genereux a droite pour ne pas coller le bouton theme contre
      la barre d'onglets de modules. Combine avec le gap 1rem du parent
      .header-title-container, l'ecart visuel total reste agreable. */
-  padding-right: 1.25rem;
+  padding-right: 2.25rem;
 }
 
 .header-logo {

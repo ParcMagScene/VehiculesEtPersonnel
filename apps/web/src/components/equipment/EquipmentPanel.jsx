@@ -38,7 +38,6 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import SavImportModal from '../affaires/SavImportModal';
 import DepotMap from '../vehicles/DepotMap';
 import MaintenanceReportModal from '../vehicles/MaintenanceReportModal';
 import CategoryCascadeFilter from './CategoryCascadeFilter';
@@ -140,8 +139,6 @@ const EquipmentPanel = ({
     // Other modals
     showImportModal,
     setShowImportModal,
-    showSavImportModal,
-    setShowSavImportModal,
     showReportModal,
     setShowReportModal,
     exportingSavPdf,
@@ -300,13 +297,6 @@ const EquipmentPanel = ({
                 placeholder="Rechercher ticket, matériel..."
                 size="sm"
               />
-              {isAdmin && (
-                <Tooltip content="Importer interventions SAV" position="bottom">
-                  <Button variant="secondary" onClick={() => setShowSavImportModal(true)}>
-                    <Upload size={14} /> Import SAV
-                  </Button>
-                </Tooltip>
-              )}
               {canManageEquipmentMaintenance && (
                 <Tooltip content="Rapport maintenance matériel" position="bottom">
                   <Button variant="secondary" onClick={() => setShowReportModal(true)}>
@@ -781,10 +771,6 @@ const EquipmentPanel = ({
         <EquipmentImportModal onClose={() => setShowImportModal(false)} onImportDone={loadData} />
       )}
 
-      {showSavImportModal && (
-        <SavImportModal onClose={() => setShowSavImportModal(false)} onImportDone={loadData} />
-      )}
-
       {labelPrintEquipment && (
         <EquipmentLabelPrint
           equipment={labelPrintEquipment}
@@ -885,25 +871,6 @@ const EquipmentPanel = ({
                           : 'Exporter PDF inventaire équipements'}
                       </Button>
                     </div>
-                  </div>
-                  <div className="eq-management-section">
-                    <h3>
-                      <Wrench size={18} /> Import Interventions SAV
-                    </h3>
-                    <p>
-                      Importez les interventions SAV depuis un fichier CSV Locmat. Les interventions
-                      seront automatiquement liées aux équipements via leur numéro de série.
-                    </p>
-                    <Button
-                      variant="primary"
-                      className="eq-mgmt-import-btn"
-                      onClick={() => {
-                        onCloseManagement();
-                        setShowSavImportModal(true);
-                      }}
-                    >
-                      <Upload size={16} /> Importer les interventions
-                    </Button>
                   </div>
                 </>
               )}

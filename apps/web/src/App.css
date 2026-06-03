@@ -129,7 +129,7 @@
   width: calc(250px - 2rem);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.4rem;
   flex-shrink: 0;
   height: 100%;
   margin-left: -10px;
@@ -141,6 +141,9 @@
   max-height: 64px;
   width: auto;
   object-fit: contain;
+  /* Pousse le groupe de boutons utilitaires (Aide, Imports, Theme)
+     vers la droite de la zone logo, avec un gap regulier entre eux. */
+  margin-right: auto;
 }
 
 /* Bouton aide stylisé */

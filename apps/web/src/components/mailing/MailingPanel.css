@@ -1,15 +1,6 @@
 /* ═══ Mailing Panel ═══ */
-
-.mailing-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--theme-overlay);
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.2s ease;
-}
+/* .mailing-overlay supprimé : MailingPanel utilise <Modal> du design-system,
+   qui rend son propre backdrop via le portail #emag-modal-root. */
 
 .mailing-panel {
   background: var(--theme-bg-card);

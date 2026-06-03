@@ -1,10 +1,6 @@
 /* ═══ Préférences utilisateur ═══ */
-.prefs-overlay {
-  /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
-  background: var(--theme-overlay-dark);
-  z-index: var(--z-modal);
-  animation: fadeIn 0.2s ease;
-}
+/* .prefs-overlay supprimé : le composant utilise <Modal> du design-system,
+   qui rend son propre backdrop via le portail #emag-modal-root. */
 
 .prefs-modal {
   background: var(--theme-bg-card);

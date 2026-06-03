@@ -1,17 +1,5 @@
-.vm-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--theme-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-  backdrop-filter: blur(4px);
-  isolation: isolate;
-}
+/* .vm-overlay supprimé : VehicleMaintenanceModal utilise <Modal> du design-system,
+   qui rend son propre backdrop via le portail #emag-modal-root. */
 
 .vehicle-maintenance-modal {
   background: var(--theme-bg-page);

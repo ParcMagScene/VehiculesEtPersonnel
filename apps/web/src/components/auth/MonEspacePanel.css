@@ -3,17 +3,8 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ─── Overlay ─── */
-.mep-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--theme-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-  padding: 20px;
-  backdrop-filter: blur(2px);
-}
+/* .mep-overlay supprimé : MonEspacePanel utilise <Modal> du design-system,
+   qui rend son propre backdrop via le portail #emag-modal-root. */
 
 /* ─── Panel principal ─── */
 .mep-panel {

@@ -1090,7 +1090,49 @@ export function setupAdminRoutes(
       res.json({ success: true, message: `Email de test envoyé à ${req.user.email}` });
     } catch (error) {
       logger.error('Erreur test email:', error);
-      res.status(500).json({ success: false, error: 'Erreur lors du test SMTP' });
+      // Mapper les erreurs SMTP courantes (Gmail) en messages explicites + correctif
+      // cf https://support.google.com/mail/answer/7126229
+      const raw = (error?.response || error?.message || '').toString();
+      const code = error?.responseCode || null;
+      let mapped = null;
+      if (/535[\s-]?5\.7\.8/.test(raw) || code === 535) {
+        mapped = {
+          code: '535 5.7.8',
+          message: "Authentification refusee : mot de passe d'application Gmail invalide.",
+          fix: "Generez un mot de passe d'application sur https://myaccount.google.com/apppasswords (la 2FA doit etre active) puis collez-le dans le champ 'Mot de passe'.",
+        };
+      } else if (/534[\s-]?5\.7\.14/.test(raw) || code === 534) {
+        mapped = {
+          code: '534 5.7.14',
+          message: 'Connexion bloquee par Google pour raison de securite.',
+          fix: "Activez la validation en 2 etapes puis utilisez un mot de passe d'application. Verifiez aussi https://accounts.google.com/DisplayUnlockCaptcha",
+        };
+      } else if (/550[\s-]?5\.1\.0/.test(raw) || code === 550) {
+        mapped = {
+          code: '550 5.1.0',
+          message: 'Adresse expediteur non autorisee.',
+          fix: "Le champ 'Utilisateur SMTP' doit correspondre exactement au compte Gmail (ou a un alias 'Send mail as' valide dans Gmail).",
+        };
+      } else if (/5\.7\.0/.test(raw)) {
+        mapped = {
+          code: '5.7.0',
+          message: 'Authentification obligatoire.',
+          fix: "Renseignez l'utilisateur SMTP (adresse Gmail complete) et le mot de passe d'application.",
+        };
+      } else if (/ETIMEDOUT|ECONNREFUSED|ENOTFOUND/.test(raw)) {
+        mapped = {
+          code: error.code,
+          message: 'Impossible de joindre le serveur SMTP.',
+          fix: 'Verifiez host=smtp.gmail.com, port=465, SSL active, et la connectivite reseau sortante.',
+        };
+      }
+      res.status(500).json({
+        success: false,
+        error: mapped?.message || 'Erreur lors du test SMTP',
+        code: mapped?.code || null,
+        fix: mapped?.fix || null,
+        raw: raw.slice(0, 500),
+      });
     }
   });
 

@@ -320,8 +320,25 @@ export default function MailingPanel({ isOpen, onClose }) {
       const result = await api.testEmail();
       setConfigTestResult({ success: true, message: result.message });
     } catch (err) {
-      setConfigTestResult({ success: false, message: err.message || 'Échec du test' });
+      // Le backend renvoie maintenant { error, code, fix } pour les codes Gmail courants
+      const data = err?.response?.data || null;
+      setConfigTestResult({
+        success: false,
+        message: data?.error || err.message || 'Échec du test',
+        code: data?.code || null,
+        fix: data?.fix || null,
+      });
     }
+  };
+
+  // Préréglage Gmail : remplit host/port/SSL pour smtp.gmail.com
+  const applyGmailPreset = () => {
+    setConfigForm((prev) => ({
+      ...prev,
+      smtp_host: 'smtp.gmail.com',
+      smtp_port: 465,
+      smtp_secure: true,
+    }));
   };
 
   if (!isOpen) return null;
@@ -809,6 +826,38 @@ export default function MailingPanel({ isOpen, onClose }) {
                 <div className="mailing-config">
                   <h3>Configuration SMTP</h3>
 
+                  <div
+                    className="mailing-form-group"
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      padding: '8px 12px',
+                      background: 'var(--theme-bg-subtle, rgba(0,0,0,0.03))',
+                      borderRadius: 6,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: '0.85rem' }}>Préréglage rapide :</span>
+                    <Button
+                      variant="ghost"
+                      className="mailing-btn secondary"
+                      onClick={applyGmailPreset}
+                      type="button"
+                    >
+                      Gmail (smtp.gmail.com:465 SSL)
+                    </Button>
+                    <a
+                      href="https://myaccount.google.com/apppasswords"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '0.8rem', marginLeft: 'auto' }}
+                    >
+                      Générer un mot de passe d'application Gmail →
+                    </a>
+                  </div>
+
                   <div className="mailing-form-group">
                     <label className="mailing-toggle-label">
                       <Checkbox
@@ -925,7 +974,17 @@ export default function MailingPanel({ isOpen, onClose }) {
                       className={`mailing-config-result ${configTestResult.success ? 'success' : 'error'}`}
                     >
                       {configTestResult.success ? <Check size={14} /> : <AlertTriangle size={14} />}
-                      {configTestResult.message}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <span>
+                          {configTestResult.code ? `[${configTestResult.code}] ` : ''}
+                          {configTestResult.message}
+                        </span>
+                        {configTestResult.fix && (
+                          <span style={{ fontSize: '0.8rem', opacity: 0.85 }}>
+                            💡 {configTestResult.fix}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

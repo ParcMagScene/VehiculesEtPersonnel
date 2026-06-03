@@ -510,23 +510,137 @@ function AppContent() {
   };
 
   // ═══ Synchronisation scroll Calendar ↔ GoogleCalendarBanner ═══
-  const handleBannerScroll = useCallback((scrollLeft) => {
-    const calendarScrollArea = document.querySelector('.calendar-scroll-area');
-    if (calendarScrollArea && Math.abs(calendarScrollArea.scrollLeft - scrollLeft) > 1) {
-      calendarScrollArea.scrollLeft = scrollLeft;
-    }
-  }, []);
+  // [L3] Sync centralisee : RAF (1 ecriture max par frame) + sourceRef
+  // (anti-boucle ping-pong) + ResizeObserver (re-aligne quand la sidebar
+  // Planning resize, switch de vue, scrollbar verticale qui apparait,
+  // etc.). Le banner et le Calendar remontent leur scrollLeft via leur
+  // prop onScroll respective ; aucun listener DOM duplique cote banner.
+  const scrollSyncSourceRef = useRef(null);
+  const scrollSyncFrameRef = useRef(null);
+  const scrollSyncLastLeftRef = useRef(0);
 
-  const handleCalendarScroll = useCallback((scrollLeft) => {
-    const bannerScrollArea = document.querySelector('.banner-scroll-area');
-    if (bannerScrollArea && Math.abs(bannerScrollArea.scrollLeft - scrollLeft) > 1) {
-      bannerScrollArea.scrollLeft = scrollLeft;
+  const findScrollers = useCallback(
+    () => ({
+      grid:
+        document.querySelector('.calendar-scroll-area') ||
+        document.querySelector('.pp-scroll-area'),
+      banner: document.querySelector('.banner-scroll-area'),
+    }),
+    [],
+  );
+
+  const flushScrollSync = useCallback(() => {
+    scrollSyncFrameRef.current = null;
+    if (document.hidden) return;
+    const { grid, banner } = findScrollers();
+    if (!grid || !banner) return;
+    const left = scrollSyncLastLeftRef.current;
+    const source = scrollSyncSourceRef.current;
+    if (source === 'banner') {
+      if (Math.abs(grid.scrollLeft - left) > 1) {
+        grid.scrollLeft = left;
+      }
+    } else if (source === 'grid') {
+      if (Math.abs(banner.scrollLeft - left) > 1) {
+        banner.scrollLeft = left;
+      }
     }
-  }, []);
+  }, [findScrollers]);
+
+  const scheduleScrollSync = useCallback(
+    (source, left) => {
+      scrollSyncSourceRef.current = source;
+      scrollSyncLastLeftRef.current = left;
+      if (scrollSyncFrameRef.current != null) return;
+      scrollSyncFrameRef.current = requestAnimationFrame(flushScrollSync);
+    },
+    [flushScrollSync],
+  );
+
+  const handleBannerScroll = useCallback(
+    (scrollLeft) => {
+      scheduleScrollSync('banner', scrollLeft);
+    },
+    [scheduleScrollSync],
+  );
+
+  const handleCalendarScroll = useCallback(
+    (scrollLeft) => {
+      scheduleScrollSync('grid', scrollLeft);
+    },
+    [scheduleScrollSync],
+  );
 
   const showGoogleBanner = useMemo(
     () => ['planning', 'vehicles', 'parc', 'google'].includes(activeModule),
     [activeModule],
+  );
+
+  // ResizeObserver : re-aligne la banner sur la grille principale quand
+  // l'une des deux change de taille (sidebar Planning resize, switch
+  // de vue, apparition/disparition de la scrollbar verticale, etc.).
+  // Sans ca, scroller la grille puis resizer la sidebar laissait la
+  // banner desyncronisee jusqu'au prochain scroll.
+  useEffect(() => {
+    if (!showGoogleBanner) return undefined;
+    let attachTimer = null;
+    let frameId = null;
+    let observer = null;
+    let observed = [];
+
+    const realign = () => {
+      if (frameId != null) return;
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        if (document.hidden) return;
+        const { grid, banner } = findScrollers();
+        if (!grid || !banner) return;
+        if (Math.abs(banner.scrollLeft - grid.scrollLeft) > 1) {
+          banner.scrollLeft = grid.scrollLeft;
+        }
+      });
+    };
+
+    const tryAttach = () => {
+      const { grid, banner } = findScrollers();
+      if (!grid || !banner) {
+        attachTimer = setTimeout(tryAttach, 120);
+        return;
+      }
+      observer = new ResizeObserver(realign);
+      observer.observe(grid);
+      observer.observe(banner);
+      observed = [grid, banner];
+      // Alignement initial des l'attache.
+      realign();
+    };
+    tryAttach();
+
+    return () => {
+      if (attachTimer) clearTimeout(attachTimer);
+      if (frameId != null) cancelAnimationFrame(frameId);
+      if (observer) {
+        observed.forEach((el) => {
+          try {
+            observer.unobserve(el);
+          } catch {
+            /* element peut deja etre detache du DOM */
+          }
+        });
+        observer.disconnect();
+      }
+    };
+  }, [showGoogleBanner, view, activeModule, findScrollers]);
+
+  // Cleanup global du frame en cours au demontage.
+  useEffect(
+    () => () => {
+      if (scrollSyncFrameRef.current != null) {
+        cancelAnimationFrame(scrollSyncFrameRef.current);
+        scrollSyncFrameRef.current = null;
+      }
+    },
+    [],
   );
 
   const handleBannerEventClick = useCallback((event) => {

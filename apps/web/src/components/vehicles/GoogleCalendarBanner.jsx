@@ -75,7 +75,6 @@ function GoogleCalendarBanner({
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const widthSyncFrameRef = useRef(null);
   const lastWidthSyncAtRef = useRef(0);
-  const scrollSyncFrameRef = useRef(null);
   const lastGridColumnsRef = useRef('');
   const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
   const [eventFormEvent, setEventFormEvent] = useState(null);
@@ -368,80 +367,11 @@ function GoogleCalendarBanner({
     };
   }, [view, currentDate, activeModule]);
 
-  // Synchroniser le scroll entre le calendrier et le banner
-  useEffect(() => {
-    let cleanupFn = null;
-    let retryTimer = null;
-    let sourceRef = null;
-
-    const attachScrollListeners = () => {
-      // Chercher la zone de scroll principale : Calendar ou PersonnelPanel
-      const calendarScrollArea =
-        document.querySelector('.calendar-scroll-area') ||
-        document.querySelector('.pp-scroll-area');
-      const bannerScrollArea = document.querySelector('.banner-scroll-area');
-
-      if (!calendarScrollArea || !bannerScrollArea) {
-        retryTimer = setTimeout(attachScrollListeners, 80);
-        return;
-      }
-
-      const scheduleScrollSync = () => {
-        if (document.hidden) return;
-        if (scrollSyncFrameRef.current) return;
-        scrollSyncFrameRef.current = requestAnimationFrame(() => {
-          scrollSyncFrameRef.current = null;
-          if (sourceRef === 'calendar') {
-            const nextLeft = calendarScrollArea.scrollLeft;
-            if (bannerScrollArea.scrollLeft !== nextLeft) {
-              bannerScrollArea.scrollLeft = nextLeft;
-            }
-            return;
-          }
-          if (sourceRef === 'banner') {
-            const nextLeft = bannerScrollArea.scrollLeft;
-            if (calendarScrollArea.scrollLeft !== nextLeft) {
-              calendarScrollArea.scrollLeft = nextLeft;
-            }
-          }
-        });
-      };
-
-      const handleCalendarScroll = () => {
-        sourceRef = 'calendar';
-        scheduleScrollSync();
-      };
-
-      const handleBannerScroll = () => {
-        sourceRef = 'banner';
-        scheduleScrollSync();
-      };
-
-      calendarScrollArea.addEventListener('scroll', handleCalendarScroll, { passive: true });
-      bannerScrollArea.addEventListener('scroll', handleBannerScroll, { passive: true });
-
-      // Aligner immédiatement après l'attache (sans attendre un scroll utilisateur)
-      sourceRef = 'calendar';
-      scheduleScrollSync();
-
-      cleanupFn = () => {
-        calendarScrollArea.removeEventListener('scroll', handleCalendarScroll);
-        bannerScrollArea.removeEventListener('scroll', handleBannerScroll);
-      };
-    };
-
-    const timer = setTimeout(attachScrollListeners, 100);
-
-    return () => {
-      if (retryTimer) clearTimeout(retryTimer);
-      clearTimeout(timer);
-      if (scrollSyncFrameRef.current) {
-        cancelAnimationFrame(scrollSyncFrameRef.current);
-        scrollSyncFrameRef.current = null;
-      }
-      if (cleanupFn) cleanupFn();
-    };
-  }, [view]);
+  // [L3] La synchronisation du scroll horizontal banner <-> grille
+  // (Calendar / PersonnelPanel) est centralisee dans App.jsx via les
+  // props onScroll passees au Calendar et a ce banner. Le doublon
+  // d'addEventListener('scroll', ...) qui existait ici a ete supprime
+  // pour eviter les triple sync (React onScroll + listener DOM + RAF).
 
   // Centrer sur la date actuelle quand elle change (synchroniser avec le calendrier principal ou personnel)
   useEffect(() => {

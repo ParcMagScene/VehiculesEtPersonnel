@@ -173,23 +173,29 @@
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-client {
-  width: 220px;
-  flex: 0 0 220px;
+  width: 180px;
+  flex: 0 0 180px;
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-spacer {
-  width: 30px;
-  flex: 0 0 30px;
+  width: 0;
+  flex: 0 0 0;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-time {
-  width: 140px;
-  flex: 0 0 140px;
+  width: 120px;
+  flex: 0 0 120px;
+  border-left: 1px solid var(--border-default);
+  padding-left: 10px;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-personnel {
+  width: 200px;
+  flex: 0 0 200px;
   border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-actions {
-  width: 160px;
-  flex: 0 0 160px;
+  width: 130px;
+  flex: 0 0 130px;
   padding-left: 8px;
   border-left: 1px solid var(--border-default);
   text-align: center;
@@ -342,14 +348,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  width: 200px;
-  flex: 0 0 200px;
+  width: 130px;
+  flex: 0 0 130px;
   padding-left: 8px;
   border-left: 1px solid var(--border-default);
   justify-content: flex-end;
-  /* Necessaire pour que les chips multi-assign restent dans la colonne au lieu
-     de chevaucher Heure / Client. */
-  min-width: 0;
 }
 
 .task-planning-panel .task-actions button {
@@ -928,8 +931,8 @@
 }
 /* Col: Client (largeur fixe) */
 .task-planning-panel .ev-col-client {
-  width: 220px;
-  flex: 0 0 220px;
+  width: 180px;
+  flex: 0 0 180px;
   font-size: 0.92rem;
   color: var(--text-muted);
   overflow: hidden;
@@ -938,17 +941,27 @@
 }
 /* Col: Spacer (espace entre Client et Heure) */
 .task-planning-panel .ev-col-spacer {
-  width: 30px;
-  flex: 0 0 30px;
+  width: 0;
+  flex: 0 0 0;
 }
 /* Col: Heure / Période (largeur fixe) */
 .task-planning-panel .ev-col-time {
   color: var(--text-muted);
   font-size: var(--font-base);
-  width: 140px;
-  flex: 0 0 140px;
+  width: 120px;
+  flex: 0 0 120px;
   border-left: 1px solid var(--border-default);
   padding-left: 10px;
+}
+/* Col: Personnels (multi-affectations alignees, hauteur stable) */
+.task-planning-panel .ev-col-personnel {
+  width: 200px;
+  flex: 0 0 200px;
+  border-left: 1px solid var(--border-default);
+  padding-left: 10px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
 }
 .task-planning-panel .ev-col-time .period-badge {
   display: inline-block;
@@ -1154,28 +1167,29 @@
 /* ═══ Personnel multi-assignment ═══ */
 .task-planning-panel .event-assign-container {
   position: relative;
-  /* Prend l'espace disponible avant les boutons d'action pour que les chips
-     puissent wrap proprement sans chevaucher la colonne Heure. */
-  flex: 1 1 auto;
+  /* Remplit la cellule Personnels mais n'autorise pas le wrap : la hauteur
+     de ligne reste stable, on tronque visuellement si trop de monde. */
+  width: 100%;
   min-width: 0;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .task-planning-panel .multi-assign-chips {
   display: flex;
   align-items: center;
   gap: 3px;
-  flex-wrap: wrap;
-  /* Ne jamais deborder sur les colonnes voisines (Heure / Client). */
+  /* Une seule ligne pour preserver la hauteur de ligne. */
+  flex-wrap: nowrap;
   max-width: 100%;
   min-width: 0;
   flex: 1 1 auto;
-  justify-content: flex-end;
+  overflow: hidden;
 }
 
-/* En multi-affectation (>=3 pers), on serre les chips pour gagner de la place ;
-   le wrap autorise une 2eme ligne si necessaire. */
+/* En multi-affectation (>=3 pers), on serre les chips pour gagner de la place
+   sans casser l'alignement vertical. */
 .task-planning-panel .multi-assign-chips.compact {
   gap: 2px;
 }

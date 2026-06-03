@@ -331,6 +331,7 @@ export const GoogleRdvRow = React.memo(function GoogleRdvRow({
       <span className="ev-col ev-col-time">
         <Clock size={11} /> {timeStr}
       </span>
+      <span className="ev-col ev-col-personnel" />
       <div className="task-actions">
         <Tooltip content="Google Calendar" position="bottom">
           <span className="google-badge">G</span>
@@ -450,6 +451,8 @@ export const RdvRow = React.memo(function RdvRow({
           ''
         )}
       </span>
+
+      <span className="ev-col ev-col-personnel" />
 
       <div className="task-actions rdv-actions">
         <Tooltip content="Voir détails">
@@ -587,6 +590,7 @@ export const IcalEventRow = React.memo(function IcalEventRow({
       <span className="ev-col ev-col-time">
         <Clock size={11} /> {timeStr}
       </span>
+      <span className="ev-col ev-col-personnel" />
       <div className="task-actions">
         <span
           className="ical-origin-badge"

@@ -417,6 +417,7 @@ const UserPreferencesModal = ({
                 <Bell size={14} /> Son d'arrivée de message
               </span>
               <Select
+                className="prefs-select"
                 value={prefs.notificationSoundVariant || 'notification'}
                 onChange={(e) => {
                   const variant = e.target.value;

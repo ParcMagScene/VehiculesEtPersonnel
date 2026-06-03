@@ -20,12 +20,11 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Avatar, Button, SearchBar, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { useAffairesList } from '../../hooks/useAffairesList';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import { AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
 import api from '../../utils/api';
@@ -42,8 +41,8 @@ const getAffaireStatus = (a, todayStr) => {
 };
 
 function MobileAffaires({ onBack }) {
-  // Sprint 2 : source unique via useAffairesList (cache IDB + subscribe bus auto).
-  const { affaires, loading, reload: loadAffaires } = useAffairesList();
+  const [affaires, setAffaires] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedAffaire, setSelectedAffaire] = useState(null);
   const [detailData, setDetailData] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -54,7 +53,22 @@ function MobileAffaires({ onBack }) {
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-  // Refresh auto sur invalidation cross-module : géré par useAffairesList.
+  // Charger toutes les affaires
+  const loadAffaires = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.getAffaires();
+      setAffaires(data);
+    } catch (err) {
+      console.error('Erreur chargement affaires:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAffaires();
+  }, [loadAffaires]);
 
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadAffaires);
 

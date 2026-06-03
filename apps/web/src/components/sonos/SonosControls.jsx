@@ -3,10 +3,8 @@
 // Prev | Play/Pause | Next  +  Shuffle / Repeat en secondary
 // ═══════════════════════════════════════════════════════════════
 
-import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lucide-react';
+import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Square } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
-
-import { Input } from '@/design-system';
 
 import { formatTime } from '../../hooks/useSonos';
 
@@ -101,7 +99,7 @@ function ProgressBar({ position, duration, onSeek }) {
       <span className="sonos-ptime">{formatTime(seekPos)}</span>
       <div className="sonos-ptrack">
         <div className="sonos-pfill" style={{ width: `${pct}%` }} />
-        <Input
+        <input
           type="range"
           min={0}
           max={duration}

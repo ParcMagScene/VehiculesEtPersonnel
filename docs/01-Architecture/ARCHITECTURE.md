@@ -1,7 +1,7 @@
 # 🏗️ Architecture Complète — eM@g
 
-> **Dernière mise à jour** : 9 avril 2026 (Module Sonos complet v2.4.0)
-> **Branche** : `dev` — **Dépôt** : `ParcMagScene/VehiculesEtPersonnel`
+> **Dernière mise à jour** : 3 juin 2026
+> **Branches actives** : `main` (production) / `dev` (intégration)
 > **Domaine** : (configurable via .env)
 
 ---
@@ -27,6 +27,7 @@
 17. [Performance (Phase 4)](#17-performance-phase-4)
 18. [Conventions de code](#18-conventions-de-code)
 19. [Diagramme des relations](#19-diagramme-des-relations)
+20. [Décisions d'architecture](#20-décisions-darchitecture)
 
 ---
 
@@ -47,6 +48,23 @@ Application web de **gestion de flotte de véhicules, de planning du personnel e
 - **Gérer le stock** : mouvements entrées/sorties, inventaire, commandes fournisseurs
 - **Communiquer** : événements d'entreprise, notes internes, mailing, messagerie temps réel
 - **Accès mobile** : interface dédiée avec QR code (planning, réservations, maintenances, messagerie)
+
+### Vue système rapide
+
+```mermaid
+flowchart LR
+  U[Utilisateurs Web/Mobile/TV] --> W[apps/web + apps/tv-client]
+  W -->|REST / SSE| A[apps/api Express]
+  A --> D[(SQLite)]
+  A --> G[Google APIs]
+  A --> S[Sonos LAN]
+```
+
+Références complémentaires :
+
+- Schéma base de données : [SCHEMA_DB.md](SCHEMA_DB.md)
+- Machines d'état métier : [../workflows/state-machines.md](../workflows/state-machines.md)
+- Index API complet : [../API-INDEX.md](../API-INDEX.md)
 
 ---
 
@@ -257,6 +275,33 @@ Client HTTP
 ```
 
 ### Fichiers serveur
+
+Principes transverses :
+
+- Point d'entrée unique via `server.js`
+- Middlewares centralisés dans `middleware/` et `config/`
+- Validation d'entrées via schémas Zod
+- Routes organisées par domaines métier (catalogue, planning, sonos, annuaire, etc.)
+
+---
+
+## 20. Décisions d'architecture
+
+### ADR-001 — Monorepo applicatif
+- **Décision** : regrouper API, frontend web et client TV dans `apps/`
+- **Motivation** : versionning cohérent, scripts centralisés, partage de conventions
+
+### ADR-002 — SQLite + better-sqlite3
+- **Décision** : base locale SQLite en mode WAL avec index métiers ciblés
+- **Motivation** : simplicité d'exploitation, performance adaptée au contexte, sauvegarde facile
+
+### ADR-003 — Validation d'entrée centralisée
+- **Décision** : validation par schémas côté API avant logique métier
+- **Motivation** : robustesse des endpoints, réduction des erreurs de données
+
+### ADR-004 — Séparation des responsabilités
+- **Décision** : routes par domaines + middlewares partagés
+- **Motivation** : maintenabilité, lisibilité, évolutivité fonctionnelle
 
 | Fichier | Lignes | Rôle |
 |---------|--------|------|

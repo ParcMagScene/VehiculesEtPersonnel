@@ -202,7 +202,7 @@
   position: absolute;
   bottom: 12px;
   left: 12px;
-  z-index: var(--z-overlay);
+  z-index: 1000;
   background: var(--theme-bg-primary, #ffffff);
   padding: 6px 12px;
   border-radius: var(--theme-radius, 8px);
@@ -224,7 +224,7 @@
   height: 18px;
   border-radius: 50%;
   background: #667eea;
-  border: 2px solid var(--theme-bg);
+  border: 2px solid #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 
@@ -233,7 +233,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--theme-bg);
+  background: #ffffff;
   border: 2px solid #667eea;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
@@ -357,7 +357,7 @@
   font-size: 0.72rem;
   color: var(--theme-text-muted, #94a3b8);
   margin: 0 0 8px;
-  font-family: var(--font-mono);
+  font-family: monospace;
 }
 
 .map-popup-actions {
@@ -501,7 +501,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: var(--z-overlay);
+  z-index: 1000;
   background: var(--theme-bg-primary, #ffffff);
   border: 1px solid var(--theme-border, #e2e8f0);
   border-radius: var(--theme-radius, 8px);
@@ -577,7 +577,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  z-index: var(--z-overlay);
+  z-index: 1000;
   width: 320px;
   max-width: calc(100% - 240px);
 }
@@ -720,7 +720,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: var(--z-overlay);
+  z-index: 1000;
 }
 
 /* Quand le contrôle du rayon est présent (carte locale), décaler le toggle */
@@ -754,7 +754,7 @@
   position: absolute;
   top: 58px;
   right: 12px;
-  z-index: var(--z-overlay);
+  z-index: 1000;
   width: 280px;
   background: var(--theme-bg-primary, #ffffff);
   border: 1px solid var(--theme-border, #e2e8f0);
@@ -1037,15 +1037,15 @@
 }
 
 .map-name-tooltip--prestataire.leaflet-tooltip {
-  --map-tooltip-connector-color: var(--theme-warning);
+  --map-tooltip-connector-color: #f59e0b;
 }
 
 .map-name-tooltip--garage.leaflet-tooltip {
-  --map-tooltip-connector-color: var(--theme-danger);
+  --map-tooltip-connector-color: #ef4444;
 }
 
 .map-name-tooltip--autre.leaflet-tooltip {
-  --map-tooltip-connector-color: var(--theme-text-muted);
+  --map-tooltip-connector-color: #94a3b8;
 }
 
 .map-name-tooltip--siege.leaflet-tooltip {
@@ -1206,7 +1206,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: var(--z-overlay);
+  z-index: 1000;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--theme-border, #e2e8f0);
   border-radius: 6px;

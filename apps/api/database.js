@@ -3,11 +3,7 @@ import dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
-// [S2-1] Helper extrait dans un module pur — voir database/_helpers.js
-import { safeAddColumn as safeAddColumnImpl } from './database/_helpers.js';
 import logger from './logger.js';
-// [PERF Phase 4.N] Instrumentation slow log SQL au niveau requête.
-import { instrumentDb } from './middleware/sqlSlowLog.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,28 +43,20 @@ db.pragma('wal_autocheckpoint = 1000');
 // [PHASE 4] Timeout 5s si la DB est verrouillée par un autre writer
 db.pragma('busy_timeout = 5000');
 
-// [PERF Phase 4.N] Patche db.prepare() pour mesurer la durée de chaque
-// .run/.get/.all et alimenter le ring buffer + agrégat (lecture via
-// /api/_perf/slow-sql, admin only). Désactivable: ENABLE_SQL_SLOW_LOG=0.
-instrumentDb(db);
-
-// [PERF Sprint 1] Tuning supplémentaires :
-// - cache_size négatif = en KiB (ici 50 Mo de cache pages)
-// - temp_store en mémoire pour les sorts/temp B-trees
-// - mmap_size : I/O memory-mapped (jusqu'à ~30 Mo) pour accélérer les lectures
-db.pragma('cache_size = -50000');
-db.pragma('temp_store = MEMORY');
-db.pragma('mmap_size = 30000000');
-
 // Créer les tables
 // [AUDIT FIX P1-12] Les clauses ON DELETE des FOREIGN KEY ne s'appliquent qu'aux nouvelles bases.
 // Pour les bases existantes, SQLite ne permet pas de modifier les FK via ALTER TABLE.
 function initializeDatabase() {
-  // [S2-1] Wrapper local qui fige `db` dans la closure pour rétro-compat
-  // de tous les appels `safeAddColumn(table, column, type, default)` ci-dessous.
-  // L'implémentation pure est dans database/_helpers.js (testable indépendamment).
+  // [AUDIT FIX P0-5] Helper pour migrations ALTER TABLE idempotentes
   function safeAddColumn(table, column, type, defaultVal) {
-    return safeAddColumnImpl(db, table, column, type, defaultVal);
+    const cols = db.pragma(`table_info(${table})`).map((c) => c.name);
+    if (!cols.includes(column)) {
+      const defClause = defaultVal !== undefined ? ` DEFAULT ${defaultVal}` : '';
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${defClause}`);
+      logger.info(`  ✅ Migration: ${table}.${column} ajouté`);
+      return true;
+    }
+    return false;
   }
 
   // Table des utilisateurs
@@ -1155,21 +1143,6 @@ function initializeDatabase() {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }
 
-  // Migration: PIN code 4 chiffres et flag is_team pour compte Equipe
-  try {
-    const userColsPinTeam = db.prepare('PRAGMA table_info(users)').all();
-    if (!userColsPinTeam.some((c) => c.name === 'pin_hash')) {
-      db.prepare('ALTER TABLE users ADD COLUMN pin_hash TEXT').run();
-      logger.info('✅ Colonne pin_hash ajoutée à users');
-    }
-    if (!userColsPinTeam.some((c) => c.name === 'is_team')) {
-      db.prepare('ALTER TABLE users ADD COLUMN is_team INTEGER DEFAULT 0').run();
-      logger.info('✅ Colonne is_team ajoutée à users');
-    }
-  } catch (_err) {
-    logger.info('Info: Migration pin_hash/is_team déjà appliquée');
-  }
-
   // Migration: ajouter is_admin dans authorized_emails (pour bases existantes)
   try {
     const authEmailCols = db.prepare('PRAGMA table_info(authorized_emails)').all();
@@ -1494,10 +1467,8 @@ function initializeDatabase() {
       }
       if (!eqCols.includes('uid')) {
         db.prepare('ALTER TABLE equipment ADD COLUMN uid TEXT').run();
-        // SQLite ne supporte pas ADD COLUMN UNIQUE.
-        // [PERF Phase 4.M] L'index unique partiel `idx_equipment_uid_unique`
-        // (WHERE uid IS NOT NULL) est créé par locmat-import-v1.js — plus économe
-        // car n'indexe pas les NULLs. Ne pas recréer `idx_equipment_uid` ici.
+        // SQLite ne supporte pas ADD COLUMN UNIQUE, on crée un index séparé
+        db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_uid ON equipment(uid)').run();
         logger.info('✅ Migration: uid ajouté à equipment');
         // Générer les UID pour les équipements existants
         const existingEq = db.prepare('SELECT id FROM equipment WHERE uid IS NULL').all();
@@ -1570,95 +1541,6 @@ function initializeDatabase() {
     } catch (e) {
       logger.warn('⚠️ Migration sav_tickets import:', e.message);
     }
-
-    // ═══ Migration SAV LocMat sync (Phase 3 — module SAV unifié) ═══
-    // Ajoute colonnes nécessaires à la synchro bidirectionnelle eM@g ↔ LocMat :
-    //  - locmat_code     : ID ticket côté LocMat (ex. "IN0000000123") — match prioritaire
-    //  - serial_number   : SN brut décodé du CSV (peut différer de equipment.serial_number)
-    //  - uid             : UID eM@g décodé du CSV (ex. "EMAG-00042")
-    //  - opened_at       : date d'entrée SAV (depuis colonne « Début » du CSV)
-    //  - closed_at       : date de sortie SAV (depuis colonne « Fin » du CSV)
-    //  - last_modified_source : 'emag' | 'locmat' — source de la dernière modif
-    //  - last_modified_at     : timestamp de la dernière modif (pour résolution collisions)
-    //  - notes           : notes libres internes (si non déjà présent)
-    try {
-      const savCols = db
-        .prepare('PRAGMA table_info(sav_tickets)')
-        .all()
-        .map((c) => c.name);
-      const addCol = (name, type) => {
-        if (!savCols.includes(name)) {
-          db.prepare(`ALTER TABLE sav_tickets ADD COLUMN ${name} ${type}`).run();
-          logger.info(`✅ Migration SAV: colonne ${name} ajoutée`);
-        }
-      };
-      addCol('locmat_code', 'TEXT');
-      addCol('serial_number', 'TEXT');
-      addCol('uid', 'TEXT');
-      addCol('opened_at', 'DATETIME');
-      addCol('closed_at', 'DATETIME');
-      addCol('last_modified_source', "TEXT DEFAULT 'emag'");
-      addCol('last_modified_at', 'DATETIME');
-      addCol('notes', 'TEXT');
-
-      db.exec(`
-        CREATE INDEX IF NOT EXISTS idx_sav_locmat_code ON sav_tickets(locmat_code);
-        CREATE INDEX IF NOT EXISTS idx_sav_uid ON sav_tickets(uid);
-        CREATE INDEX IF NOT EXISTS idx_sav_serial ON sav_tickets(serial_number);
-        CREATE INDEX IF NOT EXISTS idx_sav_status ON sav_tickets(status);
-      `);
-
-      // Backfill last_modified_* pour tickets historiques (créés avant la sync LocMat)
-      db.prepare(
-        `UPDATE sav_tickets
-           SET last_modified_source = 'emag',
-               last_modified_at = COALESCE(updated_at, created_at)
-         WHERE last_modified_at IS NULL`,
-      ).run();
-    } catch (e) {
-      logger.warn('⚠️ Migration sav_tickets LocMat sync:', e.message);
-    }
-
-    // ═══ Table d'historique des imports SAV (audit + rapport PDF) ═══
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS sav_imports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        imported_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        imported_by INTEGER,
-        filename TEXT,
-        rows_total INTEGER DEFAULT 0,
-        rows_new INTEGER DEFAULT 0,
-        rows_updated INTEGER DEFAULT 0,
-        rows_closed INTEGER DEFAULT 0,
-        rows_collisions INTEGER DEFAULT 0,
-        rows_duplicates INTEGER DEFAULT 0,
-        rows_errors INTEGER DEFAULT 0,
-        summary TEXT,        -- JSON résumé compact
-        details TEXT,        -- JSON détaillé pour rapport PDF
-        FOREIGN KEY (imported_by) REFERENCES users(id) ON DELETE SET NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_sav_imports_date ON sav_imports(imported_at DESC);
-    `);
-
-    // ═══ Historique des modifications de tickets SAV (audit field-level) ═══
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS sav_ticket_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ticket_id INTEGER NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        field TEXT NOT NULL,
-        old_value TEXT,
-        new_value TEXT,
-        source TEXT NOT NULL DEFAULT 'emag',  -- 'emag' | 'locmat'
-        user_id INTEGER,
-        import_id INTEGER,
-        FOREIGN KEY (ticket_id) REFERENCES sav_tickets(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-        FOREIGN KEY (import_id) REFERENCES sav_imports(id) ON DELETE SET NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_sav_history_ticket ON sav_ticket_history(ticket_id);
-      CREATE INDEX IF NOT EXISTS idx_sav_history_import ON sav_ticket_history(import_id);
-    `);
 
     // Catégories par défaut
     const catCount = db.prepare('SELECT COUNT(*) as c FROM equipment_categories').get();
@@ -1810,41 +1692,6 @@ function initializeDatabase() {
     logger.info('Info: Migration code_libre/postal_code/city:', error.message);
   }
 
-  // Migration Annuaire Personnel : champs RH/contact étendus.
-  // Les champs sensibles (social_security_number, iban, hr_notes) sont protégés
-  // côté API (lecture/écriture admin uniquement, voir personnelRoutes.js).
-  try {
-    const personsCols3 = db.prepare('PRAGMA table_info(persons)').all();
-    const have = new Set(personsCols3.map((c) => c.name));
-    const annuaireCols = [
-      ['address', 'TEXT'],
-      ['country', "TEXT DEFAULT 'France'"],
-      ['phone_personal', 'TEXT'],
-      ['personal_email', 'TEXT'],
-      ['birth_date', 'TEXT'],
-      ['emergency_contact_name', 'TEXT'],
-      ['emergency_contact_phone', 'TEXT'],
-      ['emergency_contact_relation', 'TEXT'],
-      ['linkedin_url', 'TEXT'],
-      // Sensibles — admin only.
-      ['social_security_number', 'TEXT'],
-      ['iban', 'TEXT'],
-      ['hr_notes', 'TEXT'],
-    ];
-    let added = 0;
-    for (const [col, def] of annuaireCols) {
-      if (!have.has(col)) {
-        db.prepare(`ALTER TABLE persons ADD COLUMN ${col} ${def}`).run();
-        added++;
-      }
-    }
-    if (added > 0) {
-      logger.info(`✅ ${added} colonnes Annuaire ajoutées à persons`);
-    }
-  } catch (error) {
-    logger.info('Info: Migration colonnes annuaire persons:', error.message);
-  }
-
   // ============================================================
   // Tables Catalogue Matériel + Flight-Cases + Modèles Camions
   // Intégration eM@g ↔ Catalogue ↔ Chargement 3D
@@ -1985,10 +1832,155 @@ function initializeDatabase() {
     logger.warn('⚠️ Migration equipment location_zone/code/floor:', error.message);
   }
 
-  // [PERF Phase 4.L2] Parser des valeurs texte "location" → champs structurés
-  // déplacé en migration versionnée 0005_parse_legacy_location_text.mjs.
-  // Tournait à chaque boot et coûtait ~200ms en full scan equipment, alors
-  // que les nouveaux INSERT/UPDATE écrivent déjà les colonnes structurées.
+  // ═══ Migration: Parser les valeurs texte "location" → champs structurés ═══
+  try {
+    const needsMigration = db
+      .prepare(
+        "SELECT COUNT(*) as cnt FROM equipment WHERE location IS NOT NULL AND location != '' AND (location_depot IS NULL OR location_depot = '')",
+      )
+      .get();
+    if (needsMigration.cnt > 0) {
+      logger.info(`📦 Migration localisation: ${needsMigration.cnt} équipements à migrer...`);
+
+      // Mapping zone → étage pour chaque dépôt
+      const depot1RDC = new Set([
+        'A1',
+        'A2',
+        'A3',
+        'A4',
+        'A5',
+        'B1',
+        'B2',
+        'B3',
+        'B4',
+        'C',
+        'C1',
+        'C2',
+        'C3',
+        'C4',
+        'C5',
+        'C6',
+        'D1',
+        'D2',
+        'D3',
+        'D4',
+        'QUAI1',
+        'QUAI2',
+        'QUAI3',
+        'BUREAUX',
+        'ENTREE',
+        'I1',
+        'I2',
+        'I3',
+      ]);
+      const depot1MEZZ = new Set([
+        'E1',
+        'E2',
+        'E3',
+        'F',
+        'F1',
+        'F2',
+        'F3',
+        'F4',
+        'F5',
+        'F6',
+        'F7',
+        'F8',
+        'G',
+        'G1',
+        'G2',
+        'G3',
+        'H',
+        'H1',
+        'H2',
+        'H3',
+        'CUISINE',
+        'LOCAL_GELAT',
+        'CHAMBRE',
+        'SALLE_REU',
+        'ARC_INFO',
+      ]);
+      const depot2RDC = new Set([
+        'J',
+        'J1',
+        'J2',
+        'J3',
+        'J4',
+        'J5',
+        'K',
+        'K1',
+        'K2',
+        'K3',
+        'K4',
+        'L',
+        'L1',
+        'L2',
+        'N',
+        'QUAI1',
+        'QUAI2',
+        'TOURNEES',
+        'WC',
+      ]);
+      const depot2MEZZ = new Set(['M', 'M1']);
+
+      const items = db
+        .prepare(
+          "SELECT id, location FROM equipment WHERE location IS NOT NULL AND location != '' AND (location_depot IS NULL OR location_depot = '')",
+        )
+        .all();
+
+      const updateStmt = db.prepare(
+        'UPDATE equipment SET location_depot = ?, location_zone = ?, location_floor = ? WHERE id = ?',
+      );
+
+      const migrateTransaction = db.transaction(() => {
+        let migrated = 0;
+        for (const item of items) {
+          const match = item.location.match(/^Entrepôt\s+(\d+)\s*:\s*(.+)$/i);
+          if (match) {
+            const depot = match[1];
+            let zone = match[2].trim();
+            let floor = null;
+
+            if (depot === '1') {
+              if (depot1RDC.has(zone)) floor = 'RDC';
+              else if (depot1MEZZ.has(zone)) floor = 'MEZZ';
+            } else if (depot === '2') {
+              // "M" seul → M1
+              if (zone === 'M') zone = 'M1';
+              if (depot2RDC.has(zone)) floor = 'RDC';
+              else if (depot2MEZZ.has(zone)) floor = 'MEZZ';
+            }
+
+            updateStmt.run(depot, zone, floor, item.id);
+            migrated++;
+          } else if (
+            /^[A-Z]\d?$/i.test(item.location) &&
+            item.location !== 'Hors stock' &&
+            item.location !== 'Hors-Stock'
+          ) {
+            // Zone seule sans "Entrepôt" (ex: "E3") — essayer de deviner le dépôt
+            const zone = item.location.trim();
+            if (depot1RDC.has(zone) || depot1MEZZ.has(zone)) {
+              const floor = depot1RDC.has(zone) ? 'RDC' : 'MEZZ';
+              updateStmt.run('1', zone, floor, item.id);
+              migrated++;
+            } else if (depot2RDC.has(zone) || depot2MEZZ.has(zone)) {
+              const floor = depot2RDC.has(zone) ? 'RDC' : 'MEZZ';
+              updateStmt.run('2', zone, floor, item.id);
+              migrated++;
+            }
+          }
+        }
+        return migrated;
+      });
+
+      const count = migrateTransaction();
+      logger.info(`✅ Migration localisation: ${count}/${items.length} équipements migrés`);
+    }
+  } catch (error) {
+    logger.warn('⚠️ Migration parsing location:', error.message);
+  }
 
   // ═══ Module Mailing Avancé ═══
   try {
@@ -2186,8 +2178,7 @@ function initializeDatabase() {
       )
     `);
 
-    // [PERF Phase 4.M] idx_bl_affaire supprimé (doublon de idx_bl_imports_affaire
-    // créé par migrations.js perfSprint1Indexes). Voir 0003_drop_duplicate_indexes.sql.
+    db.exec('CREATE INDEX IF NOT EXISTS idx_bl_affaire ON bl_imports(affaire_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_bl_status ON bl_imports(status)');
 
     db.exec(`
@@ -2308,14 +2299,6 @@ function initializeDatabase() {
     if (!taColNames.includes('location_lng')) {
       db.exec('ALTER TABLE task_assignments ADD COLUMN location_lng REAL');
       logger.info('  + task_assignments.location_lng');
-    }
-    if (!taColNames.includes('all_day')) {
-      db.exec('ALTER TABLE task_assignments ADD COLUMN all_day INTEGER DEFAULT 0');
-      logger.info('  + task_assignments.all_day');
-    }
-    if (!taColNames.includes('client_name')) {
-      db.exec('ALTER TABLE task_assignments ADD COLUMN client_name TEXT');
-      logger.info('  + task_assignments.client_name');
     }
 
     // Migration : corriger le CHECK constraint section pour inclure rdv et prep_installations
@@ -3495,105 +3478,6 @@ function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_tracking_entries_task_assignment ON tracking_entries(task_assignment_id);
     `);
 
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS tracking_recurring_tasks (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
-        title TEXT NOT NULL,
-        period TEXT NOT NULL CHECK(period IN ('AM', 'PM')),
-        recurrence TEXT NOT NULL CHECK(recurrence IN ('daily', 'weekly', 'monthly')),
-        day_of_week INTEGER,
-        day_of_month INTEGER,
-        default_time_spent REAL DEFAULT 0,
-        default_comment TEXT DEFAULT '',
-        active INTEGER DEFAULT 1,
-        created_by INTEGER REFERENCES users(id),
-        created_at TEXT DEFAULT (datetime('now'))
-      )
-    `);
-
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS tracking_incident_tickets (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        week_key TEXT NOT NULL,
-        period_start_date TEXT NOT NULL,
-        period_end_date TEXT NOT NULL,
-        affaire_num TEXT NOT NULL,
-        affaire_name TEXT DEFAULT '',
-        affaire_start_date TEXT,
-        affaire_end_date TEXT,
-        is_tournee INTEGER DEFAULT 0,
-        linked_reservations_json TEXT DEFAULT '[]',
-        linked_personnel_json TEXT DEFAULT '[]',
-        notes TEXT DEFAULT '',
-        created_by INTEGER REFERENCES users(id),
-        created_at TEXT DEFAULT (datetime('now')),
-        modified_by INTEGER REFERENCES users(id),
-        modified_at TEXT,
-        UNIQUE(week_key, affaire_num)
-      )
-    `);
-
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS tracking_incident_entries (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        ticket_id TEXT NOT NULL REFERENCES tracking_incident_tickets(id) ON DELETE CASCADE,
-        incident_type TEXT NOT NULL CHECK(incident_type IN (
-          'vehicle_problem',
-          'equipment_problem',
-          'equipment_omission',
-          'equipment_error',
-          'other'
-        )),
-        description TEXT NOT NULL DEFAULT '',
-        reporter_person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
-        reporter_name_snapshot TEXT DEFAULT '',
-        vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
-        vehicle_name_snapshot TEXT DEFAULT '',
-        linked_maintenance_id TEXT,
-        created_by INTEGER REFERENCES users(id),
-        created_at TEXT DEFAULT (datetime('now')),
-        modified_by INTEGER REFERENCES users(id),
-        modified_at TEXT
-      )
-    `);
-
-    try {
-      const teCols = db.pragma('table_info(tracking_entries)').map((c) => c.name);
-      if (!teCols.includes('recurring_task_id')) {
-        db.exec(
-          'ALTER TABLE tracking_entries ADD COLUMN recurring_task_id TEXT REFERENCES tracking_recurring_tasks(id) ON DELETE SET NULL',
-        );
-      }
-    } catch (migErr) {
-      logger.warn('⚠️ Migration tracking_entries.recurring_task_id:', migErr.message);
-    }
-
-    db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_tracking_entries_recurring_task ON tracking_entries(recurring_task_id);
-      CREATE INDEX IF NOT EXISTS idx_tracking_recurring_person_active ON tracking_recurring_tasks(person_id, active);
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_tracking_entries_sheet_recurring_unique
-      ON tracking_entries(sheet_id, recurring_task_id)
-      WHERE recurring_task_id IS NOT NULL;
-    `);
-
-    try {
-      safeAddColumn('tracking_incident_entries', 'vehicle_id', 'INTEGER');
-      safeAddColumn('tracking_incident_entries', 'vehicle_name_snapshot', 'TEXT', "''");
-      safeAddColumn('tracking_incident_entries', 'linked_maintenance_id', 'TEXT');
-    } catch (migErr) {
-      logger.warn('⚠️ Migration tracking_incident_entries véhicule/signalement:', migErr.message);
-    }
-
-    db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_week ON tracking_incident_tickets(week_key);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_affaire ON tracking_incident_tickets(affaire_num);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_start ON tracking_incident_tickets(period_start_date);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_ticket ON tracking_incident_entries(ticket_id);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_reporter ON tracking_incident_entries(reporter_person_id);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_vehicle ON tracking_incident_entries(vehicle_id);
-    `);
-
     logger.info('  ✅ Module Suivi du Personnel initialisé');
   } catch (error) {
     logger.warn('⚠️ Migration Suivi du Personnel:', error.message);
@@ -3618,11 +3502,10 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_maintenances_type ON maintenances(type);
   `);
   // Historique des modifications (audit logs)
-  // [PERF Phase 4.M] idx_history_entity et idx_history_timestamp supprimés
-  // (doublons de idx_modification_history_entity / idx_modhist_timestamp DESC
-  // créés par migrations.js perfSprint1Indexes).
   db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_history_entity ON modification_history(entity_type, entity_id);
     CREATE INDEX IF NOT EXISTS idx_history_user ON modification_history(user_id);
+    CREATE INDEX IF NOT EXISTS idx_history_timestamp ON modification_history(timestamp);
   `);
   // Référentiels (clients, conducteurs, lieux, garages)
   db.exec(`
@@ -3630,11 +3513,10 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_reservation_requests_status ON reservation_requests(status);
   `);
   // Sessions actives
-  // [PERF Phase 4.M] idx_sessions_expires et idx_sessions_token supprimés
-  // (doublons de idx_active_sessions_expires / idx_active_sessions_token_hash
-  // créés par migrations.js perfSprint1Indexes).
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_sessions_user ON active_sessions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_sessions_expires ON active_sessions(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_sessions_token ON active_sessions(token_hash);
   `);
 
   // Index critiques auth & lookup
@@ -3657,39 +3539,35 @@ initializeDatabase();
 import { runPostInitMigrations } from './migrations.js';
 runPostInitMigrations(db);
 
-// Index de performance L10/L11 (idempotents) — voir services/perfIndexesL10.js
-import { applyPerfL10Indexes } from './services/perfIndexesL10.js';
-try {
-  const r = applyPerfL10Indexes(db);
-  if (r.failed > 0) {
-    console.warn(
-      `⚠️ Index perf : ${r.succeeded}/${r.attempted} OK, ${r.failed} échec(s)`,
-      r.errors,
-    );
-  }
-} catch (e) {
-  console.warn('⚠️ applyPerfL10Indexes a échoué:', e.message);
-}
-
-// ─────────────────────────────────────────────────────────────
-// [S2-1 step 2] WAL management extrait dans database/wal.js
-// On garde des wrappers locaux qui figent `db` pour rétro-compat
-// des appelants existants (server.js : checkpointDatabase(), closeDatabase()).
-// ─────────────────────────────────────────────────────────────
-import {
-  checkpointDatabase as checkpointDatabaseImpl,
-  closeDatabase as closeDatabaseImpl,
-  setupWALScheduling,
-} from './database/wal.js';
-
-const walScheduling = setupWALScheduling(db);
-
+// Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
-  return checkpointDatabaseImpl(db);
+  try {
+    db.pragma('wal_checkpoint(FULL)');
+    logger.info('✅ Checkpoint WAL effectué');
+  } catch (error) {
+    logger.error('❌ Erreur checkpoint WAL:', error);
+  }
 }
 
+// Fonction pour fermer proprement la base de données
 export function closeDatabase() {
-  return closeDatabaseImpl(db, walScheduling);
+  try {
+    clearInterval(checkpointTimer);
+    // Faire un checkpoint final avant de fermer
+    checkpointDatabase();
+    db.close();
+    logger.info('✅ Base de données fermée proprement');
+  } catch (error) {
+    logger.error('❌ Erreur fermeture DB:', error);
+  }
 }
+
+// Checkpoint automatique toutes les 5 minutes
+const checkpointTimer = setInterval(
+  () => {
+    checkpointDatabase();
+  },
+  5 * 60 * 1000,
+);
 
 export default db;

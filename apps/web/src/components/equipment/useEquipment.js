@@ -2,11 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { useRefreshOnFocus } from '../../hooks/useRefreshOnFocus';
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { refreshBus } from '../../utils/refresh-bus';
 import { findZone } from './equipmentUtils';
 
 export const useEquipment = ({ currentUser, initialTab }) => {
@@ -126,13 +123,6 @@ export const useEquipment = ({ currentUser, initialTab }) => {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  // Auto-refresh quand le materiel ou SAV change ailleurs
-  useRefreshSubscription('equipment', loadData);
-  useRefreshSubscription('sav', loadData);
-
-  // [N4] Refresh au retour de focus (veille tab / multi-onglets). Throttle 60s.
-  useRefreshOnFocus(loadData, { minIntervalMs: 60_000 });
 
   const families = useMemo(() => categories.filter((c) => c.level === 'family'), [categories]);
   const subfamilies = useMemo(
@@ -266,7 +256,6 @@ export const useEquipment = ({ currentUser, initialTab }) => {
       } else {
         await api.createEquipment(data);
       }
-      refreshBus.publish('equipment');
       setShowEquipmentModal(false);
       setEditingEquipment(null);
       loadData();
@@ -286,7 +275,6 @@ export const useEquipment = ({ currentUser, initialTab }) => {
           await api.deleteEquipment(id);
           setSelectedEquipment(null);
           setDialogEquipment(null);
-          refreshBus.publish('equipment');
           loadData();
         } catch (err) {
           toast.error('Erreur: ' + err.message);
@@ -312,7 +300,6 @@ export const useEquipment = ({ currentUser, initialTab }) => {
           toast.success(`${result.message} — UID : ${result.created.map((c) => c.uid).join(', ')}`);
           setSelectedEquipment(null);
           setDialogEquipment(null);
-          refreshBus.publish('equipment');
           loadData();
         } catch (err) {
           toast.error('Erreur sérialisation: ' + err.message);
@@ -328,7 +315,6 @@ export const useEquipment = ({ currentUser, initialTab }) => {
       } else {
         await api.createSavTicket(data);
       }
-      refreshBus.publish('sav');
       setShowSavModal(false);
       setEditingSavTicket(null);
       loadData();

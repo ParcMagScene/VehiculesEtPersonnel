@@ -6,31 +6,6 @@
   overflow: hidden;
 }
 
-.api-offline-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 1rem;
-  background: color-mix(in srgb, var(--theme-warning, #f59e0b) 14%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--theme-warning, #f59e0b) 55%, transparent);
-  color: var(--theme-text-primary);
-  font-size: var(--font-sm);
-  line-height: 1.35;
-  flex-shrink: 0;
-}
-
-.api-offline-banner strong {
-  white-space: nowrap;
-}
-
-@media (max-width: 900px) {
-  .api-offline-banner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-}
-
 #main-content {
   display: flex;
   flex-direction: column;
@@ -104,7 +79,7 @@
     0 2px 4px -1px var(--overlay-subtle);
   position: sticky;
   top: 0;
-  z-index: var(--z-overlay);
+  z-index: var(--z-sticky);
   flex-shrink: 0;
 }
 
@@ -126,19 +101,14 @@
 }
 
 .header-logo-area {
-  /* Largeur naturelle : la zone se dimensionne sur son contenu (logo +
-     boutons utilitaires) plutot qu'une largeur fixe. Une largeur figee
-     calee sur la sidebar Planning faisait deborder les boutons par-
-     dessus le conteneur des onglets de modules des qu'on en ajoutait
-     un (Imports). Le gap 1rem du parent .header-title-container assure
-     la separation avec la barre d'onglets. */
+  width: calc(250px - 2rem);
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: space-between;
   flex-shrink: 0;
   height: 100%;
   margin-left: -10px;
-  padding-right: 1rem;
+  padding-right: 0.5rem;
 }
 
 .header-logo {
@@ -146,9 +116,6 @@
   max-height: 64px;
   width: auto;
   object-fit: contain;
-  /* Pousse le groupe de boutons utilitaires (Aide, Imports, Theme)
-     vers la droite de la zone logo, avec un gap regulier entre eux. */
-  margin-right: auto;
 }
 
 /* Bouton aide stylisé */
@@ -205,29 +172,6 @@
   color: var(--theme-warning);
 }
 
-/* Bouton hub d'imports (icone seule, tooltip "Imports & Documents") */
-.header-imports-btn {
-  background: linear-gradient(135deg, var(--theme-bg-hover), var(--theme-purple-bg, #f5f3ff));
-  border: 1px solid var(--theme-bg-indigo-lighter);
-  color: var(--theme-indigo);
-  padding: 0.35rem;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.header-imports-btn:hover {
-  background: linear-gradient(135deg, var(--theme-bg-indigo-light), var(--theme-purple-bg));
-  color: var(--theme-primary-dark);
-  border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px var(--accent-tint-vivid);
-}
-
 /* Module tabs (dans le header-title-container) */
 .header-title-container .module-tabs {
   display: flex;
@@ -263,36 +207,6 @@
   color: var(--theme-info);
   box-shadow: 0 1px 4px var(--shadow-sm);
   border-color: var(--theme-border);
-}
-
-/* #8 Notifications onglets : pastille avec compteur des demandes en attente */
-.header-title-container .module-tab .module-tab-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  margin-left: 0.25rem;
-  border-radius: 9px;
-  background: var(--theme-danger, #dc2626);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  box-shadow: 0 1px 3px var(--shadow-sm);
-}
-
-/* Variantes pour le badge de l'onglet Contrôles :
-   - is-late  → rouge (échéances dépassées)
-   - is-soon  → orange (échéances sous 7 jours) */
-.header-title-container .module-tab .module-tab-badge.is-late {
-  background: #dc2626;
-}
-.header-title-container .module-tab .module-tab-badge.is-soon {
-  background: var(--theme-warning);
-  color: #1f2937;
 }
 
 .maintenance-notifications {
@@ -527,18 +441,31 @@
 }
 
 /* Popup des notifications — positionnée en popover sous le header */
+.notifications-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--theme-overlay);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: var(--z-overlay);
+  padding-top: 100px;
+  animation: fadeIn 0.2s ease-out;
+}
+
 .notifications-popover-backdrop {
   position: fixed;
   inset: 0;
   background: transparent;
-  /* Au-dessus du header sticky (var(--z-overlay)=1000) mais sous les modals
-     bloquants (ModalManager: backdrop >=9000). */
-  z-index: 8000;
+  z-index: 1300;
 }
 
 .notifications-popup.notifications-popover {
   position: fixed;
-  z-index: 8001;
+  z-index: 1301;
   border-radius: var(--radius-lg);
   margin: 0;
   width: min(480px, calc(100vw - 16px));
@@ -1074,7 +1001,7 @@
 
 .notification-registration {
   display: inline-block;
-  font-family: var(--font-mono);
+  font-family: monospace;
   font-size: var(--font-sm);
   color: var(--theme-primary-light);
   font-weight: 600;
@@ -1975,52 +1902,4 @@
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   font-weight: 600;
-}
-
-/* ===== A11Y — Skip link "Aller au contenu principal" ===== */
-.a11y-skip-link {
-  position: absolute;
-  top: 0;
-  left: 0;
-  /* Reste au-dessus de toute l'UI mais sous les modals (>= 9000 via ModalManager). */
-  z-index: 8500;
-  padding: 0.5rem 1rem;
-  background: var(--theme-primary, #2563eb);
-  color: var(--theme-text-inverse, #fff);
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 0 0 var(--radius-sm, 4px) 0;
-  transform: translateY(-150%);
-  transition: transform 0.15s ease-out;
-}
-
-.a11y-skip-link:focus {
-  transform: translateY(0);
-  outline: 2px solid var(--theme-text-inverse, #fff);
-  outline-offset: -4px;
-}
-
-/* ===== A11Y — Visually hidden (lecteurs d'écran uniquement) ===== */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* ===== A11Y — Respect prefers-reduced-motion ===== */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
 }

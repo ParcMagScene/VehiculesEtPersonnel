@@ -1,18 +1,3 @@
----
-
-### 🔒 Réinitialisation du mot de passe
-
-Depuis la version 2026-05, la réinitialisation de mot de passe ne nécessite plus d’email ni de code OTP :
-
-- Depuis l’écran de connexion (desktop ou mobile), cliquer sur « Mot de passe oublié ».
-- Saisir l’adresse email du compte et un nouveau mot de passe (min. 10 caractères, confirmation requise).
-- Si le compte existe, le mot de passe est réinitialisé immédiatement.
-- Aucun email n’est envoyé, aucune validation par code n’est requise.
-- L’action est auditée côté serveur.
-
-Pour les administrateurs :
-- La réinitialisation d’un utilisateur se fait depuis l’interface admin ou via l’API `/api/admin/reset-password`.
-
 # 🚛 eM@g — Gestion de Flotte, Personnel & Équipements
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -221,11 +206,12 @@ eM@g/
 
 ## 📖 Documentation
 
-- [📚 Index docs/](docs/README.md) — Index complet de la documentation
-- [Architecture](docs/01-Architecture/ARCHITECTURE.md) — Architecture technique complète
+- [📚 Navigation globale](docs/README.md) — Point d'entrée de toute la documentation
+- [🗂️ Index API/docs](docs/API-INDEX.md) — Référence exhaustive des routes, tables, modules et glossaire
+- [Architecture](docs/01-Architecture/ARCHITECTURE.md) — Vue technique complète (backend, frontend, DB, flux)
+- [Guide développeur](docs/03-Guides/GUIDE_DEVELOPPEUR.md) — Installation, configuration, workflow Git, déploiement
+- [Guide utilisateur](docs/03-Guides/GUIDE_UTILISATEUR.md) — Démarrage rapide côté métier
 - [Sécurité](docs/02-Securite/SECURITY.md) — Politique de sécurité et vulnérabilités connues
-- [Guide utilisateur](docs/03-Guides/GUIDE_UTILISATEUR.md) — Guide de démarrage rapide
-- [Guide développeur](docs/03-Guides/GUIDE_DEVELOPPEUR.md) — Installation, configuration, déploiement
 - [Audit technique](docs/02-Securite/AUDIT.md) — Audit unifié (Juillet 2025 + Mars 2026)
 
 ---

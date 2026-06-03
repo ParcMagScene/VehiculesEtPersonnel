@@ -2,8 +2,6 @@ import './UserPreferencesModal.css';
 
 import {
   Bell,
-  Boxes,
-  Briefcase,
   Check,
   ChevronDown,
   ChevronUp,
@@ -13,14 +11,9 @@ import {
   Layout,
   Monitor,
   Moon,
-  Package,
   Palette,
-  Radio,
   Settings,
-  ShoppingCart,
   Sun,
-  Truck,
-  Users,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -42,6 +35,7 @@ import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { PALETTES } from '../../hooks/useTheme';
 import { useToast } from '../../hooks/useToast';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { DESKTOP_MODULES } from '../../router/routes.config';
 import api from '../../utils/api';
 import {
   NOTIFICATION_SOUND_VARIANTS,
@@ -54,15 +48,10 @@ import {
   SOUND_TYPES,
 } from '../../utils/notificationSound';
 
-const ALL_MODULES = [
-  { id: 'vehicles', label: 'Parc', icon: Truck, locked: true },
-  { id: 'personnel', label: 'Personnel', icon: Users },
-  { id: 'affaires', label: 'Affaires', icon: Briefcase },
-  { id: 'equipment', label: 'Équipements', icon: Package },
-  { id: 'orders', label: 'Commandes', icon: ShoppingCart },
-  { id: 'stock', label: 'Stock', icon: Boxes },
-  { id: 'planning', label: 'Planning', icon: Radio },
-];
+// Source de vérité : routes.config.js (DESKTOP_MODULES). Le premier module
+// (vehicles) est verrouillé : il sert d'onglet par défaut et ne peut pas être
+// masqué ni déplacé.
+const ALL_MODULES = DESKTOP_MODULES.map((m, i) => (i === 0 ? { ...m, locked: true } : m));
 
 const VALID_MODULE_IDS = new Set(ALL_MODULES.map((m) => m.id));
 

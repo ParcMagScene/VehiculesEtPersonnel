@@ -563,7 +563,7 @@
   --modal-header-border-radius: 0;
 
   /* Typographie monospace compacte */
-  font-family: var(--font-mono);
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
   font-size: var(--font-sm);
   --font-2xs: 10px;
   --font-xs: 11px;
@@ -624,7 +624,7 @@
    2. GLOBAL RESETS — body/html quand VS Code actif
    ───────────────────────────────────────── */
 [data-palette^='vscode'] body {
-  font-family: var(--font-mono);
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
   font-size: var(--font-sm);
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;

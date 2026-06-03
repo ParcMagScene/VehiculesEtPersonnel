@@ -34,11 +34,9 @@ import {
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
-import { refreshBus } from '../../utils/refresh-bus';
 import ProfileEditModal from '../auth/ProfileEditModal';
 
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
@@ -77,9 +75,6 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Réaction immédiate aux mutations de personnel publiées par d'autres vues
-  useRefreshSubscription('persons', () => loadData(true));
 
   const loadData = async (silent = false) => {
     try {
@@ -884,7 +879,6 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           onConfirm={async (personData) => {
             try {
               await api.createPerson(personData);
-              refreshBus.publish('persons');
               setPersonModal(null);
               loadData(true);
             } catch (err) {
@@ -1095,7 +1089,7 @@ function CreatePersonnelModal({ user, onConfirm, onCancel }) {
             <div className="create-personnel-contract-options">
               {CONTRACT_TYPES.map((ct) => (
                 <label key={ct.value} className="contract-type-option">
-                  <Input
+                  <input
                     type="radio"
                     name="contractType"
                     value={ct.value}

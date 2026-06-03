@@ -65,12 +65,6 @@
 .google-calendar-banner-grid.compact .banner-scroll-area {
   overflow-y: auto;
   border-bottom: none;
-  /* NE PAS poser flex: 0 0 auto ici : .calendar-banner est display:flex en
-     direction row, donc cette regle ferait dimensionner banner-scroll-area
-     a sa taille intrinseque (largeur du contenu) au lieu de remplir
-     l'espace restant (parent - banner-vehicle-column). Resultat : banner
-     plus large que la grille du Planning, decalage des colonnes de jours.
-     On laisse le flex:1 de la regle de base s'appliquer. */
 }
 
 .resize-handle {
@@ -129,19 +123,6 @@
   overflow: visible;
   box-shadow: none;
   min-width: 0;
-}
-
-/* Compensation du border:1px solid de .pp-calendar-container cote Planning :
-   le contenu interne du Planning est shifte d'1px a droite et reduit d'1px
-   a droite. On applique le meme decalage au banner pour garder l'alignement
-   parfait des colonnes de jours avec la grille du Planning. Detection via
-   :has() pour ne dependre que du DOM (et pas d'une prop activeModule
-   potentiellement absente au mount). */
-.calendar-banner.calendar-banner--personnel,
-body:has(.pp-calendar-container) .calendar-banner {
-  border-left: 1px solid transparent;
-  border-right: 1px solid transparent;
-  box-sizing: border-box;
 }
 
 /* Colonne véhicule fixe à gauche */
@@ -379,13 +360,10 @@ body:has(.pp-calendar-container) .calendar-banner {
   transform: scale(1.1);
 }
 
-/* Zone scrollable a droite.
-   Pas de scrollbar-gutter:stable ici NI sur les grilles principales
-   (.pp-scroll-area, .calendar-scroll-area). Resultat : banner et grille
-   s'etalent tous les deux jusqu'au bord droit (pas de zone vide reservee
-   a la scrollbar) → alignement visuel coherent au repos. */
+/* Zone scrollable à droite */
 .banner-scroll-area {
   flex: 1;
+  max-width: calc(100vw - 250px);
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -407,11 +385,13 @@ body:has(.pp-calendar-container) .calendar-banner {
   background: var(--theme-bg-card);
 }
 
-/* NB: gridTemplateColumns est defini en inline style depuis le composant
-   React, via utils/planningGridColumns.js, partage avec les grilles
-   principales (Parc + Planning) pour un alignement pixel-perfect. Les
-   anciens fallbacks .banner-grid.week-view / .month-view ont ete
-   supprimes car ils interferaient avec la source de verite unique. */
+.banner-grid.week-view {
+  grid-template-columns: repeat(14, minmax(100px, 1fr));
+}
+
+.banner-grid.month-view {
+  grid-template-columns: repeat(62, minmax(55px, 1fr));
+}
 
 /* Lignes de grille avec subgrid */
 .banner-grid-lines {
@@ -487,13 +467,7 @@ body:has(.pp-calendar-container) .calendar-banner {
   align-items: stretch;
 }
 
-/* Bloc d'événement qui s'étend sur plusieurs colonnes.
-   IMPORTANT : min-width:0 est obligatoire pour empecher le min-content du
-   texte (white-space:nowrap) de remonter dans le track-sizing du grid
-   parent. Sans ca, un evenement qui span 7 cols avec un texte de 1898px
-   force chaque colonne a au moins 1898/7 ≈ 271px, donc la grille (et le
-   banner-scroll-area en flex:1) deborde sa largeur disponible et perd
-   l'alignement avec la grille principale (Parc/Planning). */
+/* Bloc d'événement qui s'étend sur plusieurs colonnes */
 .event-block-span {
   padding: 2px 6px;
   margin: 0;
@@ -503,7 +477,6 @@ body:has(.pp-calendar-container) .calendar-banner {
   align-items: center;
   gap: 8px;
   min-height: 20px;
-  min-width: 0;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;

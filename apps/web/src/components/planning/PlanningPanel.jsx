@@ -69,9 +69,9 @@ function PlanningPanel({
   }, [activeSubTab]);
 
   const subTabs = [
-    { id: 'personnel', label: 'Personnel', icon: Users },
+    { id: 'personnel', label: 'Planning', icon: Users },
     { id: 'suivi', label: 'Suivi', icon: ClipboardCheck },
-    { id: 'tasks', label: 'Planification', icon: ClipboardList, count: stats?.tasksPending || 0 },
+    { id: 'tasks', label: 'Tâches', icon: ClipboardList, count: stats?.tasksPending || 0 },
     { id: 'dashboard', label: 'Dashboard Écrans', icon: Tv2 },
   ];
 

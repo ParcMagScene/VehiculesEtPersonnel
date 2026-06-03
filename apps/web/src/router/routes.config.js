@@ -30,12 +30,12 @@ import {
  * Ne PAS ajouter de modules mobile-only ici (suivi, tasks, leaves, personnel, etc.)
  */
 export const DESKTOP_MODULES = [
-  { id: 'vehicles', label: 'Parc', icon: Truck },
+  { id: 'vehicles', label: 'Véhicules', icon: Truck },
+  { id: 'planning', label: 'Personnel', icon: Radio },
   { id: 'equipment', label: 'Équipements', icon: Package },
   { id: 'affaires', label: 'Affaires', icon: Briefcase },
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
   { id: 'stock', label: 'Stocks', icon: Boxes },
-  { id: 'planning', label: 'Planning', icon: Radio },
   { id: 'annuaire', label: 'Annuaire', icon: Building2 },
   { id: 'lieux', label: 'Lieux', icon: MapPin },
   { id: 'video', label: 'Vidéo', icon: Video },

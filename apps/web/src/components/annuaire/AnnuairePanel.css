@@ -300,7 +300,7 @@
 }
 
 .code-cell {
-  font-family: var(--font-mono);
+  font-family: 'SF Mono', 'Monaco', monospace;
   font-size: var(--font-sm);
   color: var(--text-secondary, var(--theme-text-secondary));
 }
@@ -497,7 +497,7 @@
 }
 
 .code-badge {
-  font-family: var(--font-mono);
+  font-family: 'SF Mono', monospace;
   font-size: var(--font-xs);
   background: var(--bg-secondary, var(--theme-border-light));
   padding: 2px 8px;
@@ -1191,7 +1191,7 @@
   color: var(--theme-primary);
   text-decoration: none;
   font-size: 0.78rem;
-  font-family: var(--font-mono);
+  font-family: 'SF Mono', Monaco, monospace;
   display: inline-flex;
   align-items: center;
   gap: 4px;

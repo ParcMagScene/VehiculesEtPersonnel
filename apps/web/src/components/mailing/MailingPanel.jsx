@@ -346,7 +346,13 @@ export default function MailingPanel({ isOpen, onClose }) {
   const smtpConfigured = emailConfig?.smtp_host && emailConfig?.enabled;
 
   return (
-    <Modal open={isOpen} onClose={onClose} size="lg" className="mailing-panel">
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      size="lg"
+      className="mailing-panel"
+      closeOnBackdrop={false}
+    >
       <ModalHeader icon={<Mail size={20} />} onClose={onClose}>
         Mailing
       </ModalHeader>

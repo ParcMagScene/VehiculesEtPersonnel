@@ -5,7 +5,7 @@
 // ============================================================
 
 import crypto from 'crypto';
-import { readFileSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -175,19 +175,11 @@ export function setupCatalogRoutes(app, authenticateToken, requireWriteAccess) {
   );
 
   // GET /api/catalog/equipment/zones — Données des zones de dépôt depuis depot-zones.json
-  // [PERF Sprint 2] Cache mtime-aware (évite readFileSync + JSON.parse à chaque requête).
-  let _zonesCache = null; // { mtimeMs, data }
   app.get('/api/catalog/equipment/zones', authenticateToken, (req, res) => {
     try {
       const zonesPath = join(__dirname, '..', '..', 'public', 'depot-zones.json');
-      const stat = statSync(zonesPath);
-      if (!_zonesCache || _zonesCache.mtimeMs !== stat.mtimeMs) {
-        _zonesCache = {
-          mtimeMs: stat.mtimeMs,
-          data: JSON.parse(readFileSync(zonesPath, 'utf-8')),
-        };
-      }
-      res.json(_zonesCache.data);
+      const data = JSON.parse(readFileSync(zonesPath, 'utf-8'));
+      res.json(data);
     } catch (error) {
       logger.error('GET /api/catalog/equipment/zones error:', error);
       res.status(500).json({ success: false, error: 'Erreur chargement zones dépôt' });

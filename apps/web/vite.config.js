@@ -1,8 +1,7 @@
-import react from '@vitejs/plugin-react';
-import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
-import { visualizer } from 'rollup-plugin-visualizer';
-import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react'
+import { existsSync } from 'fs'
+import { join } from 'path'
+import { defineConfig } from 'vite'
 
 // Plugin : redirection auto quand le navigateur demande un asset périmé (ancien hash)
 function staleAssetReload() {
@@ -17,10 +16,7 @@ function staleAssetReload() {
           if (!existsSync(filePath)) {
             if (req.url.endsWith('.js')) {
               // Forcer un rechargement complet de la page pour obtenir le nouveau index.html
-              res.writeHead(200, {
-                'Content-Type': 'application/javascript',
-                'Cache-Control': 'no-store',
-              });
+              res.writeHead(200, { 'Content-Type': 'application/javascript', 'Cache-Control': 'no-store' });
               res.end('window.location.reload();');
             } else {
               res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -32,33 +28,7 @@ function staleAssetReload() {
         next();
       });
     },
-  };
-}
-
-// Plugin : SPA fallback — sert index.html pour toute route sans extension (support F5)
-function spaFallback() {
-  return {
-    name: 'spa-fallback',
-    configurePreviewServer(server) {
-      // Retourner une fonction = middleware post-statique (s'exécute si aucun fichier trouvé)
-      return () => {
-        server.middlewares.use((req, res, next) => {
-          const url = (req.url || '/').split('?')[0];
-          // Laisser passer les ressources avec extension (.js, .css, .png…)
-          if (/\.[a-z0-9]+$/i.test(url)) return next();
-          const indexPath = join(import.meta.dirname, 'dist', 'index.html');
-          if (existsSync(indexPath)) {
-            res.writeHead(200, {
-              'Content-Type': 'text/html; charset=utf-8',
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-            });
-            return res.end(readFileSync(indexPath));
-          }
-          next();
-        });
-      };
-    },
-  };
+  }
 }
 
 // Plugin : headers de cache intelligents (HTML = no-cache, assets hashés = immutable)
@@ -72,10 +42,7 @@ function smartCacheHeaders() {
         res.setHeader = (name, value) => {
           if (name.toLowerCase() === 'cache-control') {
             // Assets avec hash → cache longue durée (le hash change à chaque build)
-            if (
-              url.startsWith('/assets/') &&
-              /-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)
-            ) {
+            if (url.startsWith('/assets/') && /-[a-zA-Z0-9_]{6,}\.(js|css|woff2?|ttf|svg|png|jpg|webp)$/.test(url)) {
               return origSetHeader(name, 'public, max-age=31536000, immutable');
             }
             // HTML et autres → pas de cache
@@ -86,54 +53,11 @@ function smartCacheHeaders() {
         next();
       });
     },
-  };
-}
-
-// Helper : durcissement du proxy `vite preview` (prod backend HTTPS:3443).
-// Pendant un déploiement le backend peut être indisponible 1-2s ; sans handler
-// explicite http-proxy renvoie un socket hangup et le frontend voit "Failed to
-// fetch" pour TOUTES les requêtes en cours. Avec ce handler on logue clairement
-// et on renvoie un 503 propre (le client peut retry / le user peut reload).
-function previewProxyHardening(label) {
-  return (proxy /* , _options */) => {
-    proxy.on('error', (err, _req, res) => {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `[preview-proxy:${label}] ${err.code || err.name || 'ERR'} ${err.message || ''}`,
-      );
-      if (res && !res.headersSent && typeof res.writeHead === 'function') {
-        try {
-          res.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-          res.end(
-            JSON.stringify({
-              error: 'backend_unavailable',
-              code: err.code || 'EPROXY',
-              message: 'Backend temporairement indisponible. Réessayez dans quelques secondes.',
-            }),
-          );
-        } catch (_e) {
-          /* socket déjà fermé, rien à faire */
-        }
-      }
-    });
-  };
+  }
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [
-    react(),
-    staleAssetReload(),
-    smartCacheHeaders(),
-    spaFallback(),
-    // Génère dist/stats.html (treemap interactive) à chaque build
-    // Ouvrir dans le navigateur pour auditer la composition des chunks.
-    visualizer({
-      filename: 'dist/stats.html',
-      template: 'treemap',
-      gzipSize: true,
-      brotliSize: true,
-    }),
-  ],
+  plugins: [react(), staleAssetReload(), smartCacheHeaders()],
   // Le dossier public est à la racine du monorepo
   publicDir: '../../public',
   test: {
@@ -153,7 +77,7 @@ export default defineConfig(({ mode }) => ({
     // Supprimer console.log et debugger en production
     minify: 'esbuild',
     target: 'es2020',
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 600,
     // Source maps pour le debugging production
     sourcemap: false, // [AUDIT FIX] Désactivé en production pour ne pas exposer le code source
     rollupOptions: {
@@ -176,7 +100,7 @@ export default defineConfig(({ mode }) => ({
     pure: mode === 'production' ? ['console.log', 'console.debug', 'console.info'] : [],
   },
   server: {
-    // MODE DEV — proxy vers le backend DEV sur port 3003 (HTTP)
+    // MODE DEV — proxy vers le backend DEV sur port 3003
     host: '0.0.0.0',
     port: 5174,
     open: true,
@@ -184,31 +108,22 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       '/api': {
         target: 'http://localhost:3003',
-        changeOrigin: true,
+        changeOrigin: true
       },
       '/tv-client': {
         target: 'http://localhost:3003',
-        changeOrigin: true,
-      },
-      '/catalogues': {
-        target: 'http://localhost:3003',
-        changeOrigin: true,
-      },
-    },
+        changeOrigin: true
+      }
+    }
   },
   preview: {
-    // MODE PROD — proxy vers le backend PROD (HTTPS :3443)
+    // MODE PROD — proxy vers le backend PROD sur port 3002
     host: '0.0.0.0',
     port: 4173,
     allowedHosts: true,
-    // Handler global appliqué à tous les proxys ci-dessous via `configure`.
-    // Résout l'incident "500 partout après deploy" : pendant le restart du backend,
-    // http-proxy peut tomber sur un ECONNREFUSED puis "rester planté". Avec ce
-    // handler, chaque erreur est loguée + renvoie un 503 explicite (au lieu d'un
-    // socket hangup) et le pool reste sain pour la requête suivante.
     headers: {
-      Pragma: 'no-cache',
-      Expires: '0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
       'Content-Security-Policy': [
         "default-src 'self'",
         "script-src 'self' https://accounts.google.com https://maps.googleapis.com",
@@ -228,30 +143,22 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'https://localhost:3443',
         changeOrigin: true,
-        secure: false,
-        configure: previewProxyHardening('/api'),
+        secure: false
       },
       '/tv-client': {
         target: 'https://localhost:3443',
         changeOrigin: true,
-        secure: false,
-        configure: previewProxyHardening('/tv-client'),
-      },
-      '/catalogues': {
-        target: 'https://localhost:3443',
-        changeOrigin: true,
-        secure: false,
-        configure: previewProxyHardening('/catalogues'),
-      },
-    },
+        secure: false
+      }
+    }
   },
   optimizeDeps: {
-    include: ['pdfjs-dist'],
+    include: ['pdfjs-dist']
   },
   resolve: {
     alias: {
       '@': join(import.meta.dirname, 'src'),
-      'pdfjs-dist/build/pdf.worker.min.mjs': 'pdfjs-dist/build/pdf.worker.mjs',
-    },
-  },
-}));
+      'pdfjs-dist/build/pdf.worker.min.mjs': 'pdfjs-dist/build/pdf.worker.mjs'
+    }
+  }
+}))

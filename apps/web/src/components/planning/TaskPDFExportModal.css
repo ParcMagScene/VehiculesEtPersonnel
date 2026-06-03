@@ -48,14 +48,16 @@
   }
 }
 
-/* Modal */
+/* Modal — taille redimensionnable via useDraggableModals (poignees auto). */
 .pdf-export-modal {
   display: flex;
   flex-direction: column;
   width: 95vw;
-  max-width: 1100px;
-  height: 85vh;
-  max-height: 750px;
+  max-width: 1400px;
+  height: 92vh;
+  max-height: 95vh;
+  min-width: 720px;
+  min-height: 480px;
   background: var(--surface-primary);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-modal);

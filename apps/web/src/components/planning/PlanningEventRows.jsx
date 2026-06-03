@@ -1,6 +1,6 @@
 /* eslint-disable no-misleading-character-class */
 import { Check, Clock, Eye, Link, Plus, User, UserPlus, X } from 'lucide-react';
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 
 import { Button, DetailRow, Input, Tooltip } from '@/design-system';
 
@@ -29,6 +29,23 @@ export const MultiAssignWidget = React.memo(function MultiAssignWidget({
   // En multi-affectation (>=3 pers), on raccourcit pour eviter le clipping :
   // initiales seulement (J.D.) au lieu du prenom complet.
   const compactChips = assignments.length >= 3;
+
+  // Drop-up auto : si la dropdown deborde sous la viewport, on la bascule au-dessus.
+  const dropdownRef = useRef(null);
+  const [dropUp, setDropUp] = useState(false);
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setDropUp(false);
+      return;
+    }
+    const el = dropdownRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    if (rect.bottom > vh - 12 && rect.top > rect.height + 24) {
+      setDropUp(true);
+    }
+  }, [isOpen, persons.length]);
 
   return (
     <div className="event-assign-container">
@@ -66,7 +83,7 @@ export const MultiAssignWidget = React.memo(function MultiAssignWidget({
         </Tooltip>
       </div>
       {isOpen && (
-        <div className="assign-dropdown">
+        <div ref={dropdownRef} className={`assign-dropdown${dropUp ? ' drop-up' : ''}`}>
           <div className="assign-dropdown-header">
             <div className="assign-dropdown-title">Multi-affectation :</div>
             <Button

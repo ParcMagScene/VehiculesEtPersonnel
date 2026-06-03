@@ -126,17 +126,19 @@
 }
 
 .header-logo-area {
-  width: calc(250px - 2rem);
+  /* Largeur naturelle : la zone se dimensionne sur son contenu (logo +
+     boutons utilitaires) plutot qu'une largeur fixe. Une largeur figee
+     calee sur la sidebar Planning faisait deborder les boutons par-
+     dessus le conteneur des onglets de modules des qu'on en ajoutait
+     un (Imports). Le gap 1rem du parent .header-title-container assure
+     la separation avec la barre d'onglets. */
   display: flex;
   align-items: center;
   gap: 0.4rem;
   flex-shrink: 0;
   height: 100%;
   margin-left: -10px;
-  /* Padding genereux a droite pour ne pas coller le bouton theme contre
-     la barre d'onglets de modules. Combine avec le gap 1rem du parent
-     .header-title-container, l'ecart visuel total reste agreable. */
-  padding-right: 2.25rem;
+  padding-right: 1rem;
 }
 
 .header-logo {

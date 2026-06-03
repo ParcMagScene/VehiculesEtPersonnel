@@ -164,7 +164,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const [form, setForm] = useState({
     title: initTitle(task),
     date: task.date || '',
-    period: task.period || 'AM',
+    period: task.allDay === 1 || task.all_day === 1 ? 'JOURNEE' : task.period || 'AM',
     time: task.time || '',
     endTime: task.endTime || '',
     notes: task.notes || '',
@@ -173,7 +173,6 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     status: task.status || 'pending',
     affaireNum: task.affaireNum || task.affaire_num || '',
     locationAddress: task.locationAddress || task.location_address || '',
-    allDay: task.allDay === 1 || task.all_day === 1,
   });
 
   // Charger les affaires
@@ -234,7 +233,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     setForm({
       title: initTitle(task),
       date: task.date || '',
-      period: task.period || 'AM',
+      period: task.allDay === 1 || task.all_day === 1 ? 'JOURNEE' : task.period || 'AM',
       time: task.time || '',
       endTime: task.endTime || '',
       notes: task.notes || '',
@@ -243,7 +242,6 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       status: task.status || 'pending',
       affaireNum: task.affaireNum || task.affaire_num || '',
       locationAddress: task.locationAddress || task.location_address || '',
-      allDay: task.allDay === 1 || task.all_day === 1,
     });
   }, [task]);
 
@@ -347,13 +345,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         }
       }
 
+      const isAllDay = form.period === 'JOURNEE';
       await api.updateTask(task.id, {
         title: finalTitle,
         date: form.date,
-        period: form.allDay ? 'AM' : form.period || null,
-        time: form.allDay ? null : form.time || null,
-        end_time: form.allDay ? null : form.endTime || null,
-        all_day: form.allDay ? 1 : 0,
+        period: isAllDay ? 'AM' : form.period || null,
+        time: isAllDay ? null : form.time || null,
+        end_time: isAllDay ? null : form.endTime || null,
+        all_day: isAllDay ? 1 : 0,
         notes: form.notes || '',
         person_id: form.personId || null,
         section: form.section,
@@ -459,39 +458,16 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               />
             </FormField>
             <FormField className="tem-field" label="Période">
-              <Select
-                value={form.period}
-                onChange={(e) => update('period', e.target.value)}
-                disabled={form.allDay}
-              >
+              <Select value={form.period} onChange={(e) => update('period', e.target.value)}>
                 <option value="AM">Matin (AM)</option>
                 <option value="PM">Après-midi (PM)</option>
+                <option value="JOURNEE">Journée (toute la journée)</option>
               </Select>
             </FormField>
           </div>
 
-          {/* Journée entière */}
-          <FormField className="tem-field full" label="">
-            <label
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={form.allDay}
-                onChange={(e) => update('allDay', e.target.checked)}
-              />
-              Journée entière (masque l&apos;heure et la période)
-            </label>
-          </FormField>
-
-          {/* Heure début / fin */}
-          {!form.allDay && (
+          {/* Heure début / fin (masquées si Journee) */}
+          {form.period !== 'JOURNEE' && (
             <div className="tem-row">
               <FormField
                 className="tem-field"

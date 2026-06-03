@@ -89,8 +89,9 @@ export default function AddTaskModal({
   // dans le planning) mais l'utilisateur peut choisir un autre jour avant
   // de valider. Format ISO YYYY-MM-DD attendu par l'input type="date".
   const [taskDate, setTaskDate] = useState(selectedDate || '');
-  // Toggle "Journée entière" : masque Heure+Période et envoie all_day=1.
-  const [allDay, setAllDay] = useState(false);
+  // Periode 'JOURNEE' = journee entiere : on envoie all_day=1 + period='AM'
+  // + time=null au backend (qui n'accepte que AM/PM/null pour period).
+  const isAllDay = period === 'JOURNEE';
   const [affaireNum, setAffaireNum] = useState('');
   const [googleEventId, setGoogleEventId] = useState('');
   const [reservationId, setReservationId] = useState('');
@@ -109,7 +110,6 @@ export default function AddTaskModal({
       time,
       period,
       taskDate,
-      allDay,
       affaireNum,
       googleEventId,
       reservationId,
@@ -154,7 +154,6 @@ export default function AddTaskModal({
       setTime('');
       setPeriod('AM');
       setTaskDate(selectedDate || '');
-      setAllDay(false);
       setAffaireNum('');
       setGoogleEventId('');
       setReservationId('');
@@ -314,9 +313,9 @@ export default function AddTaskModal({
 
       await api.createTask({
         date: taskDate || selectedDate,
-        period: allDay ? 'AM' : period || 'AM',
-        all_day: allDay ? 1 : 0,
-        time: allDay ? null : time || null,
+        period: isAllDay ? 'AM' : period || 'AM',
+        all_day: isAllDay ? 1 : 0,
+        time: isAllDay ? null : time || null,
         section: effectiveSection,
         title: finalTitle,
         person_id: personId || null,
@@ -341,10 +340,10 @@ export default function AddTaskModal({
     }
   };
 
-  // Auto-set period from time
+  // Auto-set period from time (sauf si Journee deja choisie)
   const handleTimeChange = (val) => {
     setTime(val);
-    if (val) {
+    if (val && period !== 'JOURNEE') {
       const h = parseInt(val.split(':')[0], 10);
       setPeriod(h < 12 ? 'AM' : 'PM');
     }
@@ -643,39 +642,24 @@ export default function AddTaskModal({
             </FormField>
           )}
 
-          {/* Date + Journée entière (ajouts 2026-05) :
+          {/* Date + Heure + Periode
             - Date : permet de cibler un autre jour que celui ouvert dans le planning.
-            - Journée entière : masque Heure/Période et envoie all_day=1 au backend. */}
+            - Periode 'Journee' : envoie all_day=1 et masque l'heure. */}
           <div className="atm-row">
             <FormField className="atm-field atm-field-half" label="Date">
               <Input type="date" value={taskDate} onChange={(e) => setTaskDate(e.target.value)} />
             </FormField>
-            <div
-              className="atm-field atm-field-half"
-              style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 6 }}
-            >
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                }}
-              >
-                <Input
-                  type="checkbox"
-                  checked={allDay}
-                  onChange={(e) => setAllDay(e.target.checked)}
-                  style={{ width: 16, height: 16 }}
-                />
-                <span>Journée entière</span>
-              </label>
-            </div>
+            <FormField className="atm-field atm-field-half" label="Période">
+              <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                <option value="AM">AM (Matin)</option>
+                <option value="PM">PM (Après-midi)</option>
+                <option value="JOURNEE">Journée (toute la journée)</option>
+              </Select>
+            </FormField>
           </div>
 
-          {/* Heure + Période (masqués si journée entière) */}
-          {!allDay && (
+          {/* Heure (masquee si Journee) */}
+          {!isAllDay && (
             <div className="atm-row">
               <FormField
                 className="atm-field atm-field-half"
@@ -691,12 +675,7 @@ export default function AddTaskModal({
                   onChange={(e) => handleTimeChange(e.target.value)}
                 />
               </FormField>
-              <FormField className="atm-field atm-field-half" label="Période">
-                <Select value={period} onChange={(e) => setPeriod(e.target.value)}>
-                  <option value="AM">AM (Matin)</option>
-                  <option value="PM">PM (Après-midi)</option>
-                </Select>
-              </FormField>
+              <div className="atm-field atm-field-half" />
             </div>
           )}
         </ModalBody>

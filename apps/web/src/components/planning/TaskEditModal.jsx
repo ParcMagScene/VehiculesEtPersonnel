@@ -173,6 +173,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     status: task.status || 'pending',
     affaireNum: task.affaireNum || task.affaire_num || '',
     locationAddress: task.locationAddress || task.location_address || '',
+    clientName: task.clientName || task.client_name || task.eventClient || task.event_client || '',
   });
 
   // Charger les affaires
@@ -242,6 +243,8 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       status: task.status || 'pending',
       affaireNum: task.affaireNum || task.affaire_num || '',
       locationAddress: task.locationAddress || task.location_address || '',
+      clientName:
+        task.clientName || task.client_name || task.eventClient || task.event_client || '',
     });
   }, [task]);
 
@@ -359,6 +362,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         status: form.status,
         affaire_num: form.affaireNum || null,
         location_address: form.locationAddress || null,
+        client_name: (form.clientName || selectedAffaire?.client || '').trim() || null,
       });
       refreshBus.publish('planning');
       toast.success('Tâche mise à jour');
@@ -520,6 +524,20 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
             />
           </FormField>
 
+          {/* Client (editable, prerempli depuis l'affaire liee ou l'evenement source) */}
+          <FormField className="tem-field full" label="Client">
+            <Input
+              type="text"
+              value={form.clientName}
+              onChange={(e) => update('clientName', e.target.value)}
+              placeholder={
+                selectedAffaire?.client
+                  ? `${selectedAffaire.client} (affaire liée)`
+                  : 'Nom du client...'
+              }
+            />
+          </FormField>
+
           {/* Affaire liée */}
           <div className="tem-field full" ref={affaireRef}>
             <label>
@@ -567,7 +585,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                           type="button"
                           className="tem-affaire-option"
                           onClick={() => {
-                            update('affaireNum', a.numeroAffaire);
+                            setForm((prev) => ({
+                              ...prev,
+                              affaireNum: a.numeroAffaire,
+                              // Pre-remplir le client si vide ou si c'etait celui d'une autre affaire
+                              clientName: prev.clientName?.trim()
+                                ? prev.clientName
+                                : a.client || prev.clientName || '',
+                            }));
                             setAffaireSearch('');
                             setAffaireDropdownOpen(false);
                           }}

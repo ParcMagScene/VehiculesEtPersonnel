@@ -2313,6 +2313,10 @@ function initializeDatabase() {
       db.exec('ALTER TABLE task_assignments ADD COLUMN all_day INTEGER DEFAULT 0');
       logger.info('  + task_assignments.all_day');
     }
+    if (!taColNames.includes('client_name')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN client_name TEXT');
+      logger.info('  + task_assignments.client_name');
+    }
 
     // Migration : corriger le CHECK constraint section pour inclure rdv et prep_installations
     try {

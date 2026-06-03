@@ -167,14 +167,14 @@
   flex: 0 0 110px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-nom {
-  flex: 1 1 180px;
+  flex: 2 1 200px;
   min-width: 140px;
   border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-client {
-  width: 180px;
-  flex: 0 0 180px;
+  flex: 1 1 200px;
+  min-width: 180px;
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-spacer {
@@ -909,9 +909,9 @@
   width: 110px;
   flex: 0 0 110px;
 }
-/* Col: Nom (seul flex pour absorber l'espace restant) */
+/* Col: Nom (flex pour absorber l'espace, mais partage avec Client) */
 .task-planning-panel .ev-col-nom {
-  flex: 1 1 180px;
+  flex: 2 1 200px;
   min-width: 140px;
   font-weight: 600;
   font-size: 1.05rem;
@@ -929,10 +929,10 @@
   color: var(--text-muted);
   margin-left: 6px;
 }
-/* Col: Client (largeur fixe) */
+/* Col: Client (flex partage avec Nom, alignement preserve grace au meme ratio sur toutes les lignes) */
 .task-planning-panel .ev-col-client {
-  width: 180px;
-  flex: 0 0 180px;
+  flex: 1 1 200px;
+  min-width: 180px;
   font-size: 0.92rem;
   color: var(--text-muted);
   overflow: hidden;

@@ -326,6 +326,7 @@ export default function AddTaskModal({
         affaire_num: affaireNum || null,
         reservation_id: finalReservationId,
         location_address: locationAddress || null,
+        client_name: (client || selectedAffaire?.client || '').trim() || null,
       });
 
       refreshBus.publish('planning');
@@ -520,7 +521,8 @@ export default function AddTaskModal({
                   if (evId) {
                     const ev = allEvents.find((ev2) => ev2.id === evId);
                     if (ev) {
-                      setTitle(ev.summary || ev.title || '');
+                      const summary = ev.summary || ev.title || '';
+                      setTitle(summary);
                       const startDT =
                         ev._source === 'ical' ? ev.start || '' : ev.start?.dateTime || '';
                       if (startDT && startDT.includes('T')) {
@@ -532,6 +534,18 @@ export default function AddTaskModal({
                           setPeriod(d.getHours() < 12 ? 'AM' : 'PM');
                         }
                       }
+                      // Detection client depuis l'evenement :
+                      // 1) si le summary contient un n affaire connu, prendre son client
+                      // 2) sinon utiliser organizer.displayName / location en fallback
+                      const upperSummary = summary.toUpperCase();
+                      const matched = (affaires || []).find(
+                        (a) =>
+                          a.numeroAffaire &&
+                          upperSummary.includes(String(a.numeroAffaire).toUpperCase()),
+                      );
+                      const inferred =
+                        matched?.client || ev.organizer?.displayName || ev.organizer?.email || '';
+                      if (inferred) setClient(inferred);
                     }
                   }
                 }}

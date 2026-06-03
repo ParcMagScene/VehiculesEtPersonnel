@@ -703,7 +703,7 @@ export function setupTaskRoutes(app, authenticateToken) {
 
             // Client et lieu
             const displayClient = stripEmoji(
-              t.event_client || (linkedAffaire ? linkedAffaire.client : '') || '',
+              t.client_name || t.event_client || (linkedAffaire ? linkedAffaire.client : '') || '',
             );
             const displayLocation = stripEmoji(
               t.event_location ||
@@ -1120,6 +1120,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         location_lat,
         location_lng,
         all_day,
+        client_name,
       } = req.body;
 
       if (!date) {
@@ -1149,8 +1150,8 @@ export function setupTaskRoutes(app, authenticateToken) {
       const defaultVisible = EVENT_SECTIONS.includes(effectiveSection) ? 0 : 1;
 
       const stmt = db.prepare(`
-      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, reservation_id, location_address, location_lat, location_lng, all_day, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, reservation_id, location_address, location_lat, location_lng, all_day, client_name, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
 
       stmt.run(
@@ -1175,6 +1176,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         location_lat != null ? location_lat : null,
         location_lng != null ? location_lng : null,
         all_day ? 1 : 0,
+        client_name || null,
         req.user.id,
       );
 
@@ -1214,8 +1216,8 @@ export function setupTaskRoutes(app, authenticateToken) {
 
         const EVENT_SECTIONS_BATCH = ['rdv', 'evenements'];
         const insertStmt = db.prepare(`
-      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, all_day, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, all_day, client_name, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
 
         const createdIds = [];
@@ -1251,6 +1253,7 @@ export function setupTaskRoutes(app, authenticateToken) {
               t.location_lat != null ? t.location_lat : null,
               t.location_lng != null ? t.location_lng : null,
               t.all_day ? 1 : 0,
+              t.client_name || null,
               req.user.id,
             );
             createdIds.push(id);
@@ -1330,6 +1333,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         location_lat,
         location_lng,
         all_day,
+        client_name,
       } = req.body;
 
       if (date && !isValidDate(date)) {
@@ -1350,7 +1354,7 @@ export function setupTaskRoutes(app, authenticateToken) {
 
       const stmt = db.prepare(`
       UPDATE task_assignments
-      SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, reservation_id = ?, location_address = ?, location_lat = ?, location_lng = ?, all_day = ?, modified_by = ?, modified_at = datetime('now')
+      SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, reservation_id = ?, location_address = ?, location_lat = ?, location_lng = ?, all_day = ?, client_name = ?, modified_by = ?, modified_at = datetime('now')
       WHERE id = ?
     `);
 
@@ -1374,6 +1378,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         location_lat !== undefined ? location_lat : existing.location_lat,
         location_lng !== undefined ? location_lng : existing.location_lng,
         all_day !== undefined ? (all_day ? 1 : 0) : existing.all_day,
+        client_name !== undefined ? client_name : existing.client_name,
         req.user.id,
         req.params.id,
       );

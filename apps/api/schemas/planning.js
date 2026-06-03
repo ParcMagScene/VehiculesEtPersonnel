@@ -73,6 +73,7 @@ export const taskCreateSchema = z
       .union([z.boolean(), z.literal(0), z.literal(1)])
       .optional()
       .nullable(),
+    client_name: optStr(255),
   })
   .passthrough();
 
@@ -101,6 +102,7 @@ export const taskUpdateSchema = z
       .union([z.boolean(), z.literal(0), z.literal(1)])
       .optional()
       .nullable(),
+    client_name: optStr(255),
   })
   .passthrough();
 

@@ -21,16 +21,11 @@ import HeaderNotifications from './header/HeaderNotifications';
 import OverdueInterventionModal from './planning/OverdueInterventionModal';
 
 const Header = ({
-  _view,
-  _setView,
-  _currentDate,
-  _setCurrentDate,
   onOpenSettings,
   activeModule,
   setActiveModule,
   maintenances = [],
   vehicles = [],
-  _onOpenVehicleMaintenance,
   onOpenMaintenance,
   reservations = [],
   currentUser,
@@ -268,12 +263,7 @@ const Header = ({
             <div className="header-logo-area">
               <img src="/Logos/LogoEmagTransp.png" alt="eM@g Scene" className="header-logo" />
               <Tooltip content="Aide — Guide d'utilisation" position="bottom">
-                <Button
-                  variant="ghost"
-                  className="help-trigger-btn"
-                  onClick={onOpenHelp}
-                  aria-label="Aide"
-                >
+                <Button variant="ghost" className="help-trigger-btn" onClick={onOpenHelp}>
                   <HelpCircle size={18} />
                   <span>Aide</span>
                 </Button>
@@ -288,15 +278,19 @@ const Header = ({
                   <Upload size={18} />
                 </Button>
               </Tooltip>
-              <Button
-                variant="ghost"
-                className="theme-toggle-btn"
-                onClick={onToggleTheme}
-                title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
-                aria-label="Basculer le thème"
+              <Tooltip
+                content={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                position="bottom"
               >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </Button>
+                <Button
+                  variant="ghost"
+                  className="theme-toggle-btn"
+                  onClick={onToggleTheme}
+                  aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                >
+                  {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                </Button>
+              </Tooltip>
             </div>
             <div className="module-tabs" role="tablist" aria-label="Module principal">
               {(() => {

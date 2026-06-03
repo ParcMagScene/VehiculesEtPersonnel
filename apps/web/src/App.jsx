@@ -835,17 +835,12 @@ function AppContent() {
               </div>
             )}
             <Header
-              view={view}
-              setView={setView}
-              currentDate={currentDate}
-              setCurrentDate={setCurrentDate}
               onOpenSettings={() => setShowSettings(true)}
               activeModule={activeModule}
               setActiveModule={setActiveModule}
               maintenances={data.maintenances}
               vehicles={data.vehicles}
               reservations={data.reservations}
-              onOpenVehicleMaintenance={setSelectedVehicleForMaintenance}
               onOpenMaintenance={(vehicle, maintenanceId) => {
                 setSelectedVehicleForMaintenance(vehicle);
                 setMaintenanceToEdit(maintenanceId);

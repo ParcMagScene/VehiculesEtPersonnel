@@ -693,11 +693,18 @@ const AssignmentDialog = ({
       setError(null);
 
       // Titre de la mission
-      const title = selectedAffaire
-        ? `${selectedAffaire.numeroAffaire || ''} — ${selectedAffaire.titre || selectedAffaire.eventName || selectedAffaire.client || 'Mission'}`.trim()
-        : selectedPositions.length > 0
-          ? selectedPositions.join(', ')
-          : `Mission ${format(parseISO(startDate), 'd MMM yyyy', { locale: fr })}`;
+      // Si numeroAffaire vide (saisie libre), on n'ajoute pas de prefixe " — "
+      let title;
+      if (selectedAffaire) {
+        const num = selectedAffaire.numeroAffaire || '';
+        const txt =
+          selectedAffaire.titre || selectedAffaire.eventName || selectedAffaire.client || 'Mission';
+        title = num ? `${num} — ${txt}`.trim() : txt.trim();
+      } else if (selectedPositions.length > 0) {
+        title = selectedPositions.join(', ');
+      } else {
+        title = `Mission ${format(parseISO(startDate), 'd MMM yyyy', { locale: fr })}`;
+      }
 
       // Sérialiser les jours OFF (on ne stocke que les jours explicitement OFF)
       const offDays = Object.entries(dayStates)
@@ -1050,11 +1057,28 @@ const AssignmentDialog = ({
             {selectedAffaire ? (
               <div className="asd-affaire-selected">
                 <div className="asd-affaire-info">
-                  <AffaireBadge
-                    numero={selectedAffaire.numeroAffaire}
-                    type={selectedAffaire.type}
-                    size="sm"
-                  />
+                  {selectedAffaire.numeroAffaire ? (
+                    <AffaireBadge
+                      numero={selectedAffaire.numeroAffaire}
+                      type={selectedAffaire.type}
+                      size="sm"
+                    />
+                  ) : (
+                    <span
+                      className="asd-affaire-free-tag"
+                      title="Nom libre (sans affaire)"
+                      style={{
+                        fontSize: '0.7rem',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        border: '1px dashed var(--theme-border)',
+                        color: 'var(--theme-text-muted)',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      libre
+                    </span>
+                  )}
                   <span className="asd-affaire-titre">
                     {selectedAffaire.titre || selectedAffaire.eventName || ''}
                   </span>
@@ -1094,11 +1118,37 @@ const AssignmentDialog = ({
                 />
                 {showAffaireDropdown && (
                   <div className="asd-affaire-dropdown">
+                    {/* Option : utiliser le texte saisi comme nom libre */}
+                    {affaireSearch.trim() && (
+                      <div
+                        className="asd-affaire-option asd-affaire-option-free"
+                        onClick={() =>
+                          selectAffaire({
+                            numeroAffaire: '',
+                            titre: affaireSearch.trim(),
+                            source: 'free',
+                          })
+                        }
+                        style={{
+                          borderBottom: '1px solid var(--theme-border)',
+                          fontStyle: 'italic',
+                        }}
+                      >
+                        <div className="asd-affaire-opt-left">
+                          <span style={{ color: 'var(--theme-primary)' }}>+</span>
+                          <span className="asd-affaire-opt-title">
+                            Utiliser «&nbsp;{affaireSearch.trim()}&nbsp;» comme nom libre
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     {filteredAffaires.length === 0 ? (
                       <div className="asd-affaire-empty">
                         {affaires.length === 0
-                          ? 'Aucune affaire en base'
-                          : 'Aucun résultat pour cette recherche'}
+                          ? 'Aucune affaire en base — saisissez un nom libre ci-dessus'
+                          : affaireSearch.trim()
+                            ? 'Aucune affaire trouvée — vous pouvez utiliser le texte comme nom libre'
+                            : 'Aucun résultat pour cette recherche'}
                       </div>
                     ) : (
                       filteredAffaires.slice(0, 20).map((a) => (

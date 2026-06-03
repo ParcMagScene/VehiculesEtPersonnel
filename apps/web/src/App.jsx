@@ -35,6 +35,7 @@ import { useDraggableModals } from './hooks/useDraggableModals';
 import { useFeedback } from './hooks/useFeedback';
 import { useGoogleCalendar } from './hooks/useGoogleCalendar';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useDocumentBadge } from './hooks/useDocumentBadge';
 import { useMessagingPolling } from './hooks/useMessagingPolling';
 import { useSilentRefresh } from './hooks/useSilentRefresh';
 import { useTheme } from './hooks/useTheme';
@@ -290,6 +291,9 @@ function AppContent() {
     showMessagingRef,
     toast,
   });
+
+  // Badge titre + favicon (visible meme si l'onglet est en arriere-plan).
+  useDocumentBadge(unreadMsgCount);
 
   // ═══ Mobile detection ═══
   // [Sprint C] Le hashchange listener a été retiré : `detectMobile()` se base

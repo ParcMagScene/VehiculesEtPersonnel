@@ -381,7 +381,20 @@ const UserPreferencesModal = ({
             </span>
             <Toggle
               checked={prefs.notificationsEnabled}
-              onChange={(e) => updatePref('notificationsEnabled', e.target.checked)}
+              onChange={async (e) => {
+                const checked = e.target.checked;
+                if (checked && 'Notification' in window && Notification.permission === 'default') {
+                  // Demande explicite de la permission au moment du toggle
+                  // (Chrome/Safari refusent toute demande sans interaction).
+                  const ok = await requestNotificationPermission();
+                  if (!ok) {
+                    toast.warning(
+                      'Permission navigateur refusee — notifications visuelles desactivees',
+                    );
+                  }
+                }
+                updatePref('notificationsEnabled', checked);
+              }}
             />
           </div>
 

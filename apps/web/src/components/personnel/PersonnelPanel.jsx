@@ -2491,27 +2491,49 @@ const PlanningTab = ({
               style={{
                 cursor: view !== 'year' && !isCovered && !isFullAbsence ? 'crosshair' : 'default',
                 ...(hasAbsence
-                  ? {
+                  ? (() => {
                       // [2.5] AM = moitié haut, PM = moitié bas, FULL = tout
-                      backgroundColor:
-                        absence.period === 'FULL'
-                          ? absenceColor + (absence.status === STATUS.PENDING ? '30' : '40')
-                          : 'transparent',
-                      backgroundImage:
-                        absence.period === 'AM'
-                          ? `linear-gradient(to bottom, ${absenceColor}${absence.status === STATUS.PENDING ? '30' : '40'} 50%, transparent 50%)`
-                          : absence.period === 'PM'
-                            ? `linear-gradient(to bottom, transparent 50%, ${absenceColor}${absence.status === STATUS.PENDING ? '30' : '40'} 50%)`
-                            : absence.status === STATUS.PENDING
-                              ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)`
-                              : 'none',
-                    }
+                      // Pending = hachures diagonales marquées + bordure dashed pour signaler "demande en attente"
+                      const isPending = absence.status === STATUS.PENDING;
+                      const baseAlpha = isPending ? '25' : '40';
+                      const stripesAlpha = isPending ? '70' : '00';
+                      const stripes = isPending
+                        ? `, repeating-linear-gradient(45deg, transparent 0, transparent 5px, ${absenceColor}${stripesAlpha} 5px, ${absenceColor}${stripesAlpha} 8px)`
+                        : '';
+                      let backgroundImage = 'none';
+                      if (absence.period === 'AM') {
+                        backgroundImage = `linear-gradient(to bottom, ${absenceColor}${baseAlpha} 50%, transparent 50%)${stripes}`;
+                      } else if (absence.period === 'PM') {
+                        backgroundImage = `linear-gradient(to bottom, transparent 50%, ${absenceColor}${baseAlpha} 50%)${stripes}`;
+                      } else if (isPending) {
+                        backgroundImage = `repeating-linear-gradient(45deg, transparent 0, transparent 5px, ${absenceColor}${stripesAlpha} 5px, ${absenceColor}${stripesAlpha} 8px)`;
+                      }
+                      return {
+                        backgroundColor:
+                          absence.period === 'FULL' ? absenceColor + baseAlpha : 'transparent',
+                        backgroundImage,
+                        ...(isPending
+                          ? {
+                              outline: `1.5px dashed ${absenceColor}`,
+                              outlineOffset: '-2px',
+                            }
+                          : {}),
+                      };
+                    })()
                   : {}),
               }}
             >
               {/* Label absence */}
               {hasAbsence && !isCovered && (
-                <span className="pp-absence-label" style={{ color: absenceColor }}>
+                <span
+                  className="pp-absence-label"
+                  style={{
+                    color: absenceColor,
+                    fontStyle: absence.status === STATUS.PENDING ? 'italic' : 'normal',
+                    opacity: absence.status === STATUS.PENDING ? 0.85 : 1,
+                  }}
+                >
+                  {absence.status === STATUS.PENDING ? '⏳ ' : ''}
                   {absenceLabel}
                   {absencePeriodLabel}
                 </span>

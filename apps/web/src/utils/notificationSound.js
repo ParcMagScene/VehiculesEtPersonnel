@@ -42,6 +42,33 @@ const playNotification = (ctx, t) => {
   note(ctx, 784, t + 0.2, 0.25, 0.12);
 };
 
+/** Carillon doux deux notes (cloche cristalline) */
+const playChime = (ctx, t) => {
+  note(ctx, 1047, t, 0.4, 0.13, 'triangle'); // Do6
+  note(ctx, 1568, t + 0.12, 0.5, 0.1, 'triangle'); // Sol6
+};
+
+/** "Pop" court et discret (bulle / message rapide) */
+const playPop = (ctx, t) => {
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(420, t);
+  osc.frequency.exponentialRampToValueAtTime(880, t + 0.06);
+  g.gain.setValueAtTime(0.18 * masterVolume, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  osc.connect(g).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.13);
+};
+
+/** Bip moderne (style smartphone, 3 notes courtes) */
+const playPing = (ctx, t) => {
+  note(ctx, 880, t, 0.08, 0.13, 'sine');
+  note(ctx, 1175, t + 0.09, 0.08, 0.12, 'sine'); // Re6
+  note(ctx, 1568, t + 0.18, 0.12, 0.1, 'sine'); // Sol6
+};
+
 /** Accord majeur bref — confirmation positive */
 const playSuccess = (ctx, t) => {
   note(ctx, 523, t, 0.12, 0.12); // Do5
@@ -83,6 +110,9 @@ const playDelete = (ctx, t) => {
 
 const SOUNDS = {
   notification: playNotification,
+  chime: playChime,
+  pop: playPop,
+  ping: playPing,
   success: playSuccess,
   error: playError,
   warning: playWarning,
@@ -93,8 +123,22 @@ const SOUNDS = {
 export const SOUND_TYPES = Object.keys(SOUNDS);
 
 /**
+ * Variantes proposees a l'utilisateur pour le son d'arrivee de message.
+ * Chaque entree contient la cle technique (utilisable avec playSound)
+ * et un libelle francais pour l'UI.
+ */
+export const NOTIFICATION_SOUND_VARIANTS = [
+  { id: 'notification', label: 'Arpège (par défaut)', emoji: '🎵' },
+  { id: 'chime', label: 'Carillon doux', emoji: '🔔' },
+  { id: 'pop', label: 'Pop discret', emoji: '💧' },
+  { id: 'ping', label: 'Ping moderne', emoji: '📱' },
+];
+
+const NOTIFICATION_SOUND_IDS = new Set(NOTIFICATION_SOUND_VARIANTS.map((v) => v.id));
+
+/**
  * Joue un son par type
- * @param {'notification'|'success'|'error'|'warning'|'click'|'delete'} type
+ * @param {string} type
  */
 export const playSound = (type = 'notification') => {
   try {
@@ -106,8 +150,19 @@ export const playSound = (type = 'notification') => {
   }
 };
 
-/** Rétro-compatibilité */
+/** Rétro-compatibilité — arpège classique */
 export const playNotificationSound = () => playSound('notification');
+
+/**
+ * Joue la variante de son de notification choisie (fallback "notification"
+ * si la valeur fournie n'est pas une variante connue). Utilisee par le hook
+ * de messagerie pour respecter la preference utilisateur.
+ * @param {string} variant
+ */
+export const playNotificationVariant = (variant) => {
+  const id = NOTIFICATION_SOUND_IDS.has(variant) ? variant : 'notification';
+  playSound(id);
+};
 
 // ── Vibration ─────────────────────────────────────────────────
 const VIBRATION_PATTERNS = {

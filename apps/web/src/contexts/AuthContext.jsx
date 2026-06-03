@@ -28,7 +28,11 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [tabPrefs, setTabPrefs] = useState({ tabOrder: null, hiddenTabs: [] });
-  const userPrefsRef = useRef({ notificationsEnabled: true, soundEnabled: true });
+  const userPrefsRef = useRef({
+    notificationsEnabled: true,
+    soundEnabled: true,
+    notificationSoundVariant: 'notification',
+  });
 
   // Vérifier l'authentification au démarrage — attend la récupération async (IDB / refresh)
   useEffect(() => {
@@ -70,6 +74,7 @@ export function AuthProvider({ children }) {
         userPrefsRef.current = {
           notificationsEnabled: prefs.notificationsEnabled !== false,
           soundEnabled: prefs.soundEnabled !== false,
+          notificationSoundVariant: prefs.notificationSoundVariant || 'notification',
         };
         setVolume((prefs.soundVolume ?? 70) / 100);
         applyTabPrefs(prefs);
@@ -103,6 +108,7 @@ export function AuthProvider({ children }) {
         userPrefsRef.current = {
           notificationsEnabled: prefs.notificationsEnabled !== false,
           soundEnabled: prefs.soundEnabled !== false,
+          notificationSoundVariant: prefs.notificationSoundVariant || 'notification',
         };
         setVolume((prefs.soundVolume ?? 70) / 100);
         applyTabPrefs(prefs);
@@ -143,6 +149,7 @@ export function AuthProvider({ children }) {
       userPrefsRef.current = {
         notificationsEnabled: prefs.notificationsEnabled !== false,
         soundEnabled: prefs.soundEnabled !== false,
+        notificationSoundVariant: prefs.notificationSoundVariant || 'notification',
       };
       setVolume((prefs.soundVolume ?? 70) / 100);
       applyTabPrefs(prefs);

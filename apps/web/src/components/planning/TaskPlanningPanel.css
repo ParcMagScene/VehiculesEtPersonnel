@@ -961,7 +961,11 @@
   padding-left: 10px;
   display: flex;
   align-items: center;
-  overflow: hidden;
+  /* overflow visible : la dropdown .assign-dropdown (position absolute) doit
+     pouvoir deborder de la cellule. Le clipping des chips est gere localement
+     par .multi-assign-chips { overflow: hidden }. */
+  overflow: visible;
+  position: relative;
 }
 .task-planning-panel .ev-col-time .period-badge {
   display: inline-block;

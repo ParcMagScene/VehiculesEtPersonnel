@@ -45,12 +45,6 @@ export function registerEquipmentMethods(ApiClient) {
         body: JSON.stringify({ photo }),
       });
     },
-    async importEquipmentCsv(data, mode = 'import') {
-      return this.request('/equipment/import-csv', {
-        method: 'POST',
-        body: JSON.stringify({ data, mode }),
-      });
-    },
     async getEquipmentCategoriesTree() {
       return this.request('/equipment-categories/tree');
     },

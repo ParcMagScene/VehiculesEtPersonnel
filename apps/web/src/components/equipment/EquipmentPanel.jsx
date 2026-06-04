@@ -47,8 +47,8 @@ import { SAV_STATUS } from './equipmentConstants';
 import { EquipmentDetailDialog, EquipmentSlidePanel } from './EquipmentDetail';
 import EquipmentFormModal from './EquipmentFormModal';
 import EquipmentGrid from './EquipmentGrid';
-import EquipmentImportModal from './EquipmentImportModal';
 import EquipmentLabelPrint from './EquipmentLabelPrint';
+import LocmatImportModal from './import/LocmatImportModal';
 import EquipmentMediaManager from './EquipmentMediaManager';
 import {
   MobileSavRequestForm,
@@ -768,7 +768,13 @@ const EquipmentPanel = ({
       )}
 
       {showImportModal && (
-        <EquipmentImportModal onClose={() => setShowImportModal(false)} onImportDone={loadData} />
+        <LocmatImportModal
+          onClose={() => setShowImportModal(false)}
+          onDone={() => {
+            setShowImportModal(false);
+            loadData();
+          }}
+        />
       )}
 
       {labelPrintEquipment && (
@@ -827,11 +833,14 @@ const EquipmentPanel = ({
                 <>
                   <div className="eq-management-section">
                     <h3>
-                      <Upload size={18} /> Import CSV Inventaire
+                      <Upload size={18} /> Import CSV Locmat (Locations + Sérialisé)
                     </h3>
                     <p>
-                      Importez votre inventaire depuis un fichier CSV (format Locmat ou équivalent).
-                      Les familles, catégories et types seront automatiquement créés.
+                      Importez vos deux exports Locmat&nbsp;: <strong>Locations.csv</strong>
+                      &nbsp;(références &amp; stock) et <strong>Serialise.csv</strong>
+                      &nbsp;(numéros de série + numéros MAG). Les familles, catégories et marques
+                      sont créées automatiquement, et les unités sérialisées sont matérialisées en
+                      lignes individuelles.
                     </p>
                     <Button
                       variant="primary"
@@ -841,7 +850,7 @@ const EquipmentPanel = ({
                         setShowImportModal(true);
                       }}
                     >
-                      <Upload size={16} /> Importer un fichier CSV
+                      <Upload size={16} /> Importer Locations.csv + Serialise.csv
                     </Button>
                     <div className="u-mt-2">
                       <Select

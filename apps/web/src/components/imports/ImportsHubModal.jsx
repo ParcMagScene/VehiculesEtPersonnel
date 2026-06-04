@@ -31,7 +31,6 @@ import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 const BLMultiImportModal = lazy(() => import('../affaires/BLMultiImportModal'));
 const BLImportLocPrestaModal = lazy(() => import('../affaires/BLImportLocPrestaModal'));
 const PersonnelImportModal = lazy(() => import('../personnel/PersonnelImportModal'));
-const EquipmentImportModal = lazy(() => import('../equipment/EquipmentImportModal'));
 const LocmatImportModal = lazy(() => import('../equipment/import/LocmatImportModal'));
 const PvImportPanel = lazy(() => import('../pv-import/PvImportPanel'));
 const ContactsCSVImportDialog = lazy(() => import('../annuaire/ContactsCSVImportDialog'));
@@ -71,10 +70,7 @@ function buildSections() {
       label: 'Stocks',
       icon: Package,
       description: 'Equipements (UID, QR codes), locations / serialise.',
-      items: [
-        { id: 'equipements', label: 'Equipements (CSV)', target: 'equipment' },
-        { id: 'locmat', label: 'Locations + Serialise (CSV)', target: 'locmat' },
-      ],
+      items: [{ id: 'locmat', label: 'Locations + Serialise (CSV)', target: 'locmat' }],
     },
     {
       id: 'controles',
@@ -183,11 +179,6 @@ function ImportsHubModal({ onClose, onImported }) {
       {activeImport === 'personnel' && (
         <Suspense fallback={null}>
           <PersonnelImportModal onClose={closeChild} onImportDone={handleChildImported} />
-        </Suspense>
-      )}
-      {activeImport === 'equipment' && (
-        <Suspense fallback={null}>
-          <EquipmentImportModal onClose={closeChild} onImportDone={handleChildImported} />
         </Suspense>
       )}
       {activeImport === 'locmat' && (

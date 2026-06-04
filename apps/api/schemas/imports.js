@@ -4,28 +4,9 @@ import { z } from 'zod';
 const str = (max = 255) => z.string().max(max).trim();
 const optStr = (max = 255) => str(max).optional().or(z.literal(''));
 
-// ── Equipment Import CSV ──
-export const equipmentImportSchema = z.object({
-  data: z
-    .array(
-      z
-        .object({
-          code_libre: optStr(100),
-          nom: str(255),
-          famille: optStr(100),
-          sous_famille: optStr(100),
-          categorie: optStr(100),
-          zone: optStr(100),
-          stock: z.coerce.number().nonnegative().optional(),
-          marque: optStr(100),
-          numero_serie: optStr(100),
-        })
-        .passthrough(),
-    )
-    .min(1)
-    .max(10000),
-  mode: z.enum(['preview', 'import']),
-});
+// ── Equipment Import CSV (legacy: route removed, kept only if needed for tests) ──
+// Removed: equipmentImportSchema was used by the legacy /api/equipment/import-csv
+// route which has been replaced by the Locmat dual-CSV import.
 
 // ── Personnel Import CSV ──
 export const personnelImportSchema = z.object({

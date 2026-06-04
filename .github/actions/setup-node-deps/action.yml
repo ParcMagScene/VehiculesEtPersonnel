@@ -1,0 +1,17 @@
+name: 'Setup Node + deps'
+description: 'Checkout-aware Node setup with npm cache and `npm ci`. Centralise la version Node et le cache pour tous les jobs CI.'
+inputs:
+  node-version:
+    description: 'Version Node.js (par défaut alignée sur .nvmrc)'
+    required: false
+    default: '22'
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+    - name: Install dependencies (npm ci)
+      shell: bash
+      run: npm ci

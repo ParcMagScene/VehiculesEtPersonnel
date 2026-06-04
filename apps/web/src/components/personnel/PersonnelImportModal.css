@@ -11,22 +11,22 @@
 .pi-import-body {
   overflow-y: auto;
   max-height: calc(85vh - 120px);
-  padding: 16px !important;
+  padding: var(--space-4) !important;
 }
 
 /* ---------- PREVIEW ---------- */
 .pi-import-preview {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 /* ---------- COLLISION SUMMARY ---------- */
 .pi-collision-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .pi-collision-stat {
@@ -86,7 +86,7 @@
 
 /* ---------- COLLISION DETAIL ---------- */
 .pi-collision-detail {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .pi-collision-header {
@@ -97,7 +97,7 @@
   font-weight: 500;
   font-size: var(--font-base);
   color: var(--theme-text-secondary);
-  padding: 6px 8px;
+  padding: 6px var(--space-2);
   border-radius: var(--radius-sm);
   transition: background 0.15s ease;
 }
@@ -109,7 +109,7 @@
 .pi-collision-list {
   max-height: 300px;
   overflow-y: auto;
-  margin-top: 8px;
+  margin-top: var(--space-2);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light, var(--theme-border));
 }
@@ -129,8 +129,8 @@
 .pi-action-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
   border-radius: var(--radius-lg);
   font-size: var(--font-xs);
   font-weight: 600;
@@ -157,7 +157,7 @@
 /* ---------- TYPE TAGS ---------- */
 .pi-type-tag {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-lg);
   font-size: var(--font-xs);
   font-weight: 500;
@@ -188,7 +188,7 @@
 .pi-collision-via {
   font-size: var(--font-xs);
   color: var(--theme-text-secondary);
-  margin-left: 4px;
+  margin-left: var(--space-1);
 }
 
 /* ---------- ANALYZE CTA ---------- */
@@ -196,8 +196,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 20px 0;
+  gap: var(--space-2);
+  padding: var(--space-5) 0;
 }
 
 .pi-analyze-hint {
@@ -229,7 +229,7 @@
 }
 
 [data-theme='dark'] .pi-collision-list {
-  border-color: var(--border-dark, #3a3a3a);
+  border-color: var(--border-dark);
 }
 
 [data-theme='dark'] .pi-collision-match {

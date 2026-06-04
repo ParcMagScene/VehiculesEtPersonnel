@@ -422,7 +422,7 @@
 }
 
 .catalog-import-ref {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
   color: var(--theme-primary);
   font-weight: 600;
@@ -586,12 +586,12 @@
 }
 
 .parser-skipped-lines {
-  margin-top: 8px;
+  margin-top: var(--space-2);
   max-height: 240px;
   overflow-y: auto;
   font-size: 0.78rem;
-  font-family: monospace;
-  background: var(--theme-bg-secondary, #f8f8f8);
+  font-family: var(--font-mono);
+  background: var(--theme-bg-secondary);
   border-radius: var(--radius-md);
   padding: 0.75rem;
 }
@@ -613,7 +613,7 @@
   margin: 0 0 0.75rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .parser-best-row {
@@ -641,7 +641,7 @@
   margin: 0 0 1rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--theme-text-primary);
 }
 
@@ -656,7 +656,7 @@
   padding: 0.75rem 1rem;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   cursor: pointer;
   font-size: 0.95rem;
   transition: background 0.15s;
@@ -765,7 +765,7 @@
 .catalog-checkbox-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   cursor: pointer;
 }
 
@@ -778,14 +778,14 @@
 .taxonomy-member-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   cursor: pointer;
 }
 
 .taxonomy-canonical-content {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .icon-success {

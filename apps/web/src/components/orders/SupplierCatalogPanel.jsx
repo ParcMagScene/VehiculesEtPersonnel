@@ -26,7 +26,6 @@ import {
   Button,
   EntityCombobox,
   InlineAlert,
-  Input,
   ModalLayout,
   SearchBar,
   Select,
@@ -42,12 +41,11 @@ import api from '../../utils/api';
 import { AVAILABLE_PARSERS, parseCatalog } from '../../utils/catalogParsers';
 import { formatDateTime } from '../../utils/formatUtils';
 import { extractPDFMeta } from '../../utils/pdfParser';
-import { refreshBus } from '../../utils/refresh-bus';
 import CatalogSettingsPanel from './CatalogSettingsPanel';
 
 const PAGE_SIZE = 50;
 
-export function SupplierCatalogPanel({ currentUser }) {
+export default function SupplierCatalogPanel({ currentUser }) {
   const toast = useToast();
 
   // ── State principal ──
@@ -155,7 +153,6 @@ export function SupplierCatalogPanel({ currentUser }) {
         try {
           await api.deleteSupplierArticle(id);
           toast.success('Article supprimé');
-          refreshBus.publish('orders');
           loadArticles();
         } catch {
           toast.error('Erreur suppression');
@@ -379,19 +376,26 @@ export function SupplierCatalogPanel({ currentUser }) {
                 allowClear
               />
             )}
-            <span className="u-text-secondary u-font-sm u-nowrap">
+            <span
+              className="u-text-secondary"
+              style={{ fontSize: '0.85rem', whiteSpace: 'nowrap' }}
+            >
               {total} article{total > 1 ? 's' : ''}
             </span>
           </div>
 
           {/* Table */}
           {loading ? (
-            <div className="u-text-center u-p-12">Chargement…</div>
+            <div className="u-text-center" style={{ padding: '3rem' }}>
+              Chargement…
+            </div>
           ) : articles.length === 0 ? (
-            <div className="u-text-center u-text-secondary u-p-12">
+            <div className="u-text-center u-text-secondary" style={{ padding: '3rem' }}>
               <Package size={48} className="u-opacity-30 u-mb-4" />
               <p>Aucun article fournisseur</p>
-              {canWrite && <p className="u-font-sm">Importez un catalogue PDF pour commencer</p>}
+              {canWrite && (
+                <p style={{ fontSize: '0.85rem' }}>Importez un catalogue PDF pour commencer</p>
+              )}
             </div>
           ) : (
             <div className="catalog-table-wrapper">
@@ -411,7 +415,9 @@ export function SupplierCatalogPanel({ currentUser }) {
                 <tbody>
                   {articles.map((a) => (
                     <tr key={a.id}>
-                      <td className="u-font-mono u-font-xs">{a.supplier_ref || '—'}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        {a.supplier_ref || '—'}
+                      </td>
                       <td>{a.designation}</td>
                       <td>
                         {(a.brand_canonical || a.brand) && (
@@ -420,12 +426,12 @@ export function SupplierCatalogPanel({ currentUser }) {
                           </Tag>
                         )}
                       </td>
-                      <td className="u-font-sm">{a.model || ''}</td>
-                      <td className="u-font-sm">{a.family || ''}</td>
-                      <td className="u-text-right u-font-semibold u-nowrap">
+                      <td style={{ fontSize: '0.85rem' }}>{a.model || ''}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{a.family || ''}</td>
+                      <td className="u-text-right u-font-semibold" style={{ whiteSpace: 'nowrap' }}>
                         {fmtPrice(a.price_ht)}
                       </td>
-                      <td className="u-font-sm">{a.supplier_name || ''}</td>
+                      <td style={{ fontSize: '0.85rem' }}>{a.supplier_name || ''}</td>
                       {canWrite && (
                         <td>
                           <Tooltip content="Supprimer">
@@ -433,7 +439,7 @@ export function SupplierCatalogPanel({ currentUser }) {
                               variant="danger"
                               size="sm"
                               iconOnly
-                              className="u-p-1"
+                              style={{ padding: '0.25rem' }}
                               aria-label="Supprimer"
                               onClick={() => handleDeleteArticle(a.id)}
                             >
@@ -451,7 +457,10 @@ export function SupplierCatalogPanel({ currentUser }) {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="pagination u-flex-center u-gap-3 u-mt-4 u-justify-center">
+            <div
+              className="pagination u-flex-center u-gap-3 u-mt-4"
+              style={{ justifyContent: 'center' }}
+            >
               <Button
                 variant="secondary"
                 disabled={page === 0}
@@ -459,7 +468,7 @@ export function SupplierCatalogPanel({ currentUser }) {
               >
                 <ChevronLeft size={16} />
               </Button>
-              <span className="u-font-sm">
+              <span style={{ fontSize: '0.85rem' }}>
                 Page {page + 1} / {totalPages}
               </span>
               <Button
@@ -478,7 +487,7 @@ export function SupplierCatalogPanel({ currentUser }) {
       {view === 'imports' && (
         <div>
           {imports.length === 0 ? (
-            <div className="u-text-center u-text-secondary u-p-12">
+            <div className="u-text-center u-text-secondary" style={{ padding: '3rem' }}>
               <History size={48} className="u-opacity-30 u-mb-4" />
               <p>Aucun import réalisé</p>
             </div>
@@ -498,7 +507,9 @@ export function SupplierCatalogPanel({ currentUser }) {
               <tbody>
                 {imports.map((imp) => (
                   <tr key={imp.id}>
-                    <td className="u-nowrap u-font-sm">{formatDateTime(imp.created_at)}</td>
+                    <td style={{ whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
+                      {formatDateTime(imp.created_at)}
+                    </td>
                     <td>
                       <FileText
                         size={14}
@@ -509,7 +520,7 @@ export function SupplierCatalogPanel({ currentUser }) {
                     <td>{imp.supplier_name || '—'}</td>
                     <td className="u-text-center">{imp.page_count || '?'}</td>
                     <td className="u-text-center u-font-semibold">{imp.items_count}</td>
-                    <td className="u-font-sm">{imp.imported_by_name || '—'}</td>
+                    <td style={{ fontSize: '0.85rem' }}>{imp.imported_by_name || '—'}</td>
                     {canWrite && (
                       <td>
                         <Tooltip content="Supprimer import + articles">
@@ -517,7 +528,7 @@ export function SupplierCatalogPanel({ currentUser }) {
                             variant="danger"
                             size="sm"
                             iconOnly
-                            className="u-p-1"
+                            style={{ padding: '0.25rem' }}
                             aria-label="Supprimer"
                             onClick={() => handleDeleteImport(imp)}
                           >
@@ -599,8 +610,6 @@ export function SupplierCatalogPanel({ currentUser }) {
     </div>
   );
 }
-
-export default SupplierCatalogPanel;
 
 // ═══════════════════════════════════════════════════════════
 // MODAL D'IMPORT PDF
@@ -774,7 +783,7 @@ function ImportPDFModal({ onDone, onClose }) {
 
             <div className="catalog-form-group">
               <label>Fichier(s) PDF</label>
-              <Input
+              <input
                 type="file"
                 accept=".pdf"
                 multiple

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import api from '../utils/api';
 import {
-  playNotificationSound,
+  playNotificationVariant,
   requestNotificationPermission,
   showBrowserNotification,
 } from '../utils/notificationSound';
@@ -25,20 +25,23 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
       if (newCount > prevCount && prevCount !== -1) {
         const prefs = userPrefsRef.current;
         const diff = newCount - prevCount;
+        const label = `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`;
 
-        if (prefs.notificationsEnabled !== false && !showMessagingRef.current) {
-          toast.info(`💬 ${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`, {
-            sound: prefs.soundEnabled !== false,
-          });
-        } else if (prefs.soundEnabled) {
-          playNotificationSound();
+        // Son selon la variante choisie par l'utilisateur
+        if (prefs.soundEnabled !== false) {
+          playNotificationVariant(prefs.notificationSoundVariant);
         }
 
+        // Toast in-app (sauf si la messagerie est deja ouverte)
+        if (prefs.notificationsEnabled !== false && !showMessagingRef.current) {
+          toast.info(`💬 ${label}`);
+        }
+
+        // Notification navigateur (idem)
         if (prefs.notificationsEnabled && !showMessagingRef.current) {
-          showBrowserNotification(
-            `${diff} nouveau${diff > 1 ? 'x' : ''} message${diff > 1 ? 's' : ''}`,
-            { body: 'Cliquez pour ouvrir la messagerie eM@g' },
-          );
+          showBrowserNotification(label, {
+            body: 'Cliquez pour ouvrir la messagerie eM@g',
+          });
         }
       }
       prevUnreadRef.current = newCount;

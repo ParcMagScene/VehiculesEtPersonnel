@@ -1,0 +1,87 @@
+/* ImportsHubModal — styles du hub centralise des imports.
+   Cherche a rester coherent avec les autres modals (BLMultiImportModal,
+   PersonnelImportModal) : variables CSS du theme, espacements, typographie. */
+
+.imports-hub-modal .imports-hub-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.imports-hub-modal .imports-hub-intro {
+  margin: 0 0 1rem;
+  color: var(--theme-text-muted);
+  font-size: var(--font-sm);
+  line-height: 1.4;
+}
+
+.imports-hub-modal .imports-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.imports-hub-section {
+  border: 1px solid var(--theme-border-medium);
+  border-radius: var(--radius-md);
+  padding: 0.875rem;
+  background: var(--theme-bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.imports-hub-section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--theme-text-dark);
+}
+
+.imports-hub-section-header h3 {
+  margin: 0 0 0.125rem;
+  font-size: var(--font-base);
+  font-weight: 600;
+}
+
+.imports-hub-section-header p {
+  margin: 0;
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+  line-height: 1.3;
+}
+
+.imports-hub-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.imports-hub-item-btn {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  font-size: var(--font-sm);
+}
+
+.imports-hub-item-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.imports-hub-soon {
+  margin-left: auto;
+  font-size: var(--font-xxs, 0.7rem);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  background: var(--theme-bg-subtle, var(--theme-bg-card));
+  color: var(--theme-text-muted);
+  border: 1px solid var(--theme-border-medium);
+}

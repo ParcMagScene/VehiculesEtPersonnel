@@ -7,6 +7,7 @@ import { useState } from 'react';
 import {
   Button,
   FormField,
+  InlineAlert,
   Input,
   Modal,
   ModalBody,
@@ -20,6 +21,7 @@ import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import { todayIso } from './utils';
+import './ControlPerformModal.css';
 
 export default function ControlPerformModal({ control, onClose, onDone }) {
   const [date, setDate] = useState(todayIso());
@@ -54,11 +56,11 @@ export default function ControlPerformModal({ control, onClose, onDone }) {
     <>
       <Modal open onClose={handleSafeClose} size="md">
         <ModalHeader>
-          <CheckCircle2 size={18} style={{ marginRight: 8 }} />
+          <CheckCircle2 size={18} className="ctrl-perform-header-icon" />
           Effectuer le contrôle — {control?.type_name}
         </ModalHeader>
         <ModalBody>
-          <p style={{ marginTop: 0, color: '#475569', fontSize: 14 }}>
+          <p className="ctrl-perform-entity">
             {control?.entity_type === 'vehicle' ? 'Véhicule' : 'Équipement'} :{' '}
             <strong>{control?.entity_name || control?.entity_id}</strong>
           </p>
@@ -72,7 +74,7 @@ export default function ControlPerformModal({ control, onClose, onDone }) {
           </FormField>
           <FormField
             label="Prochaine échéance (optionnel)"
-            help={`Par défaut : date + ${control?.periodicity_days || 365} jours.`}
+            hint={`Par défaut : date + ${control?.periodicity_days || 365} jours.`}
           >
             <Input type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
           </FormField>
@@ -84,11 +86,7 @@ export default function ControlPerformModal({ control, onClose, onDone }) {
               placeholder="Garage, n° rapport, défauts constatés…"
             />
           </FormField>
-          {error && (
-            <div style={{ color: '#991b1b', background: '#fee2e2', padding: 8, borderRadius: 6 }}>
-              {error}
-            </div>
-          )}
+          {error && <InlineAlert variant="error">{error}</InlineAlert>}
         </ModalBody>
         <ModalFooter>
           <Button variant="ghost" onClick={handleSafeClose} disabled={busy}>

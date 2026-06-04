@@ -1,0 +1,363 @@
+/* ═══════════════════════════════════════════════════════════════
+   ControlsDashboard.css — Tableau de bord Contrôles périodiques
+
+   Style aligné sur `.eq-table*` (cf. EquipmentPanel.css) pour rester
+   cohérent visuellement avec les autres modules de l'application :
+   wrapper bordé radius, thead gradient sticky, lignes hover, badges
+   pill, sous-titres muted, échéance colorée selon urgence.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Toolbar (filtres + actions) ─────────────────────────────── */
+.ctrl-toolbar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+/* Carte filtres : surface dédiée, fond doux, bord léger, padding confort.
+   Grille auto-fit pour aligner proprement les Selects à largeur min. */
+.ctrl-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  flex: 1 1 auto;
+  padding: var(--space-3);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md-lg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.ctrl-filters :where(select, .ds-select, .ds-select__control) {
+  width: 100%;
+  min-width: 0;
+}
+
+.ctrl-toolbar-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* ── Cartes stats (KPI bar) ──────────────────────────────────── */
+.ctrl-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.ctrl-stat-card {
+  position: relative;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md-lg);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
+  border-left: 4px solid var(--ctrl-accent, var(--theme-primary));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.ctrl-stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.ctrl-stat-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--theme-text-muted);
+}
+
+.ctrl-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ctrl-accent, var(--theme-text-primary));
+}
+
+/* ── Erreur ──────────────────────────────────────────────────── */
+.ctrl-error {
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+  border: 1px solid var(--theme-danger-border);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  margin-bottom: var(--space-3);
+}
+
+/* ═══ TABLEAU CONTRÔLES ═══ */
+.ctrl-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md-lg);
+  background: var(--theme-bg-card);
+}
+
+.ctrl-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--font-base);
+}
+
+.ctrl-table thead {
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%)
+  );
+  position: sticky;
+  top: 0;
+  z-index: var(--z-base);
+}
+
+.ctrl-table thead tr {
+  box-shadow: 0 2px 0 0 var(--theme-border);
+}
+
+.ctrl-table th {
+  padding: var(--space-2-5) var(--space-3);
+  text-align: left;
+  font-weight: 700;
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--theme-text-inverse);
+  white-space: nowrap;
+}
+
+.ctrl-table th.ctrl-th-actions {
+  text-align: right;
+}
+
+/* En-tête triable : cursor pointer + icône flèche atténuée (active = blanc). */
+.ctrl-table th.is-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.ctrl-table th.is-sortable:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ctrl-th-sort-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: var(--space-1);
+  opacity: 0.45;
+}
+
+.ctrl-th-sort-icon.is-active {
+  opacity: 1;
+}
+
+.ctrl-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.ctrl-table tbody tr:hover {
+  background: var(--theme-bg-page);
+}
+
+.ctrl-table td {
+  padding: var(--space-2-5) var(--space-3);
+  border-bottom: 1px solid var(--theme-border-light);
+  color: var(--theme-text-dark);
+  vertical-align: middle;
+}
+
+.ctrl-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Colonne Entité — miniature + titre + métadonnées */
+.ctrl-entity-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ctrl-entity-thumb {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  border: 1px solid var(--theme-border);
+  background: var(--theme-bg-page);
+}
+
+.ctrl-entity-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-text-muted);
+  background: var(--theme-border-light);
+}
+
+.ctrl-entity-info {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Colonne Entité — titre + métadonnées */
+.ctrl-entity-name {
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  line-height: 1.3;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ctrl-entity-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+  margin-top: 2px;
+}
+
+.ctrl-kind-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-2);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  background: var(--theme-bg-indigo-light);
+  color: var(--theme-secondary);
+}
+
+.ctrl-kind-pill.is-vehicle {
+  background: var(--theme-cyan-bg);
+  color: var(--theme-cyan-dark);
+}
+
+.ctrl-uid {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--theme-text-muted);
+  background: var(--theme-border-light);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+/* Colonne Type — code en mono + libellé */
+.ctrl-type-code {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--font-sm);
+  color: var(--theme-text-primary);
+}
+
+.ctrl-type-name {
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+  margin-top: 2px;
+  max-width: 320px;
+  line-height: 1.3;
+}
+
+/* Colonne Échéance */
+.ctrl-due {
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  white-space: nowrap;
+}
+
+.ctrl-due.is-late {
+  color: var(--theme-danger-text);
+}
+
+.ctrl-due.is-soon {
+  color: var(--theme-warning-text);
+}
+
+.ctrl-due-rel {
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+  margin-top: 2px;
+}
+
+.ctrl-due-rel.is-late {
+  color: var(--theme-danger-text);
+}
+
+.ctrl-due-rel.is-soon {
+  color: var(--theme-warning-text);
+}
+
+/* Colonne Dernière */
+.ctrl-last {
+  font-weight: 500;
+  color: var(--theme-text-dark);
+  white-space: nowrap;
+}
+
+.ctrl-last-rel {
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+  margin-top: 2px;
+}
+
+.ctrl-muted {
+  color: var(--theme-text-muted);
+}
+
+/* Badge statut — pill colorée */
+.ctrl-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+/* Colonne Actions */
+.ctrl-actions-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ctrl-actions-cell > * + * {
+  margin-left: var(--space-1);
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ctrl-table th,
+  .ctrl-table td {
+    padding: var(--space-2);
+  }
+
+  .ctrl-entity-name,
+  .ctrl-type-name {
+    max-width: 180px;
+  }
+
+  .ctrl-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

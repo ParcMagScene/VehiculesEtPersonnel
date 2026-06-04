@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 // Contexte centralisé pour la gestion des modals de planning
 const PlanningModalContext = createContext();
@@ -17,11 +17,11 @@ export function PlanningModalProvider({ children }) {
     setModal(null);
   }, []);
 
-  return (
-    <PlanningModalContext.Provider value={{ modal, openModal, closeModal }}>
-      {children}
-    </PlanningModalContext.Provider>
-  );
+  // [PERF Phase 4.G] Mémoïser la value pour éviter de re-render tous les
+  // subscribers à chaque render du Provider parent.
+  const value = useMemo(() => ({ modal, openModal, closeModal }), [modal, openModal, closeModal]);
+
+  return <PlanningModalContext.Provider value={value}>{children}</PlanningModalContext.Provider>;
 }
 
 export function usePlanningModal() {

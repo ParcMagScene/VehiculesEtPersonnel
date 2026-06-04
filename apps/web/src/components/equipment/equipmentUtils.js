@@ -1,5 +1,17 @@
 import { GENERIC_IMAGES } from '../../utils/genericImages';
 
+/**
+ * Transforme une URL `/Photos/...` en URL de vignette WebP via l'endpoint
+ * backend `/api/photos/thumb`. Sizes autorisées : 60, 80, 120, 160, 240.
+ * Retourne l'URL d'origine si elle ne pointe pas vers /Photos/.
+ */
+export const toThumbUrl = (src, size = 80) => {
+  if (!src || typeof src !== 'string') return src;
+  if (!src.startsWith('/Photos/')) return src;
+  const rel = src.slice('/Photos/'.length);
+  return `/api/photos/thumb?p=${encodeURIComponent(rel)}&size=${size}`;
+};
+
 // Recherche flexible de zone : exact → codes → préfixe (ex: "G" → "G1", "A3" → "A1")
 export const findZone = (zoneList, zid) => {
   if (!zoneList || !zid) return null;

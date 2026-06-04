@@ -10,6 +10,16 @@
 
 ---
 
+## 🚀 Parcours rapides
+
+- **Nouveau développeur (5 min)** : [03-Guides/GUIDE_DEVELOPPEUR.md](03-Guides/GUIDE_DEVELOPPEUR.md)
+- **Comprendre la structure technique** : [01-Architecture/ARCHITECTURE.md](01-Architecture/ARCHITECTURE.md)
+- **Préparer un déploiement** : [04-Operations/CHECKLIST_PRODUCTION.md](04-Operations/CHECKLIST_PRODUCTION.md)
+- **Consulter les endpoints** : [API-INDEX.md](API-INDEX.md)
+- **Consulter les règles métier** : [business-rules/rules.md](business-rules/rules.md)
+
+---
+
 ## Structure documentaire
 
 ### 📐 01-Architecture
@@ -31,6 +41,7 @@
 - [CHECKLIST_PRODUCTION.md](04-Operations/CHECKLIST_PRODUCTION.md) — Checklist pré-déploiement production
 - [PLAN_MAINTENANCE.md](04-Operations/PLAN_MAINTENANCE.md) — Cycles de maintenance, monitoring, procédures
 - [ROLLBACK_PLAN.md](04-Operations/ROLLBACK_PLAN.md) — Procédures de rollback en cas d'incident
+- [STABILISATION-2026-05.md](04-Operations/STABILISATION-2026-05.md) — Rapport de stabilisation (base du rapport Étape 2)
 
 ### 📋 05-Specs
 - [README.md](05-Specs/README.md) — Index des spécifications
@@ -92,3 +103,13 @@ Documents historiques conservés pour référence : audits terminés, plans ache
 - [CHANGELOG.md](../CHANGELOG.md) — Changelog unifié
 - [ROADMAP.md](../ROADMAP.md) — Roadmap produit
 - [CODING_STANDARDS.md](../CODING_STANDARDS.md) — Conventions de code
+
+---
+
+## 📌 Rapport Étape 2
+
+Le socle du rapport Étape 2 est centralisé dans [04-Operations/STABILISATION-2026-05.md](04-Operations/STABILISATION-2026-05.md), complété par :
+
+- [02-Securite/AUDITS_OVERVIEW.md](02-Securite/AUDITS_OVERVIEW.md)
+- [06-Changelog/CHANGELOG_DOCS.md](06-Changelog/CHANGELOG_DOCS.md)
+- [05-Specs/README.md](05-Specs/README.md)

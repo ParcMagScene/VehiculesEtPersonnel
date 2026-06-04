@@ -130,7 +130,7 @@
 .coordinates-badge small {
   color: var(--btn-success-color);
   font-size: var(--font-sm);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .help-text.warning {
@@ -243,7 +243,7 @@
   background: var(--shadow-sm);
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-xs);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-sm);
 }
 
@@ -336,7 +336,7 @@
 }
 
 .location-dialog .form-group {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .location-dialog .form-group label {
@@ -353,7 +353,7 @@
 
 .location-dialog .form-group input {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -418,7 +418,7 @@
 
 .coordinates-info {
   background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
-  border: 2px solid var(--theme-info, #0ea5e9);
+  border: 2px solid var(--theme-info);
   padding: 1.25rem;
   border-radius: var(--radius-md-lg);
   margin-top: 1rem;

@@ -42,6 +42,8 @@ export const OrderSlidePanel = React.memo(
         onClose={onClose}
         side="right"
         width={420}
+        inline
+        overlay={false}
         className="orders-slide-panel"
         title={order.reference}
         headerActions={
@@ -169,6 +171,8 @@ export const QuoteSlidePanel = React.memo(
         onClose={onClose}
         side="right"
         width={420}
+        inline
+        overlay={false}
         className="orders-slide-panel"
         title={quote.reference}
         headerActions={
@@ -280,6 +284,8 @@ export const RequestSlidePanel = React.memo(
         onClose={onClose}
         side="right"
         width={420}
+        inline
+        overlay={false}
         className="orders-slide-panel"
         title={request.article}
         headerActions={
@@ -381,6 +387,8 @@ export const SupplierSlidePanel = React.memo(({ supplier, onClose, onViewDetail,
       onClose={onClose}
       side="right"
       width={420}
+      inline
+      overlay={false}
       className="orders-slide-panel"
       icon={<Building2 size={16} />}
       title={supplier.name}

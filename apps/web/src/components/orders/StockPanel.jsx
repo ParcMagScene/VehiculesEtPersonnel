@@ -33,9 +33,6 @@ import {
   EntityCombobox,
   InlineAlert,
   Input,
-  Modal,
-  ModalBody,
-  ModalHeader,
   ModalLayout,
   SearchBar,
   Select,
@@ -428,26 +425,28 @@ function StockPanel({
 
       {/* Panneau Gestion Catégories (via bouton Gestion du header) */}
       {showManagement && (
-        <Modal open={true} onClose={onCloseManagement} size="lg" className="stock-management-panel">
-          <ModalHeader icon={<Layers size={20} />} onClose={onCloseManagement}>
-            Gestion des catégories
-          </ModalHeader>
-          <ModalBody>
-            <CategoriesView
-              categories={categories}
-              onAdd={() => {
-                setEditingCategory(null);
-                setShowCategoryForm(true);
-              }}
-              onEdit={(cat) => {
-                setEditingCategory(cat);
-                setShowCategoryForm(true);
-              }}
-              onDelete={handleDeleteCategory}
-              isAdmin={isAdmin}
-            />
-          </ModalBody>
-        </Modal>
+        <ModalLayout
+          open
+          onClose={onCloseManagement}
+          size="lg"
+          className="stock-management-panel"
+          title="Gestion des catégories"
+          icon={<Layers size={20} />}
+        >
+          <CategoriesView
+            categories={categories}
+            onAdd={() => {
+              setEditingCategory(null);
+              setShowCategoryForm(true);
+            }}
+            onEdit={(cat) => {
+              setEditingCategory(cat);
+              setShowCategoryForm(true);
+            }}
+            onDelete={handleDeleteCategory}
+            isAdmin={isAdmin}
+          />
+        </ModalLayout>
       )}
     </div>
   );
@@ -481,6 +480,8 @@ const StockSlidePanel = ({
       onClose={onClose}
       side="right"
       width={420}
+      inline
+      overlay={false}
       className="stock-slide-panel"
       title={
         <span className="stock-slide-title-row">
@@ -2135,7 +2136,7 @@ function ImportStockModal({ onDone, onClose }) {
                     placeholder={
                       'Référence\tNom\tDescription\tCatégorie\tEmplacement\tQuantité\tValeur\n62006042\t360 MAC AURA\t\tÉlectronique\tStock Pièces\t3\t59.17'
                     }
-                    style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}
                   />
                 </div>
               )}
@@ -2220,7 +2221,7 @@ function ImportStockModal({ onDone, onClose }) {
                   <tbody>
                     {parsedItems.slice(0, 30).map((item, i) => (
                       <tr key={i}>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                        <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>
                           {item.reference || '—'}
                         </td>
                         <td>{item.name}</td>

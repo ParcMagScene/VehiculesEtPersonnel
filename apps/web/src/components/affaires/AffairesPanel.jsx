@@ -46,7 +46,7 @@ import { capitalizeText } from '../../utils/dateUtils';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
 import AffaireDashboard from './AffaireDashboard';
-import { AffaireDetailDialog, AffaireSlidePanel } from './AffaireDetailPanel';
+import { AffaireDetailModal, AffaireSlidePanel } from './AffaireDetailPanel';
 
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
 const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));
@@ -1493,7 +1493,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       </div>
 
       {/* Dialog de détail (double-clic) */}
-      <AffaireDetailDialog
+      <AffaireDetailModal
         affaire={dialogAffaire}
         reservations={reservations}
         googleEventIds={dialogAffaire ? googleEventIdsMap[dialogAffaire.numeroAffaire] || [] : []}

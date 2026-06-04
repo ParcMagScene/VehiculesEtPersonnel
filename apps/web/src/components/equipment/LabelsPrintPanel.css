@@ -5,8 +5,8 @@
 .lpp-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   height: 100%;
   min-height: 0;
 }
@@ -14,18 +14,18 @@
 .lpp-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--surface-2, #f8f9fa);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
   border-radius: 8px;
 }
 
 .lpp-toolbar-left,
 .lpp-toolbar-right {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -33,15 +33,15 @@
 .lpp-counter {
   font-weight: 600;
   font-size: 0.9rem;
-  padding: 4px 10px;
-  background: var(--primary-100, #e3f2fd);
-  color: var(--primary-700, #1976d2);
+  padding: var(--space-1) 10px;
+  background: var(--primary-100);
+  color: var(--primary-700);
   border-radius: 12px;
 }
 
 .lpp-counter.lpp-counter-warn {
-  background: var(--warning-100, #fff3e0);
-  color: var(--warning-700, #e65100);
+  background: var(--warning-100);
+  color: var(--warning-700);
 }
 
 .lpp-filter-toggle {
@@ -57,9 +57,9 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  border: 1px solid var(--border, #e0e0e0);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--surface, #fff);
+  background: var(--surface);
 }
 
 .lpp-table {
@@ -71,7 +71,7 @@
 .lpp-table thead {
   position: sticky;
   top: 0;
-  background: var(--surface-2, #f5f5f5);
+  background: var(--surface-2);
   z-index: 1;
 }
 
@@ -79,7 +79,7 @@
 .lpp-table td {
   padding: 6px 10px;
   text-align: left;
-  border-bottom: 1px solid var(--border, #eee);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 
@@ -88,58 +88,58 @@
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--text-secondary, #555);
+  color: var(--text-secondary);
 }
 
 .lpp-table tr.lpp-selected {
-  background: var(--primary-50, #e3f2fd);
+  background: var(--primary-50);
 }
 
 .lpp-table tbody tr:hover {
-  background: var(--surface-hover, #f0f0f0);
+  background: var(--surface-hover);
 }
 
 .lpp-mag-input {
   width: 90px;
   padding: 3px 6px;
-  border: 1px solid var(--border, #ccc);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   text-transform: uppercase;
 }
 
 .lpp-mag-input.lpp-mag-invalid {
-  border-color: var(--danger, #d32f2f);
+  border-color: var(--danger);
   background: #fff5f5;
 }
 
 .lpp-mag-input.lpp-mag-saved {
-  border-color: var(--success, #388e3c);
+  border-color: var(--success);
   background: var(--theme-success-bg);
 }
 
 .lpp-mag-input.lpp-mag-suggested {
-  border-color: var(--warning, #f59e0b);
-  background: #fffbeb;
+  border-color: var(--theme-warning);
+  background: var(--theme-warning-bg);
 }
 
 .lpp-mag-cell {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .lpp-mag-apply {
   padding: 3px 6px;
   font-size: 0.75rem;
-  border: 1px solid var(--warning, #f59e0b);
+  border: 1px solid var(--warning);
   background: var(--warning-bg);
   color: var(--theme-warning-text);
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .lpp-mag-apply:hover {
@@ -148,27 +148,27 @@
 
 .lpp-suggested-hint {
   font-size: 0.75rem;
-  color: var(--text-secondary, #666);
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
 .lpp-pagination {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: var(--space-2);
   font-size: 0.85rem;
 }
 
 .lpp-preview {
-  border: 1px dashed var(--border, #ccc);
+  border: 1px dashed var(--border);
   background: #fff;
-  padding: 8px;
+  padding: var(--space-2);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -176,19 +176,19 @@
   width: 100%;
   max-width: 600px;
   height: 600px;
-  border: 1px solid var(--border, #ddd);
+  border: 1px solid var(--border);
   background: #fff;
 }
 
 .lpp-empty,
 .lpp-loading {
-  padding: 40px;
+  padding: var(--space-10);
   text-align: center;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
 }
 
 .lpp-error {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--danger-bg);
   color: var(--danger-dark);
   border-radius: 6px;

@@ -17,6 +17,7 @@ import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serial
 import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
+import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
@@ -316,7 +317,7 @@ export function runPostInitMigrations(db) {
         end_time TEXT,
         section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
           'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations', 'prep_tournees',
-          'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
+          'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation', 'intervention',
           'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual'
         )),
         title TEXT,
@@ -874,6 +875,9 @@ export function runPostInitMigrations(db) {
   // ═══ Module Contrôles Périodiques (équipements + véhicules) ═══
   runControlesPeriodiquesMigrations(db);
 
+  // ═══ Module Import PV (Procès-Verbaux PDF) ═══
+  runPvImportsMigrations(db);
+
   // ═══ Import intelligent Locmat (Locations + Serialise) ═══
   runLocmatImportMigrations(db);
   runEquipmentNumeroMagMigration(db);
@@ -896,18 +900,9 @@ export function runPostInitMigrations(db) {
   // ═══ Uniformisation Marques & Sociétés — Phase 3 ═══
   runBrandsMigrations(db);
 
-  // ═══ Nettoyage noms sérialisés (retirer suffixe #N) ═══
-  try {
-    const dirty = db.prepare("SELECT COUNT(*) as c FROM equipment WHERE name LIKE '% #%'").get();
-    if (dirty.c > 0) {
-      db.prepare(
-        "UPDATE equipment SET name = TRIM(SUBSTR(name, 1, INSTR(name, ' #') - 1)) WHERE name LIKE '% #%' AND INSTR(name, ' #') > 0",
-      ).run();
-      logger.info(`✅ Migration: suffixe #N retiré de ${dirty.c} noms d'équipements sérialisés`);
-    }
-  } catch (e) {
-    logger.warn('⚠️ Migration cleanup serialize names:', e.message);
-  }
+  // [PERF Phase 4.L] Cleanup des noms sérialisés (suffixe " #N") déplacé en
+  // migration versionnée 0004_cleanup_equipment_serialize_suffix.sql — ne
+  // tourne plus à chaque boot (le SELECT COUNT(*) LIKE '% #%' coûtait ~2s).
 
   // ═══ Google OAuth2 — Table tokens avec refresh_token chiffré (Phase A) ═══
   try {
@@ -1247,7 +1242,8 @@ export function runPostInitMigrations(db) {
     'CREATE INDEX IF NOT EXISTS idx_supplier_articles_supplier ON supplier_articles(supplier_id)',
     'CREATE INDEX IF NOT EXISTS idx_supplier_articles_brand ON supplier_articles(brand)',
     // modification_history : lookup par entité (entity_type, entity_id) + tri timestamp DESC.
-    'CREATE INDEX IF NOT EXISTS idx_modhist_entity ON modification_history(entity_type, entity_id)',
+    // [PERF Phase 4.M] idx_modhist_entity remplacé par idx_modification_history_entity
+    // (créé par perfSprint1Indexes ligne 598). Voir 0003_drop_duplicate_indexes.sql.
     'CREATE INDEX IF NOT EXISTS idx_modhist_timestamp ON modification_history(timestamp DESC)',
   ];
   let perfIdxOk = 0;
@@ -1267,14 +1263,16 @@ export function runPostInitMigrations(db) {
   const perfEquipmentIndexes = [
     'CREATE INDEX IF NOT EXISTS idx_equipment_reference ON equipment(reference)',
     'CREATE INDEX IF NOT EXISTS idx_equipment_serial ON equipment(serial_number)',
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_equipment_uid ON equipment(uid) WHERE uid IS NOT NULL',
+    // [PERF Phase 4.M] idx_equipment_uid (partial) retiré : doublon de
+    // idx_equipment_uid_unique créé par locmat-import-v1.js.
     'CREATE INDEX IF NOT EXISTS idx_equipment_location_zone ON equipment(location_zone)',
     'CREATE INDEX IF NOT EXISTS idx_equipment_location_depot ON equipment(location_depot)',
     'CREATE INDEX IF NOT EXISTS idx_equipment_brand_id ON equipment(brand_id)',
     'CREATE INDEX IF NOT EXISTS idx_equipment_numero_mag ON equipment(numero_mag)',
     'CREATE INDEX IF NOT EXISTS idx_ea_equipment_status ON equipment_assignments(equipment_id, status)',
     'CREATE INDEX IF NOT EXISTS idx_ea_assigned_to ON equipment_assignments(assigned_to)',
-    'CREATE INDEX IF NOT EXISTS idx_sav_equipment ON sav_tickets(equipment_id)',
+    // [PERF Phase 4.M] idx_sav_equipment retiré : doublon de idx_sav_tickets_equipment_id
+    // créé par update_sav_tickets_import.sql.
     'CREATE INDEX IF NOT EXISTS idx_sav_status ON sav_tickets(status)',
     'CREATE INDEX IF NOT EXISTS idx_sav_reported_by ON sav_tickets(reported_by)',
     'CREATE INDEX IF NOT EXISTS idx_eqcat_parent_level ON equipment_categories(parent_id, level)',

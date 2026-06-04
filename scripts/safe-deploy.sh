@@ -30,7 +30,9 @@ echo "🔨 Build en cours..."
 cd "$PROJ_DIR"
 
 # Build normal (écrase dist/)
-if (cd "$WEB_DIR" && npx vite build); then
+# [PERF Phase 4.K] On enchaîne inject-sw-version.mjs pour remplacer le
+# placeholder __BUILD_VERSION__ du Service Worker par un timestamp unique.
+if (cd "$WEB_DIR" && npx vite build && node scripts/inject-sw-version.mjs); then
   echo "   ✅ Build réussi"
 else
   echo "   ❌ Build échoué !"

@@ -3,28 +3,11 @@
    depuis un événement Google Calendar
    ═══════════════════════════════════════════════ */
 
-/* .etm-overlay supprimé : on utilise l'overlay du design system Modal */
-
-@keyframes etm-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.etm-modal {
-  background: var(--surface-primary);
-  border-radius: var(--radius-lg);
-  width: 100%;
-  max-width: 560px;
-  max-height: 85vh;
-  overflow: hidden;
-  box-shadow: var(--shadow-modal);
-  display: flex;
-  flex-direction: column;
-}
+/* .etm-overlay supprimé : on utilise l'overlay du design system Modal.
+   .etm-modal ne redéfinit PAS background/width/box-shadow/border-radius :
+   ces propriétés viennent du DS (.ui-modal + .ui-modal--lg). Les redéclarer
+   localement créait un effet "carte-dans-carte" et plafonnait la largeur à
+   560px alors que size="lg" doit donner min(700px, 94vw). */
 
 .etm-modal .ui-modal-title h3 {
   display: flex;
@@ -71,7 +54,7 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
@@ -92,7 +75,7 @@
 .etm-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 0.78rem;
   padding: 3px 10px;
   border-radius: var(--radius-2xl);
@@ -211,13 +194,12 @@
   font-size: var(--font-xs);
   font-weight: 600;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.01em;
 }
 
 .etm-field input,
 .etm-field select {
-  padding: 5px 8px;
+  padding: 5px var(--space-2);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-default);
   /* Évite le rendu translucide de la liste native dans le modal */
@@ -287,7 +269,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 16px;
+  padding: 7px var(--space-4);
   border-radius: var(--radius-md);
   border: none;
   font-size: 0.82rem;
@@ -331,12 +313,6 @@
 
 /* Mobile */
 @media (max-width: 640px) {
-  .etm-modal {
-    max-width: 100%;
-    max-height: 95vh;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
-
   .etm-step-fields {
     grid-template-columns: 1fr;
   }

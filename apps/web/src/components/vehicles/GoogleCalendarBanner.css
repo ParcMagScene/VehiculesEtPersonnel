@@ -65,7 +65,6 @@
 .google-calendar-banner-grid.compact .banner-scroll-area {
   overflow-y: auto;
   border-bottom: none;
-  flex: 0 0 auto;
 }
 
 .resize-handle {
@@ -476,7 +475,7 @@
   font-size: var(--font-sm);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-height: 20px;
   cursor: pointer;
   transition: all 0.2s;
@@ -556,7 +555,7 @@
   justify-content: center;
   gap: 2px;
   height: 16px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   background: var(--theme-bg-card-translucent);
   border-radius: var(--radius-md);
   color: var(--theme-indigo);

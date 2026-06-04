@@ -68,9 +68,11 @@ function isSetupMounted(serverContent, setupName) {
 
 function main() {
   const errors = [];
+  const fixMode = process.argv.includes('--fix');
 
   const serverContent = read('apps/api/server.js');
   const apiReadme = read('docs/api/README.md');
+  const docsIndexPath = path.join(rootDir, 'docs/docs-index.json');
   const docsIndexRaw = read('docs/docs-index.json');
   const docsIndex = JSON.parse(docsIndexRaw);
 
@@ -78,9 +80,16 @@ function main() {
   const apiMarkdownFiles = listMarkdownFiles('docs/api').map((file) => file.replace('docs/api/', ''));
 
   if (docsIndex.totalFiles !== docsMarkdownFiles.length) {
-    errors.push(
-      `docs/docs-index.json totalFiles=${docsIndex.totalFiles} mais ${docsMarkdownFiles.length} fichiers .md ont été trouvés dans docs/`,
-    );
+    if (fixMode) {
+      docsIndex.totalFiles = docsMarkdownFiles.length;
+      docsIndex.generated = new Date().toISOString().slice(0, 10);
+      fs.writeFileSync(docsIndexPath, JSON.stringify(docsIndex, null, 2) + '\n', 'utf8');
+      console.log(`✏️  docs-index.json totalFiles régénéré: ${docsMarkdownFiles.length}`);
+    } else {
+      errors.push(
+        `docs/docs-index.json totalFiles=${docsIndex.totalFiles} mais ${docsMarkdownFiles.length} fichiers .md ont été trouvés dans docs/ (lancer: npm run docs:fix)`,
+      );
+    }
   }
 
   const indexedApiFiles = (docsIndex.sections?.api?.files || []).map((file) =>

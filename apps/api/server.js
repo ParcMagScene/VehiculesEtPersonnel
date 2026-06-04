@@ -108,9 +108,11 @@ import {
   setupPersonsRoutes,
   setupSkillsRoutes,
 } from './personnelRoutes.js';
+import { setupPhotoThumbRoutes } from './photoThumbRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { stopPlanningRolloverCron } from './planningRoutes.js';
 import { setupProfileRoutes } from './profileRoutes.js';
+import { setupPvImportRoutes } from './pvImportRoutes.js';
 import { setupSavRoutes } from './savRoutes.js';
 import { logSecurityEvent } from './securityLog.js';
 import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';
@@ -305,6 +307,11 @@ app.use(
   express.static(path.join(__dirname, '..', '..', 'public', 'bl-imports'), { maxAge: '1h' }),
 );
 
+// Servir les PV (Procès-Verbaux de contrôle) — sensibles, protégés
+const pvPath = path.join(__dirname, '..', '..', 'public', 'pv');
+if (!fs.existsSync(pvPath)) fs.mkdirSync(pvPath, { recursive: true });
+app.use('/pv', authenticateToken, express.static(pvPath, { maxAge: '1h' }));
+
 // Servir les avatars
 const avatarsPath = path.join(__dirname, '..', '..', 'public', 'avatars');
 if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
@@ -418,6 +425,10 @@ setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMain
 // Module SAV unifié (Phase 3 — synchro LocMat)
 setupSavRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
+// Vignettes WebP à la volée pour /Photos/ (cache disque)
+setupPhotoThumbRoutes(app);
+// Vignettes WebP à la volée pour /Photos/ (cache disque)
+setupPhotoThumbRoutes(app);
 
 // Routes Commandes & Ventes
 setupSuppliersRoutes(app, authenticateToken, requireAdmin);
@@ -473,6 +484,7 @@ setupVehicleRoutes(
   requireNotReadOnly,
 );
 setupControlesPeriodiquesRoutes(app, authenticateToken, requireAdmin);
+setupPvImportRoutes(app, authenticateToken, requireAdmin);
 setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS });
 setupTOTPRoutes(app, authenticateToken, requireAdmin);
 setupAffairesRoutes(app, authenticateToken, requireAdmin);

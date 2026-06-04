@@ -975,6 +975,8 @@ const SavSlidePanel = ({
       onClose={onClose}
       side="right"
       width={420}
+      inline
+      overlay={false}
       className="eq-slide-panel"
       title={
         <span className="eq-slide-title-row">

@@ -29,7 +29,7 @@ import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import { getExpiredTechnicalControls, hasExpiredTechnicalControl } from '../../utils/vehicleUtils';
 import ChangePassword from '../auth/ChangePassword';
 import MobileAccess from '../auth/MobileAccess';
-const LocationsMapPanel = React.lazy(() => import('../locations/LocationsMapPanel'));
+import LocationsMapPanel from '../locations/LocationsMapPanel';
 import { formatPhoneDisplay } from '../PhoneInput';
 import ClientDialog from '../vehicles/ClientDialog';
 import DepotMap from '../vehicles/DepotMap';
@@ -44,7 +44,7 @@ import './ManagementPanel.css';
 
 import { Button, Input, Modal, ModalBody, ModalHeader, Select } from '@/design-system';
 
-import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, MANAGEMENT_PALETTE, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 
@@ -55,6 +55,8 @@ const ManagementPanel = ({
   setReservations,
   clients,
   setClients,
+  drivers,
+  setDrivers,
   locations,
   setLocations,
   _calendarConfig,
@@ -186,48 +188,40 @@ const ManagementPanel = ({
 
   // Les lieux utilisent maintenant LocationDialog avec PlaceAutocompleteElement
 
-  const tabs = React.useMemo(
-    () =>
-      panelType === 'settings'
-        ? [
-            { id: 'account', label: 'Mon compte', icon: Lock, color: 'var(--theme-text-gray)' },
-            ...(currentUser?.isAdmin
-              ? [
-                  { id: 'users', label: 'Utilisateurs', icon: Shield, color: STATUS_COLORS.danger },
-                  { id: 'sync', label: 'Import/Export', icon: Cloud, color: ACCENT_COLORS.pink },
-                  { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
-                  { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
-                  {
-                    id: 'depot-map',
-                    label: 'Plan Dépôt',
-                    icon: MapPin,
-                    color: STATUS_COLORS.success,
-                  },
-                ]
-              : []),
-          ]
-        : [
-            { id: 'vehicles', label: 'Véhicules', icon: Truck, color: STATUS_COLORS.info },
-            { id: 'clients', label: 'Clients', icon: UserCircle2, color: ACCENT_COLORS.violet },
-            ...(currentUser?.isAdmin
-              ? [
-                  {
-                    id: 'requests',
-                    label: 'Demandes',
-                    icon: Calendar,
-                    color: ACCENT_COLORS.orange,
-                  },
-                  {
-                    id: 'rental-reports',
-                    label: 'Rapports Locations',
-                    icon: Gauge,
-                    color: ACCENT_COLORS.cyan || '#06b6d4',
-                  },
-                ]
-              : []),
-          ],
-    [panelType, currentUser],
-  );
+  const tabs =
+    panelType === 'settings'
+      ? [
+          { id: 'account', label: 'Mon compte', icon: Lock, color: 'var(--theme-text-gray)' },
+          ...(currentUser?.isAdmin
+            ? [
+                { id: 'users', label: 'Utilisateurs', icon: Shield, color: STATUS_COLORS.danger },
+                { id: 'sync', label: 'Import/Export', icon: Cloud, color: ACCENT_COLORS.pink },
+                { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
+                { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
+                {
+                  id: 'depot-map',
+                  label: 'Plan Dépôt',
+                  icon: MapPin,
+                  color: STATUS_COLORS.success,
+                },
+              ]
+            : []),
+        ]
+      : [
+          { id: 'vehicles', label: 'Véhicules', icon: Truck, color: STATUS_COLORS.info },
+          { id: 'clients', label: 'Clients', icon: UserCircle2, color: ACCENT_COLORS.violet },
+          ...(currentUser?.isAdmin
+            ? [
+                { id: 'requests', label: 'Demandes', icon: Calendar, color: ACCENT_COLORS.orange },
+                {
+                  id: 'rental-reports',
+                  label: 'Rapports Locations',
+                  icon: Gauge,
+                  color: ACCENT_COLORS.cyan || '#06b6d4',
+                },
+              ]
+            : []),
+        ];
 
   useEffect(() => {
     const validTabIds = tabs.map((t) => t.id);
@@ -242,6 +236,8 @@ const ManagementPanel = ({
         return vehicles;
       case 'clients':
         return clients;
+      case 'drivers':
+        return drivers;
       case 'locations': {
         // Ajouter le siège comme premier lieu si une adresse est configurée
         if (companyAddress) {
@@ -268,6 +264,9 @@ const ManagementPanel = ({
         break;
       case 'clients':
         setClients(newList);
+        break;
+      case 'drivers':
+        setDrivers(newList);
         break;
       case 'locations':
         setLocations(newList);
@@ -339,6 +338,12 @@ const ManagementPanel = ({
         const newList = [...currentList, clientWithId];
         setClients(newList);
         saveToIndexedDB(STORES.clients, newList);
+      } else if (activeTab === 'drivers') {
+        const createdDriver = await api.createDriver(itemToAdd);
+        const driverWithId = { ...itemToAdd, id: createdDriver.id || itemToAdd.id };
+        const newList = [...currentList, driverWithId];
+        setDrivers(newList);
+        saveToIndexedDB(STORES.drivers, newList);
       } else if (activeTab === 'locations') {
         const createdLocation = await api.createLocation(itemToAdd);
         const locationWithId = { ...itemToAdd, id: createdLocation.id || itemToAdd.id };
@@ -463,6 +468,10 @@ const ManagementPanel = ({
         await api.updateClient(editingItem.id, editingItem);
         setClients(newList);
         saveToIndexedDB(STORES.clients, newList);
+      } else if (activeTab === 'drivers') {
+        await api.updateDriver(editingItem.id, editingItem);
+        setDrivers(newList);
+        saveToIndexedDB(STORES.drivers, newList);
       } else if (activeTab === 'locations') {
         await api.updateLocation(editingItem.id, editingItem);
         setLocations(newList);
@@ -497,6 +506,10 @@ const ManagementPanel = ({
             await api.deleteClient(id);
             setClients(newList);
             saveToIndexedDB(STORES.clients, newList);
+          } else if (activeTab === 'drivers') {
+            await api.deleteDriver(id);
+            setDrivers(newList);
+            saveToIndexedDB(STORES.drivers, newList);
           } else if (activeTab === 'locations') {
             await api.deleteLocation(id);
             setLocations(newList);
@@ -532,6 +545,8 @@ const ManagementPanel = ({
     } else {
       if (activeTab === 'clients') {
         setClients(currentList);
+      } else if (activeTab === 'drivers') {
+        setDrivers(currentList);
       } else if (activeTab === 'locations') {
         setLocations(currentList);
       } else if (activeTab === 'garages') {
@@ -562,6 +577,8 @@ const ManagementPanel = ({
     } else {
       if (activeTab === 'clients') {
         setClients(currentList);
+      } else if (activeTab === 'drivers') {
+        setDrivers(currentList);
       } else if (activeTab === 'locations') {
         setLocations(currentList);
       }
@@ -635,6 +652,7 @@ const ManagementPanel = ({
         'vehicles',
         'reservations',
         'clients',
+        'drivers',
         'locations',
         'maintenances',
         'calendarConfig',
@@ -686,6 +704,7 @@ const ManagementPanel = ({
       if (backupData.vehicles) setVehicles(backupData.vehicles);
       if (backupData.reservations) setReservations(backupData.reservations);
       if (backupData.clients) setClients(backupData.clients);
+      if (backupData.drivers) setDrivers(backupData.drivers);
       if (backupData.locations) setLocations(backupData.locations);
       if (backupData.maintenances) setMaintenances(backupData.maintenances);
       if (backupData.calendarConfig) setCalendarConfig(backupData.calendarConfig);
@@ -705,56 +724,7 @@ const ManagementPanel = ({
     }
   };
 
-  const colors = [
-    // Bleus
-    '#3b82f6',
-    '#2563eb',
-    '#1d4ed8',
-    '#60a5fa',
-    '#93c5fd',
-    // Violets
-    '#8b5cf6',
-    '#7c3aed',
-    '#6366f1',
-    '#a78bfa',
-    '#c4b5fd',
-    // Roses/Rouges
-    '#ec4899',
-    '#db2777',
-    '#ef4444',
-    '#dc2626',
-    '#f87171',
-    // Oranges/Jaunes
-    '#f59e0b',
-    '#f97316',
-    '#fb923c',
-    '#fbbf24',
-    '#fcd34d',
-    // Verts
-    '#10b981',
-    '#059669',
-    '#14b8a6',
-    '#22c55e',
-    '#4ade80',
-    // Cyans
-    '#06b6d4',
-    '#0891b2',
-    '#22d3ee',
-    '#67e8f9',
-    '#a5f3fc',
-    // Gris
-    '#6b7280',
-    '#4b5563',
-    '#374151',
-    '#9ca3af',
-    '#d1d5db',
-    // Noirs/Blancs
-    '#1f2937',
-    '#111827',
-    '#000000',
-    '#e5e7eb',
-    '#f3f4f6',
-  ];
+  const colors = MANAGEMENT_PALETTE;
 
   const panelTitle =
     panelType === 'settings'
@@ -835,7 +805,9 @@ const ManagementPanel = ({
                       ? 'un véhicule'
                       : activeTab === 'clients'
                         ? 'un client'
-                        : 'un lieu'}
+                        : activeTab === 'drivers'
+                          ? 'un conducteur'
+                          : 'un lieu'}
                   </h3>
                   <div className="u-flex-center u-gap-1">
                     {activeTab === 'locations' && (
@@ -884,7 +856,7 @@ const ManagementPanel = ({
                   <div className="add-form">
                     <Input
                       type="text"
-                      placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : 'lieu'}`}
+                      placeholder={`Nom du ${activeTab === 'vehicles' ? 'véhicule' : activeTab === 'clients' ? 'client' : activeTab === 'drivers' ? 'conducteur' : 'lieu'}`}
                       value={newItem.name}
                       onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                       onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
@@ -1009,7 +981,7 @@ const ManagementPanel = ({
                     Exporter toutes les données
                   </Button>
 
-                  <Input
+                  <input
                     type="file"
                     ref={fileInputRef}
                     accept=".json"
@@ -1999,21 +1971,15 @@ const ManagementPanel = ({
 
       {/* Panneau cartographie des lieux */}
       {showMapPanel && (
-        <Suspense
-          fallback={
-            <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement de la carte…</div>
-          }
-        >
-          <LocationsMapPanel
-            locations={getCurrentList()}
-            onClose={() => setShowMapPanel(false)}
-            onEditLocation={(loc) => {
-              setShowMapPanel(false);
-              setLocationToEdit(loc);
-              setShowLocationDialog(true);
-            }}
-          />
-        </Suspense>
+        <LocationsMapPanel
+          locations={getCurrentList()}
+          onClose={() => setShowMapPanel(false)}
+          onEditLocation={(loc) => {
+            setShowMapPanel(false);
+            setLocationToEdit(loc);
+            setShowLocationDialog(true);
+          }}
+        />
       )}
 
       {ConfirmDialogRenderer}

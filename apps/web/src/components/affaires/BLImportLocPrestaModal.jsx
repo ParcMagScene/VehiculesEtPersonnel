@@ -206,6 +206,26 @@ const formatFileSize = (bytes) => {
 };
 
 // ═══ Composant Principal ═══
+/**
+ * BLImportLocPrestaModal — Import specialise Bon de Preparation Location/Prestation.
+ *
+ * Variante de BLImportModal dediee au flux Location & Prestation :
+ *  - n'accepte que les types d'affaire dans ALLOWED_TYPES (Location, Prestation),
+ *  - attend un document de type Bon de Preparation (DOC_TYPES.BON_PREPARATION) :
+ *    affiche un avertissement si autre type detecte (isWrongDocType),
+ *  - rapproche les lignes extraites avec le catalogue (catalogMatches) pour
+ *    suggerer les references existantes,
+ *  - permet le pliage/depliage par section (expandedSections) pour les BL longs.
+ *
+ * Pour les BL Vente / generiques, utiliser BLImportModal a la place.
+ *
+ * @param {Object} props
+ * @param {() => void} props.onClose - Ferme la modal (avec garde dirty form).
+ * @param {(result: any) => void} props.onImported - Callback apres import OK.
+ * @param {string} [props.defaultAffaireId] - Affaire pre-selectionnee.
+ * @param {string} [props.defaultAffaireType] - Type d'affaire pre-selectionne
+ *   (ignore si non present dans ALLOWED_TYPES).
+ */
 function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, defaultAffaireType }) {
   const toast = useToast();
   const fileInputRef = useRef(null);
@@ -278,7 +298,7 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
       const text = await extractTextFromPDF(selectedFile);
       setRawText(text);
 
-      const parsed = smartParse(text);
+      const parsed = smartParse(text, selectedFile?.name || '');
       setParsedData(parsed);
       setDocType(parsed.docType);
 
@@ -289,6 +309,13 @@ function BLImportLocPrestaModal({ onClose, onImported, defaultAffaireId, default
       // Auto-remplir le type depuis le parsing
       if (parsed?.type && !affaireType && ALLOWED_TYPES.includes(parsed.type)) {
         setAffaireType(parsed.type);
+      }
+
+      // Alerte si le parsing n'a pas trouvé de numéro d'affaire
+      if (!parsed?.numero && !affaireId) {
+        toast.warning(
+          "Numéro d'affaire non détecté dans le PDF. Veuillez le saisir manuellement avant d'importer.",
+        );
       }
 
       // Expand all sections by default

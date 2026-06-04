@@ -1,5 +1,7 @@
 import { forwardRef } from 'react';
 
+import { warnBareOnce } from './_warnBareOnce';
+
 /**
  * Input — Composant atomique Design System
  *
@@ -9,9 +11,15 @@ import { forwardRef } from 'react';
  *
  * Mode bare  : sans prefix/suffix → rend un <input> nu (pas de wrapper div)
  * Mode slots : avec prefix/suffix → wrapper div inline-flex
+ *
+ * ⚠️ Sans `size`, le style est minimal (pas de bordure ni focus ring DS).
+ *    Préférez explicitement `size="sm|md|lg"` sauf si vous savez ce que vous faites.
  */
 const Input = forwardRef(
   ({ size, error = false, prefix, suffix, className = '', ...props }, ref) => {
+    if (import.meta.env?.DEV && size === undefined && !prefix && !suffix) {
+      warnBareOnce('Input');
+    }
     /* ─── Mode bare (pas de wrapper) ─── */
     if (!prefix && !suffix) {
       const classes = [

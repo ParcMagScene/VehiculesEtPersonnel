@@ -1,9 +1,9 @@
 import './VehicleDetailPanel.css';
 
-import { AlertTriangle, Calendar, ExternalLink, Gauge, User, Wrench } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { AlertTriangle, Calendar, ExternalLink, Gauge, User, Wrench, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, Drawer, Tag } from '@/design-system';
+import { Button, Tag } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
@@ -15,7 +15,6 @@ import { getVehicleAvatar } from '../../utils/vehicleAvatars';
    ═══════════════════════════════════════════════ */
 const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onAction }) => {
   const [mileageHistory, setMileageHistory] = useState([]);
-  const [periodicControls, setPeriodicControls] = useState([]);
   const isAdmin = currentUser?.isAdmin === true;
 
   useEffect(() => {
@@ -29,31 +28,12 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
               let parsed = {};
               try {
                 parsed = typeof h.changes === 'string' ? JSON.parse(h.changes) : h.changes || {};
-              } catch {
-                /* JSON malformé : fallback {} (ignoré volontairement) */
-              }
+              } catch (e) {}
               return { ...h, parsed };
             });
           setMileageHistory(kmEntries);
         })
         .catch(() => {});
-    }
-  }, [vehicle?.id]);
-
-  // L3 — Charger les contrôles périodiques du nouveau système (equipment_controls)
-  // (le slide panel n'affichait auparavant que le JSON legacy `controles_techniques`,
-  // d'où l'invisibilité des contrôles créés via /api/controls).
-  useEffect(() => {
-    if (vehicle?.id && typeof api.getControlsForEntity === 'function') {
-      api
-        .getControlsForEntity('vehicle', vehicle.id)
-        .then((res) => {
-          const list = res?.data || res || [];
-          setPeriodicControls(Array.isArray(list) ? list : []);
-        })
-        .catch(() => setPeriodicControls([]));
-    } else {
-      setPeriodicControls([]);
     }
   }, [vehicle?.id]);
 
@@ -289,38 +269,6 @@ const VehicleDetailContent = ({ vehicle, maintenances = [], currentUser, onActio
         </section>
       )}
 
-      {/* L3 — Contrôles périodiques suivis (nouveau système equipment_controls) */}
-      {periodicControls.length > 0 && (
-        <section className="vdp-section">
-          <h4 className="vdp-section-title">
-            <Calendar size={14} /> Contrôles périodiques suivis ({periodicControls.length})
-          </h4>
-          <div className="vdp-ct-list">
-            {periodicControls.map((c) => {
-              const deadline = getDeadlineStatus(c.next_due_date);
-              const label = c.type_name || c.type_code || 'Contrôle';
-              return (
-                <div key={c.id} className="vdp-ct-item">
-                  <div className="vdp-ct-header">
-                    <span className="vdp-ct-type">{label}</span>
-                    {deadline && (
-                      <span className={`vdp-ct-badge ${deadline.className}`}>{deadline.label}</span>
-                    )}
-                  </div>
-                  <div className="vdp-ct-dates">
-                    {c.last_done_date && (
-                      <span>Dernier : {formatDateSimple(c.last_done_date)}</span>
-                    )}
-                    {c.next_due_date && <span>Échéance : {formatDateSimple(c.next_due_date)}</span>}
-                    {c.status && <span>Statut : {c.status}</span>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
       {/* Historique des interventions */}
       <section className="vdp-section">
         <h4 className="vdp-section-title">
@@ -375,40 +323,98 @@ const VehicleSlidePanel = ({
   onOpenDialog,
   onAction,
 }) => {
-  if (!vehicle) return null;
+  const [isVisible, setIsVisible] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const panelRef = useRef(null);
 
-  const currentVehicle = vehicle;
+  useEffect(() => {
+    if (vehicle) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsVisible(true);
+      setIsClosing(false);
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsOpen(true));
+      });
+      return () => cancelAnimationFrame(raf);
+    } else {
+      setIsOpen(false);
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setIsClosing(false);
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [vehicle]);
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    setIsClosing(true);
+    setTimeout(() => onClose(), 300);
+  }, [onClose]);
+
+  // Clic extérieur
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) handleClose();
+    };
+    // Utiliser 'click' au lieu de 'mousedown' pour éviter les conflits
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [isOpen, handleClose]);
+
+  if (!isVisible && !vehicle) return null;
+
+  const currentVehicle = vehicle || {};
 
   return (
-    <Drawer
-      open={!!vehicle}
-      onClose={onClose}
-      side="right"
-      width={420}
-      className="vehicle-slide-panel"
-      icon={
-        <span
-          className="vdp-slide-color"
-          style={{
-            backgroundColor:
-              currentVehicle.displayColor || currentVehicle.color || STATUS_COLORS.info,
-          }}
+    <div
+      className={`vehicle-slide-panel ${isClosing ? 'closing' : isOpen ? 'open' : ''}`}
+      ref={panelRef}
+    >
+      {/* Header */}
+      <div className="vdp-slide-header">
+        <div className="vdp-slide-title-row">
+          <div
+            className="vdp-slide-color"
+            style={{
+              backgroundColor:
+                currentVehicle.displayColor || currentVehicle.color || STATUS_COLORS.info,
+            }}
+          />
+          <div className="vdp-slide-title-info">
+            <span className="vdp-slide-name">{currentVehicle.name}</span>
+            <div className="vdp-slide-badges">
+              {currentVehicle.type && (
+                <span className="vdp-slide-badge">{currentVehicle.type}</span>
+              )}
+              {(currentVehicle.immatriculation || currentVehicle.registration) && (
+                <span className="vdp-slide-badge vdp-slide-reg">
+                  {currentVehicle.immatriculation || currentVehicle.registration}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <Button variant="ghost" className="slide-panel-close" onClick={handleClose}>
+          <X size={18} />
+        </Button>
+      </div>
+
+      {/* Body */}
+      <div className="vdp-slide-body">
+        <VehicleDetailContent
+          vehicle={currentVehicle}
+          maintenances={maintenances}
+          currentUser={currentUser}
+          onAction={onAction}
         />
-      }
-      title={
-        <span className="vdp-slide-title-info">
-          <span className="vdp-slide-name">{currentVehicle.name}</span>
-          <span className="vdp-slide-badges">
-            {currentVehicle.type && <span className="vdp-slide-badge">{currentVehicle.type}</span>}
-            {(currentVehicle.immatriculation || currentVehicle.registration) && (
-              <span className="vdp-slide-badge vdp-slide-reg">
-                {currentVehicle.immatriculation || currentVehicle.registration}
-              </span>
-            )}
-          </span>
-        </span>
-      }
-      footer={
+      </div>
+
+      {/* Footer */}
+      <div className="vdp-slide-footer">
         <Button
           variant="ghost"
           className="vdp-slide-open-btn"
@@ -416,15 +422,8 @@ const VehicleSlidePanel = ({
         >
           <ExternalLink size={14} /> Ouvrir la fiche complète
         </Button>
-      }
-    >
-      <VehicleDetailContent
-        vehicle={currentVehicle}
-        maintenances={maintenances}
-        currentUser={currentUser}
-        onAction={onAction}
-      />
-    </Drawer>
+      </div>
+    </div>
   );
 };
 

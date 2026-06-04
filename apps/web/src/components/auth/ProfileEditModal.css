@@ -31,23 +31,23 @@
   color: var(--theme-text-inverse);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .profile-edit-content {
-  padding: 24px;
+  padding: var(--space-6);
 }
 
 .profile-edit-avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .profile-edit-avatar-wrapper {
   position: relative;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .profile-edit-avatar-preview {
@@ -92,16 +92,16 @@
   font-size: var(--font-base);
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 4px;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
 }
 
 .profile-edit-field {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .profile-edit-field:last-of-type {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .profile-edit-label {
@@ -136,11 +136,11 @@
 }
 
 .profile-edit-footer {
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-6);
   border-top: 1px solid var(--theme-border);
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: var(--space-3);
   background: var(--theme-bg-page);
 }
 
@@ -148,7 +148,7 @@
 .profile-edit-tabs {
   display: flex;
   border-bottom: 1px solid var(--theme-border);
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   background: var(--theme-bg-secondary);
 }
 
@@ -156,7 +156,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 10px var(--space-4);
   font-size: var(--font-base);
   font-weight: 500;
   color: var(--theme-text-secondary);
@@ -183,8 +183,8 @@
 .profile-edit-pin-header {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 4px 0 16px;
+  gap: var(--space-3);
+  padding: var(--space-1) 0 var(--space-4);
   color: var(--theme-text-body);
 }
 
@@ -195,7 +195,7 @@
 }
 
 .profile-edit-pin-desc {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: var(--font-sm);
   color: var(--theme-text-secondary);
 }
@@ -211,14 +211,14 @@
 .profile-edit-pin-form {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .profile-edit-pin-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 8px;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
 .profile-edit-pin-delete {

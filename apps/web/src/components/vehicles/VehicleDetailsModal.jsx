@@ -21,6 +21,7 @@ import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import InterventionModal from '../planning/InterventionModal';
+import PvDocumentsSection from '../pv-import/PvDocumentsSection';
 
 const VehicleDetailsModal = ({
   vehicle,
@@ -549,6 +550,9 @@ const VehicleDetailsModal = ({
             </div>
           </div>
         )}
+
+        {/* PV de contrôle importés (rapports DEKRA / Apave / Socotec…) */}
+        <PvDocumentsSection entityType="vehicle" entityId={vehicle?.id} />
 
         {/* Section Historique */}
         <div className="history-section">

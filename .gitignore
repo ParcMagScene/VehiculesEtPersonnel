@@ -66,6 +66,10 @@ backups/
 
 # Fichier .env.development (contient VIDEO_CIPHER_KEY)
 apps/api/.env.development
+# Backups .env auto-generes (safe-deploy.sh) — peuvent contenir des secrets
+apps/api/.env.development.bak.*
+apps/api/.env.*.bak.*
+apps/api/.env.development.local
 
 # Configuration mediamtx (contient credentials RTSP caméras)
 mediamtx.yml

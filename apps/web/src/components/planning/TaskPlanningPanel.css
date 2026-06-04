@@ -13,9 +13,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: var(--space-3) var(--space-6);
   border-bottom: 1px solid var(--border-default);
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   flex-shrink: 0;
 }
@@ -29,7 +29,7 @@
 .task-planning-panel .tp-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .task-planning-panel .tp-progress-mini {
@@ -40,7 +40,7 @@
 .task-planning-panel .tp-date-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .task-planning-panel .tp-date-nav button {
@@ -86,7 +86,7 @@
   min-width: 160px;
   text-align: center;
   cursor: pointer;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-md);
 }
 
@@ -98,7 +98,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: var(--space-2) 14px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   background: var(--surface-primary);
@@ -131,7 +131,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 0 24px 16px;
+  padding: 0 var(--space-6) var(--space-4);
 }
 
 /* ═══ En-tête de colonnes (sticky) ═══ */
@@ -139,7 +139,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   position: sticky;
   top: 0;
   z-index: var(--z-dropdown);
@@ -152,7 +152,7 @@
   color: var(--text-muted);
 }
 .task-planning-panel .tp-columns-header .ev-col-h {
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -167,44 +167,50 @@
   flex: 0 0 110px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-nom {
-  flex: 1 1 180px;
+  flex: 2 1 200px;
   min-width: 140px;
   border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-client {
-  width: 220px;
-  flex: 0 0 220px;
+  flex: 1 1 200px;
+  min-width: 180px;
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-spacer {
-  width: 30px;
-  flex: 0 0 30px;
+  width: 0;
+  flex: 0 0 0;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-time {
-  width: 140px;
-  flex: 0 0 140px;
+  width: 120px;
+  flex: 0 0 120px;
+  border-left: 1px solid var(--border-default);
+  padding-left: 10px;
+}
+.task-planning-panel .tp-columns-header .ev-col-h-personnel {
+  width: 200px;
+  flex: 0 0 200px;
   border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-actions {
-  width: 160px;
-  flex: 0 0 160px;
-  padding-left: 8px;
+  width: 130px;
+  flex: 0 0 130px;
+  padding-left: var(--space-2);
   border-left: 1px solid var(--border-default);
   text-align: center;
 }
 
 /* Section block */
 .task-planning-panel .task-section {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .task-planning-panel .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
+  padding: var(--space-2) 14px;
   background: var(--surface-secondary);
   border-radius: var(--radius-md-lg) var(--radius-md-lg) 0 0;
   border: 1px solid var(--border-default);
@@ -215,7 +221,7 @@
 .task-planning-panel .section-header h4 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   font-size: 0.88rem;
   font-weight: 700;
@@ -225,12 +231,12 @@
 .task-planning-panel .section-header .section-count {
   font-size: var(--font-sm);
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-md-lg);
   background: var(--interactive-primary);
   color: var(--text-inverse);
   margin-right: auto;
-  margin-left: 8px;
+  margin-left: var(--space-2);
 }
 
 /* Task row */
@@ -323,7 +329,7 @@
 .task-planning-panel .task-person {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 3px 10px;
   border-radius: var(--radius-lg);
   background: var(--accent-tint-light);
@@ -335,16 +341,16 @@
 /* Task person dans layout colonnes */
 .task-planning-panel .event-row-cols .task-person {
   font-size: 0.88rem;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
 }
 
 .task-planning-panel .task-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
-  width: 160px;
-  flex: 0 0 160px;
-  padding-left: 8px;
+  gap: var(--space-1);
+  width: 130px;
+  flex: 0 0 130px;
+  padding-left: var(--space-2);
   border-left: 1px solid var(--border-default);
   justify-content: flex-end;
 }
@@ -374,8 +380,8 @@
 .task-planning-panel .add-task-inline {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: var(--space-2);
+  padding: var(--space-2) 14px;
   border: 1px dashed var(--border-default);
   border-top: none;
   border-radius: 0 0 var(--radius-md-lg) var(--radius-md-lg);
@@ -393,7 +399,7 @@
 /* Task form inline */
 .task-planning-panel .task-form-inline {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 14px;
   border: 1px solid var(--interactive-primary);
   border-top: none;
@@ -425,7 +431,7 @@
 
 .task-planning-panel .task-form-inline .form-actions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .task-planning-panel .task-form-inline .form-actions button {
@@ -456,7 +462,7 @@
 }
 .task-planning-panel .task-form-enriched .form-row {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex-wrap: nowrap;
 }
@@ -494,7 +500,7 @@
 }
 .task-planning-panel .affaire-autocomplete-search {
   width: 100%;
-  padding: 6px 10px 6px 28px !important;
+  padding: 6px 10px 6px var(--space-7) !important;
   border: 1px solid var(--border-default) !important;
   border-radius: var(--radius-sm) !important;
   background: var(--surface-primary);
@@ -522,7 +528,7 @@
 .task-planning-panel .affaire-autocomplete-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   padding: 7px 10px;
   border: none;
@@ -533,7 +539,7 @@
   text-align: left;
 }
 .task-planning-panel .affaire-autocomplete-option:hover {
-  background: var(--theme-primary-alpha, rgba(99, 102, 241, 0.1));
+  background: var(--theme-primary-alpha);
 }
 .task-planning-panel .affaire-opt-num {
   font-weight: 600;
@@ -564,7 +570,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   background: var(--surface-primary);
@@ -609,7 +615,7 @@
   background: var(--primary-tint-faint);
   border: 1px dashed var(--primary-tint-vivid);
   border-radius: var(--radius-sm);
-  padding: 4px 6px;
+  padding: var(--space-1) 6px;
 }
 .task-planning-panel .task-form-enriched .form-field-reservation {
   flex: 1 1 250px;
@@ -635,24 +641,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 60px var(--space-5);
   color: var(--text-muted);
 }
 
 .task-planning-panel .empty-state svg {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
   opacity: 0.5;
 }
 
 @media (max-width: 768px) {
   .task-planning-panel .tp-toolbar {
-    padding: 8px 16px;
+    padding: var(--space-2) var(--space-4);
     flex-direction: column;
     align-items: stretch;
   }
 
   .task-planning-panel .sections-container {
-    padding: 12px 16px;
+    padding: var(--space-3) var(--space-4);
   }
 
   .task-planning-panel .task-row {
@@ -673,7 +679,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   border: none;
   background: var(--surface-primary);
   color: var(--text-muted);
@@ -750,7 +756,7 @@
 .task-planning-panel .affaire-num-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-xs);
   background: var(--primary-tint);
   color: var(--feedback-info);
@@ -797,7 +803,7 @@
   color: var(--text-inverse);
   background: var(--feedback-info);
   border-radius: var(--radius-xs);
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   margin-left: 6px;
   line-height: 1.4;
 }
@@ -833,7 +839,7 @@
 .task-planning-panel .sections-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   margin: 18px 0 14px;
   color: var(--text-muted);
   font-size: var(--font-sm);
@@ -876,7 +882,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   flex-wrap: nowrap;
   min-height: 38px;
 }
@@ -888,7 +894,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: var(--font-md);
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   flex-shrink: 0;
 }
 /* Col: Coche / Dot (icône) */
@@ -903,9 +909,9 @@
   width: 110px;
   flex: 0 0 110px;
 }
-/* Col: Nom (seul flex pour absorber l'espace restant) */
+/* Col: Nom (flex pour absorber l'espace, mais partage avec Client) */
 .task-planning-panel .ev-col-nom {
-  flex: 1 1 180px;
+  flex: 2 1 200px;
   min-width: 140px;
   font-weight: 600;
   font-size: 1.05rem;
@@ -923,10 +929,10 @@
   color: var(--text-muted);
   margin-left: 6px;
 }
-/* Col: Client (largeur fixe) */
+/* Col: Client (flex partage avec Nom, alignement preserve grace au meme ratio sur toutes les lignes) */
 .task-planning-panel .ev-col-client {
-  width: 220px;
-  flex: 0 0 220px;
+  flex: 1 1 200px;
+  min-width: 180px;
   font-size: 0.92rem;
   color: var(--text-muted);
   overflow: hidden;
@@ -935,17 +941,31 @@
 }
 /* Col: Spacer (espace entre Client et Heure) */
 .task-planning-panel .ev-col-spacer {
-  width: 30px;
-  flex: 0 0 30px;
+  width: 0;
+  flex: 0 0 0;
 }
 /* Col: Heure / Période (largeur fixe) */
 .task-planning-panel .ev-col-time {
   color: var(--text-muted);
   font-size: var(--font-base);
-  width: 140px;
-  flex: 0 0 140px;
+  width: 120px;
+  flex: 0 0 120px;
   border-left: 1px solid var(--border-default);
   padding-left: 10px;
+}
+/* Col: Personnels (multi-affectations alignees, hauteur stable) */
+.task-planning-panel .ev-col-personnel {
+  width: 200px;
+  flex: 0 0 200px;
+  border-left: 1px solid var(--border-default);
+  padding-left: 10px;
+  display: flex;
+  align-items: center;
+  /* overflow visible : la dropdown .assign-dropdown (position absolute) doit
+     pouvoir deborder de la cellule. Le clipping des chips est gere localement
+     par .multi-assign-chips { overflow: hidden }. */
+  overflow: visible;
+  position: relative;
 }
 .task-planning-panel .ev-col-time .period-badge {
   display: inline-block;
@@ -956,6 +976,11 @@
   background: var(--surface-tertiary, var(--shadow-sm));
   color: var(--text-muted);
 }
+.task-planning-panel .ev-col-time .period-badge.period-allday {
+  background: var(--accent-tint-light);
+  color: var(--interactive-primary);
+  letter-spacing: 0.2px;
+}
 /* Badge type course (Enlèvement, Livraison, Retour, Récupération…) */
 .task-planning-panel .course-type-badge {
   display: inline-flex;
@@ -964,7 +989,7 @@
   font-size: var(--font-xs);
   font-weight: 600;
   padding: 1px 7px;
-  margin-left: 8px;
+  margin-left: var(--space-2);
   border-radius: var(--radius-md-lg);
   border: 1px solid;
   white-space: nowrap;
@@ -978,7 +1003,7 @@
   font-size: 0.68rem;
   font-weight: 600;
   padding: 1px 6px;
-  margin-left: 4px;
+  margin-left: var(--space-1);
   border-radius: var(--radius-md-lg);
   background: var(--primary-tint-light);
   color: var(--feedback-info);
@@ -994,7 +1019,7 @@
   font-size: 0.68rem;
   font-weight: 600;
   padding: 1px 6px;
-  margin-left: 4px;
+  margin-left: var(--space-1);
   border-radius: var(--radius-md-lg);
   background: rgba(234, 67, 53, 0.08);
   color: #ea4335;
@@ -1012,12 +1037,12 @@
 /* Origine (badge compact dans actions) */
 .task-planning-panel .ev-col-origin {
   flex-shrink: 0;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
 }
 /* Statut (badge compact dans actions) */
 .task-planning-panel .ev-col-status {
   flex-shrink: 0;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
 }
 /* Tâche terminée en layout colonnes */
 .task-planning-panel .event-row-cols .ev-col-nom.done {
@@ -1082,7 +1107,7 @@
   color: var(--interactive-primary);
   font-size: 0.78rem;
   font-weight: 600;
-  margin-right: 4px;
+  margin-right: var(--space-1);
 }
 
 .task-planning-panel .google-rdv-row .affaire-tag {
@@ -1096,7 +1121,7 @@
 
 .task-planning-panel .rdv-actions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .task-planning-panel .btn-rdv-view {
@@ -1121,14 +1146,14 @@
 
 .task-planning-panel .rdv-detail-card {
   width: 100%;
-  margin-top: 8px;
+  margin-top: var(--space-2);
   padding: 10px 14px;
   background: var(--surface-secondary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 0.82rem;
 }
 
@@ -1146,15 +1171,37 @@
 /* ═══ Personnel multi-assignment ═══ */
 .task-planning-panel .event-assign-container {
   position: relative;
-  flex-shrink: 0;
+  /* Remplit la cellule Personnels mais n'autorise pas le wrap : la hauteur
+     de ligne reste stable, on tronque visuellement si trop de monde. */
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .task-planning-panel .multi-assign-chips {
   display: flex;
   align-items: center;
   gap: 3px;
-  flex-wrap: wrap;
-  max-width: 180px;
+  /* Une seule ligne pour preserver la hauteur de ligne. */
+  flex-wrap: nowrap;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+/* En multi-affectation (>=3 pers), on serre les chips pour gagner de la place
+   sans casser l'alignement vertical. */
+.task-planning-panel .multi-assign-chips.compact {
+  gap: 2px;
+}
+
+.task-planning-panel .multi-assign-chips.compact .task-person.assigned {
+  padding: 1px var(--space-1);
+  font-size: 0.7rem;
+  letter-spacing: 0;
 }
 
 .task-planning-panel .btn-assign {
@@ -1192,12 +1239,12 @@
 
 .task-planning-panel .task-person.assigned {
   cursor: pointer;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-xs);
   font-size: 0.78rem;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   background: var(--accent-tint-light);
   color: var(--interactive-primary);
   transition: background 0.15s;
@@ -1220,15 +1267,24 @@
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px var(--shadow-dropdown);
   padding: 6px 0;
-  margin-top: 4px;
+  margin-top: var(--space-1);
+}
+
+/* Bascule au-dessus du widget quand la dropdown deborderait sous la viewport
+   (typiquement la derniere tache de la liste). */
+.task-planning-panel .assign-dropdown.drop-up {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: var(--space-1);
 }
 
 .task-planning-panel .assign-dropdown-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 2px 8px 6px;
+  gap: var(--space-2);
+  padding: 2px var(--space-2) 6px;
 }
 
 .task-planning-panel .assign-dropdown-title {
@@ -1257,8 +1313,8 @@
 .task-planning-panel .assign-option {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: var(--space-2);
+  padding: 6px var(--space-3);
   font-size: 0.82rem;
   color: var(--text-body);
   cursor: pointer;
@@ -1309,9 +1365,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-1);
   width: calc(100% - 12px);
-  margin: 6px 6px 4px;
+  margin: 6px 6px var(--space-1);
   padding: 5px 0;
   font-size: var(--font-xs);
   font-weight: 600;
@@ -1330,7 +1386,7 @@
 .google-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: var(--font-xs);
   font-weight: 600;
   padding: 2px 10px;
@@ -1361,7 +1417,7 @@
   color: var(--feedback-info);
   font-size: 0.65rem;
   font-weight: 800;
-  margin-right: 4px;
+  margin-right: var(--space-1);
   flex-shrink: 0;
 }
 
@@ -1375,7 +1431,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
@@ -1395,7 +1451,7 @@
   flex: 1;
   min-height: 0;
   gap: 0;
-  padding: 8px;
+  padding: var(--space-2);
   overflow-x: auto;
   overflow-y: auto;
 }
@@ -1404,7 +1460,7 @@
 .wk-days-row {
   display: flex;
   flex: 1;
-  gap: 4px;
+  gap: var(--space-1);
   min-height: 0;
 }
 
@@ -1436,7 +1492,7 @@
   gap: 2px;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px;
+  padding: var(--space-1);
 }
 .wk-section-events {
   flex: 50 0 0;
@@ -1490,7 +1546,7 @@
 .wk-empty-mini {
   color: var(--text-muted, var(--text-muted));
   text-align: center;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
   font-size: var(--font-xs);
   opacity: 0.5;
 }
@@ -1540,11 +1596,11 @@
   cursor: pointer;
   user-select: none;
   transition: background 0.15s;
-  gap: 4px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 .wk-col-header:hover {
-  background: var(--surface-hover, #eef2f7);
+  background: var(--surface-hover);
 }
 .wk-col-header.today {
   background: var(--interactive-primary, var(--feedback-info));
@@ -1615,7 +1671,7 @@
 .wk-empty {
   color: var(--text-muted, var(--text-muted));
   text-align: center;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   font-size: var(--font-sm);
 }
 
@@ -1630,12 +1686,12 @@
   position: sticky;
   top: 0;
   z-index: var(--z-base);
-  padding: 3px 4px;
+  padding: 3px var(--space-1);
   font-size: 0.65rem;
-  gap: 4px;
+  gap: var(--space-1);
   background: var(--surface-secondary, var(--surface-page));
   border-bottom: 1px solid var(--border-default);
-  margin: 0 -4px;
+  margin: 0 -var(--space-1);
 }
 .wk-day-expanded .tp-columns-header-mini .ev-col-h {
   font-size: 0.6rem;
@@ -1644,7 +1700,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 .wk-expanded-section-label {
   font-size: 0.65rem;
@@ -1654,7 +1710,7 @@
   padding: 3px 6px 2px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
   margin-bottom: 1px;
 }
@@ -1662,7 +1718,7 @@
 /* Lignes d'items dans la vue étendue — plus compactes */
 .wk-day-expanded .event-row-cols,
 .wk-day-expanded .task-row {
-  padding: 3px 4px;
+  padding: 3px var(--space-1);
   font-size: var(--font-sm);
   min-height: 28px;
 }
@@ -1676,7 +1732,7 @@
 
 .wk-day-expanded .ev-col-affaire .course-badge {
   font-size: 0.58rem;
-  padding: 1px 4px;
+  padding: 1px var(--space-1);
 }
 .wk-day-expanded .assign-multi-container {
   gap: 2px;
@@ -1691,7 +1747,7 @@
 
 /* ── Groupes de tâches par section dans vue compacte ── */
 .wk-task-group {
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 .wk-task-group:last-child {
   margin-bottom: 0;
@@ -1701,7 +1757,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 2px 4px 1px;
+  padding: 2px var(--space-1) 1px;
   display: flex;
   align-items: center;
   gap: 3px;
@@ -1767,7 +1823,7 @@
 .wk-card {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 5px 6px;
   border-radius: var(--radius-sm);
   border-left: 3px solid transparent;
@@ -1777,7 +1833,7 @@
   transition: background 0.15s;
 }
 .wk-card:hover {
-  background: var(--surface-hover, #eef2f7);
+  background: var(--surface-hover);
 }
 .wk-card.hidden-display {
   /* Pas de grisage global pour les éléments masqués de l'écran */
@@ -1884,7 +1940,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 12px;
+  padding: 7px var(--space-3);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   background: var(--surface-primary);
@@ -1917,7 +1973,7 @@
 .task-planning-panel .recurring-panel {
   border-bottom: 2px solid var(--border-default);
   background: var(--surface-secondary);
-  padding: 12px 24px 16px;
+  padding: var(--space-3) var(--space-6) var(--space-4);
   flex-shrink: 0;
   max-height: 350px;
   overflow-y: auto;
@@ -1931,7 +1987,7 @@
 .task-planning-panel .recurring-panel-header h3 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   font-size: 0.92rem;
   font-weight: 700;
@@ -1940,8 +1996,8 @@
 .task-planning-panel .btn-add-recurring {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
+  gap: var(--space-1);
+  padding: 5px var(--space-3);
   border: 1px solid var(--interactive-primary);
   border-radius: var(--radius-sm);
   background: var(--accent-tint-light);
@@ -1998,19 +2054,19 @@
 .task-planning-panel .recurring-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .task-planning-panel .recurring-empty {
   text-align: center;
   color: var(--text-muted);
   font-size: 0.82rem;
-  padding: 12px;
+  padding: var(--space-3);
 }
 .task-planning-panel .recurring-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--surface-primary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -2038,7 +2094,7 @@
 }
 .task-planning-panel .recurring-item-actions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .task-planning-panel .recurring-item-actions button {
   width: 28px;
@@ -2070,8 +2126,8 @@
 .task-planning-panel .ical-header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-left: 8px;
+  gap: var(--space-1);
+  margin-left: var(--space-2);
 }
 
 .task-planning-panel .ical-manage-btn {
@@ -2081,7 +2137,7 @@
   background: var(--surface-tertiary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   font-size: 0.78rem;
   color: var(--text-muted);
   cursor: pointer;
@@ -2098,7 +2154,7 @@
   background: none;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  padding: 4px 6px;
+  padding: var(--space-1) 6px;
   cursor: pointer;
   color: var(--text-muted);
   transition: color 0.15s;
@@ -2129,7 +2185,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 .task-planning-panel .ical-manager-header h5 {
   margin: 0;
@@ -2142,12 +2198,12 @@
 .task-planning-panel .btn-add-ical {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   background: var(--interactive-primary);
   color: var(--text-inverse);
   border: none;
   border-radius: var(--radius-sm);
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   font-size: 0.78rem;
   cursor: pointer;
 }
@@ -2160,7 +2216,7 @@
   flex-direction: column;
   gap: 6px;
   margin-bottom: 10px;
-  padding: 8px;
+  padding: var(--space-2);
   background: var(--surface-page);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-default);
@@ -2168,7 +2224,7 @@
 .task-planning-panel .ical-form input[type='text'],
 .task-planning-panel .ical-form input[type='url'] {
   width: 100%;
-  padding: 5px 8px;
+  padding: 5px var(--space-2);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-xs);
   font-size: 0.82rem;
@@ -2178,7 +2234,7 @@
 .task-planning-panel .ical-form-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .task-planning-panel .ical-form input[type='color'] {
   width: 28px;
@@ -2192,19 +2248,19 @@
 .task-planning-panel .ical-calendar-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .task-planning-panel .ical-empty {
   font-size: var(--font-sm);
   color: var(--text-subtle);
   text-align: center;
-  padding: 8px;
+  padding: var(--space-2);
 }
 .task-planning-panel .ical-calendar-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
+  gap: var(--space-2);
+  padding: 5px var(--space-2);
   border-radius: var(--radius-sm);
   background: var(--surface-page);
   font-size: 0.82rem;
@@ -2225,7 +2281,7 @@
 }
 .task-planning-panel .ical-cal-actions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 .task-planning-panel .ical-cal-actions button {
@@ -2253,7 +2309,7 @@
 .task-planning-panel .ical-cal-error {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   color: var(--theme-danger);
   font-size: var(--font-xs);
 }
@@ -2276,7 +2332,7 @@
 /* ═══ Section empty msg ═══ */
 .task-planning-panel .section-empty-msg {
   text-align: center;
-  padding: 12px;
+  padding: var(--space-3);
   color: var(--text-subtle);
   font-size: 0.82rem;
   font-style: italic;
@@ -2315,13 +2371,13 @@
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--interactive-primary, var(--feedback-info)) 5%, transparent);
   position: relative;
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   overflow: hidden;
 }
 .task-planning-panel .events-today-group::before {
   content: "● Aujourd'hui";
   display: block;
-  padding: 3px 12px 2px;
+  padding: 3px var(--space-3) 2px;
   font-size: 0.65rem;
   font-weight: 700;
   color: var(--interactive-primary, var(--feedback-info));
@@ -2340,7 +2396,7 @@
 
 /* ═══ Sous-groupes rétractables (événements précédents / suivants) ═══ */
 .task-planning-panel .events-subgroup {
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   border-radius: var(--radius-md);
   background: var(--surface-secondary, var(--surface-page));
   border: 1px solid var(--border-default);
@@ -2354,7 +2410,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   cursor: pointer;
   user-select: none;
   font-size: var(--font-xs);
@@ -2398,7 +2454,7 @@
 /* ═══ Liaison manuelle event → affaire ═══ */
 .task-planning-panel .ev-col-link {
   flex: 0 0 auto;
-  margin-left: 4px;
+  margin-left: var(--space-1);
 }
 .task-planning-panel .btn-link-affaire {
   background: none;
@@ -2431,8 +2487,8 @@
   width: 100%;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  padding: 2px 0 4px 28px;
+  gap: var(--space-1);
+  padding: 2px 0 var(--space-1) var(--space-7);
 }
 .task-planning-panel .linked-task-chip {
   display: inline-flex;
@@ -2482,7 +2538,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: var(--font-base);
   font-weight: 600;
   color: var(--text-body, var(--text-body));
@@ -2503,7 +2559,7 @@
 .task-planning-panel .link-search-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   border-bottom: 1px solid var(--border-default);
   font-size: var(--font-base);
@@ -2521,9 +2577,9 @@
 .task-planning-panel .link-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 7px 12px;
+  padding: 7px var(--space-3);
   border: none;
   background: none;
   cursor: pointer;
@@ -2552,7 +2608,7 @@
   text-overflow: ellipsis;
 }
 .task-planning-panel .link-no-results {
-  padding: 12px;
+  padding: var(--space-3);
   text-align: center;
   font-size: 0.82rem;
   color: var(--text-muted, var(--text-muted));
@@ -2588,7 +2644,7 @@
 }
 
 .wk-expanded-section-label.wk-section-affaires {
-  color: var(--interactive-primary, #3b82f6);
+  color: var(--interactive-primary);
 }
 
 .wk-expanded-section-label.wk-section-display {

@@ -3,8 +3,6 @@ import dotenv from 'dotenv';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
-// [S2-1] Helper extrait dans un module pur — voir database/_helpers.js
-import { safeAddColumn as safeAddColumnImpl } from './database/_helpers.js';
 import logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -45,23 +43,20 @@ db.pragma('wal_autocheckpoint = 1000');
 // [PHASE 4] Timeout 5s si la DB est verrouillée par un autre writer
 db.pragma('busy_timeout = 5000');
 
-// [PERF Sprint 1] Tuning supplémentaires :
-// - cache_size négatif = en KiB (ici 50 Mo de cache pages)
-// - temp_store en mémoire pour les sorts/temp B-trees
-// - mmap_size : I/O memory-mapped (jusqu'à ~30 Mo) pour accélérer les lectures
-db.pragma('cache_size = -50000');
-db.pragma('temp_store = MEMORY');
-db.pragma('mmap_size = 30000000');
-
 // Créer les tables
 // [AUDIT FIX P1-12] Les clauses ON DELETE des FOREIGN KEY ne s'appliquent qu'aux nouvelles bases.
 // Pour les bases existantes, SQLite ne permet pas de modifier les FK via ALTER TABLE.
 function initializeDatabase() {
-  // [S2-1] Wrapper local qui fige `db` dans la closure pour rétro-compat
-  // de tous les appels `safeAddColumn(table, column, type, default)` ci-dessous.
-  // L'implémentation pure est dans database/_helpers.js (testable indépendamment).
+  // [AUDIT FIX P0-5] Helper pour migrations ALTER TABLE idempotentes
   function safeAddColumn(table, column, type, defaultVal) {
-    return safeAddColumnImpl(db, table, column, type, defaultVal);
+    const cols = db.pragma(`table_info(${table})`).map((c) => c.name);
+    if (!cols.includes(column)) {
+      const defClause = defaultVal !== undefined ? ` DEFAULT ${defaultVal}` : '';
+      db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}${defClause}`);
+      logger.info(`  ✅ Migration: ${table}.${column} ajouté`);
+      return true;
+    }
+    return false;
   }
 
   // Table des utilisateurs
@@ -1148,21 +1143,6 @@ function initializeDatabase() {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }
 
-  // Migration: PIN code 4 chiffres et flag is_team pour compte Equipe
-  try {
-    const userColsPinTeam = db.prepare('PRAGMA table_info(users)').all();
-    if (!userColsPinTeam.some((c) => c.name === 'pin_hash')) {
-      db.prepare('ALTER TABLE users ADD COLUMN pin_hash TEXT').run();
-      logger.info('✅ Colonne pin_hash ajoutée à users');
-    }
-    if (!userColsPinTeam.some((c) => c.name === 'is_team')) {
-      db.prepare('ALTER TABLE users ADD COLUMN is_team INTEGER DEFAULT 0').run();
-      logger.info('✅ Colonne is_team ajoutée à users');
-    }
-  } catch (_err) {
-    logger.info('Info: Migration pin_hash/is_team déjà appliquée');
-  }
-
   // Migration: ajouter is_admin dans authorized_emails (pour bases existantes)
   try {
     const authEmailCols = db.prepare('PRAGMA table_info(authorized_emails)').all();
@@ -1562,95 +1542,6 @@ function initializeDatabase() {
       logger.warn('⚠️ Migration sav_tickets import:', e.message);
     }
 
-    // ═══ Migration SAV LocMat sync (Phase 3 — module SAV unifié) ═══
-    // Ajoute colonnes nécessaires à la synchro bidirectionnelle eM@g ↔ LocMat :
-    //  - locmat_code     : ID ticket côté LocMat (ex. "IN0000000123") — match prioritaire
-    //  - serial_number   : SN brut décodé du CSV (peut différer de equipment.serial_number)
-    //  - uid             : UID eM@g décodé du CSV (ex. "EMAG-00042")
-    //  - opened_at       : date d'entrée SAV (depuis colonne « Début » du CSV)
-    //  - closed_at       : date de sortie SAV (depuis colonne « Fin » du CSV)
-    //  - last_modified_source : 'emag' | 'locmat' — source de la dernière modif
-    //  - last_modified_at     : timestamp de la dernière modif (pour résolution collisions)
-    //  - notes           : notes libres internes (si non déjà présent)
-    try {
-      const savCols = db
-        .prepare('PRAGMA table_info(sav_tickets)')
-        .all()
-        .map((c) => c.name);
-      const addCol = (name, type) => {
-        if (!savCols.includes(name)) {
-          db.prepare(`ALTER TABLE sav_tickets ADD COLUMN ${name} ${type}`).run();
-          logger.info(`✅ Migration SAV: colonne ${name} ajoutée`);
-        }
-      };
-      addCol('locmat_code', 'TEXT');
-      addCol('serial_number', 'TEXT');
-      addCol('uid', 'TEXT');
-      addCol('opened_at', 'DATETIME');
-      addCol('closed_at', 'DATETIME');
-      addCol('last_modified_source', "TEXT DEFAULT 'emag'");
-      addCol('last_modified_at', 'DATETIME');
-      addCol('notes', 'TEXT');
-
-      db.exec(`
-        CREATE INDEX IF NOT EXISTS idx_sav_locmat_code ON sav_tickets(locmat_code);
-        CREATE INDEX IF NOT EXISTS idx_sav_uid ON sav_tickets(uid);
-        CREATE INDEX IF NOT EXISTS idx_sav_serial ON sav_tickets(serial_number);
-        CREATE INDEX IF NOT EXISTS idx_sav_status ON sav_tickets(status);
-      `);
-
-      // Backfill last_modified_* pour tickets historiques (créés avant la sync LocMat)
-      db.prepare(
-        `UPDATE sav_tickets
-           SET last_modified_source = 'emag',
-               last_modified_at = COALESCE(updated_at, created_at)
-         WHERE last_modified_at IS NULL`,
-      ).run();
-    } catch (e) {
-      logger.warn('⚠️ Migration sav_tickets LocMat sync:', e.message);
-    }
-
-    // ═══ Table d'historique des imports SAV (audit + rapport PDF) ═══
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS sav_imports (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        imported_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        imported_by INTEGER,
-        filename TEXT,
-        rows_total INTEGER DEFAULT 0,
-        rows_new INTEGER DEFAULT 0,
-        rows_updated INTEGER DEFAULT 0,
-        rows_closed INTEGER DEFAULT 0,
-        rows_collisions INTEGER DEFAULT 0,
-        rows_duplicates INTEGER DEFAULT 0,
-        rows_errors INTEGER DEFAULT 0,
-        summary TEXT,        -- JSON résumé compact
-        details TEXT,        -- JSON détaillé pour rapport PDF
-        FOREIGN KEY (imported_by) REFERENCES users(id) ON DELETE SET NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_sav_imports_date ON sav_imports(imported_at DESC);
-    `);
-
-    // ═══ Historique des modifications de tickets SAV (audit field-level) ═══
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS sav_ticket_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ticket_id INTEGER NOT NULL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        field TEXT NOT NULL,
-        old_value TEXT,
-        new_value TEXT,
-        source TEXT NOT NULL DEFAULT 'emag',  -- 'emag' | 'locmat'
-        user_id INTEGER,
-        import_id INTEGER,
-        FOREIGN KEY (ticket_id) REFERENCES sav_tickets(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-        FOREIGN KEY (import_id) REFERENCES sav_imports(id) ON DELETE SET NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_sav_history_ticket ON sav_ticket_history(ticket_id);
-      CREATE INDEX IF NOT EXISTS idx_sav_history_import ON sav_ticket_history(import_id);
-    `);
-
     // Catégories par défaut
     const catCount = db.prepare('SELECT COUNT(*) as c FROM equipment_categories').get();
     if (catCount.c === 0) {
@@ -1799,41 +1690,6 @@ function initializeDatabase() {
     }
   } catch (error) {
     logger.info('Info: Migration code_libre/postal_code/city:', error.message);
-  }
-
-  // Migration Annuaire Personnel : champs RH/contact étendus.
-  // Les champs sensibles (social_security_number, iban, hr_notes) sont protégés
-  // côté API (lecture/écriture admin uniquement, voir personnelRoutes.js).
-  try {
-    const personsCols3 = db.prepare('PRAGMA table_info(persons)').all();
-    const have = new Set(personsCols3.map((c) => c.name));
-    const annuaireCols = [
-      ['address', 'TEXT'],
-      ['country', "TEXT DEFAULT 'France'"],
-      ['phone_personal', 'TEXT'],
-      ['personal_email', 'TEXT'],
-      ['birth_date', 'TEXT'],
-      ['emergency_contact_name', 'TEXT'],
-      ['emergency_contact_phone', 'TEXT'],
-      ['emergency_contact_relation', 'TEXT'],
-      ['linkedin_url', 'TEXT'],
-      // Sensibles — admin only.
-      ['social_security_number', 'TEXT'],
-      ['iban', 'TEXT'],
-      ['hr_notes', 'TEXT'],
-    ];
-    let added = 0;
-    for (const [col, def] of annuaireCols) {
-      if (!have.has(col)) {
-        db.prepare(`ALTER TABLE persons ADD COLUMN ${col} ${def}`).run();
-        added++;
-      }
-    }
-    if (added > 0) {
-      logger.info(`✅ ${added} colonnes Annuaire ajoutées à persons`);
-    }
-  } catch (error) {
-    logger.info('Info: Migration colonnes annuaire persons:', error.message);
   }
 
   // ============================================================
@@ -3622,105 +3478,6 @@ function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_tracking_entries_task_assignment ON tracking_entries(task_assignment_id);
     `);
 
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS tracking_recurring_tasks (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        person_id INTEGER NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
-        title TEXT NOT NULL,
-        period TEXT NOT NULL CHECK(period IN ('AM', 'PM')),
-        recurrence TEXT NOT NULL CHECK(recurrence IN ('daily', 'weekly', 'monthly')),
-        day_of_week INTEGER,
-        day_of_month INTEGER,
-        default_time_spent REAL DEFAULT 0,
-        default_comment TEXT DEFAULT '',
-        active INTEGER DEFAULT 1,
-        created_by INTEGER REFERENCES users(id),
-        created_at TEXT DEFAULT (datetime('now'))
-      )
-    `);
-
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS tracking_incident_tickets (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        week_key TEXT NOT NULL,
-        period_start_date TEXT NOT NULL,
-        period_end_date TEXT NOT NULL,
-        affaire_num TEXT NOT NULL,
-        affaire_name TEXT DEFAULT '',
-        affaire_start_date TEXT,
-        affaire_end_date TEXT,
-        is_tournee INTEGER DEFAULT 0,
-        linked_reservations_json TEXT DEFAULT '[]',
-        linked_personnel_json TEXT DEFAULT '[]',
-        notes TEXT DEFAULT '',
-        created_by INTEGER REFERENCES users(id),
-        created_at TEXT DEFAULT (datetime('now')),
-        modified_by INTEGER REFERENCES users(id),
-        modified_at TEXT,
-        UNIQUE(week_key, affaire_num)
-      )
-    `);
-
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS tracking_incident_entries (
-        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-        ticket_id TEXT NOT NULL REFERENCES tracking_incident_tickets(id) ON DELETE CASCADE,
-        incident_type TEXT NOT NULL CHECK(incident_type IN (
-          'vehicle_problem',
-          'equipment_problem',
-          'equipment_omission',
-          'equipment_error',
-          'other'
-        )),
-        description TEXT NOT NULL DEFAULT '',
-        reporter_person_id INTEGER REFERENCES persons(id) ON DELETE SET NULL,
-        reporter_name_snapshot TEXT DEFAULT '',
-        vehicle_id INTEGER REFERENCES vehicles(id) ON DELETE SET NULL,
-        vehicle_name_snapshot TEXT DEFAULT '',
-        linked_maintenance_id TEXT,
-        created_by INTEGER REFERENCES users(id),
-        created_at TEXT DEFAULT (datetime('now')),
-        modified_by INTEGER REFERENCES users(id),
-        modified_at TEXT
-      )
-    `);
-
-    try {
-      const teCols = db.pragma('table_info(tracking_entries)').map((c) => c.name);
-      if (!teCols.includes('recurring_task_id')) {
-        db.exec(
-          'ALTER TABLE tracking_entries ADD COLUMN recurring_task_id TEXT REFERENCES tracking_recurring_tasks(id) ON DELETE SET NULL',
-        );
-      }
-    } catch (migErr) {
-      logger.warn('⚠️ Migration tracking_entries.recurring_task_id:', migErr.message);
-    }
-
-    db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_tracking_entries_recurring_task ON tracking_entries(recurring_task_id);
-      CREATE INDEX IF NOT EXISTS idx_tracking_recurring_person_active ON tracking_recurring_tasks(person_id, active);
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_tracking_entries_sheet_recurring_unique
-      ON tracking_entries(sheet_id, recurring_task_id)
-      WHERE recurring_task_id IS NOT NULL;
-    `);
-
-    try {
-      safeAddColumn('tracking_incident_entries', 'vehicle_id', 'INTEGER');
-      safeAddColumn('tracking_incident_entries', 'vehicle_name_snapshot', 'TEXT', "''");
-      safeAddColumn('tracking_incident_entries', 'linked_maintenance_id', 'TEXT');
-    } catch (migErr) {
-      logger.warn('⚠️ Migration tracking_incident_entries véhicule/signalement:', migErr.message);
-    }
-
-    db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_week ON tracking_incident_tickets(week_key);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_affaire ON tracking_incident_tickets(affaire_num);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_tickets_start ON tracking_incident_tickets(period_start_date);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_ticket ON tracking_incident_entries(ticket_id);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_reporter ON tracking_incident_entries(reporter_person_id);
-      CREATE INDEX IF NOT EXISTS idx_tracking_incident_entries_vehicle ON tracking_incident_entries(vehicle_id);
-    `);
-
     logger.info('  ✅ Module Suivi du Personnel initialisé');
   } catch (error) {
     logger.warn('⚠️ Migration Suivi du Personnel:', error.message);
@@ -3782,25 +3539,35 @@ initializeDatabase();
 import { runPostInitMigrations } from './migrations.js';
 runPostInitMigrations(db);
 
-// ─────────────────────────────────────────────────────────────
-// [S2-1 step 2] WAL management extrait dans database/wal.js
-// On garde des wrappers locaux qui figent `db` pour rétro-compat
-// des appelants existants (server.js : checkpointDatabase(), closeDatabase()).
-// ─────────────────────────────────────────────────────────────
-import {
-  checkpointDatabase as checkpointDatabaseImpl,
-  closeDatabase as closeDatabaseImpl,
-  setupWALScheduling,
-} from './database/wal.js';
-
-const walScheduling = setupWALScheduling(db);
-
+// Fonction pour faire un checkpoint WAL (synchroniser les données sur disque)
 export function checkpointDatabase() {
-  return checkpointDatabaseImpl(db);
+  try {
+    db.pragma('wal_checkpoint(FULL)');
+    logger.info('✅ Checkpoint WAL effectué');
+  } catch (error) {
+    logger.error('❌ Erreur checkpoint WAL:', error);
+  }
 }
 
+// Fonction pour fermer proprement la base de données
 export function closeDatabase() {
-  return closeDatabaseImpl(db, walScheduling);
+  try {
+    clearInterval(checkpointTimer);
+    // Faire un checkpoint final avant de fermer
+    checkpointDatabase();
+    db.close();
+    logger.info('✅ Base de données fermée proprement');
+  } catch (error) {
+    logger.error('❌ Erreur fermeture DB:', error);
+  }
 }
+
+// Checkpoint automatique toutes les 5 minutes
+const checkpointTimer = setInterval(
+  () => {
+    checkpointDatabase();
+  },
+  5 * 60 * 1000,
+);
 
 export default db;

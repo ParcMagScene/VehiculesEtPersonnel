@@ -1,3 +1,14 @@
+#!/usr/bin/env sh
+# ─────────────────────────────────────────────────────────────
+# pre-commit — léger, scope diff uniquement
+#
+# - lint-staged : Prettier --write + ESLint --fix sur fichiers staged
+# - check:syntax : vérification rapide imports/syntaxe
+#
+# Pas de tests ici → coût trop élevé pour un commit. Les tests
+# rapides sont rejoués au pre-push, la suite complète en CI.
+# Bypass exceptionnel : git commit --no-verify
+# ─────────────────────────────────────────────────────────────
+set -e
 npx lint-staged
 npm run check:syntax
-npm test

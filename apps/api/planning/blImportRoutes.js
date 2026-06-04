@@ -28,6 +28,18 @@ const __dirname = path.dirname(__filename);
  * Pattern 2 : "description…•MARQUE" (marque après bullet)
  * Modifie les items in-place.
  */
+/**
+ * Extrait un numéro d'affaire (AFxxxxx) depuis un nom de fichier.
+ * Filet de secours backend si le parser frontend a échoué.
+ * @param {string} filename
+ * @returns {string|null} ex: "AF31621" ou null
+ */
+function extractAFFromFilename(filename) {
+  if (!filename || typeof filename !== 'string') return null;
+  const m = filename.match(/AF[-_\s]?(\d{4,6})/i);
+  return m ? `AF${m[1]}` : null;
+}
+
 function enrichItemsFournisseur(items) {
   if (!Array.isArray(items)) return;
   for (const item of items) {
@@ -171,6 +183,31 @@ export function setupBLImportRoutes(app, authenticateToken) {
       }
       // Fallback : utiliser pd.numero si affaire_id non fourni
       let linkedAffaireId = affaire_id || pd?.numero || null;
+      // Filet de secours : extraire AFxxxxx du nom de fichier d'origine
+      if (!linkedAffaireId && file?.originalname) {
+        linkedAffaireId = extractAFFromFilename(file.originalname);
+        if (linkedAffaireId) {
+          logger.warn(
+            `[bl-import] N° affaire "${linkedAffaireId}" récupéré du filename (parser PDF échec) : ${file.originalname}`,
+          );
+        }
+      }
+      // Refus d'insertion si aucun n° d'affaire identifié (évite les orphelins silencieux)
+      if (!linkedAffaireId) {
+        if (file?.path) {
+          try {
+            fs.unlinkSync(file.path);
+          } catch (_) {
+            /* ignore */
+          }
+        }
+        return res.status(422).json({
+          success: false,
+          error:
+            "Impossible d'identifier le n° d'affaire (ni dans le PDF, ni dans le nom de fichier). Renommez le fichier avec le pattern \"...AF12345...\" ou saisissez l'affaire manuellement.",
+          filename: file?.originalname || null,
+        });
+      }
       let affaireCreated = false;
       let finalId,
         updated = false,
@@ -546,6 +583,33 @@ export function setupBLImportRoutes(app, authenticateToken) {
 
             // Auto-création / mise à jour affaire
             let linkedAffaireId = affaire_id || pd?.numero || null;
+            // Filet de secours : nom de fichier d'origine
+            if (!linkedAffaireId && file?.originalname) {
+              linkedAffaireId = extractAFFromFilename(file.originalname);
+              if (linkedAffaireId) {
+                logger.warn(
+                  `[bl-import batch] N° affaire "${linkedAffaireId}" récupéré du filename : ${file.originalname}`,
+                );
+              }
+            }
+            // Refus : pas d'orphelin silencieux
+            if (!linkedAffaireId) {
+              if (file?.path) {
+                try {
+                  fs.unlinkSync(file.path);
+                } catch (_) {
+                  /* ignore */
+                }
+              }
+              results.push({
+                index: i,
+                filename: file?.originalname || `item-${i}`,
+                error:
+                  "N° d'affaire introuvable (PDF + filename). Renommez en ...AF12345... ou saisissez manuellement.",
+                success: false,
+              });
+              continue;
+            }
             let affaireCreated = false;
             let affaireUpdated = false;
             let finalId;

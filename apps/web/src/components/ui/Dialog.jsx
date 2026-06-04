@@ -16,6 +16,12 @@ const VARIANT_CONFIG = {
 /**
  * Dialog — Dialogue de confirmation / alerte.
  * Utilise Modal en interne, en simplifiant l'API.
+ *
+ * Prop `destructive` (opt-in) : inverse l'ordre des boutons pour les cas
+ * où `onConfirm` est destructive (perte de données). Le bouton destructif
+ * `confirmLabel` passe à gauche en ghost danger, et `cancelLabel` (safe)
+ * devient le primary à droite avec le focus default — un appui Enter
+ * réflexe ne déclenche plus l'action destructive.
  */
 function Dialog({
   open,
@@ -30,10 +36,22 @@ function Dialog({
   loading = false,
   hideCancel = false,
   extraAction,
+  destructive = false,
 }) {
   const cfg = VARIANT_CONFIG[variant] || VARIANT_CONFIG.confirm;
   const Icon = cfg.icon;
   const btnVariant = confirmVariant || (variant === 'danger' ? 'danger' : 'primary');
+
+  const destructiveBtn = (
+    <Button variant={btnVariant} onClick={onConfirm} loading={loading}>
+      {confirmLabel}
+    </Button>
+  );
+  const safeBtn = !hideCancel && (
+    <Button variant={destructive ? 'primary' : 'secondary'} onClick={onClose} disabled={loading}>
+      {cancelLabel}
+    </Button>
+  );
 
   return (
     <Modal open={open} onClose={onClose} size="sm">
@@ -48,15 +66,18 @@ function Dialog({
           </div>
         </div>
       </ModalBody>
-      <ModalFooter align="end">
-        {!hideCancel && (
-          <Button variant="secondary" onClick={onClose} disabled={loading}>
-            {cancelLabel}
-          </Button>
+      <ModalFooter align={destructive ? 'between' : 'end'}>
+        {destructive ? (
+          <>
+            {destructiveBtn}
+            {safeBtn}
+          </>
+        ) : (
+          <>
+            {safeBtn}
+            {destructiveBtn}
+          </>
         )}
-        <Button variant={btnVariant} onClick={onConfirm} loading={loading}>
-          {confirmLabel}
-        </Button>
         {extraAction && (
           <Button
             variant={extraAction.variant || 'primary'}

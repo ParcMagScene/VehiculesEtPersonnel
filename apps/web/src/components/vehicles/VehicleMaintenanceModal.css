@@ -1,17 +1,5 @@
-.vm-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--theme-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-  backdrop-filter: blur(4px);
-  isolation: isolate;
-}
+/* .vm-overlay supprimé : VehicleMaintenanceModal utilise <Modal> du design-system,
+   qui rend son propre backdrop via le portail #emag-modal-root. */
 
 .vehicle-maintenance-modal {
   background: var(--theme-bg-page);
@@ -63,7 +51,7 @@
 .vehicle-maintenance-modal .modal-header .vehicle-info {
   display: flex;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .vehicle-maintenance-modal .modal-header .vehicle-type,
@@ -78,7 +66,7 @@
 
 .vehicle-maintenance-modal .modal-header .vehicle-registration {
   background: var(--close-btn-border);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   letter-spacing: 1px;
 }
 
@@ -113,7 +101,7 @@
 .maintenance-form::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
   border-radius: var(--scrollbar-radius);
-  margin: 8px 0;
+  margin: var(--space-2) 0;
 }
 
 .maintenance-form::-webkit-scrollbar-thumb {
@@ -140,7 +128,7 @@
 }
 
 .vehicle-maintenance-modal .form-group {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .vehicle-maintenance-modal .form-group label {
@@ -156,7 +144,7 @@
 .vehicle-maintenance-modal .form-group input,
 .vehicle-maintenance-modal .form-group select {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -399,7 +387,7 @@
   }
 
   .vehicle-maintenance-modal .modal-header {
-    padding: 14px 16px;
+    padding: 14px var(--space-4);
   }
 
   .vehicle-maintenance-modal .modal-header h2 {
@@ -407,7 +395,7 @@
   }
 
   .vehicle-maintenance-modal .modal-body {
-    padding: 16px;
+    padding: var(--space-4);
   }
 
   .vehicle-maintenance-modal .form-group label {

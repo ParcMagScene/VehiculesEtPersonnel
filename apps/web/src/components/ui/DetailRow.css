@@ -10,12 +10,12 @@
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
 }
 
 .ui-detail-row__label {
   font-weight: 600;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary);
   white-space: nowrap;
   flex-shrink: 0;
 }

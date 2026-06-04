@@ -17,7 +17,7 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarPlus, Plus } from 'lucide-react';
-import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
 import { Button, InlineAlert, LoadingOverlay } from '@/design-system';
 
@@ -26,13 +26,41 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useGoogleSync } from '../../hooks/useGoogleSync';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { isApiCoolingDown } from '../../utils/api/base';
 import { capitalizeText } from '../../utils/dateUtils';
 import EventDetailsModal from '../planning/EventDetailsModal';
 
 // Code splitting - Lazy loading
 const AffaireImportModal = lazy(() => import('../affaires/AffaireImportModal'));
 const GoogleEventFormModal = lazy(() => import('./GoogleEventFormModal'));
+
+// ── Persistance localStorage pour éviter le flash "non connecté" au chargement ──
+const GOOGLE_STATE_KEY = 'emag_google_state';
+
+function loadGoogleStateFromStorage() {
+  try {
+    const raw = localStorage.getItem(GOOGLE_STATE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveGoogleStateToStorage(state) {
+  try {
+    localStorage.setItem(GOOGLE_STATE_KEY, JSON.stringify(state));
+  } catch {
+    /* quota */
+  }
+}
+
+function clearGoogleStateFromStorage() {
+  try {
+    localStorage.removeItem(GOOGLE_STATE_KEY);
+  } catch {
+    /* */
+  }
+}
 
 function GoogleCalendarBanner({
   _calendarConfig,
@@ -56,25 +84,23 @@ function GoogleCalendarBanner({
   onNavigateToAffaire,
 }) {
   const toast = useToast();
+  const cachedState = useMemo(() => loadGoogleStateFromStorage(), []);
   const [error, setError] = useState(null);
-  const [googleConfigured, setGoogleConfigured] = useState(null); // null = loading, true/false
-  const [googleCanWrite, setGoogleCanWrite] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(cachedState?.isSignedIn || false);
+  const [googleConfigured, setGoogleConfigured] = useState(cachedState ? true : null); // null = loading, true/false
   const displayMode = 'compact';
   const [bannerHeight, setBannerHeight] = useState(200);
   const [modalOpen, setModalOpen] = useState(false);
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [_clickedCell, setClickedCell] = useState(null);
-  const [googleCalendarId, setGoogleCalendarId] = useState(null);
+  const [googleCalendarId, setGoogleCalendarId] = useState(cachedState?.calendarId || null);
+  const [_googleEmail, setGoogleEmail] = useState(cachedState?.email || null);
 
   const [affairesWithAttachments, setAffairesWithAttachments] = useState([]);
   const [attachmentCounts, setAttachmentCounts] = useState({});
 
   const [eventFormOpen, setEventFormOpen] = useState(false);
-  const widthSyncFrameRef = useRef(null);
-  const lastWidthSyncAtRef = useRef(0);
-  const scrollSyncFrameRef = useRef(null);
-  const lastGridColumnsRef = useRef('');
   const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
   const [eventFormEvent, setEventFormEvent] = useState(null);
 
@@ -87,31 +113,35 @@ function GoogleCalendarBanner({
     isLeader: _isLeader,
     fetchError,
   } = useGoogleSync({
-    isSignedIn: !!googleConfigured,
+    isSignedIn,
     view,
     currentDate,
     calendarId: googleCalendarId,
   });
 
+  // Analyse le titre de l'événement pour extraire client, lieu et affaire
   const analyzeEventTitle = (event) => {
     const title = event.summary || '';
     const eventLocation = event.location || '';
     const enrichedEvent = { ...event };
 
-    // Détecter le numero d'affaire (formats: "af 32744", "AF 32744", "af32744", "AF32744")
+    // Détecter le numéro d'affaire (formats: "af 32744", "AF 32744", "af32744", "AF32744")
     const affaireMatch = title.match(/\baf\s*(\d+)\b/i);
     if (affaireMatch) {
       enrichedEvent.affaire = `AF${affaireMatch[1]}`;
     }
 
-    const foundClient = clients.find((client) =>
-      title.toLowerCase().includes(client.name.toLowerCase()),
-    );
-    if (foundClient) {
-      enrichedEvent.detectedClient = foundClient.name;
+    // Détecter un client existant (recherche insensible à la casse)
+    if (clients && clients.length > 0) {
+      const foundClient = clients.find((client) =>
+        title.toLowerCase().includes(client.name.toLowerCase()),
+      );
+      if (foundClient) {
+        enrichedEvent.detectedClient = foundClient.name;
+      }
     }
 
-    // Détecter un lieu existant dans le titre, le champ location, ou l'adresse
+    // Détecter un lieu existant (recherche insensible à la casse dans le titre ET dans le champ location de l'événement)
     if (locations && locations.length > 0) {
       const foundLocation = locations.find((location) => {
         const titleMatch = title.toLowerCase().includes(location.name.toLowerCase());
@@ -119,21 +149,23 @@ function GoogleCalendarBanner({
           .toLowerCase()
           .includes(location.name.toLowerCase());
 
+        // Chercher aussi par adresse si elle existe
         let addressMatch = false;
         if (location.address && eventLocation) {
+          // Recherche partielle dans l'adresse (POI)
           const locationParts = eventLocation
             .toLowerCase()
             .split(',')
-            .map((part) => part.trim());
+            .map((p) => p.trim());
           const addressParts = location.address
             .toLowerCase()
             .split(',')
-            .map((part) => part.trim());
+            .map((p) => p.trim());
 
-          addressMatch = addressParts.some((addressPart) =>
+          // Vérifier si au moins une partie de l'adresse correspond
+          addressMatch = addressParts.some((addrPart) =>
             locationParts.some(
-              (locationPart) =>
-                locationPart.includes(addressPart) || addressPart.includes(locationPart),
+              (locPart) => locPart.includes(addrPart) || addrPart.includes(locPart),
             ),
           );
         }
@@ -156,32 +188,65 @@ function GoogleCalendarBanner({
     [rawEvents, clients, locations],
   );
 
-  // Charger la configuration Google Service Account
+  // Charger la configuration Google et le statut de connexion (v2 OAuth)
   useEffect(() => {
     const loadGoogleStatus = async () => {
-      if (isApiCoolingDown()) return;
       try {
-        const [statusData, calendarIdData] = await Promise.all([
-          api.getCalendarServiceStatus(),
+        const [configuredData, calendarIdData, statusData] = await Promise.all([
+          api.getGoogleOAuthConfigured(),
           api.getGoogleCalendarId(),
+          api.getGoogleOAuthStatus(),
         ]);
-        setGoogleConfigured(!!statusData?.configured);
-        setGoogleCanWrite(!!statusData?.canWrite);
+        setGoogleConfigured(configuredData?.configured || false);
         setGoogleCalendarId(calendarIdData?.value || null);
+        if (statusData?.connected) {
+          setIsSignedIn(true);
+          setGoogleEmail(statusData.email || null);
+          // Persister pour éviter le flash au prochain chargement
+          saveGoogleStateToStorage({
+            isSignedIn: true,
+            email: statusData.email || null,
+            calendarId: calendarIdData?.value || null,
+          });
+        } else {
+          setIsSignedIn(false);
+          clearGoogleStateFromStorage();
+        }
       } catch (error) {
-        // Google non configuré ou inaccessible
+        // Google non configuré → silencieux (AUDIT_GOOGLE)
         void error;
         setGoogleConfigured(false);
-        setGoogleCanWrite(false);
       }
     };
     loadGoogleStatus();
+
+    // Détecter le retour du callback OAuth (redirect depuis /api/google/callback)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('google_connected') === 'true') {
+      toast.success('Compte Google connecté avec succès');
+      // Nettoyer l'URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('google_connected');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    } else if (params.get('google_error')) {
+      const errorCode = params.get('google_error');
+      const errorMessages = {
+        access_denied: "Accès refusé par l'utilisateur",
+        invalid_state: 'Session expirée — réessayez',
+        no_refresh_token: "Erreur de configuration OAuth — contactez l'administrateur",
+        exchange_failed: "Échec de l'échange de code — réessayez",
+        missing_params: 'Paramètres manquants dans le callback',
+      };
+      setError(errorMessages[errorCode] || `Erreur Google: ${errorCode}`);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('google_error');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
   }, [toast]);
 
   // Charger l'index des affaires ayant des pièces jointes
   useEffect(() => {
     const loadAttachmentsIndex = async () => {
-      if (isApiCoolingDown()) return;
       try {
         const data = await api.getAttachmentsIndex();
         setAffairesWithAttachments(data.affaires || []);
@@ -212,91 +277,54 @@ function GoogleCalendarBanner({
 
   // Synchroniser les largeurs avec le calendrier principal (ou le planning personnel)
   useEffect(() => {
-    const MIN_WIDTH_SYNC_INTERVAL_MS = 120;
-    let calendarGridEl = null;
-    let bannerGridEl = null;
+    const syncWidths = () => {
+      // Chercher la grille principale : Calendar (.calendar-grid) ou PersonnelPanel (.pp-grid)
+      const calendarGrid =
+        document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+      const bannerGrid = document.querySelector('.banner-grid');
+      const bannerScrollArea = document.querySelector('.banner-scroll-area');
 
-    const resolveGridEls = () => {
-      if (!calendarGridEl || !calendarGridEl.isConnected) {
-        calendarGridEl =
-          document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
-      }
-      if (!bannerGridEl || !bannerGridEl.isConnected) {
-        bannerGridEl = document.querySelector('.banner-grid');
-      }
-      return { calendarGrid: calendarGridEl, bannerGrid: bannerGridEl };
-    };
-
-    const applyWidths = () => {
-      const { calendarGrid, bannerGrid } = resolveGridEls();
-
-      if (calendarGrid && bannerGrid) {
+      if (calendarGrid && bannerGrid && bannerScrollArea) {
         // Copier les colonnes calculées du calendrier pour toutes les vues
         const gridComputedStyle = window.getComputedStyle(calendarGrid);
         const gridColumns = gridComputedStyle.gridTemplateColumns;
-
-        if (!gridColumns || gridColumns === lastGridColumnsRef.current) {
-          return;
-        }
-
-        lastGridColumnsRef.current = gridColumns;
-        bannerGrid.style.gridTemplateColumns = gridColumns;
+        const columnWidths = gridColumns.split(' ').map((width) => width);
+        bannerGrid.style.gridTemplateColumns = columnWidths.join(' ');
       }
-    };
-
-    const scheduleWidthSync = () => {
-      if (document.hidden) return;
-
-      const now = Date.now();
-      if (now - lastWidthSyncAtRef.current < MIN_WIDTH_SYNC_INTERVAL_MS) {
-        return;
-      }
-      lastWidthSyncAtRef.current = now;
-
-      if (widthSyncFrameRef.current) {
-        cancelAnimationFrame(widthSyncFrameRef.current);
-      }
-
-      widthSyncFrameRef.current = requestAnimationFrame(() => {
-        widthSyncFrameRef.current = null;
-        applyWidths();
-      });
     };
 
     // Attendre que le DOM soit complètement rendu après changement de vue
-    scheduleWidthSync();
-    const timer1 = setTimeout(scheduleWidthSync, 50);
-    const timer2 = setTimeout(scheduleWidthSync, 150);
+    const timer1 = setTimeout(syncWidths, 50);
+    const timer2 = setTimeout(syncWidths, 150);
+    const timer3 = setTimeout(syncWidths, TIMING.DEBOUNCE_SEARCH);
+    const timer4 = setTimeout(syncWidths, TIMING.PRINT_DELAY);
 
     // Observer les changements de taille du calendrier ou du planning personnel
-    const { calendarGrid } = resolveGridEls();
+    const calendarGrid =
+      document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
     let resizeObserver;
 
     if (calendarGrid) {
-      resizeObserver = new ResizeObserver(scheduleWidthSync);
+      resizeObserver = new ResizeObserver(syncWidths);
       resizeObserver.observe(calendarGrid);
     }
 
     // Synchroniser lors du resize de la fenêtre
-    window.addEventListener('resize', scheduleWidthSync);
+    window.addEventListener('resize', syncWidths);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      if (widthSyncFrameRef.current) {
-        cancelAnimationFrame(widthSyncFrameRef.current);
-        widthSyncFrameRef.current = null;
-      }
+      clearTimeout(timer3);
+      clearTimeout(timer4);
       if (resizeObserver) resizeObserver.disconnect();
-      window.removeEventListener('resize', scheduleWidthSync);
+      window.removeEventListener('resize', syncWidths);
     };
-  }, [view, currentDate]);
+  }, [view, currentDate, events.length]);
 
   // Synchroniser le scroll entre le calendrier et le banner
   useEffect(() => {
     let cleanupFn = null;
-    let retryTimer = null;
-    let sourceRef = null;
 
     const attachScrollListeners = () => {
       // Chercher la zone de scroll principale : Calendar ou PersonnelPanel
@@ -306,47 +334,34 @@ function GoogleCalendarBanner({
       const bannerScrollArea = document.querySelector('.banner-scroll-area');
 
       if (!calendarScrollArea || !bannerScrollArea) {
-        retryTimer = setTimeout(attachScrollListeners, 80);
+        setTimeout(attachScrollListeners, 50);
         return;
       }
 
-      const scheduleScrollSync = () => {
-        if (document.hidden) return;
-        if (scrollSyncFrameRef.current) return;
-        scrollSyncFrameRef.current = requestAnimationFrame(() => {
-          scrollSyncFrameRef.current = null;
-          if (sourceRef === 'calendar') {
-            const nextLeft = calendarScrollArea.scrollLeft;
-            if (bannerScrollArea.scrollLeft !== nextLeft) {
-              bannerScrollArea.scrollLeft = nextLeft;
-            }
-            return;
-          }
-          if (sourceRef === 'banner') {
-            const nextLeft = bannerScrollArea.scrollLeft;
-            if (calendarScrollArea.scrollLeft !== nextLeft) {
-              calendarScrollArea.scrollLeft = nextLeft;
-            }
-          }
-        });
-      };
+      let isScrolling = false;
 
       const handleCalendarScroll = () => {
-        sourceRef = 'calendar';
-        scheduleScrollSync();
+        if (!isScrolling) {
+          isScrolling = true;
+          bannerScrollArea.scrollLeft = calendarScrollArea.scrollLeft;
+          requestAnimationFrame(() => {
+            isScrolling = false;
+          });
+        }
       };
 
       const handleBannerScroll = () => {
-        sourceRef = 'banner';
-        scheduleScrollSync();
+        if (!isScrolling) {
+          isScrolling = true;
+          calendarScrollArea.scrollLeft = bannerScrollArea.scrollLeft;
+          requestAnimationFrame(() => {
+            isScrolling = false;
+          });
+        }
       };
 
       calendarScrollArea.addEventListener('scroll', handleCalendarScroll, { passive: true });
       bannerScrollArea.addEventListener('scroll', handleBannerScroll, { passive: true });
-
-      // Aligner immédiatement après l'attache (sans attendre un scroll utilisateur)
-      sourceRef = 'calendar';
-      scheduleScrollSync();
 
       cleanupFn = () => {
         calendarScrollArea.removeEventListener('scroll', handleCalendarScroll);
@@ -357,15 +372,10 @@ function GoogleCalendarBanner({
     const timer = setTimeout(attachScrollListeners, 100);
 
     return () => {
-      if (retryTimer) clearTimeout(retryTimer);
       clearTimeout(timer);
-      if (scrollSyncFrameRef.current) {
-        cancelAnimationFrame(scrollSyncFrameRef.current);
-        scrollSyncFrameRef.current = null;
-      }
       if (cleanupFn) cleanupFn();
     };
-  }, [view]);
+  }, [events.length, view]);
 
   // Centrer sur la date actuelle quand elle change (synchroniser avec le calendrier principal ou personnel)
   useEffect(() => {
@@ -532,11 +542,44 @@ function GoogleCalendarBanner({
 
   // La récupération des événements est gérée par useGoogleSync (timer, IDB, BroadcastChannel)
 
-  // Gérer les erreurs de sync (calendrier introuvable, indisponibilité)
+  const handleSignIn = async () => {
+    setError(null);
+    try {
+      const data = await api.getGoogleOAuthUrl();
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        setError("Impossible d'obtenir l'URL d'autorisation Google");
+      }
+    } catch (err) {
+      setError('Erreur lors de la connexion: ' + err.message);
+    }
+  };
+
+  const _handleReconnect = async () => {
+    // Déconnexion puis reconnexion
+    try {
+      await api.disconnectGoogle();
+    } catch {}
+    handleSignIn();
+  };
+
+  // Gérer les erreurs de sync (déconnexion, calendrier introuvable)
   useEffect(() => {
     if (!fetchError) return;
     const msg = fetchError.message || '';
-    setError('Impossible de récupérer les événements: ' + msg);
+    if (msg.includes('google_not_connected') || msg.includes('401')) {
+      setIsSignedIn(false);
+      setError('Session Google expirée. Veuillez vous reconnecter.');
+    } else if (msg.includes('404') && googleCalendarId && googleCalendarId !== 'primary') {
+      // Tentative d'ajout automatique du calendrier
+      api
+        .addGoogleCalendarV2({ id: googleCalendarId })
+        .then(() => fetchNow())
+        .catch(() => {});
+    } else {
+      setError('Impossible de récupérer les événements: ' + msg);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchError]);
 
@@ -719,8 +762,8 @@ function GoogleCalendarBanner({
             <h3>📅 Synchronisation Google Calendar</h3>
             <p>⚠️ Configuration manquante</p>
             <p>
-              Le module Google Calendar n'est pas configuré sur le serveur (variables
-              GOOGLE_SERVICE_ACCOUNT_JSON ou GOOGLE_SERVICE_ACCOUNT_KEY_PATH manquantes)
+              Le module Google OAuth n'est pas configuré sur le serveur (variables GOOGLE_CLIENT_ID
+              / GOOGLE_CLIENT_SECRET manquantes)
             </p>
           </div>
         </div>
@@ -728,13 +771,21 @@ function GoogleCalendarBanner({
     );
   }
 
-  if (!googleConfigured) {
+  if (!isSignedIn) {
     return (
       <div className="google-calendar-banner auth">
         <div className="banner-content">
           <div className="auth-prompt">
             <h3>📅 Synchronisation Google Calendar</h3>
-            <p>Le calendrier n'est pas configuré côté administrateur.</p>
+            <p>Connectez-vous pour afficher vos événements personnels</p>
+            <Button
+              variant="ghost"
+              onClick={handleSignIn}
+              className="signin-button"
+              disabled={googleConfigured === null}
+            >
+              {googleConfigured === null ? 'Chargement...' : 'Se connecter avec Google'}
+            </Button>
             {error && <InlineAlert>{error}</InlineAlert>}
           </div>
         </div>
@@ -798,7 +849,7 @@ function GoogleCalendarBanner({
                 </span>
               </Button>
               {/* Bouton Nouvel événement Google Calendar */}
-              {googleCanWrite && currentUser?.isAdmin && (
+              {isSignedIn && currentUser?.isAdmin && (
                 <Button
                   variant="ghost"
                   className="banner-new-action-btn banner-new-event-btn"
@@ -1032,8 +1083,8 @@ function GoogleCalendarBanner({
         onRequestCreateAssignment={handleCreateAssignmentFromEvent}
         onEventCreated={handleOpenAffaireImport}
         onEventUpdated={handleEventUpdated}
-        onRequestEditEvent={googleCanWrite ? handleRequestEditEvent : undefined}
-        onRequestDeleteEvent={googleCanWrite ? handleDeleteEvent : undefined}
+        onRequestEditEvent={isSignedIn ? handleRequestEditEvent : undefined}
+        onRequestDeleteEvent={isSignedIn ? handleDeleteEvent : undefined}
         onReservationsRefresh={onReservationsRefresh}
         currentUser={currentUser}
         activeModule={activeModule}

@@ -355,13 +355,15 @@ function CompareView({ product, entries, bestId, onAddToQuote }) {
                   </td>
                   <td>
                     {e.price_ht > 0 && (
-                      <button
-                        className="eshop-btn-icon"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
                         title="Ajouter au devis"
                         onClick={() => onAddToQuote(e)}
                       >
                         <ShoppingCart size={14} />
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>
@@ -684,8 +686,10 @@ export function ExternalProductsPanel({ currentUser }) {
                 </div>
                 {canWrite && (
                   <div className="eshop-card-actions" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      className="eshop-btn-icon"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
                       title="Modifier"
                       onClick={() => {
                         setEditProduct(p);
@@ -693,14 +697,16 @@ export function ExternalProductsPanel({ currentUser }) {
                       }}
                     >
                       <Edit2 size={14} />
-                    </button>
-                    <button
-                      className="eshop-btn-icon eshop-btn-danger"
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      iconOnly
                       title="Supprimer"
                       onClick={() => handleDeleteProduct(p)}
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -770,8 +776,10 @@ export function ExternalProductsPanel({ currentUser }) {
                     <div key={e.id} className="eshop-sup-action-row">
                       <span>{e.supplier_name}</span>
                       <div>
-                        <button
-                          className="eshop-btn-icon"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
                           title="Modifier"
                           onClick={() => {
                             setEditSupplier(e);
@@ -779,14 +787,16 @@ export function ExternalProductsPanel({ currentUser }) {
                           }}
                         >
                           <Edit2 size={13} />
-                        </button>
-                        <button
-                          className="eshop-btn-icon eshop-btn-danger"
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          iconOnly
                           title="Supprimer"
                           onClick={() => handleDeleteSupplier(e)}
                         >
                           <Trash2 size={13} />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -803,6 +813,9 @@ export function ExternalProductsPanel({ currentUser }) {
   const renderQuoteBadge = () => {
     if (quoteItems.length === 0) return null;
     return (
+      // FAB e-shop : style positionnel custom (fixed bottom-right) incompatible
+      // avec ui-btn ; on garde un <button> brut.
+      // eslint-disable-next-line react/forbid-elements
       <button className="eshop-quote-fab" onClick={() => setShowQuote(true)} title="Voir le devis">
         <ShoppingCart size={18} />
         <span className="eshop-quote-fab-count">{quoteItems.length}</span>
@@ -841,12 +854,15 @@ export function ExternalProductsPanel({ currentUser }) {
                       )
                     }
                   />
-                  <button
-                    className="eshop-btn-icon eshop-btn-danger"
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    iconOnly
+                    title="Retirer"
                     onClick={() => setQuoteItems((prev) => prev.filter((_, i2) => i2 !== idx))}
                   >
                     <X size={13} />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}

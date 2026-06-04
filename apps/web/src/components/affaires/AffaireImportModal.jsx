@@ -360,7 +360,7 @@ const AffaireImportModal = ({
       setPdfPreviewUrl(previewUrl);
 
       // Parse intelligent : détection auto du type + parseur spécialisé
-      const parsed = smartParse(text);
+      const parsed = smartParse(text, file?.name || '');
       const info = parsed.info;
       setDetectedDocType({
         docType: parsed.docType,

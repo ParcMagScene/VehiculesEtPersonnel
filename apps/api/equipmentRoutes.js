@@ -28,6 +28,7 @@ import {
 import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
 import logger from './logger.js';
+import { setCacheControl } from './middleware/cacheControl.js';
 import { equipmentSchema } from './schemas/crud.js';
 import { equipmentImportSchema, validate } from './schemas/imports.js';
 import { getNextUid } from './services/uidCounter.js';
@@ -41,7 +42,9 @@ const __dirname = dirname(__filename);
 
 export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin) {
   // GET /api/equipment-categories
-  app.get('/api/equipment-categories', authenticateToken, (req, res) => {
+  // [PERF Phase 4.P] Cache HTTP 1h (private) — catégories quasi-statiques,
+  // invalidées côté serveur sur POST/PUT/DELETE via equipmentTreeCache.
+  app.get('/api/equipment-categories', authenticateToken, setCacheControl(3600), (req, res) => {
     try {
       const categories = db
         .prepare('SELECT * FROM equipment_categories ORDER BY level, name')
@@ -60,6 +63,7 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
   app.get(
     '/api/equipment-categories/tree',
     authenticateToken,
+    setCacheControl(3600),
     cacheMiddleware(equipmentTreeCache, () => 'tree'),
     (req, res) => {
       try {
@@ -2254,25 +2258,32 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
   };
 
   // ═══ GET /api/equipment-all-depot-zones — Toutes les zones des deux dépôts ═══
-  app.get('/api/equipment-all-depot-zones', authenticateToken, (req, res) => {
-    try {
-      const depot1 = loadZonesCached('depot-zones.json');
-      const depot2 = loadZonesCached('depot2-zones.json');
-      res.json({
-        depots: [
-          { id: '1', ...depot1 },
-          { id: '2', ...depot2 },
-        ],
-      });
-    } catch (error) {
-      logger.error('GET /api/equipment-all-depot-zones error:', error);
-      res.status(500).json({ success: false, error: 'Erreur chargement zones dépôt' });
-    }
-  });
-
+  // [PERF Phase 4.P] Cache HTTP 24h (private) — fichiers JSON statiques
+  // chargés du disque, modifiés très rarement via PUT admin.
+  app.get(
+    '/api/equipment-all-depot-zones',
+    authenticateToken,
+    setCacheControl(86400),
+    (req, res) => {
+      try {
+        const depot1 = loadZonesCached('depot-zones.json');
+        const depot2 = loadZonesCached('depot2-zones.json');
+        res.json({
+          depots: [
+            { id: '1', ...depot1 },
+            { id: '2', ...depot2 },
+          ],
+        });
+      } catch (error) {
+        logger.error('GET /api/equipment-all-depot-zones error:', error);
+        res.status(500).json({ success: false, error: 'Erreur chargement zones dépôt' });
+      }
+    },
+  );
   // ═══ GET /api/equipment-depot-zones — Zones de dépôt (depot-zones.json / depot2-zones.json) ═══
   // ?depot=1 (défaut) ou ?depot=2
-  app.get('/api/equipment-depot-zones', authenticateToken, (req, res) => {
+  // [PERF Phase 4.P] Cache HTTP 24h (private)
+  app.get('/api/equipment-depot-zones', authenticateToken, setCacheControl(86400), (req, res) => {
     try {
       const depotId = parseInt(req.query.depot, 10) || 1;
       const filename = depotId === 2 ? 'depot2-zones.json' : 'depot-zones.json';
@@ -2283,9 +2294,10 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
       res.status(500).json({ success: false, error: 'Erreur chargement zones dépôt' });
     }
   });
-
   // ═══ GET /api/equipment-location-stats — Stats localisation par zone ═══
-  app.get('/api/equipment-location-stats', authenticateToken, (req, res) => {
+  // [PERF Phase 4.Q] Cache HTTP 5 min — stats mises a jour lors des changements
+  // d'equipement, TTL court suffit pour les vues admin.
+  app.get('/api/equipment-location-stats', authenticateToken, setCacheControl(300), (req, res) => {
     try {
       const depot = req.query.depot || null;
       let statsQuery = `
@@ -2314,7 +2326,6 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }
   });
-
   // ═══ PUT /api/equipment-depot-zones — Sauvegarder les zones modifiées (admin) ═══
   app.put('/api/equipment-depot-zones', authenticateToken, requireAdmin, (req, res) => {
     try {

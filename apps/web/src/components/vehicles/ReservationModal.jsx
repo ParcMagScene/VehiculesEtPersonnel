@@ -936,7 +936,7 @@ const ReservationModal = ({
     : '';
 
   return (
-    <Modal open={true} onClose={handleSafeClose} size="lg" className="reservation-modal">
+    <Modal open onClose={handleSafeClose} size="lg" className="reservation-modal">
       <ModalHeader onClose={handleSafeClose}>
         <div className="modal-header-content">
           <span>

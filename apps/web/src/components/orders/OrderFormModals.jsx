@@ -98,6 +98,16 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
               />
             </div>
             <div className="form-field">
+              <label>N° commande fournisseur</label>
+              <Input
+                type="text"
+                value={form.supplier_order_number}
+                onChange={(e) => setForm((f) => ({ ...f, supplier_order_number: e.target.value }))}
+                placeholder="Référence du fournisseur (optionnel)"
+                maxLength={100}
+              />
+            </div>
+            <div className="form-field">
               <label>Code affaire</label>
               <Input
                 type="text"

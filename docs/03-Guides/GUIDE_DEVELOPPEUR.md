@@ -8,14 +8,17 @@
 
 1. [Stack technique](#stack-technique)
 2. [Prérequis](#prérequis)
-3. [Installation](#installation)
-4. [Configuration](#configuration)
-5. [Lancement en développement](#lancement-en-développement)
-6. [Déploiement production](#déploiement-production)
-7. [Structure du projet](#structure-du-projet)
-8. [URLs d'accès](#urls-daccès)
-9. [Commandes disponibles](#commandes-disponibles)
-10. [Branches & workflow Git](#branches--workflow-git)
+3. [Démarrage en 5 minutes](#démarrage-en-5-minutes)
+4. [Installation](#installation)
+5. [Configuration](#configuration)
+6. [Variables d'environnement](#variables-denvironnement)
+7. [Lancement en développement](#lancement-en-développement)
+8. [Déploiement production](#déploiement-production)
+9. [Structure du projet](#structure-du-projet)
+10. [URLs d'accès](#urls-daccès)
+11. [Commandes disponibles](#commandes-disponibles)
+12. [Dépannage fréquent](#dépannage-fréquent)
+13. [Branches & workflow Git](#branches--workflow-git)
 
 ---
 
@@ -40,6 +43,21 @@
 
 ---
 
+## Démarrage en 5 minutes
+
+```bash
+git clone https://github.com/ParcMagScene/VehiculesEtPersonnel.git
+cd "eM@g"
+npm install
+cp apps/api/.env.example apps/api/.env
+npm run dev:start
+```
+
+- Frontend : http://localhost:5174
+- Backend API : http://localhost:3003
+
+---
+
 ## Installation
 
 ```bash
@@ -60,6 +78,14 @@ npm install
 cp apps/api/.env.example apps/api/.env
 # Éditer apps/api/.env avec votre JWT_SECRET et VIDEO_CIPHER_KEY
 ```
+
+---
+
+## Variables d'environnement
+
+- **Backend** : `apps/api/.env`
+- **Exemple** : `apps/api/.env.example`
+- **Note dev** : après modification de `apps/api/.env.development`, redémarrer le backend pour recharger `process.env`
 
 ---
 
@@ -155,8 +181,17 @@ npm run preview      # Prévisualiser le build
 npm run deploy       # Build + déploiement PM2
 npm run lint         # Vérification du code (ESLint)
 npm run dev:start    # Démarre backend + frontend en dev
-npm test             # Lance les 56 tests (unit + Zod + DB init)
+npm test             # Lance la suite backend (unit + Zod + DB init + audits)
 ```
+
+---
+
+## Dépannage fréquent
+
+- **Port backend occupé (3003)** : arrêter le process puis relancer `npm run dev:start`
+- **Variables env non prises en compte** : redémarrer le backend
+- **Erreur auth au chargement** : vérifier cookie session + endpoint `/api/health`
+- **Échec build** : exécuter `npm run build` depuis `apps/web` pour isoler les erreurs frontend
 
 ---
 

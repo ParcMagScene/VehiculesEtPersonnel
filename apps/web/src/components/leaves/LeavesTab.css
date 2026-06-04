@@ -7,9 +7,9 @@
 .lt-loading {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: center;
-  padding: 60px 20px;
+  padding: 60px var(--space-5);
   color: var(--text-muted, var(--text-muted));
   font-size: 0.95rem;
 }
@@ -26,8 +26,8 @@
 .lt-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 0 4px;
+  gap: var(--space-4);
+  padding: 0 var(--space-1);
 }
 
 /* Header */
@@ -36,12 +36,12 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .lt-header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .lt-header-left h2 {
   margin: 0;
@@ -77,7 +77,7 @@
 }
 .lt-header-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Buttons */
@@ -107,14 +107,14 @@
   background: var(--feedback-info-text);
 }
 .lt-btn-sm {
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   font-size: var(--font-sm);
 }
 .lt-btn-link {
   background: none;
   border: none;
   color: var(--feedback-info);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   font-weight: 500;
 }
 .lt-btn-link:hover {
@@ -128,7 +128,7 @@
 .lt-error {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 14px;
   background: var(--feedback-error-bg);
   color: var(--feedback-error-text);
@@ -148,16 +148,16 @@
 .lt-kpi-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
+  gap: var(--space-3);
 }
 .lt-kpi-card {
   background: var(--surface-primary, white);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   position: relative;
 }
 .lt-kpi-card.clickable {
@@ -170,7 +170,7 @@
 }
 .lt-kpi-icon {
   font-size: 1.3rem;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 .lt-kpi-card.balance {
   border-left: 3px solid var(--feedback-info);
@@ -218,17 +218,17 @@
 .lt-kpi-action {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: var(--font-xs);
   color: var(--feedback-info);
-  margin-top: 4px;
+  margin-top: var(--space-1);
   font-weight: 500;
 }
 
 /* Admin Nav */
 .lt-admin-nav {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   background: var(--surface-secondary, var(--border-subtle));
   border-radius: var(--radius-md-lg);
   padding: 3px;
@@ -262,13 +262,13 @@
   background: var(--surface-primary, white);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: var(--space-4);
 }
 .lt-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 .lt-section-header h3 {
   margin: 0;
@@ -277,28 +277,28 @@
   color: var(--text-body, var(--text-body));
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .lt-empty-section {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--text-muted);
   font-size: var(--font-base);
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 
 /* Pending list (admin overview) */
 .lt-pending-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .lt-pending-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
   background: var(--surface-secondary, var(--surface-page));
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
@@ -312,14 +312,14 @@
 .lt-pending-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 1;
   font-size: var(--font-sm);
 }
 .lt-pending-type {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-weight: 500;
 }
 .lt-pending-dates {
@@ -348,8 +348,8 @@
   display: grid;
   grid-template-columns: 140px 120px 1fr auto;
   align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
+  gap: var(--space-3);
+  padding: var(--space-2) 10px;
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
 }
@@ -363,7 +363,7 @@
 .lt-team-type {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 0.78rem;
   font-weight: 500;
 }
@@ -381,13 +381,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 .lt-stat-card {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--surface-secondary, var(--surface-page));
   border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
@@ -407,7 +407,7 @@
 
 /* Month chart */
 .lt-stats-months {
-  padding-top: 8px;
+  padding-top: var(--space-2);
   border-top: 1px solid var(--border-default);
 }
 .lt-month-chart {
@@ -415,7 +415,7 @@
   align-items: flex-end;
   gap: 6px;
   height: 100px;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 .lt-month-bar {
   flex: 1;
@@ -435,7 +435,7 @@
 .lt-month-label {
   font-size: 0.6rem;
   color: var(--text-muted);
-  margin-top: 4px;
+  margin-top: var(--space-1);
   text-transform: uppercase;
 }
 
@@ -448,8 +448,8 @@
 .lt-balances-header {
   display: grid;
   grid-template-columns: 1fr 80px 80px 80px;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   font-size: var(--font-xs);
   font-weight: 600;
   text-transform: uppercase;
@@ -459,8 +459,8 @@
 .lt-balances-row {
   display: grid;
   grid-template-columns: 1fr 80px 80px 80px;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
 }
@@ -489,15 +489,15 @@
 /* Request Filters */
 .lt-filters {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 .lt-filter-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: var(--space-1);
+  padding: 6px var(--space-3);
   border: 1px solid var(--border-default);
   background: var(--surface-primary, white);
   border-radius: var(--radius-2xl);
@@ -528,7 +528,7 @@
 .lt-request-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .lt-request-card {
   background: var(--surface-primary, white);
@@ -561,8 +561,8 @@
 .lt-card-main {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: var(--space-3);
+  padding: var(--space-3) 14px;
 }
 .lt-card-left {
   display: flex;
@@ -575,7 +575,7 @@
   font-size: 0.82rem;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .lt-card-person {
   font-size: var(--font-xs);
@@ -596,12 +596,12 @@
 .lt-card-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .lt-card-status {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 3px 10px;
   border-radius: var(--radius-lg);
   font-size: var(--font-xs);
@@ -620,7 +620,7 @@
 }
 .lt-detail-row {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: var(--font-sm);
 }
 .lt-detail-row.modified {
@@ -635,7 +635,7 @@
 .lt-sig-ok {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   color: var(--theme-success-alt);
   font-weight: 500;
 }
@@ -643,16 +643,16 @@
 /* Card actions */
 .lt-card-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
   border-top: 1px solid var(--border-default);
 }
 .lt-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
+  gap: var(--space-1);
+  padding: 5px var(--space-3);
   border: 1px solid var(--border-default);
   background: var(--surface-primary, white);
   border-radius: var(--radius-sm);
@@ -692,8 +692,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 48px 20px;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-5);
   color: var(--text-muted);
   text-align: center;
 }
@@ -704,7 +704,7 @@
 
 /* Holidays */
 .lt-holidays {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 .lt-holidays-list {
   display: flex;
@@ -714,7 +714,7 @@
 .lt-holiday-chip {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   background: var(--theme-warning-bg);
   color: var(--theme-warning-text);
   border-radius: var(--radius-xl);
@@ -732,11 +732,11 @@
   }
   .lt-team-row {
     grid-template-columns: 1fr 1fr;
-    gap: 4px;
+    gap: var(--space-1);
   }
   .lt-card-main {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--space-2);
   }
   .lt-card-center {
     flex-basis: 100%;

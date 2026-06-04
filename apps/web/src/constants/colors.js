@@ -122,5 +122,60 @@ export const ANNUAIRE_TAB_COLORS = {
   referentiels: '#64748b',
 };
 
+// ─── Palette de sélection (ManagementPanel : modules, statuts, équipes) ─
+// 40 teintes Tailwind organisées par famille pour offrir un choix
+// homogène à l'utilisateur. À utiliser uniquement comme valeurs
+// de saisie, pas comme tokens de thème.
+export const MANAGEMENT_PALETTE = [
+  // Bleus
+  '#3b82f6',
+  '#2563eb',
+  '#1d4ed8',
+  '#60a5fa',
+  '#93c5fd',
+  // Violets
+  '#8b5cf6',
+  '#7c3aed',
+  '#6366f1',
+  '#a78bfa',
+  '#c4b5fd',
+  // Roses / Rouges
+  '#ec4899',
+  '#db2777',
+  '#ef4444',
+  '#dc2626',
+  '#f87171',
+  // Oranges / Jaunes
+  '#f59e0b',
+  '#f97316',
+  '#fb923c',
+  '#fbbf24',
+  '#fcd34d',
+  // Verts
+  '#10b981',
+  '#059669',
+  '#14b8a6',
+  '#22c55e',
+  '#4ade80',
+  // Cyans
+  '#06b6d4',
+  '#0891b2',
+  '#22d3ee',
+  '#67e8f9',
+  '#a5f3fc',
+  // Gris
+  '#6b7280',
+  '#4b5563',
+  '#374151',
+  '#9ca3af',
+  '#d1d5db',
+  // Noirs / Blancs
+  '#1f2937',
+  '#111827',
+  '#000000',
+  '#e5e7eb',
+  '#f3f4f6',
+];
+
 // ─── Helper: couleur de section par clé ─────────────────────
 export const getSectionColor = (key) => PLANNING_SECTIONS[key]?.color || STATUS_COLORS.neutral;

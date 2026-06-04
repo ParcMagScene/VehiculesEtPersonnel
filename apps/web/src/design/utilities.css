@@ -404,7 +404,7 @@
 
 /* ─── Font additionnels ───────────────────────────────── */
 .u-font-mono {
-  font-family: var(--font-family-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-family: var(--font-mono);
 }
 
 /* ─── Borders ─────────────────────────────────────────── */

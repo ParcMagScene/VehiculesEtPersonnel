@@ -35,9 +35,7 @@ import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatCurrency } from '../../utils/formatUtils';
 import { refreshBus } from '../../utils/refresh-bus';
-import { OrderFormModal, QuoteFormModal } from './OrderFormModals';
 import { ORDER_STATUS, QUOTE_STATUS, REQUEST_STATUS } from './ordersConstants';
-import { OrderDetailDialog, QuoteDetailDialog, RequestDetailDialog } from './OrdersDialogs';
 import {
   EnhancedSuppliersList,
   MaterialRequestsList,
@@ -45,18 +43,56 @@ import {
   OrdersList,
   QuotesList,
 } from './OrdersListViews';
-import {
-  OrderSlidePanel,
-  QuoteSlidePanel,
-  RequestSlidePanel,
-  SupplierSlidePanel,
-} from './OrdersSlidePanels';
-import {
-  ApproveRequestModal,
-  MaterialRequestModal,
-  SupplierDetailModal,
-  SupplierFormModal,
-} from './SupplierModals';
+
+// ─────────────────────────────────────────────────────────────
+// Code-split : modales/dialogs/slide-panels ne se rendent qu'à
+// l'interaction utilisateur (clic sur item, bouton Nouveau, ...).
+// On lazy-load les 4 modules sibling (OrderFormModals, OrdersDialogs,
+// OrdersSlidePanels, SupplierModals) pour les sortir du chunk initial
+// du panneau Commandes (~85KB → cible ~40KB).
+// Vite déduplique les import() vers le même module → 1 chunk par fichier
+// même si plusieurs lazy() y pointent. OrdersListViews reste sync
+// (toujours visible selon l'onglet actif).
+// ─────────────────────────────────────────────────────────────
+const OrderFormModal = lazy(() =>
+  import('./OrderFormModals').then((m) => ({ default: m.OrderFormModal })),
+);
+const QuoteFormModal = lazy(() =>
+  import('./OrderFormModals').then((m) => ({ default: m.QuoteFormModal })),
+);
+const OrderDetailDialog = lazy(() =>
+  import('./OrdersDialogs').then((m) => ({ default: m.OrderDetailDialog })),
+);
+const QuoteDetailDialog = lazy(() =>
+  import('./OrdersDialogs').then((m) => ({ default: m.QuoteDetailDialog })),
+);
+const RequestDetailDialog = lazy(() =>
+  import('./OrdersDialogs').then((m) => ({ default: m.RequestDetailDialog })),
+);
+const OrderSlidePanel = lazy(() =>
+  import('./OrdersSlidePanels').then((m) => ({ default: m.OrderSlidePanel })),
+);
+const QuoteSlidePanel = lazy(() =>
+  import('./OrdersSlidePanels').then((m) => ({ default: m.QuoteSlidePanel })),
+);
+const RequestSlidePanel = lazy(() =>
+  import('./OrdersSlidePanels').then((m) => ({ default: m.RequestSlidePanel })),
+);
+const SupplierSlidePanel = lazy(() =>
+  import('./OrdersSlidePanels').then((m) => ({ default: m.SupplierSlidePanel })),
+);
+const ApproveRequestModal = lazy(() =>
+  import('./SupplierModals').then((m) => ({ default: m.ApproveRequestModal })),
+);
+const MaterialRequestModal = lazy(() =>
+  import('./SupplierModals').then((m) => ({ default: m.MaterialRequestModal })),
+);
+const SupplierDetailModal = lazy(() =>
+  import('./SupplierModals').then((m) => ({ default: m.SupplierDetailModal })),
+);
+const SupplierFormModal = lazy(() =>
+  import('./SupplierModals').then((m) => ({ default: m.SupplierFormModal })),
+);
 
 function OrdersPanel({ currentUser, isMobile }) {
   const toast = useToast();
@@ -985,213 +1021,217 @@ function OrdersPanel({ currentUser, isMobile }) {
             )}
           </div>
 
-          {activeTab === 'orders' && (
-            <OrderSlidePanel
-              order={selectedOrder}
-              onClose={() => setSelectedOrder(null)}
-              onOpenDialog={(o) => {
-                setSelectedOrder(null);
-                handleOpenOrderDialog(o);
-              }}
-              onEdit={() => handleEditOrder(selectedOrder)}
-              onDelete={() => handleDeleteOrder(selectedOrder)}
-              onStatusChange={async (newStatus) => {
-                try {
-                  await api.updateOrder(selectedOrder.id, { status: newStatus });
-                  refreshBus.publish('orders');
-                  const full = await api.getOrderById(selectedOrder.id);
-                  setSelectedOrder(full);
-                  loadData();
-                } catch (error) {
-                  toast.error('Erreur: ' + error.message);
-                }
-              }}
-            />
-          )}
-          {activeTab === 'quotes' && (
-            <QuoteSlidePanel
-              quote={selectedQuote}
-              onClose={() => setSelectedQuote(null)}
-              onOpenDialog={(q) => {
-                setSelectedQuote(null);
-                handleOpenQuoteDialog(q);
-              }}
-              onEdit={() => handleEditQuote(selectedQuote)}
-              onDelete={() => handleDeleteQuote(selectedQuote)}
-              onConvert={() => handleConvertQuote(selectedQuote)}
-            />
-          )}
-          {activeTab === 'requests' && (
-            <RequestSlidePanel
-              request={selectedRequest}
-              onClose={() => setSelectedRequest(null)}
-              onOpenDialog={(r) => {
-                setSelectedRequest(null);
-                setDialogRequest(r);
-              }}
-              isAdmin={currentUser?.isAdmin}
-              onValidate={handleValidateRequest}
-              onEdit={(r) => {
-                setSelectedRequest(null);
-                handleEditRequest(r);
-              }}
-            />
-          )}
-          {activeTab === 'suppliers' && selectedSupplierPanel && (
-            <SupplierSlidePanel
-              supplier={selectedSupplierPanel}
-              onClose={() => setSelectedSupplierPanel(null)}
-              onViewDetail={handleSupplierDoubleClick}
-              onViewOrder={(o) => {
-                setActiveTab('orders');
-                handleOpenOrderDialog(o);
-              }}
-            />
-          )}
+          <Suspense fallback={null}>
+            {activeTab === 'orders' && (
+              <OrderSlidePanel
+                order={selectedOrder}
+                onClose={() => setSelectedOrder(null)}
+                onOpenDialog={(o) => {
+                  setSelectedOrder(null);
+                  handleOpenOrderDialog(o);
+                }}
+                onEdit={() => handleEditOrder(selectedOrder)}
+                onDelete={() => handleDeleteOrder(selectedOrder)}
+                onStatusChange={async (newStatus) => {
+                  try {
+                    await api.updateOrder(selectedOrder.id, { status: newStatus });
+                    refreshBus.publish('orders');
+                    const full = await api.getOrderById(selectedOrder.id);
+                    setSelectedOrder(full);
+                    loadData();
+                  } catch (error) {
+                    toast.error('Erreur: ' + error.message);
+                  }
+                }}
+              />
+            )}
+            {activeTab === 'quotes' && (
+              <QuoteSlidePanel
+                quote={selectedQuote}
+                onClose={() => setSelectedQuote(null)}
+                onOpenDialog={(q) => {
+                  setSelectedQuote(null);
+                  handleOpenQuoteDialog(q);
+                }}
+                onEdit={() => handleEditQuote(selectedQuote)}
+                onDelete={() => handleDeleteQuote(selectedQuote)}
+                onConvert={() => handleConvertQuote(selectedQuote)}
+              />
+            )}
+            {activeTab === 'requests' && (
+              <RequestSlidePanel
+                request={selectedRequest}
+                onClose={() => setSelectedRequest(null)}
+                onOpenDialog={(r) => {
+                  setSelectedRequest(null);
+                  setDialogRequest(r);
+                }}
+                isAdmin={currentUser?.isAdmin}
+                onValidate={handleValidateRequest}
+                onEdit={(r) => {
+                  setSelectedRequest(null);
+                  handleEditRequest(r);
+                }}
+              />
+            )}
+            {activeTab === 'suppliers' && selectedSupplierPanel && (
+              <SupplierSlidePanel
+                supplier={selectedSupplierPanel}
+                onClose={() => setSelectedSupplierPanel(null)}
+                onViewDetail={handleSupplierDoubleClick}
+                onViewOrder={(o) => {
+                  setActiveTab('orders');
+                  handleOpenOrderDialog(o);
+                }}
+              />
+            )}
+          </Suspense>
         </div>
       )}
 
       {activeTab === 'tracking' && <MyLinkedOrdersList orders={myLinkedOrders} loading={loading} />}
 
-      {dialogOrder && (
-        <OrderDetailDialog
-          order={dialogOrder}
-          onClose={() => setDialogOrder(null)}
-          onEdit={() => {
-            setDialogOrder(null);
-            handleEditOrder(dialogOrder);
-          }}
-          onDelete={() => {
-            setDialogOrder(null);
-            handleDeleteOrder(dialogOrder);
-          }}
-          onStatusChange={async (newStatus) => {
-            try {
-              await api.updateOrder(dialogOrder.id, { status: newStatus });
-              refreshBus.publish('orders');
-              const full = await api.getOrderById(dialogOrder.id);
-              setDialogOrder(full);
-              loadData();
-            } catch (error) {
-              toast.error('Erreur: ' + error.message);
-            }
-          }}
-        />
-      )}
-      {dialogQuote && (
-        <QuoteDetailDialog
-          quote={dialogQuote}
-          onClose={() => setDialogQuote(null)}
-          onEdit={() => {
-            setDialogQuote(null);
-            handleEditQuote(dialogQuote);
-          }}
-          onDelete={() => {
-            setDialogQuote(null);
-            handleDeleteQuote(dialogQuote);
-          }}
-          onConvert={() => {
-            setDialogQuote(null);
-            handleConvertQuote(dialogQuote);
-          }}
-          onStatusChange={async (newStatus) => {
-            try {
-              await api.updateQuote(dialogQuote.id, { status: newStatus });
-              const full = await api.getQuoteById(dialogQuote.id);
-              setDialogQuote(full);
-              loadData();
-            } catch (error) {
-              toast.error('Erreur: ' + error.message);
-            }
-          }}
-        />
-      )}
-      {dialogRequest && (
-        <RequestDetailDialog
-          request={dialogRequest}
-          onClose={() => setDialogRequest(null)}
-          isAdmin={currentUser?.isAdmin}
-          onValidate={handleValidateRequest}
-          onDelete={handleDeleteRequest}
-          onDetach={handleDetachRequest}
-          onEdit={(r) => {
-            setDialogRequest(null);
-            handleEditRequest(r);
-          }}
-        />
-      )}
+      <Suspense fallback={null}>
+        {dialogOrder && (
+          <OrderDetailDialog
+            order={dialogOrder}
+            onClose={() => setDialogOrder(null)}
+            onEdit={() => {
+              setDialogOrder(null);
+              handleEditOrder(dialogOrder);
+            }}
+            onDelete={() => {
+              setDialogOrder(null);
+              handleDeleteOrder(dialogOrder);
+            }}
+            onStatusChange={async (newStatus) => {
+              try {
+                await api.updateOrder(dialogOrder.id, { status: newStatus });
+                refreshBus.publish('orders');
+                const full = await api.getOrderById(dialogOrder.id);
+                setDialogOrder(full);
+                loadData();
+              } catch (error) {
+                toast.error('Erreur: ' + error.message);
+              }
+            }}
+          />
+        )}
+        {dialogQuote && (
+          <QuoteDetailDialog
+            quote={dialogQuote}
+            onClose={() => setDialogQuote(null)}
+            onEdit={() => {
+              setDialogQuote(null);
+              handleEditQuote(dialogQuote);
+            }}
+            onDelete={() => {
+              setDialogQuote(null);
+              handleDeleteQuote(dialogQuote);
+            }}
+            onConvert={() => {
+              setDialogQuote(null);
+              handleConvertQuote(dialogQuote);
+            }}
+            onStatusChange={async (newStatus) => {
+              try {
+                await api.updateQuote(dialogQuote.id, { status: newStatus });
+                const full = await api.getQuoteById(dialogQuote.id);
+                setDialogQuote(full);
+                loadData();
+              } catch (error) {
+                toast.error('Erreur: ' + error.message);
+              }
+            }}
+          />
+        )}
+        {dialogRequest && (
+          <RequestDetailDialog
+            request={dialogRequest}
+            onClose={() => setDialogRequest(null)}
+            isAdmin={currentUser?.isAdmin}
+            onValidate={handleValidateRequest}
+            onDelete={handleDeleteRequest}
+            onDetach={handleDetachRequest}
+            onEdit={(r) => {
+              setDialogRequest(null);
+              handleEditRequest(r);
+            }}
+          />
+        )}
 
-      {showOrderForm && (
-        <OrderFormModal
-          order={editingOrder}
-          suppliers={suppliers}
-          onSave={handleSaveOrder}
-          onClose={() => {
-            setShowOrderForm(false);
-            setEditingOrder(null);
-          }}
-        />
-      )}
-      {dispatchPrefill && (
-        <OrderFormModal
-          order={dispatchPrefill.prefillOrder}
-          suppliers={suppliers}
-          onSave={handleSaveDispatchOrder}
-          onClose={() => setDispatchPrefill(null)}
-        />
-      )}
-      {showQuoteForm && (
-        <QuoteFormModal
-          quote={editingQuote}
-          clients={clients}
-          onSave={handleSaveQuote}
-          onClose={() => {
-            setShowQuoteForm(false);
-            setEditingQuote(null);
-          }}
-        />
-      )}
-      {showSupplierForm && (
-        <SupplierFormModal
-          supplier={editingSupplier}
-          onSave={handleSaveSupplier}
-          onClose={() => {
-            setShowSupplierForm(false);
-            setEditingSupplier(null);
-          }}
-        />
-      )}
-      {showRequestModal && (
-        <MaterialRequestModal
-          request={editingRequest}
-          suppliers={suppliers}
-          onSave={handleSaveRequest}
-          onClose={() => {
-            setShowRequestModal(false);
-            setEditingRequest(null);
-          }}
-        />
-      )}
-      {approvingRequest && (
-        <ApproveRequestModal
-          request={approvingRequest.request}
-          eligibleData={approvingRequest.eligibleData}
-          onConfirm={handleConfirmApproval}
-          onClose={() => setApprovingRequest(null)}
-        />
-      )}
-      {supplierDetailData && (
-        <SupplierDetailModal
-          data={supplierDetailData}
-          onClose={() => setSupplierDetailData(null)}
-          onViewOrder={handleViewOrder}
-          onReload={async () => {
-            const detail = await api.getSupplierFullDetail(supplierDetailData.supplier.id);
-            setSupplierDetailData(detail);
-          }}
-          currentUser={currentUser}
-        />
-      )}
+        {showOrderForm && (
+          <OrderFormModal
+            order={editingOrder}
+            suppliers={suppliers}
+            onSave={handleSaveOrder}
+            onClose={() => {
+              setShowOrderForm(false);
+              setEditingOrder(null);
+            }}
+          />
+        )}
+        {dispatchPrefill && (
+          <OrderFormModal
+            order={dispatchPrefill.prefillOrder}
+            suppliers={suppliers}
+            onSave={handleSaveDispatchOrder}
+            onClose={() => setDispatchPrefill(null)}
+          />
+        )}
+        {showQuoteForm && (
+          <QuoteFormModal
+            quote={editingQuote}
+            clients={clients}
+            onSave={handleSaveQuote}
+            onClose={() => {
+              setShowQuoteForm(false);
+              setEditingQuote(null);
+            }}
+          />
+        )}
+        {showSupplierForm && (
+          <SupplierFormModal
+            supplier={editingSupplier}
+            onSave={handleSaveSupplier}
+            onClose={() => {
+              setShowSupplierForm(false);
+              setEditingSupplier(null);
+            }}
+          />
+        )}
+        {showRequestModal && (
+          <MaterialRequestModal
+            request={editingRequest}
+            suppliers={suppliers}
+            onSave={handleSaveRequest}
+            onClose={() => {
+              setShowRequestModal(false);
+              setEditingRequest(null);
+            }}
+          />
+        )}
+        {approvingRequest && (
+          <ApproveRequestModal
+            request={approvingRequest.request}
+            eligibleData={approvingRequest.eligibleData}
+            onConfirm={handleConfirmApproval}
+            onClose={() => setApprovingRequest(null)}
+          />
+        )}
+        {supplierDetailData && (
+          <SupplierDetailModal
+            data={supplierDetailData}
+            onClose={() => setSupplierDetailData(null)}
+            onViewOrder={handleViewOrder}
+            onReload={async () => {
+              const detail = await api.getSupplierFullDetail(supplierDetailData.supplier.id);
+              setSupplierDetailData(detail);
+            }}
+            currentUser={currentUser}
+          />
+        )}
+      </Suspense>
       {ConfirmDialogRenderer}
     </div>
   );

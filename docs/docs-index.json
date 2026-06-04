@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-05-27",
+  "generated": "2026-06-04",
   "sections": {
     "api": {
       "path": "docs/api/",
@@ -58,7 +58,7 @@
       ]
     }
   },
-  "totalFiles": 119,
+  "totalFiles": 121,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

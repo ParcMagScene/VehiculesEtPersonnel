@@ -50,6 +50,59 @@
   transform: translateX(0);
 }
 
+/* ═══════════════════════════════════════
+   Mode "docked" / inline (split layout)
+   ═══════════════════════════════════════
+   Le volet est rendu en place dans le flux flex du parent. Il prend la
+   hauteur du conteneur (tableau), ne masque ni le header, ni les toolbars,
+   ni les banners. Pas de backdrop.
+   Pré-requis côté parent : `display:flex; min-height:0; overflow:hidden`
+   et la liste/tableau adjacent en `flex:1; min-width:0` (pour adapter la
+   largeur à l'ouverture du volet).
+*/
+.ui-drawer--inline {
+  position: relative;
+  top: auto;
+  bottom: auto;
+  right: auto;
+  left: auto;
+  height: 100%;
+  align-self: stretch;
+  flex-shrink: 0;
+  max-width: 100%;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1));
+  /* Largeur animée pour produire un vrai split (la liste rétrécit) au lieu
+     d'une superposition. La transition translate sert de fallback subtil. */
+  transition:
+    width var(--duration-normal, 0.3s) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+    transform var(--duration-normal, 0.3s) var(--ease-out, cubic-bezier(0.33, 1, 0.68, 1)),
+    opacity var(--duration-normal, 0.3s) var(--ease-out);
+}
+
+/* Animation d'entrée / sortie docked : la largeur grandit/rétrécit + léger
+   slide horizontal. La classe .ui-drawer--open est ajoutée après mount. */
+.ui-drawer--inline.ui-drawer--right {
+  border-left: 1px solid var(--theme-border);
+  border-right: none;
+  transform: translateX(8px);
+  opacity: 0;
+}
+.ui-drawer--inline.ui-drawer--right.ui-drawer--open {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.ui-drawer--inline.ui-drawer--left {
+  border-right: 1px solid var(--theme-border);
+  border-left: none;
+  transform: translateX(-8px);
+  opacity: 0;
+}
+.ui-drawer--inline.ui-drawer--left.ui-drawer--open {
+  transform: translateX(0);
+  opacity: 1;
+}
+
 /* ── Header ── */
 .ui-drawer-header {
   display: flex;
@@ -98,7 +151,7 @@
   height: var(--close-btn-size, 32px);
   border-radius: var(--close-btn-radius, 8px);
   border: 1px solid var(--close-btn-border, var(--close-btn-border));
-  background: var(--close-btn-bg, rgba(255, 255, 255, 0.12));
+  background: var(--close-btn-bg);
   color: var(--close-btn-color, var(--theme-bg-card));
   cursor: pointer;
   transition:
@@ -109,7 +162,7 @@
 }
 
 .ui-drawer-close:hover {
-  background: var(--close-btn-hover-bg, rgba(255, 255, 255, 0.22));
+  background: var(--close-btn-hover-bg);
   border-color: var(--close-btn-hover-border, var(--glass));
 }
 
@@ -147,5 +200,15 @@
   }
   .ui-drawer-footer {
     padding: var(--space-3) var(--space-4);
+  }
+  /* En mobile, le mode docked repasse en plein écran (la liste passe
+     dessous via overflow du parent). */
+  .ui-drawer--inline {
+    position: fixed;
+    inset: 0;
+    width: 100vw !important;
+    max-width: 100vw;
+    height: auto;
+    z-index: var(--z-modal, 9000);
   }
 }

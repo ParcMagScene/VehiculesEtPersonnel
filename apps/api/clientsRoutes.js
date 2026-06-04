@@ -3,7 +3,7 @@
 // GET → conservé en lecture seule + headers Deprecation (sera supprimé)
 // POST/PUT/DELETE → 410 Gone (aucun consommateur runtime côté apps)
 
-import { cacheMiddleware, listCache } from './cache.js';
+import { browserRevalidate, cacheMiddleware, listCache } from './cache.js';
 import db from './database.js';
 import logger from './logger.js';
 
@@ -34,6 +34,7 @@ export function setupClientsRoutes(app, authenticateToken, _requireAdmin) {
   app.get(
     '/api/clients',
     authenticateToken,
+    browserRevalidate(),
     cacheMiddleware(listCache, () => 'clients', 60_000),
     (req, res) => {
       setDeprecationHeaders(res, '/api/annuaire/clients');

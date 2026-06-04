@@ -65,7 +65,15 @@ function PersonalSuiviWrapper({ currentUser, personnel = [], initialPersonId = n
   // Si on est en authentification personnelle, afficher le SuiviPanel filtré
   if (isPersonalAuthenticated && authenticatedPerson) {
     return (
-      <div style={{ position: 'relative' }}>
+      <div
+        style={{
+          position: 'relative',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
         {/* Header de session personnelle */}
         <div
           style={{
@@ -103,12 +111,14 @@ function PersonalSuiviWrapper({ currentUser, personnel = [], initialPersonId = n
         </div>
 
         {/* Panel suivi filtré au personnel authentifié */}
-        <SuiviPanel
-          currentUser={currentUser}
-          initialPersonId={authenticatedPerson.id}
-          isPersonalMode={true}
-          onPersonalDataSaved={handlePersonalDataSaved}
-        />
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <SuiviPanel
+            currentUser={currentUser}
+            initialPersonId={authenticatedPerson.id}
+            isPersonalMode={true}
+            onPersonalDataSaved={handlePersonalDataSaved}
+          />
+        </div>
 
         {/* Modal avertissement auto-déconnexion */}
         {showAutoLogoutWarning && (
@@ -134,12 +144,21 @@ function PersonalSuiviWrapper({ currentUser, personnel = [], initialPersonId = n
 
   // Mode équipe normal avec accès personnalisé
   return (
-    <div>
-      <SuiviPanel
-        currentUser={currentUser}
-        initialPersonId={initialPersonId}
-        isPersonalMode={false}
-      />
+    <div
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+      }}
+    >
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <SuiviPanel
+          currentUser={currentUser}
+          initialPersonId={initialPersonId}
+          isPersonalMode={false}
+        />
+      </div>
 
       {/* Bouton "Accès Personnel" si compte équipe */}
       {currentUser?.isTeam && (

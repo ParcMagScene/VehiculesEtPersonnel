@@ -42,7 +42,8 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TableVirtuoso } from 'react-virtuoso';
 
 import {
   Avatar,
@@ -55,7 +56,6 @@ import {
   SearchBar,
   Select,
   Spinner,
-  Table,
   Textarea,
   Tooltip,
 } from '@/design-system';
@@ -66,7 +66,9 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
+import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
+import { computeGridColumnsCss } from '../../utils/planningGridColumns';
 import { refreshBus } from '../../utils/refresh-bus';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
 import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
@@ -95,6 +97,44 @@ import PositionsTab from './PositionsTab';
 import SkillsTab from './SkillsTab';
 
 // ═══════════════════════════════════════
+// Composants TableVirtuoso pour la liste personnel
+// Définis au module-level pour éviter remounts à chaque render.
+// `context` est utilisé pour transmettre selectedId + handlers aux rows.
+// ═══════════════════════════════════════
+const PpVirtuosoScroller = forwardRef(function PpVirtuosoScroller(props, ref) {
+  return <div {...props} ref={ref} />;
+});
+const PpVirtuosoTable = (props) => <table {...props} className="eq-table pp-table" />;
+const PpVirtuosoTableHead = forwardRef(function PpVirtuosoTableHead(props, ref) {
+  return <thead {...props} ref={ref} />;
+});
+const PpVirtuosoTableBody = forwardRef(function PpVirtuosoTableBody(props, ref) {
+  return <tbody {...props} ref={ref} />;
+});
+const PpVirtuosoTableRow = ({ item, context, ...rest }) => {
+  if (item?.__group) {
+    return <tr {...rest} className="pp-group-header" />;
+  }
+  const selectedId = context?.selectedId;
+  const inactive = item?.status === STATUS.INACTIVE;
+  return (
+    <tr
+      {...rest}
+      className={`eq-table-row${selectedId === item?.id ? ' selected' : ''}${inactive ? ' pp-row-inactive' : ''}`}
+      onClick={() => item && context?.onSelect?.(item)}
+      onDoubleClick={() => item && context?.onEdit?.(item)}
+    />
+  );
+};
+const PP_TABLE_COMPONENTS = {
+  Scroller: PpVirtuosoScroller,
+  Table: PpVirtuosoTable,
+  TableHead: PpVirtuosoTableHead,
+  TableBody: PpVirtuosoTableBody,
+  TableRow: PpVirtuosoTableRow,
+};
+
+// ═══════════════════════════════════════
 // Composant principal
 // ═══════════════════════════════════════
 
@@ -111,6 +151,7 @@ const PersonnelPanel = ({
   quickAssignmentSlot,
   onQuickAssignmentHandled,
   onOpenSuivi,
+  googleBanner = null,
 }) => {
   const toast = useToast();
   const [subTab, setSubTab] = useState(mode === 'planning' ? 'planning' : 'persons');
@@ -344,6 +385,7 @@ const PersonnelPanel = ({
           onQuickAssignmentHandled={onQuickAssignmentHandled}
           currentUser={currentUser}
           onOpenSuivi={onOpenSuivi}
+          googleBanner={googleBanner}
         />
         {editFormVisible && (
           <ModalLayout
@@ -794,6 +836,45 @@ const PersonsTab = ({
     [filteredPersons],
   );
 
+  // [PERF Phase 4.L] Données aplaties pour TableVirtuoso :
+  // chaque élément est soit un séparateur de groupe (__group=true), soit une personne.
+  // Cela permet la virtualisation tout en conservant les en-têtes de section.
+  const ppTableData = useMemo(() => {
+    const items = [];
+    if (permanentsList.length > 0) {
+      items.push({
+        __group: true,
+        kind: 'permanent',
+        label: 'Permanents',
+        count: permanentsList.length,
+      });
+      items.push(...permanentsList);
+    }
+    if (nonPermanentsList.length > 0) {
+      items.push({
+        __group: true,
+        kind: 'non-permanent',
+        label: 'Non-permanents',
+        count: nonPermanentsList.length,
+      });
+      items.push(...nonPermanentsList);
+    }
+    return items;
+  }, [permanentsList, nonPermanentsList]);
+
+  // Context partagé avec les composants TableVirtuoso (au module-level).
+  // Toggle sélection au clic, ouverture édition au double-clic.
+  const ppTableContext = useMemo(
+    () => ({
+      selectedId: selectedPerson?.id || null,
+      onSelect: (person) => setSelectedPerson((prev) => (prev?.id === person.id ? null : person)),
+      onEdit: (person) => openEdit(person),
+    }),
+    // openEdit est stable (defined plus haut sans deps externes); selectedPerson change le HIT visuel
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedPerson?.id],
+  );
+
   return (
     <div className="personnel-tab-content">
       {/* Toolbar */}
@@ -911,8 +992,15 @@ const PersonsTab = ({
             />
           ) : (
             <div className="eq-table-wrap">
-              <Table className="eq-table pp-table">
-                <thead>
+              <TableVirtuoso
+                style={{ height: '100%' }}
+                data={ppTableData}
+                overscan={200}
+                increaseViewportBy={200}
+                components={PP_TABLE_COMPONENTS}
+                computeItemKey={(_idx, item) => (item?.__group ? `g-${item.kind}` : `p-${item.id}`)}
+                context={ppTableContext}
+                fixedHeaderContent={() => (
                   <tr>
                     <th style={{ width: 40 }}></th>
                     <th>Nom</th>
@@ -924,136 +1012,105 @@ const PersonsTab = ({
                     <th>Statut</th>
                     <th style={{ width: 70 }}>Actions</th>
                   </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const renderRow = (person) => {
-                      const badge = getTypeBadge(person);
-                      let postes = [];
-                      try {
-                        const raw = person.defaultPositions || person.default_positions;
-                        postes = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
-                      } catch {
-                        /* ignore */
-                      }
-                      return (
-                        <tr
-                          key={person.id}
-                          className={`eq-table-row${selectedPerson?.id === person.id ? ' selected' : ''}${person.status === STATUS.INACTIVE ? ' pp-row-inactive' : ''}`}
-                          onClick={() =>
-                            setSelectedPerson(selectedPerson?.id === person.id ? null : person)
-                          }
-                          onDoubleClick={() => openEdit(person)}
-                        >
-                          <td className="eq-table-thumb">
-                            <Avatar name={`${person.firstName} ${person.lastName}`} size="xs" />
-                          </td>
-                          <td className="eq-table-name">{person.lastName}</td>
-                          <td>{person.firstName}</td>
-                          <td>
-                            <span className={`pp-type-badge ${badge.cls}`}>{badge.label}</span>
-                          </td>
-                          <td className="pp-phone-cell">
-                            {formatPhoneDisplay(person.phone) || '—'}
-                          </td>
-                          <td className="pp-email-cell">{person.email || '—'}</td>
-                          <td className="pp-postes-cell">
-                            {postes.length > 0 ? (
-                              <div className="pp-postes-chips">
-                                {postes.slice(0, 2).map((name, i) => {
-                                  const posObj = positions.find((p) => p.name === name);
-                                  const catColor =
-                                    POSITION_CATEGORIES.find((c) => c.value === posObj?.category)
-                                      ?.color || 'var(--theme-text-gray)';
-                                  return (
-                                    <span
-                                      key={i}
-                                      className="skill-chip-mini"
-                                      style={{ '--chip-color': catColor }}
-                                    >
-                                      {name}
-                                    </span>
-                                  );
-                                })}
-                                {postes.length > 2 && (
-                                  <span className="skill-more">+{postes.length - 2}</span>
-                                )}
-                              </div>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                          <td>
-                            <span className={`pp-status-dot ${person.status}`}>
-                              {person.status === STATUS.ACTIVE ? '● Actif' : '○ Inactif'}
-                            </span>
-                          </td>
-                          <td className="pp-actions-cell">
-                            <Tooltip content="Modifier">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                iconOnly
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEdit(person);
-                                }}
-                                aria-label="Modifier"
-                              >
-                                <Edit2 size={14} />
-                              </Button>
-                            </Tooltip>
-                            {currentUser?.isAdmin && (
-                              <Tooltip content="Supprimer">
-                                <Button
-                                  variant="danger"
-                                  size="sm"
-                                  iconOnly
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(person.id);
-                                  }}
-                                  aria-label="Supprimer"
-                                >
-                                  <Trash2 size={14} />
-                                </Button>
-                              </Tooltip>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    };
+                )}
+                itemContent={(_idx, item) => {
+                  if (item?.__group) {
                     return (
-                      <>
-                        {permanentsList.length > 0 && (
-                          <>
-                            <tr className="pp-group-header">
-                              <td colSpan={9}>
-                                <span className="pp-group-label permanent">
-                                  Permanents ({permanentsList.length})
-                                </span>
-                              </td>
-                            </tr>
-                            {permanentsList.map(renderRow)}
-                          </>
-                        )}
-                        {nonPermanentsList.length > 0 && (
-                          <>
-                            <tr className="pp-group-header">
-                              <td colSpan={9}>
-                                <span className="pp-group-label non-permanent">
-                                  Non-permanents ({nonPermanentsList.length})
-                                </span>
-                              </td>
-                            </tr>
-                            {nonPermanentsList.map(renderRow)}
-                          </>
-                        )}
-                      </>
+                      <td colSpan={9}>
+                        <span className={`pp-group-label ${item.kind}`}>
+                          {item.label} ({item.count})
+                        </span>
+                      </td>
                     );
-                  })()}
-                </tbody>
-              </Table>
+                  }
+                  const person = item;
+                  const badge = getTypeBadge(person);
+                  let postes = [];
+                  try {
+                    const raw = person.defaultPositions || person.default_positions;
+                    postes = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+                  } catch {
+                    /* ignore */
+                  }
+                  return (
+                    <>
+                      <td className="eq-table-thumb">
+                        <Avatar name={`${person.firstName} ${person.lastName}`} size="xs" />
+                      </td>
+                      <td className="eq-table-name">{person.lastName}</td>
+                      <td>{person.firstName}</td>
+                      <td>
+                        <span className={`pp-type-badge ${badge.cls}`}>{badge.label}</span>
+                      </td>
+                      <td className="pp-phone-cell">{formatPhoneDisplay(person.phone) || '—'}</td>
+                      <td className="pp-email-cell">{person.email || '—'}</td>
+                      <td className="pp-postes-cell">
+                        {postes.length > 0 ? (
+                          <div className="pp-postes-chips">
+                            {postes.slice(0, 2).map((name, i) => {
+                              const posObj = positions.find((p) => p.name === name);
+                              const catColor =
+                                POSITION_CATEGORIES.find((c) => c.value === posObj?.category)
+                                  ?.color || 'var(--theme-text-gray)';
+                              return (
+                                <span
+                                  key={i}
+                                  className="skill-chip-mini"
+                                  style={{ '--chip-color': catColor }}
+                                >
+                                  {name}
+                                </span>
+                              );
+                            })}
+                            {postes.length > 2 && (
+                              <span className="skill-more">+{postes.length - 2}</span>
+                            )}
+                          </div>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td>
+                        <span className={`pp-status-dot ${person.status}`}>
+                          {person.status === STATUS.ACTIVE ? '● Actif' : '○ Inactif'}
+                        </span>
+                      </td>
+                      <td className="pp-actions-cell">
+                        <Tooltip content="Modifier">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            iconOnly
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEdit(person);
+                            }}
+                            aria-label="Modifier"
+                          >
+                            <Edit2 size={14} />
+                          </Button>
+                        </Tooltip>
+                        {currentUser?.isAdmin && (
+                          <Tooltip content="Supprimer">
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              iconOnly
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(person.id);
+                              }}
+                              aria-label="Supprimer"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </Tooltip>
+                        )}
+                      </td>
+                    </>
+                  );
+                }}
+              />
             </div>
           )}
         </div>
@@ -1587,6 +1644,7 @@ const PlanningTab = ({
   onQuickAssignmentHandled,
   currentUser,
   onOpenSuivi,
+  googleBanner = null,
 }) => {
   const toast = useToast();
   const { confirm: confirmDelete, ConfirmDialogRenderer: DeleteConfirmRenderer } =
@@ -1966,12 +2024,14 @@ const PlanningTab = ({
     [missionSpans],
   );
 
-  // Grid columns CSS
-  const gridColumns = useMemo(() => {
-    if (view === 'year') return `repeat(12, minmax(120px, 1fr))`;
-    const minWidth = view === 'week' ? 120 : 56;
-    return `repeat(${days.length}, minmax(${minWidth}px, 1fr))`;
-  }, [view, days.length]);
+  // Grid columns CSS — source de verite UNIQUE partagee avec le banner
+  // Google Calendar et le module Parc, via utils/planningGridColumns.
+  // Garantit l'alignement pixel-perfect entre banner et grille.
+  const windowWidth = useWindowWidth();
+  const gridColumns = useMemo(
+    () => computeGridColumnsCss({ view, days, module: 'planning', windowWidth }),
+    [view, days, windowWidth],
+  );
 
   // Scroll synchronisé
   useEffect(() => {
@@ -2434,27 +2494,49 @@ const PlanningTab = ({
               style={{
                 cursor: view !== 'year' && !isCovered && !isFullAbsence ? 'crosshair' : 'default',
                 ...(hasAbsence
-                  ? {
+                  ? (() => {
                       // [2.5] AM = moitié haut, PM = moitié bas, FULL = tout
-                      backgroundColor:
-                        absence.period === 'FULL'
-                          ? absenceColor + (absence.status === STATUS.PENDING ? '30' : '40')
-                          : 'transparent',
-                      backgroundImage:
-                        absence.period === 'AM'
-                          ? `linear-gradient(to bottom, ${absenceColor}${absence.status === STATUS.PENDING ? '30' : '40'} 50%, transparent 50%)`
-                          : absence.period === 'PM'
-                            ? `linear-gradient(to bottom, transparent 50%, ${absenceColor}${absence.status === STATUS.PENDING ? '30' : '40'} 50%)`
-                            : absence.status === STATUS.PENDING
-                              ? `repeating-linear-gradient(45deg, transparent, transparent 4px, ${absenceColor}20 4px, ${absenceColor}20 8px)`
-                              : 'none',
-                    }
+                      // Pending = hachures diagonales marquées + bordure dashed pour signaler "demande en attente"
+                      const isPending = absence.status === STATUS.PENDING;
+                      const baseAlpha = isPending ? '25' : '40';
+                      const stripesAlpha = isPending ? '70' : '00';
+                      const stripes = isPending
+                        ? `, repeating-linear-gradient(45deg, transparent 0, transparent 5px, ${absenceColor}${stripesAlpha} 5px, ${absenceColor}${stripesAlpha} 8px)`
+                        : '';
+                      let backgroundImage = 'none';
+                      if (absence.period === 'AM') {
+                        backgroundImage = `linear-gradient(to bottom, ${absenceColor}${baseAlpha} 50%, transparent 50%)${stripes}`;
+                      } else if (absence.period === 'PM') {
+                        backgroundImage = `linear-gradient(to bottom, transparent 50%, ${absenceColor}${baseAlpha} 50%)${stripes}`;
+                      } else if (isPending) {
+                        backgroundImage = `repeating-linear-gradient(45deg, transparent 0, transparent 5px, ${absenceColor}${stripesAlpha} 5px, ${absenceColor}${stripesAlpha} 8px)`;
+                      }
+                      return {
+                        backgroundColor:
+                          absence.period === 'FULL' ? absenceColor + baseAlpha : 'transparent',
+                        backgroundImage,
+                        ...(isPending
+                          ? {
+                              outline: `1.5px dashed ${absenceColor}`,
+                              outlineOffset: '-2px',
+                            }
+                          : {}),
+                      };
+                    })()
                   : {}),
               }}
             >
               {/* Label absence */}
               {hasAbsence && !isCovered && (
-                <span className="pp-absence-label" style={{ color: absenceColor }}>
+                <span
+                  className="pp-absence-label"
+                  style={{
+                    color: absenceColor,
+                    fontStyle: absence.status === STATUS.PENDING ? 'italic' : 'normal',
+                    opacity: absence.status === STATUS.PENDING ? 0.85 : 1,
+                  }}
+                >
+                  {absence.status === STATUS.PENDING ? '⏳ ' : ''}
                   {absenceLabel}
                   {absencePeriodLabel}
                 </span>
@@ -2653,13 +2735,6 @@ const PlanningTab = ({
               >
                 Mois
               </Button>
-              <Button
-                variant="ghost"
-                className={`cal-nav-view-btn ${view === 'year' ? 'active' : ''}`}
-                onClick={() => setView('year')}
-              >
-                Année
-              </Button>
             </div>
             <div className="cal-nav-date">
               <Button
@@ -2705,12 +2780,6 @@ const PlanningTab = ({
             </div>
           </div>
         )}
-        <SearchBar
-          value={planningSearch}
-          onChange={setPlanningSearch}
-          placeholder="Rechercher un personnel..."
-          size="sm"
-        />
         <div className="pp-planning-filters">
           <Filter size={14} />
           <Select
@@ -2735,7 +2804,20 @@ const PlanningTab = ({
           <Star size={14} fill={sortByFavorites ? 'currentColor' : 'none'} />
           Favoris
         </Button>
+        {onPersonCreate && (
+          <Button
+            variant="primary"
+            className="pp-planning-add-btn"
+            onClick={onPersonCreate}
+            title="Ajouter une personne (modification/suppression : clic droit sur la ligne)"
+          >
+            <Plus size={14} />
+            Nouveau
+          </Button>
+        )}
       </div>
+
+      {googleBanner}
 
       {filteredPersons.length === 0 ? (
         <EmptyState
@@ -2752,6 +2834,17 @@ const PlanningTab = ({
       ) : (
         <div className="pp-planning-with-panel">
           <div className="pp-calendar-container">
+            {/* Recherche personnel (contenue dans la colonne sidebar) */}
+            <div className="pp-planning-search-row">
+              <div className="pp-planning-search-wrap" style={{ width: personColumnWidth }}>
+                <SearchBar
+                  value={planningSearch}
+                  onChange={setPlanningSearch}
+                  placeholder="Rechercher…"
+                  size="sm"
+                />
+              </div>
+            </div>
             {/* Ligne d'en-têtes */}
             <div className="pp-headers-row">
               <div className="pp-column-header">
@@ -2803,9 +2896,9 @@ const PlanningTab = ({
                           key={i}
                           className={`pp-header-cell day-header${isWeekendFn(day) ? ' weekend' : ''}${isToday(day) ? ' today' : ''}`}
                         >
-                          <div className="pp-day-name">{format(day, 'EEE', { locale: fr })}</div>
+                          <div className="pp-day-name">{format(day, 'EEEE', { locale: fr })}</div>
                           <div className="pp-day-number">
-                            {format(day, 'd MMM', { locale: fr })}
+                            {format(day, 'd MMMM', { locale: fr })}
                           </div>
                         </div>
                       ))}

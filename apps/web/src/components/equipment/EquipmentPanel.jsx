@@ -14,14 +14,12 @@ import {
   Package,
   Plus,
   Printer,
-  RefreshCw,
   Star,
   Tag,
   Upload,
   Wrench,
-  Zap,
 } from 'lucide-react';
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 
 import {
   Button,
@@ -40,10 +38,7 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import { refreshBus } from '../../utils/refresh-bus';
-import SavImportModal from '../sav/SAVManagerModal';
 import DepotMap from '../vehicles/DepotMap';
-import DepotMapFocused from '../vehicles/DepotMapFocused';
 import MaintenanceReportModal from '../vehicles/MaintenanceReportModal';
 import CategoryCascadeFilter from './CategoryCascadeFilter';
 import EquipmentBatchLabels from './EquipmentBatchLabels';
@@ -53,8 +48,6 @@ import { EquipmentDetailDialog, EquipmentSlidePanel } from './EquipmentDetail';
 import EquipmentFormModal from './EquipmentFormModal';
 import EquipmentGrid from './EquipmentGrid';
 import EquipmentImportModal from './EquipmentImportModal';
-import LabelsPrintPanel from './LabelsPrintPanel';
-const LocmatImportModal = lazy(() => import('./import/LocmatImportModal.jsx'));
 import EquipmentLabelPrint from './EquipmentLabelPrint';
 import EquipmentMediaManager from './EquipmentMediaManager';
 import {
@@ -78,8 +71,6 @@ const EquipmentPanel = ({
 }) => {
   const toast = useToast();
   const [exportFamilyId, setExportFamilyId] = React.useState('');
-  const [showLocmatImport, setShowLocmatImport] = React.useState(false);
-  const [backfillingRefs, setBackfillingRefs] = React.useState(false);
   const {
     // Data
     equipment,
@@ -148,8 +139,6 @@ const EquipmentPanel = ({
     // Other modals
     showImportModal,
     setShowImportModal,
-    showSavImportModal,
-    setShowSavImportModal,
     showReportModal,
     setShowReportModal,
     exportingSavPdf,
@@ -308,13 +297,6 @@ const EquipmentPanel = ({
                 placeholder="Rechercher ticket, matériel..."
                 size="sm"
               />
-              {isAdmin && (
-                <Tooltip content="Importer interventions SAV" position="bottom">
-                  <Button variant="secondary" onClick={() => setShowSavImportModal(true)}>
-                    <Upload size={14} /> Import SAV
-                  </Button>
-                </Tooltip>
-              )}
               {canManageEquipmentMaintenance && (
                 <Tooltip content="Rapport maintenance matériel" position="bottom">
                   <Button variant="secondary" onClick={() => setShowReportModal(true)}>
@@ -588,7 +570,6 @@ const EquipmentPanel = ({
                     onConfirm: async () => {
                       try {
                         await api.deleteSavTicket(id);
-                        refreshBus.publish('sav');
                         loadData();
                       } catch (err) {
                         toast.error('Erreur: ' + err.message);
@@ -651,7 +632,6 @@ const EquipmentPanel = ({
                   try {
                     await api.deleteSavTicket(id);
                     setSelectedTicket(null);
-                    refreshBus.publish('sav');
                     loadData();
                   } catch (err) {
                     toast.error('Erreur: ' + err.message);
@@ -725,7 +705,6 @@ const EquipmentPanel = ({
               try {
                 await api.deleteSavTicket(id);
                 setDialogTicket(null);
-                refreshBus.publish('sav');
                 loadData();
               } catch (err) {
                 toast.error('Erreur: ' + err.message);
@@ -781,7 +760,6 @@ const EquipmentPanel = ({
             } else {
               await api.createSavRequest(data);
             }
-            refreshBus.publish('sav');
             setShowMobileSavRequest(false);
             loadData();
           }}
@@ -791,22 +769,6 @@ const EquipmentPanel = ({
 
       {showImportModal && (
         <EquipmentImportModal onClose={() => setShowImportModal(false)} onImportDone={loadData} />
-      )}
-
-      {showLocmatImport && (
-        <Suspense fallback={null}>
-          <LocmatImportModal
-            onClose={() => setShowLocmatImport(false)}
-            onDone={() => {
-              setShowLocmatImport(false);
-              loadData();
-            }}
-          />
-        </Suspense>
-      )}
-
-      {showSavImportModal && (
-        <SavImportModal onClose={() => setShowSavImportModal(false)} onImportDone={loadData} />
       )}
 
       {labelPrintEquipment && (
@@ -841,12 +803,6 @@ const EquipmentPanel = ({
                   color: ACCENT_COLORS.violet,
                 },
                 { id: 'labels', label: 'Étiquettes', icon: Printer, color: ACCENT_COLORS.orange },
-                {
-                  id: 'laser',
-                  label: 'Étiquettes laser',
-                  icon: Zap,
-                  color: ACCENT_COLORS.orange,
-                },
                 { id: 'stats', label: 'Statistiques', icon: Hash, color: STATUS_COLORS.success },
                 { id: 'media', label: 'Médias', icon: ImageIcon, color: ACCENT_COLORS.pink },
               ].map((tab) => (
@@ -888,61 +844,6 @@ const EquipmentPanel = ({
                       <Upload size={16} /> Importer un fichier CSV
                     </Button>
                     <div className="u-mt-2">
-                      <Button
-                        variant="primary"
-                        className="eq-mgmt-import-btn"
-                        onClick={() => {
-                          onCloseManagement();
-                          setShowLocmatImport(true);
-                        }}
-                        title="Import intelligent Locmat (Locations.csv + Serialise.csv) avec aperçu, UID + QR Code par référence et soft-removal des numéros de série"
-                      >
-                        <Upload size={16} /> Import intelligent Locmat
-                      </Button>
-                    </div>
-                    <div className="u-mt-2">
-                      <Button
-                        variant="secondary"
-                        className="eq-mgmt-import-btn"
-                        disabled={backfillingRefs}
-                        onClick={() => {
-                          confirm({
-                            title: 'Mettre à jour les références',
-                            message:
-                              'Mettre à jour catégorie, marque, modèle, photo et localisation ' +
-                              'pour toutes les unités vides en se basant sur les unités déjà ' +
-                              'renseignées de la même référence ?\n\nLes valeurs déjà définies ne seront PAS écrasées.',
-                            confirmLabel: 'Mettre à jour',
-                            onConfirm: async () => {
-                              setBackfillingRefs(true);
-                              try {
-                                const r = await api.backfillLocmatReferences();
-                                toast.success(
-                                  `Mise à jour : ${r.updatedRows} ligne(s) complétée(s) sur ${r.processedRefs} référence(s)` +
-                                    (r.normalizedSerials
-                                      ? `, ${r.normalizedSerials} sérialisé(s) ramené(s) à qté=1.`
-                                      : '.'),
-                                );
-                                await loadData?.();
-                              } catch (e) {
-                                toast.error(
-                                  `Échec mise à jour : ${e?.message || 'erreur inconnue'}`,
-                                );
-                              } finally {
-                                setBackfillingRefs(false);
-                              }
-                            },
-                          });
-                        }}
-                        title="Re-propage catégorie, marque, modèle, photo et localisation depuis l'unité la mieux renseignée de chaque référence vers les autres unités vides. Idempotent : les valeurs déjà définies sont conservées."
-                      >
-                        <RefreshCw size={16} />{' '}
-                        {backfillingRefs
-                          ? 'Mise à jour en cours…'
-                          : 'Mettre à jour catégories / marques / localisations'}
-                      </Button>
-                    </div>
-                    <div className="u-mt-2">
                       <Select
                         className="eq-filter"
                         value={exportFamilyId}
@@ -971,25 +872,6 @@ const EquipmentPanel = ({
                       </Button>
                     </div>
                   </div>
-                  <div className="eq-management-section">
-                    <h3>
-                      <Wrench size={18} /> Import Interventions SAV
-                    </h3>
-                    <p>
-                      Importez les interventions SAV depuis un fichier CSV Locmat. Les interventions
-                      seront automatiquement liées aux équipements via leur numéro de série.
-                    </p>
-                    <Button
-                      variant="primary"
-                      className="eq-mgmt-import-btn"
-                      onClick={() => {
-                        onCloseManagement();
-                        setShowSavImportModal(true);
-                      }}
-                    >
-                      <Upload size={16} /> Importer les interventions
-                    </Button>
-                  </div>
                 </>
               )}
 
@@ -1017,13 +899,6 @@ const EquipmentPanel = ({
                     equipment={equipment}
                     onPrintSingle={(eq) => setLabelPrintEquipment(eq)}
                   />
-                </div>
-              )}
-
-              {/* Onglet Étiquettes laser (LightBurn) */}
-              {mgmtTab === 'laser' && (
-                <div className="eq-management-section">
-                  <LabelsPrintPanel />
                 </div>
               )}
 
@@ -1092,10 +967,15 @@ const EquipmentPanel = ({
           className="eq-depot-map-modal"
         >
           <div className="eq-depot-map-modal-body">
-            <DepotMapFocused
+            <DepotMap
               zones={modalDepotData}
+              stats={locationStats}
+              selectedZone={depotMapModalZone.zoneId}
               focusZoneId={depotMapModalZone.zoneId}
               focusEquipmentName={depotMapModalZone.equipmentName}
+              onZoneSelect={(_zoneId) => {}}
+              onZoneFilter={() => {}}
+              compact={true}
             />
           </div>
         </ModalLayout>

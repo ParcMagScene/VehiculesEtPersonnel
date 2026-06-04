@@ -69,6 +69,11 @@ export const taskCreateSchema = z
     location_address: optStr(500),
     location_lat: z.coerce.number().optional().nullable(),
     location_lng: z.coerce.number().optional().nullable(),
+    all_day: z
+      .union([z.boolean(), z.literal(0), z.literal(1)])
+      .optional()
+      .nullable(),
+    client_name: optStr(255),
   })
   .passthrough();
 
@@ -93,6 +98,11 @@ export const taskUpdateSchema = z
     location_address: optStr(500),
     location_lat: z.coerce.number().optional().nullable(),
     location_lng: z.coerce.number().optional().nullable(),
+    all_day: z
+      .union([z.boolean(), z.literal(0), z.literal(1)])
+      .optional()
+      .nullable(),
+    client_name: optStr(255),
   })
   .passthrough();
 

@@ -14,13 +14,14 @@ import {
   Package,
   Printer,
   QrCode,
+  ShieldCheck,
   Star,
   Tag,
   Trash2,
   Wrench,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   Button,
@@ -33,8 +34,16 @@ import {
 } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import api from '../../utils/api';
 import { safeDate } from '../../utils/formatUtils';
 import { resolveGenericImage } from '../../utils/genericImages';
+import {
+  formatDateFR,
+  formatRelativeDays,
+  STATUS_COLORS as CONTROL_STATUS_COLORS,
+  STATUS_LABELS as CONTROL_STATUS_LABELS,
+} from '../controles/utils';
+import PvDocumentsSection from '../pv-import/PvDocumentsSection';
 import {
   APP_BASE_URL,
   cleanName,
@@ -44,6 +53,75 @@ import {
   SAV_TYPES,
 } from './equipmentConstants';
 import { getCategoryHierarchy, matchLogoToBrand, matchPhotoToEquipment } from './equipmentUtils';
+
+// ───────────────────────────────────────────────────────────────
+// Section "Contrôles périodiques" affichée dans le détail équipement.
+// Fetch dédié via /api/controls/equipment/equipment/:id (les contrôles
+// ne sont pas embarqués dans le payload equipment).
+// ───────────────────────────────────────────────────────────────
+function EquipmentControlsSection({ equipmentId }) {
+  const [items, setItems] = useState(null); // null = loading, [] = vide
+  useEffect(() => {
+    let cancelled = false;
+    if (!equipmentId) return;
+    api
+      .getControlsForEntity('equipment', equipmentId)
+      .then((r) => {
+        if (!cancelled) setItems(r?.success ? r.data || [] : []);
+      })
+      .catch(() => {
+        if (!cancelled) setItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [equipmentId]);
+
+  if (items === null) return null; // loading silencieux (pas de spinner intrusif)
+
+  return (
+    <div className="eq-detail-section">
+      <h3>
+        <ShieldCheck size={16} /> Contrôles périodiques ({items.length})
+      </h3>
+      {items.length === 0 ? (
+        <p className="eq-detail-empty">Aucun contrôle planifié</p>
+      ) : (
+        <div className="eq-detail-list">
+          {items.map((c) => {
+            const colors = CONTROL_STATUS_COLORS[c.status] || CONTROL_STATUS_COLORS.A_FAIRE;
+            const isLate = c.status === 'EN_RETARD' || c.status === 'MANQUE';
+            return (
+              <div
+                key={c.id}
+                className="eq-ticket-item"
+                style={{ borderLeft: `3px solid ${colors.border}` }}
+              >
+                <div className="eq-ticket-header">
+                  <span className="eq-ticket-type">{c.type_code}</span>
+                  <span
+                    className="eq-ticket-status"
+                    style={{ background: colors.bg, color: colors.fg }}
+                  >
+                    {CONTROL_STATUS_LABELS[c.status] || c.status}
+                  </span>
+                </div>
+                <strong>{c.type_name}</strong>
+                <div className="eq-ticket-meta">
+                  <span style={{ color: isLate ? '#991b1b' : undefined }}>
+                    Échéance : {formatDateFR(c.next_due_date)}
+                    {c.next_due_date ? ` · ${formatRelativeDays(c.next_due_date)}` : ''}
+                  </span>
+                  {c.last_done_date && <span>Dernier : {formatDateFR(c.last_done_date)}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const EquipmentDetailContent = ({
   eq,
@@ -290,6 +368,12 @@ const EquipmentDetailContent = ({
         </div>
       )}
 
+      {/* Contrôles périodiques (VGP levage, EPI, Q18 électrique, etc.) */}
+      <EquipmentControlsSection equipmentId={eq.id} />
+
+      {/* PV de contrôle importés (rapports DEKRA / Apave / Socotec…) */}
+      <PvDocumentsSection entityType="equipment" entityId={eq.id} />
+
       {/* Interventions SAV */}
       {(() => {
         const tickets = eq.savTickets || [];
@@ -408,6 +492,8 @@ const EquipmentSlidePanel = ({
       onClose={onClose}
       side="right"
       width={420}
+      inline
+      overlay={false}
       className="eq-slide-panel"
       title={
         <span className="eq-slide-title-row">

@@ -13,7 +13,7 @@ import {
   Square,
   Trash2,
 } from 'lucide-react';
-import { Fragment, memo, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Input, Select, Textarea } from '@/design-system';
 
@@ -140,6 +140,24 @@ function FicheSuivi({ sheet, onSave, saving }) {
       .catch(() => setRecurringTasks([]));
   }, [sheet?.person_id]);
 
+  // Lookup rapide des méta-données d'une tâche planning (affaire_type,
+  // affaire_num, affaire_nom, title) à partir de son id. Sert à afficher
+  // clairement la tâche pickée "Depuis planning" dans la grille.
+  const planningMetaById = useMemo(() => {
+    const map = new Map();
+    for (const t of planningTasks) {
+      map.set(t.id, {
+        title: t.title || t.google_event_title || '',
+        affaire_type: t.affaire_type || null,
+        affaire_num: t.affaire_num || null,
+        affaire_nom: t.affaire_nom || t.affaire_titre || null,
+        section: t.section || null,
+        time: t.time || null,
+      });
+    }
+    return map;
+  }, [planningTasks]);
+
   const handlePickPlanningTask = useCallback(
     (task, period) => {
       const entry = {
@@ -155,7 +173,10 @@ function FicheSuivi({ sheet, onSave, saving }) {
         sort_order: entries.length,
       };
       setEntries((prev) => [...prev, entry]);
-      setPlanningTasks((prev) => prev.filter((t) => t.id !== task.id));
+      // On NE retire PAS la tâche de planningTasks : on garde la liste complète
+      // pour pouvoir résoudre les méta (type / num / nom d'affaire) à
+      // l'affichage de la ligne. Le filtrage des tâches déjà pickées se fait
+      // via `existingIncompleteTaskIds` dans renderSection.
       setDirty(true);
       setShowPicker(null);
 
@@ -237,26 +258,10 @@ function FicheSuivi({ sheet, onSave, saving }) {
 
   const amEntries = entries.filter((e) => e.period === 'AM');
   const pmEntries = entries.filter((e) => e.period === 'PM');
-  const TIME_OPTIONS = [
-    { value: 0, label: '—' },
-    { value: 10, label: '10 min' },
-    { value: 15, label: '15 min' },
-    { value: 20, label: '20 min' },
-    { value: 30, label: '30 min' },
-    { value: 40, label: '40 min' },
-    { value: 45, label: '45 min' },
-    { value: 60, label: '1 h' },
-    { value: 90, label: '1 h 30' },
-    { value: 120, label: '2 h' },
-    { value: 150, label: '2 h 30' },
-    { value: 180, label: '3 h' },
-    { value: 210, label: '3 h 30' },
-    { value: 240, label: '4 h' },
-    { value: 300, label: '5 h' },
-    { value: 360, label: '6 h' },
-    { value: 420, label: '7 h' },
-    { value: 480, label: '8 h' },
-  ];
+  // Saisie du temps : décomposé en heures (0–8) et minutes par tranches de
+  // 10 (0/10/20/30/40/50). Le state `time_spent` reste stocké en minutes.
+  const HOUR_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const MINUTE_OPTIONS = [0, 10, 20, 30, 40, 50];
   const totalMinutes = entries.reduce((s, e) => s + (parseInt(e.time_spent, 10) || 0), 0);
   const totalTimeLabel =
     totalMinutes >= 60
@@ -502,6 +507,20 @@ function FicheSuivi({ sheet, onSave, saving }) {
 
   const renderEntryRow = (entry) => {
     const isPostponing = postponeTarget?._key === entry._key;
+    const planningMeta = entry.task_assignment_id
+      ? planningMetaById.get(entry.task_assignment_id)
+      : null;
+    const totalMin = parseInt(entry.time_spent, 10) || 0;
+    const hours = Math.floor(totalMin / 60);
+    const minutes = totalMin % 60;
+    const handleHoursChange = (h) => {
+      const next = Math.max(0, Math.min(8, parseInt(h, 10) || 0)) * 60 + minutes;
+      handleEntryChange(entry._key, 'time_spent', next);
+    };
+    const handleMinutesChange = (m) => {
+      const next = hours * 60 + Math.max(0, Math.min(50, parseInt(m, 10) || 0));
+      handleEntryChange(entry._key, 'time_spent', next);
+    };
     return (
       <Fragment key={entry._key}>
         <tr className={`fiche-row ${entry.completed === 1 ? 'completed' : ''}`}>
@@ -509,33 +528,73 @@ function FicheSuivi({ sheet, onSave, saving }) {
             <GripVertical size={14} className="grip-icon" />
           </td>
           <td className="fiche-col-task">
-            <Input
-              type="text"
-              value={entry.task}
-              onChange={(e) => handleEntryChange(entry._key, 'task', e.target.value)}
-              placeholder="Description de la tâche…"
-              className="fiche-input fiche-input-task"
-              disabled={isValidated}
-            />
-            {entry.task_assignment_id && (
-              <span className="fiche-tag-planned" title="Tâche planifiée">
-                📋
-              </span>
-            )}
+            <div className="fiche-task-cell">
+              {planningMeta && (planningMeta.affaire_num || planningMeta.affaire_nom) && (
+                <div className="fiche-task-planning-meta" title="Tâche issue du planning">
+                  <Calendar size={11} className="fiche-task-planning-icon" />
+                  {planningMeta.affaire_type && (
+                    <span
+                      className={`fiche-task-planning-badge fiche-task-planning-badge--${planningMeta.affaire_type.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {planningMeta.affaire_type}
+                    </span>
+                  )}
+                  {planningMeta.affaire_num && (
+                    <span className="fiche-task-planning-num">#{planningMeta.affaire_num}</span>
+                  )}
+                  {planningMeta.affaire_nom && (
+                    <span className="fiche-task-planning-name">{planningMeta.affaire_nom}</span>
+                  )}
+                </div>
+              )}
+              <div className="fiche-task-input-row">
+                <Input
+                  type="text"
+                  value={entry.task}
+                  onChange={(e) => handleEntryChange(entry._key, 'task', e.target.value)}
+                  placeholder="Description de la tâche…"
+                  className="fiche-input fiche-input-task"
+                  disabled={isValidated}
+                />
+                {entry.task_assignment_id && !planningMeta && (
+                  <span className="fiche-tag-planned" title="Tâche planifiée">
+                    📋
+                  </span>
+                )}
+              </div>
+            </div>
           </td>
           <td className="fiche-col-time">
-            <Select
-              value={parseInt(entry.time_spent, 10) || 0}
-              onChange={(e) => handleEntryChange(entry._key, 'time_spent', Number(e.target.value))}
-              className="fiche-input fiche-input-time"
-              disabled={isValidated}
-            >
-              {TIME_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
+            <div className="fiche-time-picker">
+              <Select
+                value={hours}
+                onChange={(e) => handleHoursChange(e.target.value)}
+                className="fiche-input fiche-input-time-h"
+                disabled={isValidated}
+                aria-label="Heures"
+                title="Heures"
+              >
+                {HOUR_OPTIONS.map((h) => (
+                  <option key={h} value={h}>
+                    {h}h
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={minutes}
+                onChange={(e) => handleMinutesChange(e.target.value)}
+                className="fiche-input fiche-input-time-m"
+                disabled={isValidated}
+                aria-label="Minutes"
+                title="Minutes (tranches de 10)"
+              >
+                {MINUTE_OPTIONS.map((m) => (
+                  <option key={m} value={m}>
+                    {m.toString().padStart(2, '0')}
+                  </option>
+                ))}
+              </Select>
+            </div>
           </td>
           <td className="fiche-col-comment">
             <Input
@@ -782,22 +841,50 @@ function FicheSuivi({ sheet, onSave, saving }) {
                         <option value="weekly">Hebdomadaire</option>
                         <option value="monthly">Mensuelle</option>
                       </Select>
-                      <Select
-                        className="fiche-recurring-input"
-                        value={Number(recurringForm.default_time_spent) || 0}
-                        onChange={(e) =>
-                          setRecurringForm((prev) => ({
-                            ...prev,
-                            default_time_spent: Number(e.target.value),
-                          }))
-                        }
-                      >
-                        {TIME_OPTIONS.map((o) => (
-                          <option key={`rt-${o.value}`} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </Select>
+                      <div className="fiche-time-picker">
+                        <Select
+                          className="fiche-recurring-input fiche-input-time-h"
+                          value={Math.floor((Number(recurringForm.default_time_spent) || 0) / 60)}
+                          onChange={(e) => {
+                            const m = (Number(recurringForm.default_time_spent) || 0) % 60;
+                            const h = Math.max(0, Math.min(8, parseInt(e.target.value, 10) || 0));
+                            setRecurringForm((prev) => ({
+                              ...prev,
+                              default_time_spent: h * 60 + m,
+                            }));
+                          }}
+                          aria-label="Heures"
+                          title="Heures"
+                        >
+                          {HOUR_OPTIONS.map((h) => (
+                            <option key={`rth-${h}`} value={h}>
+                              {h}h
+                            </option>
+                          ))}
+                        </Select>
+                        <Select
+                          className="fiche-recurring-input fiche-input-time-m"
+                          value={(Number(recurringForm.default_time_spent) || 0) % 60}
+                          onChange={(e) => {
+                            const h = Math.floor(
+                              (Number(recurringForm.default_time_spent) || 0) / 60,
+                            );
+                            const m = Math.max(0, Math.min(50, parseInt(e.target.value, 10) || 0));
+                            setRecurringForm((prev) => ({
+                              ...prev,
+                              default_time_spent: h * 60 + m,
+                            }));
+                          }}
+                          aria-label="Minutes"
+                          title="Minutes (tranches de 10)"
+                        >
+                          {MINUTE_OPTIONS.map((m) => (
+                            <option key={`rtm-${m}`} value={m}>
+                              {m.toString().padStart(2, '0')}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
                       <Select
                         className="fiche-recurring-input"
                         value={recurringForm.period}

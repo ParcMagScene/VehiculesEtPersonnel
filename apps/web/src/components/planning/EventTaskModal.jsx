@@ -402,9 +402,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                       {s.enabled && <Check size={12} />}
                     </div>
                     <Icon size={16} style={{ color: step.color }} />
-                    <span className="etm-step-label">
-                      {step.emoji} {step.label}
-                    </span>
+                    <span className="etm-step-label">{step.label}</span>
                   </div>
 
                   {s.enabled && (

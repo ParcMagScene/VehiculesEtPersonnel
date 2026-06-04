@@ -24,12 +24,12 @@
 }
 
 .user-menu-header {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--theme-border, var(--theme-border-medium));
   background: var(--theme-bg-secondary, var(--theme-bg-secondary));
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .user-menu-header .user-menu-name {
@@ -45,7 +45,7 @@
 
 .user-menu-btn {
   width: 100%;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border: none;
   background: var(--theme-bg-card, white);
   text-align: left;
@@ -77,7 +77,7 @@
 
 .user-menu-cancel {
   width: 100%;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border: none;
   border-top: 1px solid var(--theme-border, var(--theme-border-medium));
   background: var(--theme-bg-secondary, var(--theme-bg-secondary));

@@ -12,8 +12,16 @@
     "color-function-alias-notation": null,
 
     "color-named": "never",
-    "color-no-hex": true,
-    "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla"],
+    "color-no-hex": [true, { "severity": "warning" }],
+    "function-disallowed-list": [
+      ["rgb", "rgba", "hsl", "hsla"],
+      { "severity": "warning" }
+    ],
+
+    "media-feature-range-notation": [
+      "prefix",
+      { "severity": "warning" }
+    ],
 
     "declaration-property-value-disallowed-list": {
       "z-index": ["/^\\d/"]

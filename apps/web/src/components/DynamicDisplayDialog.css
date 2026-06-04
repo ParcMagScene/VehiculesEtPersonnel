@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--theme-border);
 }
 
@@ -62,13 +62,13 @@
 .display-dialog .dialog-body {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: var(--space-5);
 }
 
 .display-dialog .form-row {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 .display-dialog .form-group {
@@ -95,7 +95,7 @@
 .display-dialog .form-group select,
 .display-dialog .form-group textarea {
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   background: var(--theme-bg-card);
@@ -128,8 +128,8 @@
 .display-dialog .type-chip {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: var(--space-1);
+  padding: 6px var(--space-3);
   border: 2px solid var(--theme-border);
   border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
@@ -180,7 +180,7 @@
 /* Period toggle */
 .display-dialog .period-toggle {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .display-dialog .period-btn {
@@ -189,7 +189,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 10px var(--space-4);
   border: 2px solid var(--theme-border);
   border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
@@ -230,7 +230,7 @@
 }
 
 .display-dialog .affaire-suggestion {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   cursor: pointer;
   font-size: var(--font-base);
   transition: background 0.1s;
@@ -247,7 +247,7 @@
 
 .display-dialog .affaire-suggestion .affaire-name {
   color: var(--theme-text-secondary);
-  margin-left: 8px;
+  margin-left: var(--space-2);
   font-size: var(--font-sm);
 }
 
@@ -257,12 +257,12 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  padding: 14px 20px;
+  padding: 14px var(--space-5);
   border-top: 1px solid var(--theme-border);
 }
 
 .display-dialog .btn-cancel {
-  padding: 8px 20px;
+  padding: var(--space-2) var(--space-5);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   background: var(--theme-bg-card);
@@ -281,7 +281,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 24px;
+  padding: var(--space-2) var(--space-6);
   border: none;
   border-radius: var(--radius-md);
   background: var(--theme-primary);
@@ -310,11 +310,11 @@
 
   .display-dialog .form-row {
     flex-direction: column;
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .display-dialog .type-selector {
-    gap: 4px;
+    gap: var(--space-1);
   }
 
   .display-dialog .type-chip {

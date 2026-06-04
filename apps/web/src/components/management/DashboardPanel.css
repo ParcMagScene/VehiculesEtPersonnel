@@ -5,7 +5,7 @@
 .dashboard-panel {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 20px 40px;
+  padding: var(--space-6) var(--space-5) var(--space-10);
   position: relative;
   min-height: 60vh;
   background: var(--theme-bg-page);
@@ -13,7 +13,7 @@
 
 /* ─── Header ─── */
 .dashboard-header {
-  margin-bottom: 28px;
+  margin-bottom: var(--space-7);
 }
 
 .dashboard-greeting h1 {
@@ -26,7 +26,7 @@
 .dashboard-date {
   font-size: 0.95rem;
   color: var(--theme-text-secondary);
-  margin-top: 4px;
+  margin-top: var(--space-1);
   text-transform: capitalize;
 }
 
@@ -35,17 +35,17 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
   gap: 14px;
-  margin-bottom: 32px;
+  margin-bottom: var(--space-8);
 }
 
 .kpi-card {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: var(--space-4);
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -104,7 +104,7 @@
   font-weight: 800;
   color: var(--theme-text-primary);
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .kpi-label {
@@ -169,7 +169,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   border-bottom: 1px solid var(--theme-border);
 }
 
@@ -187,7 +187,7 @@
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   transition: background 0.15s;
 }
@@ -197,14 +197,14 @@
 }
 
 .section-body {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
 }
 
 .empty-text {
   color: var(--theme-text-secondary);
   font-size: var(--font-base);
   text-align: center;
-  padding: 16px 0;
+  padding: var(--space-4) 0;
 }
 
 /* Réservations list */
@@ -218,8 +218,8 @@
   display: grid;
   grid-template-columns: 100px 1fr 1fr 60px;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) 10px;
   border-radius: var(--radius-md);
   background: var(--theme-bg-page);
   font-size: 0.82rem;
@@ -274,8 +274,8 @@
   display: grid;
   grid-template-columns: 1fr auto auto 75px;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) 10px;
   border-radius: var(--radius-md);
   background: var(--theme-bg-page);
   font-size: 0.82rem;
@@ -301,7 +301,7 @@
 
 .maint-status {
   font-size: 0.7rem;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-md-lg);
   font-weight: 600;
 }
@@ -329,7 +329,7 @@
   text-align: right;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   justify-content: flex-end;
 }
 
@@ -349,7 +349,7 @@
   grid-template-columns: 1fr auto auto;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border-radius: var(--radius-md);
   background: var(--theme-danger-bg);
   font-size: 0.82rem;
@@ -378,7 +378,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px;
+  padding: var(--space-3);
   background: var(--theme-warning-bg);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -423,7 +423,7 @@
 
 @media (max-width: 640px) {
   .dashboard-panel {
-    padding: 16px 12px 32px;
+    padding: var(--space-4) var(--space-3) var(--space-8);
   }
 
   .dashboard-greeting h1 {
@@ -432,11 +432,11 @@
 
   .dashboard-kpi-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: var(--space-2);
   }
 
   .kpi-card {
-    padding: 12px;
+    padding: var(--space-3);
   }
 
   .kpi-value {

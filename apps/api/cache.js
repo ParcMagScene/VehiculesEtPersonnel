@@ -150,6 +150,9 @@ const listCache = new LRUCache({ maxSize: 200, ttl: 30_000, name: 'lists' });
 /** Cache pour les données iCal externes : TTL 5 min */
 const icalCache = new LRUCache({ maxSize: 50, ttl: 5 * 60_000, name: 'ical' });
 
+/** Cache pour Google Calendar (API externe lente, ~700ms) : TTL 60s */
+const googleCalendarCache = new LRUCache({ maxSize: 100, ttl: 60_000, name: 'google-calendar' });
+
 /** Cache pour la config (Google keys, etc.) : TTL 10 min */
 const configCache = new LRUCache({ maxSize: 50, ttl: 10 * 60_000, name: 'config' });
 
@@ -175,6 +178,7 @@ const ALL_CACHES = [
   statsCache,
   listCache,
   icalCache,
+  googleCalendarCache,
   configCache,
   equipmentTreeCache,
   equipmentListCache,
@@ -275,16 +279,40 @@ function getAllCacheStats() {
   return ALL_CACHES.map((c) => c.stats());
 }
 
+/**
+ * Middleware Express : pose les en-têtes HTTP qui permettent au navigateur de
+ * conditionner ses GET via If-None-Match / ETag.
+ *
+ * Express génère déjà l'ETag automatiquement sur `res.json(...)`. Ce middleware
+ * ajoute simplement `Cache-Control: private, no-cache` qui :
+ *   - autorise le browser à mettre la réponse en cache MAIS
+ *   - l'oblige à revalider à chaque requête (envoie If-None-Match)
+ *   - si l'ETag matche, Express renvoie 304 No-Content (économie réseau réelle).
+ *
+ * Sûr à appliquer sur les collections de référence (clients, garages, locations…)
+ * dont les invalidations server-side restent gérées par `listCache`/`invalidateOnSuccess`.
+ *
+ * @returns {function} Express middleware
+ */
+function browserRevalidate() {
+  return (_req, res, next) => {
+    res.set('Cache-Control', 'private, no-cache');
+    next();
+  };
+}
+
 export {
   ALL_CACHES,
   annuaireRefCache,
   authCache,
+  browserRevalidate,
   cacheMiddleware,
   configCache,
   createCache,
   equipmentListCache,
   equipmentTreeCache,
   getAllCacheStats,
+  googleCalendarCache,
   icalCache,
   invalidateEntity,
   invalidateOnSuccess,

@@ -15,15 +15,13 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { Button, DetailRow, InlineAlert, Input, Textarea } from '@/design-system';
+import { Button, DetailRow, InlineAlert, Textarea } from '@/design-system';
 
 import { ROLES, STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
-import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import useSwipeAction from '../../hooks/useSwipeAction';
 import api from '../../utils/api';
-import { refreshBus } from '../../utils/refresh-bus';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from '../leaves/leaveConstants';
 import MobileListSkeleton from './MobileListSkeleton';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
@@ -70,16 +68,12 @@ function MobileLeaves({ currentUser, onBack }) {
     loadData();
   }, [loadData]);
 
-  // Auto-refresh quand les congés changent ailleurs
-  useRefreshSubscription('leaves', loadData);
-
   const { containerProps: ptrProps, indicatorNode: ptrIndicator } = usePullToRefresh(loadData);
   const { getSwipeProps, swipeState, resetSwipe } = useSwipeAction();
 
   const handleCancelLeave = async (leaveId) => {
     try {
       await api.cancelLeave(leaveId);
-      refreshBus.publish('leaves');
       loadData();
     } catch (e) {
       alert('Erreur annulation: ' + (e.message || ''));
@@ -94,7 +88,6 @@ function MobileLeaves({ currentUser, onBack }) {
   const handleDecision = async (leaveId, decision, reason = '') => {
     try {
       await api.makeLeaveDecision(leaveId, { decision, reason });
-      refreshBus.publish('leaves');
       loadData();
       if (view === 'detail') setView(isAdmin ? 'admin' : 'list');
     } catch (e) {
@@ -147,7 +140,6 @@ function MobileLeaves({ currentUser, onBack }) {
           onCancel={async () => {
             try {
               await api.cancelLeave(selectedLeave.id);
-              refreshBus.publish('leaves');
               loadData();
               setView('list');
             } catch (e) {
@@ -466,7 +458,6 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
         reason,
         workingDays,
       });
-      refreshBus.publish('leaves');
       onCreated();
     } catch (e) {
       setError(e.message || 'Erreur lors de la création');
@@ -502,7 +493,7 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
       {/* Dates */}
       <div className="ml-form-group">
         <label htmlFor="leave-start-date">Date de début</label>
-        <Input
+        <input
           id="leave-start-date"
           type="date"
           value={startDate}
@@ -525,7 +516,7 @@ function LeaveForm({ currentUser, onCreated, onCancel }) {
 
       <div className="ml-form-group">
         <label htmlFor="leave-end-date">Date de fin</label>
-        <Input
+        <input
           id="leave-end-date"
           type="date"
           value={endDate}

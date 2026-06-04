@@ -7,6 +7,16 @@ import { ALL_CACHES, getAllCacheStats } from './cache.js';
 import db from './database.js';
 import { alertAccessRequest, getTransporter, initEmailTransporter } from './emailService.js';
 import logger from './logger.js';
+import {
+  getSlowRequests,
+  getSlowRequestsAggregated,
+  getSlowRequestStats,
+} from './middleware/httpLogger.js';
+import {
+  getSlowSqlAggregated,
+  getSlowSqlEntries,
+  getSqlSlowLogStats,
+} from './middleware/sqlSlowLog.js';
 import { validatePassword } from './passwordPolicy.js';
 import {
   accessRequestSchema,
@@ -760,17 +770,11 @@ export function setupAdminRoutes(
 
   // Vérifier si un compte nécessite une réinitialisation
   // [SEC FIX] Ne renvoie que le strict nécessaire (pas id/name) pour limiter l'info leak
-  app.post('/api/auth/check-reset', async (req, res) => {
+  app.post('/api/auth/check-reset', validate(checkEmailSchema), async (req, res) => {
     try {
       const { email } = req.body;
 
-      if (!email) {
-        return res.status(400).json({ success: false, error: 'Email requis' });
-      }
-
-      const stmt = db.prepare(
-        'SELECT id, name, password_reset_required FROM users WHERE email = ?',
-      );
+      const stmt = db.prepare('SELECT id, password_reset_required FROM users WHERE email = ?');
       const user = stmt.get(email);
 
       if (!user) {
@@ -778,9 +782,9 @@ export function setupAdminRoutes(
         return res.json({ resetRequired: false });
       }
 
+      // [SEC] Ne pas exposer user.name (énumération partielle CWE-204)
       res.json({
         resetRequired: user.password_reset_required === 1,
-        user: { name: user.name },
       });
     } catch (error) {
       logger.error('Erreur check reset:', error);
@@ -1086,7 +1090,49 @@ export function setupAdminRoutes(
       res.json({ success: true, message: `Email de test envoyé à ${req.user.email}` });
     } catch (error) {
       logger.error('Erreur test email:', error);
-      res.status(500).json({ success: false, error: 'Erreur lors du test SMTP' });
+      // Mapper les erreurs SMTP courantes (Gmail) en messages explicites + correctif
+      // cf https://support.google.com/mail/answer/7126229
+      const raw = (error?.response || error?.message || '').toString();
+      const code = error?.responseCode || null;
+      let mapped = null;
+      if (/535[\s-]?5\.7\.8/.test(raw) || code === 535) {
+        mapped = {
+          code: '535 5.7.8',
+          message: "Authentification refusee : mot de passe d'application Gmail invalide.",
+          fix: "Generez un mot de passe d'application sur https://myaccount.google.com/apppasswords (la 2FA doit etre active) puis collez-le dans le champ 'Mot de passe'.",
+        };
+      } else if (/534[\s-]?5\.7\.14/.test(raw) || code === 534) {
+        mapped = {
+          code: '534 5.7.14',
+          message: 'Connexion bloquee par Google pour raison de securite.',
+          fix: "Activez la validation en 2 etapes puis utilisez un mot de passe d'application. Verifiez aussi https://accounts.google.com/DisplayUnlockCaptcha",
+        };
+      } else if (/550[\s-]?5\.1\.0/.test(raw) || code === 550) {
+        mapped = {
+          code: '550 5.1.0',
+          message: 'Adresse expediteur non autorisee.',
+          fix: "Le champ 'Utilisateur SMTP' doit correspondre exactement au compte Gmail (ou a un alias 'Send mail as' valide dans Gmail).",
+        };
+      } else if (/5\.7\.0/.test(raw)) {
+        mapped = {
+          code: '5.7.0',
+          message: 'Authentification obligatoire.',
+          fix: "Renseignez l'utilisateur SMTP (adresse Gmail complete) et le mot de passe d'application.",
+        };
+      } else if (/ETIMEDOUT|ECONNREFUSED|ENOTFOUND/.test(raw)) {
+        mapped = {
+          code: error.code,
+          message: 'Impossible de joindre le serveur SMTP.',
+          fix: 'Verifiez host=smtp.gmail.com, port=465, SSL active, et la connectivite reseau sortante.',
+        };
+      }
+      res.status(500).json({
+        success: false,
+        error: mapped?.message || 'Erreur lors du test SMTP',
+        code: mapped?.code || null,
+        fix: mapped?.fix || null,
+        raw: raw.slice(0, 500),
+      });
     }
   });
 
@@ -1116,5 +1162,42 @@ export function setupAdminRoutes(
       req,
     });
     res.json({ success: true, message: name ? `Cache '${name}' vidé` : 'Tous les caches vidés' });
+  });
+
+  // ─── Slow request log endpoints (admin only) ───
+  // Ring buffer in-memory : utile pour identifier les hot paths sans
+  // ouvrir les logs serveur. Vidé au restart.
+  app.get('/api/_perf/slow-requests', authenticateToken, requireAdmin, (req, res) => {
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+    const minDuration = Math.max(0, Number(req.query.minDuration) || 0);
+    res.json({
+      stats: getSlowRequestStats(),
+      items: getSlowRequests({ limit, minDuration }),
+    });
+  });
+  app.get('/api/_perf/slow-requests/aggregated', authenticateToken, requireAdmin, (req, res) => {
+    res.json({
+      stats: getSlowRequestStats(),
+      routes: getSlowRequestsAggregated(),
+    });
+  });
+
+  // ─── Slow SQL log endpoints (admin only) ───
+  // [PERF Phase 4.N] Instrumentation au niveau db.prepare() — voir middleware/sqlSlowLog.js.
+  app.get('/api/_perf/slow-sql', authenticateToken, requireAdmin, (req, res) => {
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 100));
+    const minDuration = Math.max(0, Number(req.query.minDuration) || 0);
+    res.json({
+      stats: getSqlSlowLogStats(),
+      items: getSlowSqlEntries({ limit, minDuration }),
+    });
+  });
+  app.get('/api/_perf/slow-sql/aggregated', authenticateToken, requireAdmin, (req, res) => {
+    const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 50));
+    const sortBy = String(req.query.sortBy || 'totalMs');
+    res.json({
+      stats: getSqlSlowLogStats(),
+      queries: getSlowSqlAggregated({ limit, sortBy }),
+    });
   });
 } // end setupAdminRoutes

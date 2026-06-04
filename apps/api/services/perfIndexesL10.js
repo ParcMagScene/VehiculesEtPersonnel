@@ -40,6 +40,31 @@ export const PERF_L10_INDEXES = [
 
   // Suivi personnel — feuilles par date + statut
   'CREATE INDEX IF NOT EXISTS idx_tracking_sheets_date_status ON tracking_sheets(date, status)',
+
+  // ─── L11 (tasks perf, mai 2026) ─────────────────────────────
+  // Audit EXPLAIN QUERY PLAN sur task_assignments a montré que
+  // idx_ta_deleted_at (créé jadis manuellement en prod) était nocif :
+  // SQLite le préférait pour `WHERE affaire_num=? AND deleted_at IS NULL`
+  // et `WHERE date<? AND ... AND deleted_at IS NULL`, ce qui revenait à
+  // un quasi full-scan (la quasi-totalité des lignes ont deleted_at NULL).
+  //
+  // Solution : 2 indexes partiels ciblés `WHERE deleted_at IS NULL` qui
+  // remplacent avantageusement l'index plein. (Le DROP de l'index nocif
+  // est appliqué séparément par PERF_L10_DROPS — voir plus bas.)
+  'CREATE INDEX IF NOT EXISTS idx_ta_affaire_active ON task_assignments(affaire_num) WHERE affaire_num IS NOT NULL AND deleted_at IS NULL',
+  'CREATE INDEX IF NOT EXISTS idx_ta_date_status_active ON task_assignments(date, status) WHERE deleted_at IS NULL',
+];
+
+/**
+ * Indexes obsolètes / contre-productifs à supprimer.
+ * Idempotent (DROP IF EXISTS).
+ */
+export const PERF_L10_DROPS = [
+  // Anti-pattern : `WHERE deleted_at IS NULL` n'est pas sélectif (presque
+  // toutes les lignes match) ; SQLite choisissait quand même cet index
+  // au lieu d'un index plus sélectif. Les nouveaux indexes partiels le
+  // remplacent et incluent déjà la condition `deleted_at IS NULL`.
+  'DROP INDEX IF EXISTS idx_ta_deleted_at',
 ];
 
 /**
@@ -53,8 +78,9 @@ export function applyPerfL10Indexes(db) {
   if (!db || typeof db.exec !== 'function') {
     throw new TypeError('applyPerfL10Indexes: db invalide (méthode exec absente)');
   }
-  const result = { attempted: PERF_L10_INDEXES.length, succeeded: 0, failed: 0, errors: [] };
-  for (const sql of PERF_L10_INDEXES) {
+  const total = PERF_L10_INDEXES.length + PERF_L10_DROPS.length;
+  const result = { attempted: total, succeeded: 0, failed: 0, errors: [] };
+  for (const sql of [...PERF_L10_DROPS, ...PERF_L10_INDEXES]) {
     try {
       db.exec(sql);
       result.succeeded += 1;

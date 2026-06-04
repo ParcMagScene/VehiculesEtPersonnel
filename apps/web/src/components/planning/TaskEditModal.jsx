@@ -164,7 +164,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
   const [form, setForm] = useState({
     title: initTitle(task),
     date: task.date || '',
-    period: task.period || 'AM',
+    period: task.allDay === 1 || task.all_day === 1 ? 'JOURNEE' : task.period || 'AM',
     time: task.time || '',
     endTime: task.endTime || '',
     notes: task.notes || '',
@@ -173,6 +173,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     status: task.status || 'pending',
     affaireNum: task.affaireNum || task.affaire_num || '',
     locationAddress: task.locationAddress || task.location_address || '',
+    clientName: task.clientName || task.client_name || task.eventClient || task.event_client || '',
   });
 
   // Charger les affaires
@@ -233,7 +234,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
     setForm({
       title: initTitle(task),
       date: task.date || '',
-      period: task.period || 'AM',
+      period: task.allDay === 1 || task.all_day === 1 ? 'JOURNEE' : task.period || 'AM',
       time: task.time || '',
       endTime: task.endTime || '',
       notes: task.notes || '',
@@ -242,6 +243,8 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       status: task.status || 'pending',
       affaireNum: task.affaireNum || task.affaire_num || '',
       locationAddress: task.locationAddress || task.location_address || '',
+      clientName:
+        task.clientName || task.client_name || task.eventClient || task.event_client || '',
     });
   }, [task]);
 
@@ -345,18 +348,21 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
         }
       }
 
+      const isAllDay = form.period === 'JOURNEE';
       await api.updateTask(task.id, {
         title: finalTitle,
         date: form.date,
-        period: form.period || null,
-        time: form.time || null,
-        end_time: form.endTime || null,
+        period: isAllDay ? 'AM' : form.period || null,
+        time: isAllDay ? null : form.time || null,
+        end_time: isAllDay ? null : form.endTime || null,
+        all_day: isAllDay ? 1 : 0,
         notes: form.notes || '',
         person_id: form.personId || null,
         section: form.section,
         status: form.status,
         affaire_num: form.affaireNum || null,
         location_address: form.locationAddress || null,
+        client_name: (form.clientName || selectedAffaire?.client || '').trim() || null,
       });
       refreshBus.publish('planning');
       toast.success('Tâche mise à jour');
@@ -459,41 +465,44 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
               <Select value={form.period} onChange={(e) => update('period', e.target.value)}>
                 <option value="AM">Matin (AM)</option>
                 <option value="PM">Après-midi (PM)</option>
+                <option value="JOURNEE">Journée (toute la journée)</option>
               </Select>
             </FormField>
           </div>
 
-          {/* Heure début / fin */}
-          <div className="tem-row">
-            <FormField
-              className="tem-field"
-              label={
-                <>
-                  <Clock size={13} /> Heure début
-                </>
-              }
-            >
-              <Input
-                type="time"
-                value={form.time}
-                onChange={(e) => update('time', e.target.value)}
-              />
-            </FormField>
-            <FormField
-              className="tem-field"
-              label={
-                <>
-                  <Clock size={13} /> Heure fin
-                </>
-              }
-            >
-              <Input
-                type="time"
-                value={form.endTime}
-                onChange={(e) => update('endTime', e.target.value)}
-              />
-            </FormField>
-          </div>
+          {/* Heure début / fin (masquées si Journee) */}
+          {form.period !== 'JOURNEE' && (
+            <div className="tem-row">
+              <FormField
+                className="tem-field"
+                label={
+                  <>
+                    <Clock size={13} /> Heure début
+                  </>
+                }
+              >
+                <Input
+                  type="time"
+                  value={form.time}
+                  onChange={(e) => update('time', e.target.value)}
+                />
+              </FormField>
+              <FormField
+                className="tem-field"
+                label={
+                  <>
+                    <Clock size={13} /> Heure fin
+                  </>
+                }
+              >
+                <Input
+                  type="time"
+                  value={form.endTime}
+                  onChange={(e) => update('endTime', e.target.value)}
+                />
+              </FormField>
+            </div>
+          )}
 
           {/* Personnel */}
           <FormField
@@ -512,6 +521,20 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                 name: `${isFavorite(p.id) ? '★ ' : ''}${p.firstName} ${p.lastName}`,
               }))}
               placeholder="— Aucun —"
+            />
+          </FormField>
+
+          {/* Client (editable, prerempli depuis l'affaire liee ou l'evenement source) */}
+          <FormField className="tem-field full" label="Client">
+            <Input
+              type="text"
+              value={form.clientName}
+              onChange={(e) => update('clientName', e.target.value)}
+              placeholder={
+                selectedAffaire?.client
+                  ? `${selectedAffaire.client} (affaire liée)`
+                  : 'Nom du client...'
+              }
             />
           </FormField>
 
@@ -562,7 +585,14 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
                           type="button"
                           className="tem-affaire-option"
                           onClick={() => {
-                            update('affaireNum', a.numeroAffaire);
+                            setForm((prev) => ({
+                              ...prev,
+                              affaireNum: a.numeroAffaire,
+                              // Pre-remplir le client si vide ou si c'etait celui d'une autre affaire
+                              clientName: prev.clientName?.trim()
+                                ? prev.clientName
+                                : a.client || prev.clientName || '',
+                            }));
                             setAffaireSearch('');
                             setAffaireDropdownOpen(false);
                           }}

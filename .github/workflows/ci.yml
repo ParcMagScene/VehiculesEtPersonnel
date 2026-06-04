@@ -1,4 +1,19 @@
-name: CI — Branche dev
+# ─────────────────────────────────────────────────────────────
+# ci.yml — Pipeline CI unique (dev + main + PR)
+# ─────────────────────────────────────────────────────────────
+# Strategie :
+#   • Un seul workflow pour push dev/main + PR vers dev/main.
+#   • Le deploiement reel est fait localement via `npm run deploy`
+#     (PM2). Cette CI sert uniquement de filet de securite.
+#   • Jobs bloquants  : lint, syntax-check, smoke-boot, tests (back+front), build
+#   • Jobs informatifs: commitlint (PR uniquement), docs:check
+#     → declares avec `continue-on-error: true` pour ne pas casser la CI
+#       sur un warning cosmetique. Visible en orange dans l'UI GitHub.
+#   • La version Node est centralisee dans .github/actions/setup-node-deps
+#     (compositie action — npm cache + `npm ci`).
+# ─────────────────────────────────────────────────────────────
+
+name: CI
 
 on:
   push:
@@ -9,187 +24,65 @@ on:
 permissions:
   contents: read
 
-# FIX CI : annule les runs précédents sur le même ref (push successifs / PR force-push)
-# → réduit le bruit email + accélère la CI.
+# Annule les runs precedents sur le meme ref (push successifs / PR force-push)
+# → reduit le bruit email + accelere la CI.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # ─── Conventional Commits ─────────────────────────────
-  commitlint:
-    name: Conventional Commits
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Vérifier les messages de commit
-        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
-
-  # ─── Lint ─────────────────────────────────────────────
-  # FIX CI : génère un rapport HTML lisible (artefact) même en cas d'échec.
-  # Le build (cf. job `build`) est découplé du lint pour ne plus être skippé
-  # sur erreurs cosmétiques.
+  # ─── Lint & format ────────────────────────────────────────────
+  # Bloquant : ESLint (api : --max-warnings=0, web : 0 erreur tolere)
+  # + Prettier strict.
   lint:
-    name: ESLint + Prettier
+    name: Lint & format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: ESLint — génération rapport HTML (non bloquant)
-        # Toujours produire un rapport, même si le lint plus bas échoue.
-        run: |
-          mkdir -p reports
-          npx --workspace=apps/web eslint . --ext js,jsx \
-            -f html -o ../../reports/eslint-web.html || true
-          npx --workspace=apps/api eslint . --ext js \
-            -f html -o ../../reports/eslint-api.html || true
-
-      - name: ESLint — vérification stricte (échec si erreurs)
+      - uses: ./.github/actions/setup-node-deps
+      - name: ESLint
         run: npm run lint
-
-      - name: Prettier (vérification)
+      - name: Prettier
         run: npm run format:check
 
-      - name: Upload rapport ESLint
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: eslint-report
-          path: reports/
-          retention-days: 14
-
-  # ─── Documentation ──────────────────────────────────
-  docs:
-    name: Documentation coherence
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Vérifier la cohérence docs ↔ code
-        run: npm run docs:check
-
-  # ─── Tests backend ────────────────────────────────────
+  # ─── Tests backend ────────────────────────────────────────────
+  # Bloquant : check syntaxique + smoke boot + node:test.
   test-backend:
-    name: Tests backend (node:test)
+    name: Tests backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
-
-      # ─── L1 stabilisation : check syntaxique strict ────
-      # Bloque accolades non fermées, blocs incomplets, fragments orphelins
-      # avant même de lancer les tests.
-      - name: Vérification syntaxique backend (node --check)
+      - uses: ./.github/actions/setup-node-deps
+      - name: Verification syntaxique (node --check)
         run: npm run check:syntax
-
-      # ─── L2 stabilisation : smoke boot backend ─────────
-      # Vérifie que le backend démarre + répond /api/health.
       - name: Smoke boot backend
         env:
           JWT_SECRET: smoke-test-secret-key-min-32-chars-long-xx
           DISABLE_SCHEDULER: '1'
         run: npm run smoke-boot
+      - name: Tests unitaires backend
+        run: npm test
 
-      - name: Tests unitaires backend avec couverture
-        run: npm run test:coverage 2>&1 | tee /tmp/backend-coverage.txt
-
-      - name: Rapport de couverture backend
-        run: |
-          COVERAGE_LINE=$(grep "^# all files" /tmp/backend-coverage.txt || true)
-          if [ -n "$COVERAGE_LINE" ]; then
-            LINE_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $2); print $2}')
-            BRANCH_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $3); print $3}')
-            FUNC_PCT=$(echo "$COVERAGE_LINE" | awk -F'|' '{gsub(/[[:space:]]/, "", $4); print $4}')
-            echo "📊 Backend — Lignes : ${LINE_PCT}% | Branches : ${BRANCH_PCT}% | Fonctions : ${FUNC_PCT}%"
-          fi
-
-  # ─── Tests frontend ───────────────────────────────────
+  # ─── Tests frontend ───────────────────────────────────────────
+  # Bloquant : Vitest (sans coverage pour rester deterministe).
   test-frontend:
-    name: Tests frontend (Vitest)
+    name: Tests frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-deps
+      - name: Tests Vitest
+        run: npm run test --workspace=apps/web
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
-
-      - name: Tests Vitest avec coverage
-        run: npm run test:coverage --workspace=apps/web
-
-      - name: Rapport de couverture
-        run: |
-          COVERAGE_FILE=apps/web/coverage/coverage-summary.json
-          if [ ! -f "$COVERAGE_FILE" ]; then
-            echo "⚠️  Fichier de couverture non trouvé"
-            exit 0
-          fi
-          LINES=$(node -e "const c=JSON.parse(require('fs').readFileSync('$COVERAGE_FILE','utf8'));console.log(c.total.lines.pct)")
-          BRANCHES=$(node -e "const c=JSON.parse(require('fs').readFileSync('$COVERAGE_FILE','utf8'));console.log(c.total.branches.pct)")
-          echo "📊 Couverture lignes : ${LINES}%"
-          echo "📊 Couverture branches : ${BRANCHES}%"
-          echo "ℹ️  Objectif : augmentation progressive (baseline ~3.7%)"
-
-      - name: Upload rapport de couverture
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: apps/web/coverage/
-          retention-days: 14
-
-  # ─── Build ────────────────────────────────────────────
-  # FIX CI : build découplé du lint pour ne plus être skippé sur erreurs
-  # cosmétiques. Reste dépendant des tests pour ne pas livrer du code cassé.
+  # ─── Build production ─────────────────────────────────────────
+  # Bloquant : depend des tests pour ne pas livrer du code casse.
   build:
     name: Build frontend
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: [lint, test-backend, test-frontend]
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - run: npm ci
-
-      # FIX CI : cache du répertoire .vite pour accélérer les rebuilds.
+      - uses: ./.github/actions/setup-node-deps
       - name: Cache Vite
         uses: actions/cache@v4
         with:
@@ -199,15 +92,55 @@ jobs:
           key: vite-${{ runner.os }}-${{ hashFiles('apps/web/package-lock.json', 'apps/web/vite.config.*') }}
           restore-keys: |
             vite-${{ runner.os }}-
-
       - name: Build production
         run: npm run build
-
-      - name: Vérifier le build
+      - name: Verifier le build
         run: |
           if [ ! -d "apps/web/dist" ]; then
-            echo "❌ Le dossier dist/ n'a pas été créé"
+            echo "::error::Le dossier apps/web/dist/ n'a pas ete cree"
             exit 1
           fi
           FILE_COUNT=$(find apps/web/dist -type f | wc -l | tr -d ' ')
-          echo "✅ Build réussi : $FILE_COUNT fichiers générés"
+          echo "Build OK : $FILE_COUNT fichiers generes"
+
+  # ─── Conventional Commits (PR uniquement, NON BLOQUANT) ───────
+  # Informatif — ne casse pas la CI sur un message non conforme.
+  commitlint:
+    name: Conventional Commits (informatif)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-node-deps
+      - name: Verifier les messages de commit
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  # ─── Coherence documentation (NON BLOQUANT) ──────────────────
+  # Informatif — un decalage docs/code ne doit pas bloquer la CI.
+  docs:
+    name: Coherence docs (informatif)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-deps
+      - name: Verifier la coherence docs ↔ code
+        run: npm run docs:check
+
+  # ─── Adoption Design System (NON BLOQUANT) ──────────────────
+  # Informatif — mesure la dette UI (Stylelint warn-only +
+  # ESLint guard-rails warn-only). Voir docs/dashboards/ui-debt.md.
+  ui-debt:
+    name: Adoption DS (informatif)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-deps
+      - name: Stylelint (warn-only)
+        run: npm run lint:css --workspace=apps/web
+      - name: Mesurer la dette UI
+        run: node scripts/measure-ui-debt.mjs --format=summary

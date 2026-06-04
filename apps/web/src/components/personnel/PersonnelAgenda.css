@@ -23,8 +23,8 @@
 .agenda-sidebar-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 16px;
+  gap: var(--space-2);
+  padding: var(--space-4);
   font-weight: 600;
   font-size: 15px;
   color: var(--text-heading);
@@ -34,8 +34,8 @@
 .agenda-search {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--border-strong);
   color: var(--text-muted);
 }
@@ -52,7 +52,7 @@
 .agenda-person-list {
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .agenda-person-item {
@@ -60,7 +60,7 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -114,7 +114,7 @@
 
 /* Légende */
 .agenda-legend {
-  padding: 12px;
+  padding: var(--space-3);
   border-top: 1px solid var(--border-strong);
   display: flex;
   flex-direction: column;
@@ -124,7 +124,7 @@
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: var(--font-sm);
   color: var(--text-muted);
 }
@@ -170,7 +170,7 @@
 .agenda-toolbar-center {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .agenda-nav-btn {
@@ -257,7 +257,7 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  gap: 12px;
+  gap: var(--space-3);
   color: var(--text-muted);
   font-size: 15px;
 }
@@ -285,9 +285,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 10px 4px;
+  padding: 10px var(--space-1);
   border-right: 1px solid var(--border-strong);
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .agenda-week-day-header:last-child {
@@ -337,7 +337,7 @@
 
 .agenda-week-day {
   border-right: 1px solid var(--border-strong);
-  padding: 8px;
+  padding: var(--space-2);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -372,7 +372,7 @@
 .agenda-event {
   display: flex;
   gap: 6px;
-  padding: 6px 8px;
+  padding: 6px var(--space-2);
   border-radius: var(--radius-sm);
   border-left: 3px solid;
   cursor: default;
@@ -457,7 +457,7 @@
 .agenda-month-cell {
   border-right: 1px solid var(--border-strong);
   border-bottom: 1px solid var(--border-strong);
-  padding: 4px;
+  padding: var(--space-1);
   min-height: 90px;
   background: var(--surface-primary);
   display: flex;
@@ -483,7 +483,7 @@
 
 .month-cell-date {
   text-align: right;
-  padding: 2px 4px;
+  padding: 2px var(--space-1);
   font-size: var(--font-base);
   font-weight: 500;
   color: var(--text-muted);
@@ -506,7 +506,7 @@
 .month-event-dot {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 2px 6px;
   border-radius: var(--radius-xs);
   overflow: hidden;
@@ -559,8 +559,8 @@
   .agenda-person-list {
     display: flex;
     overflow-x: auto;
-    padding: 4px;
-    gap: 4px;
+    padding: var(--space-1);
+    gap: var(--space-1);
   }
 
   .agenda-person-item {
@@ -580,7 +580,7 @@
   }
 
   .agenda-toolbar {
-    padding: 8px 12px;
+    padding: var(--space-2) var(--space-3);
     flex-wrap: wrap;
   }
 

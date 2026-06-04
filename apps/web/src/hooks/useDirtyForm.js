@@ -54,6 +54,7 @@ export function useDirtyForm(formData, { confirmer } = {}) {
           confirmLabel: 'Quitter sans enregistrer',
           cancelLabel: 'Continuer l’édition',
           variant: 'danger',
+          destructive: true,
           onConfirm: onClose,
         });
         return;

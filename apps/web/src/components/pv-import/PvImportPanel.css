@@ -1,0 +1,189 @@
+/* ═══════════════════════════════════════════════════════════════
+   PvImportPanel.css — Styles du panneau d'import PV PDF
+   ═══════════════════════════════════════════════════════════════ */
+
+.pv-import-modal .pv-import-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+/* ── Drop zone ─────────────────────────────────────────────── */
+.pv-drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-6, 1.5rem);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-bg-subtle);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.pv-drop-zone:hover,
+.pv-drop-zone.is-drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
+}
+
+.pv-drop-zone p {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.pv-drop-hint {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.pv-hidden-input {
+  display: none;
+}
+
+.pv-uploading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  margin-top: var(--space-2, 0.5rem);
+  color: var(--color-text-muted);
+}
+
+/* ── Filtre ────────────────────────────────────────────────── */
+.pv-filter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.pv-filter-row > * {
+  flex: 0 0 auto;
+}
+
+/* ── Liste de cartes ───────────────────────────────────────── */
+.pv-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+
+.pv-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-bg);
+}
+
+.pv-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.pv-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pv-card-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pv-card-title a:hover {
+  text-decoration: underline;
+}
+
+.pv-card-size {
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.pv-card-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+/* ── Grille des champs parsés ─────────────────────────────── */
+.pv-parsed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2, 0.5rem);
+  font-size: 0.875rem;
+}
+
+.pv-parsed-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pv-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+/* ── Résolution ────────────────────────────────────────────── */
+.pv-resolution {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-3, 0.75rem);
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-sm, 6px);
+}
+
+.pv-resolution-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  align-items: flex-end;
+}
+
+.pv-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.pv-field-sm {
+  flex: 0 0 120px;
+}
+
+.pv-field-full {
+  flex: 1 1 100%;
+}
+
+.pv-resolution-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2, 0.5rem);
+}
+
+/* ── Bloc appliqué ────────────────────────────────────────── */
+.pv-applied-info {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}

@@ -15,12 +15,12 @@
   border-radius: var(--radius-md) !important;
   box-shadow: 0 4px 15px var(--shadow-xl) !important;
   border: 1px solid var(--theme-border-medium) !important;
-  margin-top: 4px !important;
+  margin-top: var(--space-1) !important;
   font-family: inherit !important;
 }
 
 .pac-item {
-  padding: 8px 12px !important;
+  padding: var(--space-2) var(--space-3) !important;
   font-size: 13px !important;
   cursor: pointer !important;
   border-top: 1px solid var(--theme-bg-tertiary) !important;
@@ -73,45 +73,45 @@
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 4px;
-  background: var(--surface-primary, var(--theme-bg-card, #fff));
-  border: 1px solid var(--border-default, var(--theme-border, #d0d7de));
+  margin-top: var(--space-1);
+  background: var(--surface-primary, var(--theme-bg-card));
+  border: 1px solid var(--border-default, var(--theme-border));
   border-radius: var(--radius-md, 6px);
   box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.15));
   max-height: 280px;
   overflow-y: auto;
   z-index: var(--z-dropdown);
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .address-autocomplete-section-header {
-  padding: 6px 10px 4px;
+  padding: 6px 10px var(--space-1);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--interactive-primary, #1f6feb);
-  border-bottom: 1px solid var(--border-subtle, #eaeef2);
+  color: var(--interactive-primary);
+  border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 2px;
 }
 
 .address-autocomplete-section-header--place {
-  color: var(--text-muted, #57606a);
+  color: var(--text-muted);
   margin-top: 6px;
 }
 
 .address-autocomplete-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: none;
   background: none;
   cursor: pointer;
   text-align: left;
   font-size: 0.85rem;
-  color: var(--text-body, #1f2328);
+  color: var(--text-body);
   line-height: 1.3;
   border-radius: var(--radius-sm, 4px);
   font-family: inherit;
@@ -119,21 +119,21 @@
 
 .address-autocomplete-option.is-highlighted,
 .address-autocomplete-option:hover {
-  background: var(--surface-hover, #f3f4f6);
+  background: var(--surface-hover);
 }
 
 .address-autocomplete-option--saved {
-  background: color-mix(in srgb, var(--interactive-primary, #1f6feb) 6%, transparent);
+  background: color-mix(in srgb, var(--interactive-primary) 6%, transparent);
 }
 
 .address-autocomplete-option--saved.is-highlighted,
 .address-autocomplete-option--saved:hover {
-  background: color-mix(in srgb, var(--interactive-primary, #1f6feb) 14%, transparent);
+  background: color-mix(in srgb, var(--interactive-primary) 14%, transparent);
 }
 
 .address-autocomplete-option--saved .address-autocomplete-option-label {
   font-weight: 600;
-  color: var(--interactive-primary, #1f6feb);
+  color: var(--interactive-primary);
 }
 
 .address-autocomplete-option-icon {
@@ -144,7 +144,7 @@
 }
 
 .address-autocomplete-option--saved .address-autocomplete-option-icon {
-  color: var(--interactive-primary, #1f6feb);
+  color: var(--interactive-primary);
 }
 
 .address-autocomplete-option-label {
@@ -157,7 +157,7 @@
 .address-autocomplete-hint {
   padding: 6px 10px;
   font-size: 0.75rem;
-  color: var(--text-muted, #57606a);
+  color: var(--text-muted);
   font-style: italic;
 }
 

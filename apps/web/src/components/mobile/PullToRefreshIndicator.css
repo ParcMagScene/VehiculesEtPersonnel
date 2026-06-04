@@ -11,12 +11,12 @@
 }
 
 .ptr-indicator .ptr-icon {
-  color: var(--color-text-secondary, #6b7280);
+  color: var(--color-text-secondary);
   transition: color 0.2s;
 }
 
 .ptr-indicator.ptr-triggered .ptr-icon {
-  color: var(--color-primary, #3b82f6);
+  color: var(--color-primary);
 }
 
 .ptr-indicator.ptr-refreshing {

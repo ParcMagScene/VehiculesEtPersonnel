@@ -179,22 +179,12 @@
 /* Edge handles hover : bande colorée */
 .modal-resize-n:hover,
 .modal-resize-s:hover {
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--drag-handle-color, rgba(100, 149, 237, 0.3)),
-    transparent
-  );
+  background: linear-gradient(to bottom, transparent, var(--drag-handle-color), transparent);
 }
 
 .modal-resize-e:hover,
 .modal-resize-w:hover {
-  background: linear-gradient(
-    to right,
-    transparent,
-    var(--drag-handle-color, rgba(100, 149, 237, 0.3)),
-    transparent
-  );
+  background: linear-gradient(to right, transparent, var(--drag-handle-color), transparent);
 }
 
 /* Corner handles hover */
@@ -202,7 +192,7 @@
 .modal-resize-sw:hover::after,
 .modal-resize-ne:hover::after,
 .modal-resize-nw:hover::after {
-  border-color: var(--drag-handle-hover, rgba(100, 149, 237, 0.9));
+  border-color: var(--drag-handle-hover);
 }
 
 /* --- Indicateur visuel sur le header (petits points de grip) ----- */
@@ -214,7 +204,7 @@
   top: 2px;
   transform: translateX(-50%);
   font-size: var(--font-sm);
-  color: var(--drag-handle-color, rgba(120, 120, 120, 0.4));
+  color: var(--drag-handle-color);
   pointer-events: none;
   letter-spacing: 2px;
   opacity: 0;
@@ -291,13 +281,13 @@
   width: 32px;
   height: 4px;
   border-radius: 2px;
-  background: var(--drag-handle-color, rgba(120, 120, 120, 0.35));
+  background: var(--drag-handle-color);
   transition:
     background 0.2s ease,
     width 0.2s ease;
 }
 
 .modal-grip-bar:hover::before {
-  background: var(--drag-handle-hover, rgba(100, 149, 237, 0.8));
+  background: var(--drag-handle-hover);
   width: 48px;
 }

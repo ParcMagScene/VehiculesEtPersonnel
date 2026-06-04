@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Input } from '@/design-system';
+import { Input, SearchBar } from '@/design-system';
 
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
@@ -101,6 +101,7 @@ function SuiviPanel({
   const [teamSelectedPerson, setTeamSelectedPerson] = useState(null);
   const [permanentsHeight, setPermanentsHeight] = useState(280);
   const [isResizingGroups, setIsResizingGroups] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const personListRef = useRef(null);
   const resizeStartRef = useRef({ y: 0, height: 280 });
   const saveInFlightRef = useRef(false);
@@ -108,10 +109,17 @@ function SuiviPanel({
   const isAdmin = !!currentUser?.isAdmin;
   const { isFavorite, toggleFavorite, sortPersonsByFavorites } = usePersonnelFavorites();
 
-  const personnelSource = useMemo(
-    () => (onlyFavorites ? personnel.filter((p) => isFavorite(p.id)) : personnel),
-    [personnel, onlyFavorites, isFavorite],
-  );
+  const personnelSource = useMemo(() => {
+    let list = onlyFavorites ? personnel.filter((p) => isFavorite(p.id)) : personnel;
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) => {
+        const fullName = `${p.first_name || ''} ${p.last_name || ''}`.toLowerCase();
+        return fullName.includes(q);
+      });
+    }
+    return list;
+  }, [personnel, onlyFavorites, isFavorite, searchQuery]);
 
   // Groupes de personnel
   const permanents = useMemo(
@@ -644,10 +652,23 @@ function SuiviPanel({
               <Users size={16} /> Personnel
             </h3>
 
+            <div className="suivi-search-wrap">
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Rechercher un personnel…"
+                size="sm"
+              />
+            </div>
+
             <div className="suivi-person-list" ref={personListRef}>
               {personnelSource.length === 0 ? (
                 <div className="suivi-person-empty">
-                  {onlyFavorites ? 'Aucun favori trouvé' : 'Aucun personnel trouvé'}
+                  {searchQuery.trim()
+                    ? 'Aucun resultat'
+                    : onlyFavorites
+                      ? 'Aucun favori trouvé'
+                      : 'Aucun personnel trouvé'}
                 </div>
               ) : (
                 <>

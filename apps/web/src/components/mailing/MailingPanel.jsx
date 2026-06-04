@@ -16,7 +16,23 @@ import {
   Settings,
   Trash2,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
+import { Virtuoso } from 'react-virtuoso';
+
+// [PERF Phase 4.G2] Composant Item Virtuoso pour la liste templates.
+// Force la classe metier mailing-template-card sur le wrapper genere par Virtuoso.
+const VirtuosoTplItem = forwardRef(function VirtuosoTplItem({ className, ...props }, ref) {
+  return <div ref={ref} {...props} className={`mailing-template-card ${className || ''}`.trim()} />;
+});
+const VIRTUOSO_TPL_COMPONENTS = { Item: VirtuosoTplItem };
+const TEMPLATES_VIRTUALIZE_THRESHOLD = 50;
+
+// [PERF Phase 4.H] Seuil de virtualisation pour l'historique d'envois.
+// L'historique peut grossir indefiniment (potentiellement des milliers
+// d'entrees au fil du temps); virtualiser au-dela de 50 evite de monter
+// tout le DOM. En dessous, garder le rendu classique pour preserver
+// l'experience native (scroll fluide, find-in-page, accessibility).
+const HISTORY_VIRTUALIZE_THRESHOLD = 50;
 
 import {
   Button,
@@ -304,8 +320,25 @@ export default function MailingPanel({ isOpen, onClose }) {
       const result = await api.testEmail();
       setConfigTestResult({ success: true, message: result.message });
     } catch (err) {
-      setConfigTestResult({ success: false, message: err.message || 'Échec du test' });
+      // Le backend renvoie maintenant { error, code, fix } pour les codes Gmail courants
+      const data = err?.response?.data || null;
+      setConfigTestResult({
+        success: false,
+        message: data?.error || err.message || 'Échec du test',
+        code: data?.code || null,
+        fix: data?.fix || null,
+      });
     }
+  };
+
+  // Préréglage Gmail : remplit host/port/SSL pour smtp.gmail.com
+  const applyGmailPreset = () => {
+    setConfigForm((prev) => ({
+      ...prev,
+      smtp_host: 'smtp.gmail.com',
+      smtp_port: 465,
+      smtp_secure: true,
+    }));
   };
 
   if (!isOpen) return null;
@@ -313,7 +346,13 @@ export default function MailingPanel({ isOpen, onClose }) {
   const smtpConfigured = emailConfig?.smtp_host && emailConfig?.enabled;
 
   return (
-    <Modal open={isOpen} onClose={onClose} size="lg" className="mailing-panel">
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      size="lg"
+      className="mailing-panel"
+      closeOnBackdrop={false}
+    >
       <ModalHeader icon={<Mail size={20} />} onClose={onClose}>
         Mailing
       </ModalHeader>
@@ -573,47 +612,68 @@ export default function MailingPanel({ isOpen, onClose }) {
                   )}
 
                   {!editingTemplate &&
-                    templates.map((tpl) => (
-                      <div key={tpl.id} className="mailing-template-card">
-                        <div className="mailing-tpl-info">
-                          <span className="mailing-tpl-name">{tpl.name}</span>
-                          <span className="mailing-tpl-subject">
-                            {tpl.subject || '(sans sujet)'}
-                          </span>
-                          <span className={`mailing-tpl-cat cat-${tpl.category}`}>
-                            {TEMPLATE_CATEGORIES.find((c) => c.value === tpl.category)?.label ||
-                              tpl.category}
-                          </span>
+                    (() => {
+                      // [PERF Phase 4.G2] Rendu d'une template card extrait pour partage
+                      // entre le mode map() (peu de templates) et le mode Virtuoso (beaucoup).
+                      const renderTplInner = (tpl) => (
+                        <>
+                          <div className="mailing-tpl-info">
+                            <span className="mailing-tpl-name">{tpl.name}</span>
+                            <span className="mailing-tpl-subject">
+                              {tpl.subject || '(sans sujet)'}
+                            </span>
+                            <span className={`mailing-tpl-cat cat-${tpl.category}`}>
+                              {TEMPLATE_CATEGORIES.find((c) => c.value === tpl.category)?.label ||
+                                tpl.category}
+                            </span>
+                          </div>
+                          <div className="mailing-tpl-actions">
+                            <Tooltip content="Modifier">
+                              <Button variant="ghost" onClick={() => openTemplateEditor(tpl)}>
+                                <Edit3 size={14} />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Utiliser">
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  handleSelectTemplate(tpl);
+                                  setActiveTab('compose');
+                                }}
+                              >
+                                <Send size={14} />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Supprimer">
+                              <Button
+                                variant="ghost"
+                                onClick={() => deleteTemplate(tpl.id)}
+                                className="danger"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </>
+                      );
+
+                      if (templates.length > TEMPLATES_VIRTUALIZE_THRESHOLD) {
+                        return (
+                          <Virtuoso
+                            style={{ height: 520 }}
+                            data={templates}
+                            components={VIRTUOSO_TPL_COMPONENTS}
+                            computeItemKey={(_idx, tpl) => tpl.id}
+                            itemContent={(_idx, tpl) => renderTplInner(tpl)}
+                          />
+                        );
+                      }
+                      return templates.map((tpl) => (
+                        <div key={tpl.id} className="mailing-template-card">
+                          {renderTplInner(tpl)}
                         </div>
-                        <div className="mailing-tpl-actions">
-                          <Tooltip content="Modifier">
-                            <Button variant="ghost" onClick={() => openTemplateEditor(tpl)}>
-                              <Edit3 size={14} />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Utiliser">
-                            <Button
-                              variant="ghost"
-                              onClick={() => {
-                                handleSelectTemplate(tpl);
-                                setActiveTab('compose');
-                              }}
-                            >
-                              <Send size={14} />
-                            </Button>
-                          </Tooltip>
-                          <Tooltip content="Supprimer">
-                            <Button
-                              variant="ghost"
-                              onClick={() => deleteTemplate(tpl.id)}
-                              className="danger"
-                            >
-                              <Trash2 size={14} />
-                            </Button>
-                          </Tooltip>
-                        </div>
-                      </div>
-                    ))}
+                      ));
+                    })()}
 
                   {/* Template editor */}
                   {editingTemplate && (
@@ -715,29 +775,53 @@ export default function MailingPanel({ isOpen, onClose }) {
                     <EmptyState icon={<Clock size={32} />} title="Aucun email envoyé." />
                   )}
 
-                  {history.map((h) => (
-                    <div key={h.id} className={`mailing-history-item ${h.status}`}>
-                      <div className="mailing-hist-main">
-                        <span className={`mailing-hist-status status-${h.status}`}>
-                          {h.status === 'sent' ? '✅' : '❌'}
-                        </span>
-                        <div className="mailing-hist-info">
-                          <span className="mailing-hist-subject">{h.subject}</span>
-                          <span className="mailing-hist-to">→ {h.recipients}</span>
+                  {history.length > 0 &&
+                    (() => {
+                      // [PERF Phase 4.H] Contenu interne factorise: identique entre
+                      // la branche virtualisee (Virtuoso) et la branche map().
+                      const renderHistoryInner = (h) => (
+                        <>
+                          <div className="mailing-hist-main">
+                            <span className={`mailing-hist-status status-${h.status}`}>
+                              {h.status === 'sent' ? '✅' : '❌'}
+                            </span>
+                            <div className="mailing-hist-info">
+                              <span className="mailing-hist-subject">{h.subject}</span>
+                              <span className="mailing-hist-to">→ {h.recipients}</span>
+                            </div>
+                          </div>
+                          <div className="mailing-hist-meta">
+                            <span>{h.sent_by_name || '—'}</span>
+                            <span>{new Date(h.sent_at).toLocaleString('fr-FR')}</span>
+                            {h.template_name && (
+                              <span className="mailing-hist-tpl">📄 {h.template_name}</span>
+                            )}
+                          </div>
+                          {h.error_message && (
+                            <div className="mailing-hist-error">{h.error_message}</div>
+                          )}
+                        </>
+                      );
+                      if (history.length > HISTORY_VIRTUALIZE_THRESHOLD) {
+                        return (
+                          <Virtuoso
+                            style={{ height: 600 }}
+                            data={history}
+                            computeItemKey={(_i, h) => h.id}
+                            itemContent={(_i, h) => (
+                              <div className={`mailing-history-item ${h.status}`}>
+                                {renderHistoryInner(h)}
+                              </div>
+                            )}
+                          />
+                        );
+                      }
+                      return history.map((h) => (
+                        <div key={h.id} className={`mailing-history-item ${h.status}`}>
+                          {renderHistoryInner(h)}
                         </div>
-                      </div>
-                      <div className="mailing-hist-meta">
-                        <span>{h.sent_by_name || '—'}</span>
-                        <span>{new Date(h.sent_at).toLocaleString('fr-FR')}</span>
-                        {h.template_name && (
-                          <span className="mailing-hist-tpl">📄 {h.template_name}</span>
-                        )}
-                      </div>
-                      {h.error_message && (
-                        <div className="mailing-hist-error">{h.error_message}</div>
-                      )}
-                    </div>
-                  ))}
+                      ));
+                    })()}
                 </div>
               )}
             </TabPanel>
@@ -747,6 +831,38 @@ export default function MailingPanel({ isOpen, onClose }) {
               {!loading && (
                 <div className="mailing-config">
                   <h3>Configuration SMTP</h3>
+
+                  <div
+                    className="mailing-form-group"
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      padding: '8px 12px',
+                      background: 'var(--theme-bg-subtle, rgba(0,0,0,0.03))',
+                      borderRadius: 6,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: '0.85rem' }}>Préréglage rapide :</span>
+                    <Button
+                      variant="ghost"
+                      className="mailing-btn secondary"
+                      onClick={applyGmailPreset}
+                      type="button"
+                    >
+                      Gmail (smtp.gmail.com:465 SSL)
+                    </Button>
+                    <a
+                      href="https://myaccount.google.com/apppasswords"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '0.8rem', marginLeft: 'auto' }}
+                    >
+                      Générer un mot de passe d'application Gmail →
+                    </a>
+                  </div>
 
                   <div className="mailing-form-group">
                     <label className="mailing-toggle-label">
@@ -864,7 +980,17 @@ export default function MailingPanel({ isOpen, onClose }) {
                       className={`mailing-config-result ${configTestResult.success ? 'success' : 'error'}`}
                     >
                       {configTestResult.success ? <Check size={14} /> : <AlertTriangle size={14} />}
-                      {configTestResult.message}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <span>
+                          {configTestResult.code ? `[${configTestResult.code}] ` : ''}
+                          {configTestResult.message}
+                        </span>
+                        {configTestResult.fix && (
+                          <span style={{ fontSize: '0.8rem', opacity: 0.85 }}>
+                            💡 {configTestResult.fix}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

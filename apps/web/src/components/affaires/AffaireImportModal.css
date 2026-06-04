@@ -51,7 +51,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
   border-bottom: none;
   position: sticky;
   top: 0;
@@ -91,18 +91,18 @@
 }
 
 .affaire-modal-body {
-  padding: 24px;
+  padding: var(--space-6);
 }
 
 /* Étape de choix */
 .choice-step {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .choice-button {
-  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
   background: var(--btn-primary-bg);
   color: var(--btn-primary-color);
   border: none;
@@ -128,7 +128,7 @@
 .drop-zone {
   border: 3px dashed var(--theme-border);
   border-radius: var(--radius-lg);
-  padding: 60px 40px;
+  padding: 60px var(--space-10);
   text-align: center;
   background: var(--theme-bg-page);
   transition: all 0.3s;
@@ -145,7 +145,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .drop-zone-icon {
@@ -162,11 +162,11 @@
 .drop-zone-or {
   color: var(--theme-text-muted);
   font-size: var(--font-base);
-  margin: 8px 0;
+  margin: var(--space-2) 0;
 }
 
 .browse-button {
-  padding: 12px 32px;
+  padding: var(--space-3) var(--space-8);
   background: var(--theme-bg-card);
   border: 2px solid var(--theme-primary);
   color: var(--theme-primary);
@@ -188,12 +188,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
-  gap: 20px;
+  padding: 60px var(--space-5);
+  gap: var(--space-5);
 }
 
 .btn-view-pdf {
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   background: var(--theme-primary);
   color: var(--theme-text-inverse);
   border: none;
@@ -210,7 +210,7 @@
 }
 
 .btn-delete-pdf {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--btn-danger-filled-bg);
   color: var(--btn-danger-filled-color);
   border: none;
@@ -226,14 +226,14 @@
 }
 
 .additional-bls-list {
-  margin: 16px 0;
-  padding: 16px;
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
   background: var(--theme-bg-page);
   border-radius: var(--radius-md);
 }
 
 .additional-bls-list h4 {
-  margin: 0 0 12px 0;
+  margin: 0 0 var(--space-3) 0;
   font-size: 0.95rem;
   color: var(--theme-text-subtle);
 }
@@ -255,7 +255,7 @@
 
 /* Confirmation de remplacement */
 .replace-confirm {
-  padding: 20px;
+  padding: var(--space-5);
   background: var(--theme-warning-bg);
   border: 2px solid var(--theme-warning);
   border-radius: var(--radius-md);
@@ -265,17 +265,17 @@
 .warning-text {
   color: var(--theme-warning-text);
   font-weight: 600;
-  margin: 0 0 12px 0;
+  margin: 0 0 var(--space-3) 0;
 }
 
 .replace-confirm p {
   color: var(--theme-warning-text-alt);
-  margin: 0 0 20px 0;
+  margin: 0 0 var(--space-5) 0;
 }
 
 .button-group {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: center;
 }
 
@@ -283,14 +283,14 @@
 .form-step {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--space-5);
 }
 
 .pdf-indicator {
   background: var(--btn-success-bg);
   border: 1px solid var(--theme-success-alt);
   color: var(--theme-success-text);
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   font-weight: 500;
   text-align: center;
@@ -299,7 +299,7 @@
 .affaire-import-modal .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .affaire-import-modal .form-group label {
@@ -313,7 +313,7 @@
 .affaire-import-modal .form-group input,
 .affaire-import-modal .form-group textarea,
 .affaire-import-modal .form-group select {
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -339,15 +339,15 @@
 .affaire-import-modal .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .affaire-import-modal .form-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: flex-end;
-  margin-top: 8px;
-  padding-top: 16px;
+  margin-top: var(--space-2);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--theme-border);
 }
 
@@ -403,7 +403,7 @@
   }
 
   .affaire-modal-header {
-    padding: 16px 20px;
+    padding: var(--space-4) var(--space-5);
   }
 
   .affaire-modal-header h2 {
@@ -411,7 +411,7 @@
   }
 
   .affaire-modal-body {
-    padding: 20px;
+    padding: var(--space-5);
   }
 
   .form-row {
@@ -419,7 +419,7 @@
   }
 
   .drop-zone {
-    padding: 40px 20px;
+    padding: var(--space-10) var(--space-5);
   }
 }
 
@@ -436,13 +436,13 @@
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .doc-type-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -498,7 +498,7 @@
 .batch-results-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .batch-results-header {
@@ -517,7 +517,7 @@
   background: none;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-sm);
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   font-size: var(--font-base);
   cursor: pointer;
   color: var(--theme-text-secondary);
@@ -571,7 +571,7 @@
 .batch-result-file {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
   flex: 1;
 }
@@ -593,7 +593,7 @@
 .batch-result-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
@@ -623,7 +623,7 @@
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   animation: aiFadeIn 0.2s ease-out;
 }
 
@@ -637,7 +637,7 @@
   .batch-result-meta {
     flex-direction: column;
     align-items: flex-end;
-    gap: 4px;
+    gap: var(--space-1);
   }
 
   .pdf-preview-container {

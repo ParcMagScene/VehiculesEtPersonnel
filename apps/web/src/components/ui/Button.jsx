@@ -4,9 +4,12 @@ import { forwardRef } from 'react';
 /**
  * Button — Composant atomique Design System
  *
- * Variantes : primary | secondary | danger | success | warning | ghost
- * Tailles   : xs | sm | md | lg
+ * Variantes : primary | secondary | danger | success | ghost
+ * Tailles   : sm | md
  * Modes     : icon-only, loading, disabled
+ *
+ * Note: les variants `warning` et tailles `xs`/`lg` ont ete retires (B18)
+ * faute d'usage. Reintroduire si un cas legitime apparait.
  */
 const Button = forwardRef(
   (

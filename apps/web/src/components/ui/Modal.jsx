@@ -29,6 +29,7 @@ function Modal({
   className = '',
   overlayClassName = '',
   disableBackdropBlur = false,
+  closeOnBackdrop = true,
   ariaLabel,
   ariaLabelledBy,
   children,
@@ -123,9 +124,10 @@ function Modal({
 
   const handleOverlayClick = useCallback(
     (e) => {
+      if (!closeOnBackdrop) return;
       if (e.target === overlayRef.current) onClose?.();
     },
-    [onClose],
+    [onClose, closeOnBackdrop],
   );
 
   if (!open) return null;

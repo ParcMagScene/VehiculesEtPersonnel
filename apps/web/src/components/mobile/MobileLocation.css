@@ -120,7 +120,7 @@
 
 .mloc-uid {
   font-size: 0.68rem;
-  font-family: 'SF Mono', 'Monaco', monospace;
+  font-family: var(--font-mono);
   background: var(--surface-tertiary);
   color: var(--text-muted);
   padding: 1px 5px;

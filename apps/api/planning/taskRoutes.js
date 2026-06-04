@@ -703,7 +703,7 @@ export function setupTaskRoutes(app, authenticateToken) {
 
             // Client et lieu
             const displayClient = stripEmoji(
-              t.event_client || (linkedAffaire ? linkedAffaire.client : '') || '',
+              t.client_name || t.event_client || (linkedAffaire ? linkedAffaire.client : '') || '',
             );
             const displayLocation = stripEmoji(
               t.event_location ||
@@ -711,8 +711,9 @@ export function setupTaskRoutes(app, authenticateToken) {
                 '',
             );
 
-            // Horaires (ou période AM/PM si pas d'heure)
-            const rawTime = t.time || t.period || '';
+            // Horaires (ou période AM/PM/Journée si pas d'heure)
+            const isAllDay = t.all_day === 1 || t.all_day === true;
+            const rawTime = t.time || (isAllDay ? 'Journée' : t.period) || '';
             const timeStr = String(rawTime)
               .split(/\s*(?:>|→|-)\s*/)[0]
               .trim();
@@ -729,6 +730,11 @@ export function setupTaskRoutes(app, authenticateToken) {
                 : t.person_first_name || t.person_last_name
                   ? `${t.person_first_name || ''} ${t.person_last_name ? t.person_last_name.charAt(0) + '.' : ''}`.trim()
                   : '';
+            const personCount = multiAssign.length || (t.person_first_name ? 1 : 0);
+            // Largeur dynamique pour multi-affectations (eviter le clipping).
+            const personColW = personCount >= 4 ? 130 : personCount >= 2 ? 100 : personStr ? 70 : 0;
+            // "Journée" demande un peu plus de place que "AM"/"PM".
+            const timeColW = timeStr ? (isAllDay ? 56 : 42) : 0;
 
             // Détection doublons client/lieu vs titre (éviter affichage double pour les courses)
             const titleLower = titleStr.toLowerCase();
@@ -765,10 +771,7 @@ export function setupTaskRoutes(app, authenticateToken) {
             }
             // Titre
             const rightInfoW =
-              (timeStr ? 42 : 0) +
-              (showClient ? 65 : showLocation ? 55 : 0) +
-              (personStr ? 60 : 0) +
-              8;
+              timeColW + (showClient ? 65 : showLocation ? 55 : 0) + personColW + 8;
             const titleW = leftX + pageW - titleX - rightInfoW;
             if (t.status === 'done') {
               doc.font('Helvetica-Oblique').fontSize(fs).fillColor('#999999');
@@ -805,24 +808,38 @@ export function setupTaskRoutes(app, authenticateToken) {
                   .text(notesText, notesX, rowY + 2, { width: notesW, lineBreak: false });
               }
             }
+            // Largeur dynamique de la colonne PERSONNES (multi-affectations).
+            // Police plus petite quand plusieurs personnes pour eviter le clipping.
+            const personFs =
+              personCount >= 3
+                ? Math.max(5, fsSmall - 1.5)
+                : personCount >= 2
+                  ? fsSmall - 0.5
+                  : fsSmall;
+
             // Horaires (colonne la plus à droite)
             let rightX = leftX + pageW;
             if (timeStr) {
-              rightX -= 42;
+              rightX -= timeColW;
               doc
                 .font('Helvetica-Bold')
                 .fontSize(fsSmall)
                 .fillColor('#444444')
-                .text(timeStr, rightX, rowY + 2, { width: 40, lineBreak: false });
+                .text(timeStr, rightX, rowY + 2, { width: timeColW - 2, lineBreak: false });
             }
             // Personnel juste avant la colonne heure/période
             if (personStr) {
-              rightX -= 60;
+              rightX -= personColW;
               doc
                 .font('Helvetica')
-                .fontSize(fsSmall)
+                .fontSize(personFs)
                 .fillColor('#555555')
-                .text(personStr, rightX, rowY + 2, { width: 58, lineBreak: false });
+                .text(personStr, rightX, rowY + 2, {
+                  width: personColW - 2,
+                  height: rowH - 2,
+                  lineBreak: false,
+                  ellipsis: true,
+                });
             }
             // Client/Lieu ensuite (plus à gauche)
             if (showClient) {
@@ -1102,6 +1119,8 @@ export function setupTaskRoutes(app, authenticateToken) {
         location_address,
         location_lat,
         location_lng,
+        all_day,
+        client_name,
       } = req.body;
 
       if (!date) {
@@ -1131,8 +1150,8 @@ export function setupTaskRoutes(app, authenticateToken) {
       const defaultVisible = EVENT_SECTIONS.includes(effectiveSection) ? 0 : 1;
 
       const stmt = db.prepare(`
-      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, reservation_id, location_address, location_lat, location_lng, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, reservation_id, location_address, location_lat, location_lng, all_day, client_name, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
 
       stmt.run(
@@ -1156,6 +1175,8 @@ export function setupTaskRoutes(app, authenticateToken) {
         location_address || null,
         location_lat != null ? location_lat : null,
         location_lng != null ? location_lng : null,
+        all_day ? 1 : 0,
+        client_name || null,
         req.user.id,
       );
 
@@ -1195,8 +1216,8 @@ export function setupTaskRoutes(app, authenticateToken) {
 
         const EVENT_SECTIONS_BATCH = ['rdv', 'evenements'];
         const insertStmt = db.prepare(`
-      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, all_day, client_name, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
 
         const createdIds = [];
@@ -1231,6 +1252,8 @@ export function setupTaskRoutes(app, authenticateToken) {
               t.location_address || null,
               t.location_lat != null ? t.location_lat : null,
               t.location_lng != null ? t.location_lng : null,
+              t.all_day ? 1 : 0,
+              t.client_name || null,
               req.user.id,
             );
             createdIds.push(id);
@@ -1309,6 +1332,8 @@ export function setupTaskRoutes(app, authenticateToken) {
         location_address,
         location_lat,
         location_lng,
+        all_day,
+        client_name,
       } = req.body;
 
       if (date && !isValidDate(date)) {
@@ -1329,7 +1354,7 @@ export function setupTaskRoutes(app, authenticateToken) {
 
       const stmt = db.prepare(`
       UPDATE task_assignments
-      SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, reservation_id = ?, location_address = ?, location_lat = ?, location_lng = ?, modified_by = ?, modified_at = datetime('now')
+      SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, reservation_id = ?, location_address = ?, location_lat = ?, location_lng = ?, all_day = ?, client_name = ?, modified_by = ?, modified_at = datetime('now')
       WHERE id = ?
     `);
 
@@ -1352,6 +1377,8 @@ export function setupTaskRoutes(app, authenticateToken) {
         location_address !== undefined ? location_address : existing.location_address,
         location_lat !== undefined ? location_lat : existing.location_lat,
         location_lng !== undefined ? location_lng : existing.location_lng,
+        all_day !== undefined ? (all_day ? 1 : 0) : existing.all_day,
+        client_name !== undefined ? client_name : existing.client_name,
         req.user.id,
         req.params.id,
       );

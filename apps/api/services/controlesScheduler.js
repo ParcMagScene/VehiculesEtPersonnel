@@ -41,7 +41,8 @@ async function sendDueReminders(db, now = new Date()) {
          JOIN control_types ct ON ct.id = ec.control_type_id
     LEFT JOIN users u  ON u.id = ec.assigned_to
     LEFT JOIN vehicles v  ON ec.entity_type='vehicle'  AND v.id  = ec.entity_id
-    LEFT JOIN equipment e ON ec.entity_type='equipment' AND CAST(e.id AS TEXT) = ec.entity_id
+    -- Cast côté entity_id (TEXT -> INTEGER) pour utiliser le PRIMARY KEY equipment.id (cf. controlesPeriodiquesRoutes.js)
+    LEFT JOIN equipment e ON ec.entity_type='equipment' AND e.id = CAST(ec.entity_id AS INTEGER)
         WHERE ec.is_active = 1`,
     )
     .all();
@@ -98,7 +99,8 @@ async function sendDueReminders(db, now = new Date()) {
          JOIN control_types ct ON ct.id = ec.control_type_id
     LEFT JOIN users u ON u.id = ec.assigned_to
     LEFT JOIN vehicles v  ON ec.entity_type='vehicle'  AND v.id  = ec.entity_id
-    LEFT JOIN equipment e ON ec.entity_type='equipment' AND CAST(e.id AS TEXT) = ec.entity_id
+    -- Cast côté entity_id (TEXT -> INTEGER) pour utiliser le PRIMARY KEY equipment.id
+    LEFT JOIN equipment e ON ec.entity_type='equipment' AND e.id = CAST(ec.entity_id AS INTEGER)
         WHERE h.status = 'MANQUE' AND h.performed_at = ?`,
     )
     .all(today);

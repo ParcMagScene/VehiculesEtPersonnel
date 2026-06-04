@@ -157,7 +157,7 @@
   padding: 3px var(--space-2-5);
   border-radius: var(--radius-md);
   font-weight: 700;
-  font-family: 'SF Mono', 'Menlo', monospace;
+  font-family: var(--font-mono);
   letter-spacing: 0.5px;
 }
 
@@ -373,7 +373,7 @@
   font-size: var(--font-sm);
   color: var(--theme-primary);
   font-weight: 700;
-  font-family: 'SF Mono', 'Menlo', monospace;
+  font-family: var(--font-mono);
 }
 
 .m-eq-qr-notes {
@@ -496,7 +496,7 @@
 .m-eq-qr-eq-label code {
   color: var(--theme-primary);
   font-weight: 700;
-  font-family: 'SF Mono', 'Menlo', monospace;
+  font-family: var(--font-mono);
   background: var(--theme-bg-hover);
   padding: var(--space-0-5) var(--space-2);
   border-radius: var(--radius-sm);

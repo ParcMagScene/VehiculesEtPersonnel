@@ -32,7 +32,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   background: linear-gradient(135deg, var(--theme-text-dark), var(--theme-info-dark));
   color: var(--theme-text-inverse);
 }
@@ -40,7 +40,7 @@
 .mr-header h2 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: var(--font-md);
   font-weight: 600;
 }
@@ -80,7 +80,7 @@
 }
 
 .mr-period-btn {
-  padding: 5px 12px;
+  padding: 5px var(--space-3);
   border: none;
   background: transparent;
   border-radius: var(--radius-xs);
@@ -109,7 +109,7 @@
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-sm);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -126,7 +126,7 @@
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-sm);
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   cursor: pointer;
   font-size: var(--font-xs);
   font-weight: 500;
@@ -151,11 +151,11 @@
 .mr-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .mr-type-select {
-  padding: 5px 8px;
+  padding: 5px var(--space-2);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-sm);
   font-size: var(--font-sm);
@@ -166,8 +166,8 @@
 .mr-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
+  gap: var(--space-1);
+  padding: 5px var(--space-3);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
@@ -197,7 +197,7 @@
 .mr-content {
   flex: 1;
   overflow: auto;
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .mr-loading,
@@ -205,7 +205,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px;
+  padding: var(--space-12);
   color: var(--theme-text-muted);
   font-size: var(--font-base);
 }
@@ -222,7 +222,7 @@
 
 .mr-table th {
   background: var(--theme-border-light);
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   text-align: left;
   font-weight: 600;
   color: var(--theme-text-subtle);
@@ -252,7 +252,7 @@
 }
 
 .mr-mono {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
   color: var(--theme-text-gray);
 }
@@ -273,7 +273,7 @@
 /* Badges mouvement */
 .mr-badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-md-lg);
   font-size: var(--font-2xs);
   font-weight: 600;
@@ -300,9 +300,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 10px;
+  padding: var(--space-3) 10px;
   border-top: 2px solid var(--theme-text-dark);
-  margin-top: 8px;
+  margin-top: var(--space-2);
   font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-dark);
@@ -320,7 +320,7 @@
   .mr-toolbar {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: var(--space-2);
   }
 
   .mr-toolbar-center {

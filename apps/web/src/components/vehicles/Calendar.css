@@ -58,20 +58,20 @@
 .cal-nav-date {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .cal-nav-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
   border-radius: var(--radius-sm);
   font-size: var(--font-sm);
   font-weight: 500;
-  color: var(--theme-text-primary);
+  color: var(--theme-text-subtle);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -98,7 +98,7 @@
   font-size: var(--font-base);
   font-weight: 600;
   color: var(--theme-text-primary);
-  margin-left: 8px;
+  margin-left: var(--space-2);
   white-space: nowrap;
 }
 
@@ -142,7 +142,7 @@
 [data-theme='dark'] .cal-nav-btn {
   background: var(--theme-bg-tertiary);
   border-color: var(--theme-border);
-  color: var(--theme-text-primary);
+  color: var(--theme-text-secondary);
 }
 
 [data-theme='dark'] .cal-nav-btn:hover {
@@ -157,11 +157,11 @@
 @media (max-width: 768px) {
   .cal-nav-toolbar {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--space-2);
     padding: 6px 10px;
   }
   .cal-nav-view-btn {
-    padding: 4px 10px;
+    padding: var(--space-1) 10px;
     font-size: var(--font-xs);
   }
   .cal-nav-label {
@@ -289,7 +289,7 @@
   color: var(--theme-text-inverse);
   font-size: var(--font-xs);
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-md-lg);
   margin-left: 6px;
   flex-shrink: 0;
@@ -654,7 +654,7 @@
   flex-direction: column;
   gap: 2px;
   justify-content: center;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
 }
 
 .vehicle-photo {
@@ -1002,8 +1002,7 @@
   justify-content: center;
   pointer-events: none;
   z-index: var(--z-base);
-  /* padding-bottom reserve l'espace du badge .reservation-affaire (positionne en absolute bottom: 0.2rem) */
-  padding: 0.4rem 0.5rem 1.7rem;
+  padding: 0.5rem;
 }
 
 .reservation-content {
@@ -1041,29 +1040,23 @@
 }
 
 .reservation-affaire {
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.7rem;
-  color: var(--theme-bg);
-  background: rgba(124, 58, 237, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  color: var(--theme-purple-accent);
+  background: rgba(124, 58, 237, 0.1);
   padding: 0.125rem 0.375rem;
   border-radius: var(--radius-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   width: fit-content;
-  max-width: calc(100% - 0.5rem);
+  max-width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 3px;
   pointer-events: auto;
-  position: absolute;
-  bottom: 0.2rem;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   z-index: var(--z-dropdown);
 }
 
@@ -1077,8 +1070,7 @@
 
 .affaire-plus {
   font-size: 0.65rem;
-  background: rgba(255, 255, 255, 0.25);
-  color: var(--theme-bg);
+  background: rgba(124, 58, 237, 0.2);
   padding: 0.125rem 0.25rem;
   border-radius: var(--radius-xs);
   margin-left: 0.125rem;
@@ -1281,7 +1273,7 @@
   height: 14px;
   min-width: 14px;
   color: var(--theme-text-inverse);
-  margin-left: 4px;
+  margin-left: var(--space-1);
   vertical-align: middle;
   box-shadow: 0 1px 2px var(--shadow-xl);
   transition:
@@ -1429,7 +1421,7 @@
     width: 32px;
     height: 32px;
     min-width: 32px;
-    padding: 8px;
+    padding: var(--space-2);
   }
 }
 
@@ -1517,9 +1509,7 @@
 }
 
 [data-theme='dark'] .reservation-affaire {
-  color: var(--theme-bg);
-  background: rgba(167, 139, 250, 0.95);
-  border-color: rgba(255, 255, 255, 0.5);
+  color: var(--theme-primary);
 }
 
 [data-theme='dark'] .tournee-linked-sep {

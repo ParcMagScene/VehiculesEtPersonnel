@@ -2,8 +2,6 @@ import './UserPreferencesModal.css';
 
 import {
   Bell,
-  Boxes,
-  Briefcase,
   Check,
   ChevronDown,
   ChevronUp,
@@ -13,14 +11,9 @@ import {
   Layout,
   Monitor,
   Moon,
-  Package,
   Palette,
-  Radio,
   Settings,
-  ShoppingCart,
   Sun,
-  Truck,
-  Users,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -42,9 +35,12 @@ import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { PALETTES } from '../../hooks/useTheme';
 import { useToast } from '../../hooks/useToast';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { DESKTOP_MODULES } from '../../router/routes.config';
 import api from '../../utils/api';
 import {
+  NOTIFICATION_SOUND_VARIANTS,
   playNotificationSound,
+  playNotificationVariant,
   playSound,
   requestNotificationPermission,
   setVolume,
@@ -52,15 +48,10 @@ import {
   SOUND_TYPES,
 } from '../../utils/notificationSound';
 
-const ALL_MODULES = [
-  { id: 'vehicles', label: 'Parc', icon: Truck, locked: true },
-  { id: 'personnel', label: 'Personnel', icon: Users },
-  { id: 'affaires', label: 'Affaires', icon: Briefcase },
-  { id: 'equipment', label: 'Équipements', icon: Package },
-  { id: 'orders', label: 'Commandes', icon: ShoppingCart },
-  { id: 'stock', label: 'Stock', icon: Boxes },
-  { id: 'planning', label: 'Planning', icon: Radio },
-];
+// Source de vérité : routes.config.js (DESKTOP_MODULES). Le premier module
+// (vehicles) est verrouillé : il sert d'onglet par défaut et ne peut pas être
+// masqué ni déplacé.
+const ALL_MODULES = DESKTOP_MODULES.map((m, i) => (i === 0 ? { ...m, locked: true } : m));
 
 const VALID_MODULE_IDS = new Set(ALL_MODULES.map((m) => m.id));
 
@@ -74,6 +65,7 @@ const DEFAULT_PREFS = {
   notificationsEnabled: true,
   soundEnabled: true,
   soundVolume: 70,
+  notificationSoundVariant: 'notification',
   colorTheme: 'default',
   tabOrder: DEFAULT_TAB_ORDER,
   hiddenTabs: DEFAULT_HIDDEN_TABS,
@@ -381,7 +373,20 @@ const UserPreferencesModal = ({
             </span>
             <Toggle
               checked={prefs.notificationsEnabled}
-              onChange={(e) => updatePref('notificationsEnabled', e.target.checked)}
+              onChange={async (e) => {
+                const checked = e.target.checked;
+                if (checked && 'Notification' in window && Notification.permission === 'default') {
+                  // Demande explicite de la permission au moment du toggle
+                  // (Chrome/Safari refusent toute demande sans interaction).
+                  const ok = await requestNotificationPermission();
+                  if (!ok) {
+                    toast.warning(
+                      'Permission navigateur refusee — notifications visuelles desactivees',
+                    );
+                  }
+                }
+                updatePref('notificationsEnabled', checked);
+              }}
             />
           </div>
 
@@ -394,6 +399,31 @@ const UserPreferencesModal = ({
               onChange={(e) => updatePref('soundEnabled', e.target.checked)}
             />
           </div>
+
+          {prefs.soundEnabled && (
+            <div className="prefs-field">
+              <span className="prefs-field-label">
+                <Bell size={14} /> Son d'arrivée de message
+              </span>
+              <Select
+                className="prefs-select"
+                value={prefs.notificationSoundVariant || 'notification'}
+                onChange={(e) => {
+                  const variant = e.target.value;
+                  updatePref('notificationSoundVariant', variant);
+                  // Preview immédiat avec le volume courant
+                  setVolume(prefs.soundVolume / 100);
+                  playNotificationVariant(variant);
+                }}
+              >
+                {NOTIFICATION_SOUND_VARIANTS.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.emoji} {v.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
 
           {prefs.soundEnabled && (
             <div className="prefs-field prefs-volume-row">

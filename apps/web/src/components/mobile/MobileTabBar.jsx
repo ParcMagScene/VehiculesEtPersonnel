@@ -17,7 +17,7 @@ import { Calendar, CheckSquare, Home, LayoutGrid, ShoppingCart, User } from 'luc
 
 export const TABS = [
   { id: 'home', label: 'Accueil', icon: Home, screen: 'home' },
-  { id: 'planning', label: 'Planning', icon: Calendar, screen: 'planning' },
+  { id: 'planning', label: 'Personnel', icon: Calendar, screen: 'planning' },
   { id: 'parc', label: 'Parc', icon: LayoutGrid, screen: 'parc-dashboard' },
   { id: 'orders', label: 'Commandes', icon: ShoppingCart, screen: 'orders' },
   { id: 'suivi', label: 'Suivi', icon: CheckSquare, screen: 'suivi' },

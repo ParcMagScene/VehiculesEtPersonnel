@@ -1,0 +1,92 @@
+/* ═══════════════════════════════════════════════════════════════
+   PvDocumentsSection.css
+   ═══════════════════════════════════════════════════════════════ */
+
+.pv-docs-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+  padding: var(--space-3, 0.75rem) 0;
+}
+
+.pv-docs-title,
+.pv-lots-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  margin: 0 0 var(--space-2, 0.5rem) 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pv-lots-title {
+  font-size: 0.85rem;
+  margin-top: var(--space-3, 0.75rem);
+}
+
+.pv-docs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pv-doc-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  padding: 6px var(--space-2, 0.5rem);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+}
+
+.pv-doc-icon {
+  color: var(--color-text-muted);
+  flex: 0 0 auto;
+}
+
+.pv-doc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pv-doc-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-doc-name:hover {
+  text-decoration: underline;
+}
+
+.pv-doc-meta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.pv-doc-folder {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm, 4px);
+}
+
+.pv-doc-folder:hover {
+  color: var(--color-primary);
+  background: var(--color-bg);
+}

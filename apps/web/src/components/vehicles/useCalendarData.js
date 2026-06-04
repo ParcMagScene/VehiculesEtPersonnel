@@ -12,6 +12,7 @@ import { useCallback, useMemo } from 'react';
 
 import { STATUS } from '../../constants';
 import { formatLocalDate, getPeriodTimestamp } from '../../utils/dateUtils';
+import { computeGridColumnsCss } from '../../utils/planningGridColumns';
 
 /**
  * Hook encapsulating all computed/memoized calendar data.
@@ -229,21 +230,13 @@ export default function useCalendarData({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vehicleGroups, days, view, reservationLookup, reservations]);
 
-  const gridColumns = useMemo(() => {
-    let minWidth;
-    if (view === 'year') {
-      minWidth =
-        windowWidth <= 480 ? 80 : windowWidth <= 768 ? 100 : windowWidth <= 1024 ? 120 : 150;
-      return `repeat(12, minmax(${minWidth}px, 1fr))`;
-    }
-    if (view === 'day') return `repeat(2, 1fr)`;
-    if (view === 'week') {
-      minWidth = windowWidth <= 480 ? 55 : windowWidth <= 768 ? 65 : windowWidth <= 1024 ? 80 : 100;
-    } else {
-      minWidth = windowWidth <= 480 ? 26 : windowWidth <= 768 ? 32 : windowWidth <= 1024 ? 42 : 55;
-    }
-    return `repeat(${days.length * 2}, minmax(${minWidth}px, 1fr))`;
-  }, [view, days.length, windowWidth]);
+  // Source de verite UNIQUE pour gridTemplateColumns. Le banner Google
+  // Calendar et tout autre planning utilisent le meme utilitaire avec les
+  // memes inputs pour garantir un alignement pixel-perfect des colonnes.
+  const gridColumns = useMemo(
+    () => computeGridColumnsCss({ view, days, module: 'vehicles', windowWidth }),
+    [view, days, windowWidth],
+  );
 
   const getReservation = useCallback(
     (vehicleId, date, period) => {

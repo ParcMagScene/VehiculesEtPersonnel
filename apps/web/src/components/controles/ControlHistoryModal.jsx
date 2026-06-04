@@ -4,9 +4,17 @@
 import { History } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Modal, ModalBody, ModalHeader, Spinner } from '@/design-system';
+import { Modal, ModalBody, ModalHeader, Spinner, Table } from '@/design-system';
 
 import api from '../../utils/api';
+
+const HISTORY_COLUMNS = [
+  { key: 'performed_at', label: 'Date' },
+  { key: 'status', label: 'Statut' },
+  { key: 'performed_by_name', label: 'Par' },
+  { key: 'next_due_date', label: 'Échéance' },
+  { key: 'notes', label: 'Notes' },
+];
 
 export default function ControlHistoryModal({ control, onClose }) {
   const [items, setItems] = useState(null);
@@ -38,30 +46,20 @@ export default function ControlHistoryModal({ control, onClose }) {
       <ModalBody>
         {error && <div style={{ color: '#991b1b' }}>{error}</div>}
         {!items && !error && <Spinner />}
-        {items && items.length === 0 && <div>Aucun historique.</div>}
-        {items && items.length > 0 && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-            <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '1px solid #e2e8f0' }}>
-                <th style={{ padding: 8 }}>Date</th>
-                <th style={{ padding: 8 }}>Statut</th>
-                <th style={{ padding: 8 }}>Par</th>
-                <th style={{ padding: 8 }}>Échéance</th>
-                <th style={{ padding: 8 }}>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((h) => (
-                <tr key={h.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: 8 }}>{h.performed_at}</td>
-                  <td style={{ padding: 8 }}>{h.status}</td>
-                  <td style={{ padding: 8 }}>{h.performed_by_name || '—'}</td>
-                  <td style={{ padding: 8 }}>{h.next_due_date || '—'}</td>
-                  <td style={{ padding: 8, color: '#475569' }}>{h.notes || ''}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {items && (
+          <Table
+            columns={HISTORY_COLUMNS}
+            data={items.map((h) => ({
+              id: h.id,
+              performed_at: h.performed_at,
+              status: h.status,
+              performed_by_name: h.performed_by_name || '—',
+              next_due_date: h.next_due_date || '—',
+              notes: h.notes || '',
+            }))}
+            emptyMessage="Aucun historique."
+            compact
+          />
         )}
       </ModalBody>
     </Modal>

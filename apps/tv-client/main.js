@@ -30,8 +30,6 @@ let completedEvents = [];
 let tvConfig = {};
 let allEvents = [];
 let isOffline = false;
-let regularAutoScrollStop = null;
-let recurrentAutoScrollStop = null;
 
 // ===============================================
 //  CACHE OFFLINE — localStorage
@@ -88,9 +86,6 @@ function getAlarmAudio() {
   if (!alarmAudio) {
     alarmAudio = new Audio('/SNCF.wav');
     alarmAudio.volume = 1.0;
-    // [PERF Sprint 1] Préchargement actif pour éliminer la latence à la 1ère alarme.
-    alarmAudio.preload = 'auto';
-    try { alarmAudio.load(); } catch (_) { /* ignoré */ }
   }
   return alarmAudio;
 }
@@ -177,13 +172,7 @@ function updateDateTime() {
 // ===============================================
 //  CHARGEMENT ÉTAT COMPLET TV
 // ===============================================
-// [PERF Sprint 3] Backoff exponentiel : si le backend tombe, on n'inonde pas
-// le réseau toutes les 30s. On décale la prochaine tentative jusqu'à 5 min max,
-// reset à 0 sur succès.
-let _tvStateBackoffSkip = 0;       // nb de ticks à sauter avant retry
-let _tvStateConsecErrors = 0;
 async function loadTVState() {
-  if (_tvStateBackoffSkip > 0) { _tvStateBackoffSkip--; return; }
   try {
     const response = await tvFetch(`${API_BASE}/api/display/tv-public-state`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -192,16 +181,11 @@ async function loadTVState() {
     // Cache la réponse pour le mode offline
     cacheSet(CACHE_KEYS.tvState, state);
     setOnlineStatus(true);
-    _tvStateConsecErrors = 0;
-    _tvStateBackoffSkip = 0;
 
     applyTVState(state);
   } catch (error) {
     console.error('Erreur chargement état TV:', error);
     setOnlineStatus(false);
-    _tvStateConsecErrors++;
-    // 30s base × 2^(n-1), cappé à ~5 min (10 ticks de 30s)
-    _tvStateBackoffSkip = Math.min(10, Math.pow(2, _tvStateConsecErrors - 1) - 1);
     // Fallback : utiliser le cache
     const cached = cacheGet(CACHE_KEYS.tvState);
     if (cached && cached.data) {
@@ -296,23 +280,12 @@ function applyConfig(config) {
 // ===============================================
 //  RENDU DES ÉVÉNEMENTS
 // ===============================================
-// [PERF Sprint 2] Signature des events affichés : si rien n'a changé (ids,
-// statuts, ordre, drapeau récurrent), on évite la reconstruction complète du DOM
-// + le restart de l'auto-scroll (qui provoque un saut visuel à chaque tick).
-let _lastEventsSig = '';
 function renderEvents(events) {
   // Filtrer les événements terminés
   const activeEvents = events.filter(e => {
     const eventId = String(e.id);
     return e.status !== 'done' && !completedEvents.includes(eventId);
   });
-
-  // Signature stable basée sur ce qui influence l'affichage.
-  const sig = activeEvents
-    .map(e => `${e.id}:${e.status || ''}:${e.is_recurrent ? 1 : 0}`)
-    .join('|') + `#completed=${completedEvents.length}`;
-  if (sig === _lastEventsSig) return;
-  _lastEventsSig = sig;
 
   // Séparer événements réguliers et récurrents
   const regular = activeEvents.filter(e => !e.is_recurrent);
@@ -333,8 +306,6 @@ function renderEvents(events) {
         const li = createEventElement(event);
         regularList.appendChild(li);
       });
-      if (regularAutoScrollStop) regularAutoScrollStop();
-      regularAutoScrollStop = enableAutoScroll(regularList);
     }
   }
 
@@ -350,59 +321,8 @@ function renderEvents(events) {
         const li = createEventElement(event);
         recurrentList.appendChild(li);
       });
-      if (recurrentAutoScrollStop) recurrentAutoScrollStop();
-      recurrentAutoScrollStop = enableAutoScroll(recurrentList);
     }
   }
-}
-
-// Auto-scroll vertical doux pour afficher toute la liste sans interaction
-function enableAutoScroll(listEl) {
-  if (!listEl) return null;
-
-  listEl.scrollTop = 0;
-  const maxScroll = listEl.scrollHeight - listEl.clientHeight;
-  if (maxScroll <= 8) return null;
-
-  let rafId = null;
-  let dir = 1;
-  let lastTs = performance.now();
-  let pauseUntil = lastTs + 1800;
-  const speed = 26; // px/s
-  let stopped = false;
-
-  const step = (ts) => {
-    if (stopped) return;
-    const max = listEl.scrollHeight - listEl.clientHeight;
-    if (max <= 8) return;
-
-    if (ts < pauseUntil) {
-      rafId = requestAnimationFrame(step);
-      return;
-    }
-
-    const dt = Math.max(0, (ts - lastTs) / 1000);
-    lastTs = ts;
-    listEl.scrollTop += speed * dt * dir;
-
-    if (listEl.scrollTop >= max - 1) {
-      listEl.scrollTop = max;
-      dir = -1;
-      pauseUntil = ts + 2200;
-    } else if (listEl.scrollTop <= 1) {
-      listEl.scrollTop = 0;
-      dir = 1;
-      pauseUntil = ts + 2200;
-    }
-
-    rafId = requestAnimationFrame(step);
-  };
-
-  rafId = requestAnimationFrame(step);
-  return () => {
-    stopped = true;
-    if (rafId) cancelAnimationFrame(rafId);
-  };
 }
 
 // ===============================================
@@ -429,8 +349,6 @@ function createEventElement(event) {
   const eventLocation = escapeHtml(event.location || '');
   const affaireNum = event.affaire_num || '';
   const affaireType = event.affaire_type || '';
-  const reservationVehicleName = escapeHtml(event.reservation_vehicle_name || '');
-  const reservationVehicleReg = escapeHtml(event.reservation_vehicle_reg || '');
 
   // Vérifier si terminé (status 'done' dans la planification OU marqué manuellement sur l'écran)
   const isCompleted = event.status === 'done' || completedEvents.includes(eventId);
@@ -460,15 +378,12 @@ function createEventElement(event) {
   const affaireBadge = affaireNum
     ? `<span class="tv-affaire-badge" style="--badge-color:${badgeColor}">${escapeHtml(affaireNum)}</span>`
     : '';
-  const reservationVehicleBadge = reservationVehicleName
-    ? `<span class="tv-vehicle-badge" title="${reservationVehicleReg ? `${reservationVehicleName} (${reservationVehicleReg})` : reservationVehicleName}">🚛 ${reservationVehicleName}${reservationVehicleReg ? ` (${reservationVehicleReg})` : ''}</span>`
-    : '';
 
   li.innerHTML = `
     <div class="event-columns">
       <div class="col-time">${timeDisplay}</div>
       <div class="col-title">${isCompleted ? '<span class="completed-icon">✅</span>' : ''}${eventTitle}</div>
-      <div class="col-affaire">${affaireBadge}${reservationVehicleBadge}</div>
+      <div class="col-affaire">${affaireBadge}</div>
       <div class="col-location">${locationContent}</div>
     </div>
   `;
@@ -501,57 +416,39 @@ function createEventElement(event) {
 // ===============================================
 async function toggleEventComplete(eventId, li) {
   const strEventId = String(eventId);
-  const wasCompleted = completedEvents.includes(strEventId);
-  const endpoint = wasCompleted
+  const isCompleted = completedEvents.includes(strEventId);
+  const endpoint = isCompleted
     ? '/api/display/tv/uncomplete-event'
     : '/api/display/tv/complete-event';
 
-  // [PERF Sprint 4] Optimistic UI : on bascule l'affichage immédiatement,
-  // puis on revert si la requête échoue. Évite l'effet "clic sans réaction".
-  const titleDiv = li.querySelector('.col-title');
-  const applyVisual = (completed) => {
-    if (completed) {
-      li.classList.add('event-completed');
-      if (titleDiv && !titleDiv.querySelector('.completed-icon')) {
-        titleDiv.insertAdjacentHTML('afterbegin', '<span class="completed-icon">✅</span>');
-      }
-    } else {
-      li.classList.remove('event-completed');
-      const icon = titleDiv && titleDiv.querySelector('.completed-icon');
-      if (icon) icon.remove();
-    }
-  };
-
-  // 1) Mise à jour optimiste de l'état + DOM
-  if (wasCompleted) {
-    completedEvents = completedEvents.filter(id => id !== strEventId);
-  } else {
-    completedEvents.push(strEventId);
-  }
-  applyVisual(!wasCompleted);
-
-  // Invalide la signature pour qu'un éventuel renderEvents() rafraîchisse
-  // bien le DOM même si le serveur renvoie le même payload.
-  _lastEventsSig = null;
-
-  // 2) Requête réseau, revert si échec
   try {
     const response = await tvFetch(`${API_BASE}${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventId: strEventId })
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  } catch (error) {
-    console.error('Erreur toggle événement (revert):', error);
-    // Revert état + DOM
-    if (wasCompleted) {
-      completedEvents.push(strEventId);
-    } else {
-      completedEvents = completedEvents.filter(id => id !== strEventId);
+
+    if (response.ok) {
+      if (isCompleted) {
+        completedEvents = completedEvents.filter(id => id !== strEventId);
+        li.classList.remove('event-completed');
+      } else {
+        completedEvents.push(strEventId);
+        li.classList.add('event-completed');
+      }
+      // Mettre à jour l'icône dans le titre
+      const titleDiv = li.querySelector('.col-title');
+      if (titleDiv) {
+        const hasIcon = titleDiv.querySelector('.completed-icon');
+        if (li.classList.contains('event-completed')) {
+          if (!hasIcon) titleDiv.insertAdjacentHTML('afterbegin', '<span class="completed-icon">✅</span>');
+        } else {
+          if (hasIcon) hasIcon.remove();
+        }
+      }
     }
-    applyVisual(wasCompleted);
-    _lastEventsSig = null;
+  } catch (error) {
+    console.error('Erreur toggle événement:', error);
   }
 }
 
@@ -621,32 +518,16 @@ function getWeatherIcon(iconCode) {
 // ===============================================
 //  SONOS
 // ===============================================
-// [PERF Sprint 2] Signature du dernier rendu : si la réponse est strictement
-// identique (titre/artiste/cover/playing), on évite tout DOM update inutile.
-// [PERF Sprint 3] Backoff exponentiel sur erreur (cap 1 min) : sur un Sonos
-// débranché ou un backend down, on évite le hammering toutes les 5s.
-let _lastSonosSig = '';
-let _sonosBackoffSkip = 0;
-let _sonosConsecErrors = 0;
 async function loadSonosNowPlaying() {
-  if (_sonosBackoffSkip > 0) { _sonosBackoffSkip--; return; }
   try {
     const response = await tvFetch(`${API_BASE}/api/sonos/now-playing`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
 
     cacheSet(CACHE_KEYS.sonos, data);
-    _sonosConsecErrors = 0;
-    _sonosBackoffSkip = 0;
-    const sig = data ? `${data.playing ? 1 : 0}|${data.title || ''}|${data.artist || ''}|${data.albumArtURI || data.albumArt || ''}` : '';
-    if (sig === _lastSonosSig) return;
-    _lastSonosSig = sig;
     updateSonosWidget(data);
   } catch (error) {
     console.error('Erreur Sonos:', error);
-    _sonosConsecErrors++;
-    // 5s base × 2^(n-1), cappé à 12 ticks (~1 min)
-    _sonosBackoffSkip = Math.min(12, Math.pow(2, _sonosConsecErrors - 1) - 1);
     const cached = cacheGet(CACHE_KEYS.sonos);
     if (cached && cached.data) {
       updateSonosWidget(cached.data);
@@ -731,17 +612,13 @@ function hideSneakyPhoto() {
 // ===============================================
 //  DÉFILEMENT AUTOMATIQUE
 // ===============================================
-let _autoScrollStarted = false;
 function startAutoScroll() {
-  // [PERF Sprint 4] Idempotence : éviter double init (double rAF + listeners empilés)
-  if (_autoScrollStarted) return;
   const mainElement = document.querySelector('main');
   if (!mainElement) return;
 
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     return;
   }
-  _autoScrollStarted = true;
 
   // Wrapper GPU-composited : transform au lieu de scrollTop → pas de reflow par frame
   const wrapper = document.createElement('div');
@@ -813,18 +690,11 @@ function startAutoScroll() {
 // ===============================================
 async function refreshTokenSilently() {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/refresh`, {
+    await fetch(`${API_BASE}/api/auth/refresh`, {
       method: 'POST',
       credentials: 'include'
     });
-    if (!response.ok) {
-      // [PERF Sprint 1] Plus de catch totalement silencieux : on log au moins
-      // pour pouvoir diagnostiquer une session expirée en TV 24/7.
-      console.warn(`⚠️ Token refresh échoué [HTTP ${response.status}]`);
-    }
-  } catch (error) {
-    console.warn('⚠️ Token refresh erreur réseau:', error && error.message ? error.message : error);
-  }
+  } catch { /* silencieux */ }
 }
 
 // ===============================================
@@ -840,49 +710,14 @@ async function init() {
   updateDateTime();
   loadWeather();
 
-  // Préchargement audio alarme (évite latence audio à la première alerte)
-  getAlarmAudio();
+  // Intervalles de mise à jour
+  setInterval(updateDateTime, 1000);            // Horloge : chaque seconde
+  setInterval(loadTVState, 30000);              // État complet : toutes les 30s
+  setInterval(loadWeather, 600000);             // Météo : toutes les 10 min
+  setInterval(loadSonosNowPlaying, 5000);       // Sonos : toutes les 5s
+  setInterval(checkAlarms, 1000);               // Alarmes : chaque seconde
 
-  // [PERF Sprint 1] Gestionnaire centralisé d'intervalles avec pause sur
-  // visibilitychange : sur une TV 24/7 mise en veille (écran off) le navigateur
-  // garde le JS actif. On stoppe les pollings tant que l'onglet est caché.
-  const intervalSpecs = [
-    { key: 'dateTime',     fn: updateDateTime,        ms: 1000 },
-    { key: 'tvState',      fn: loadTVState,           ms: 30000 },
-    { key: 'weather',      fn: loadWeather,           ms: 600000 },
-    { key: 'sonos',        fn: loadSonosNowPlaying,   ms: 5000 },
-    { key: 'alarms',       fn: checkAlarms,           ms: 1000 },
-    { key: 'tokenRefresh', fn: refreshTokenSilently,  ms: 6 * 60 * 60 * 1000 },
-  ];
-  const intervalHandles = Object.create(null);
-
-  function startIntervals() {
-    for (const s of intervalSpecs) {
-      if (intervalHandles[s.key]) continue;
-      intervalHandles[s.key] = setInterval(s.fn, s.ms);
-    }
-  }
-  function stopIntervals() {
-    for (const k of Object.keys(intervalHandles)) {
-      clearInterval(intervalHandles[k]);
-      delete intervalHandles[k];
-    }
-  }
-
-  startIntervals();
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      stopIntervals();
-      console.log('📺 TV en veille — intervalles en pause');
-    } else {
-      startIntervals();
-      // Rattraper immédiatement l'état à la sortie de veille.
-      try { updateDateTime(); } catch (_) { /* ignoré */ }
-      try { loadTVState(); } catch (_) { /* ignoré */ }
-      console.log('📺 TV réveillée — intervalles repris');
-    }
-  });
+  setInterval(refreshTokenSilently, 6 * 60 * 60 * 1000); // Token refresh : toutes les 6h
 
   // Démarrer le défilement automatique
   startAutoScroll();

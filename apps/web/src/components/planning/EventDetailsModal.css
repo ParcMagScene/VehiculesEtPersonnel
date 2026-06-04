@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
-  padding: 20px;
+  padding: var(--space-5);
   animation: overlayFadeIn 0.2s ease-out;
 }
 
@@ -36,18 +36,18 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .event-details-modal .event-title-section {
   display: flex;
-  gap: 16px;
+  gap: var(--space-4);
   align-items: flex-start;
   flex: 1;
 }
 
 .event-details-modal .event-title-section h2 {
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--space-2) 0;
   font-size: var(--font-2xl);
   font-weight: 700;
 }
@@ -55,7 +55,7 @@
 .event-details-modal .event-affaire-badge {
   display: inline-block;
   background: var(--glass-light);
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-lg);
   font-size: var(--font-base);
   font-weight: 600;
@@ -89,7 +89,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--space-5);
-  padding-right: 20px;
+  padding-right: var(--space-5);
   scroll-padding: 12px;
 }
 
@@ -100,7 +100,7 @@
 .event-details-modal .event-details-body::-webkit-scrollbar-track {
   background: var(--border-subtle);
   border-radius: var(--radius-xs);
-  margin: 8px 0;
+  margin: var(--space-2) 0;
 }
 
 .event-details-modal .event-details-body::-webkit-scrollbar-thumb {
@@ -114,7 +114,7 @@
 
 /* Sections */
 section {
-  margin-bottom: 28px;
+  margin-bottom: var(--space-7);
 }
 
 section:last-child {
@@ -124,8 +124,8 @@ section:last-child {
 section h3 {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 16px 0;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4) 0;
   font-size: var(--font-lg);
   font-weight: 600;
   color: var(--text-heading);
@@ -135,7 +135,7 @@ section h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .event-details-modal .section-header h3 {
@@ -146,13 +146,13 @@ section h3 {
 .event-details-modal .event-info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .event-details-modal .info-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .event-details-modal .info-item.full-width {
@@ -165,7 +165,7 @@ section h3 {
   color: var(--text-subtle);
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -178,7 +178,7 @@ section h3 {
 
 .event-details-modal .event-description {
   margin: 0;
-  padding: 12px;
+  padding: var(--space-3);
   background: var(--surface-secondary);
   border-left: 3px solid var(--interactive-primary);
   border-radius: var(--radius-xs);
@@ -190,19 +190,19 @@ section h3 {
 .event-details-modal .reservations-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 /* ============ Picker : lier une r\u00e9servation existante ============ */
 .event-details-modal .link-reservation-picker {
-  margin: 8px 0 12px;
+  margin: var(--space-2) 0 var(--space-3);
   padding: 10px;
   border: 1px dashed var(--border-default);
   border-radius: var(--radius-md);
   background: var(--surface-secondary);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .event-details-modal .link-reservation-search {
@@ -218,7 +218,7 @@ section h3 {
 .event-details-modal .link-reservation-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   max-height: 260px;
   overflow-y: auto;
 }
@@ -227,8 +227,8 @@ section h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) 10px;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   background: var(--surface-primary);
@@ -263,7 +263,7 @@ section h3 {
 }
 
 .event-details-modal .link-reservation-item-dates {
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .event-details-modal .link-reservation-item-badge {
@@ -271,15 +271,15 @@ section h3 {
   text-transform: uppercase;
   padding: 2px 6px;
   border-radius: var(--radius-xs);
-  background: var(--theme-warning-bg, #fef3c7);
-  color: var(--theme-warning-text, #92400e);
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
   white-space: nowrap;
 }
 
 .event-details-modal .reservation-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .event-details-modal .btn-unlink-reservation {
@@ -287,14 +287,14 @@ section h3 {
 }
 
 .event-details-modal .btn-unlink-reservation:hover:not(:disabled) {
-  color: var(--theme-danger, #dc2626);
+  color: var(--theme-danger);
 }
 
 .event-details-modal .reservation-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: var(--space-4);
   background: var(--surface-secondary);
   border: 2px solid var(--border-default);
   border-radius: var(--radius-md);
@@ -327,16 +327,16 @@ section h3 {
 .event-details-modal .reservation-dates {
   font-size: var(--font-base);
   color: var(--text-subtle);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 /* ============ Section Liens Google Drive ============ */
 .event-details-modal .drive-links-section {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .event-details-modal .drive-links-section .section-header {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .event-details-modal .drive-links-section .section-header h3 {
@@ -369,17 +369,17 @@ section h3 {
   background: var(--theme-purple-bg);
   border: 1px solid var(--theme-purple-bg-strong);
   border-radius: var(--radius-md);
-  padding: 12px;
+  padding: var(--space-3);
   margin-bottom: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .event-details-modal .drive-link-edit-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .event-details-modal .drive-link-edit-form .drive-link-input {
@@ -387,7 +387,7 @@ section h3 {
   border: 1px solid var(--theme-purple-accent);
   background: var(--surface-primary);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: var(--font-base);
   color: var(--text-body);
   outline: none;
@@ -404,7 +404,7 @@ section h3 {
 
 .event-details-modal .drive-link-edit-actions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
@@ -419,7 +419,7 @@ section h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 14px;
   background: var(--theme-purple-bg);
   border: 1px solid var(--theme-purple-bg);
@@ -435,7 +435,7 @@ section h3 {
 .event-details-modal .drive-link-url {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: var(--font-base);
   color: var(--theme-purple-accent);
   text-decoration: none;
@@ -456,7 +456,7 @@ section h3 {
 
 .event-details-modal .drive-link-item-actions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
@@ -552,14 +552,14 @@ section h3 {
 .event-details-modal .attachments-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .event-details-modal .attachment-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   background: var(--surface-secondary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
@@ -579,7 +579,7 @@ section h3 {
 .event-details-modal .file-size {
   font-size: var(--font-sm);
   color: var(--text-subtle);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
 }
 
 .event-details-modal .btn-delete-attachment {
@@ -605,7 +605,7 @@ section h3 {
 
 /* Empty State */
 .event-details-modal .empty-state {
-  padding: 32px;
+  padding: var(--space-8);
   text-align: center;
   color: var(--text-subtle);
   background: var(--surface-secondary);
@@ -614,7 +614,7 @@ section h3 {
 }
 
 .event-details-modal .empty-state p {
-  margin: 0 0 8px 0;
+  margin: 0 0 var(--space-2) 0;
   font-size: var(--font-base);
 }
 
@@ -627,14 +627,14 @@ section h3 {
   background: var(--border-default);
   padding: 2px 6px;
   border-radius: var(--radius-xs);
-  font-family: 'Monaco', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-xs);
 }
 
 /* Buttons */
 .event-details-modal .section-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -645,7 +645,7 @@ section h3 {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border: none;
   border-radius: var(--btn-radius);
   font-size: var(--btn-font-size);
@@ -706,7 +706,7 @@ section h3 {
 
 .event-details-modal .footer-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .event-details-modal .btn-secondary {
@@ -851,7 +851,7 @@ section h3 {
   .event-details-modal .event-details-footer {
     border-radius: 0;
     flex-direction: column;
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .event-details-modal .footer-actions {
@@ -879,7 +879,7 @@ section h3 {
 }
 
 .event-details-modal .preview-header {
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
@@ -938,21 +938,21 @@ section h3 {
 
 .event-details-modal .unsupported-preview {
   text-align: center;
-  padding: 48px;
+  padding: var(--space-12);
   color: var(--text-subtle);
 }
 
 .event-details-modal .unsupported-preview svg {
   color: var(--border-subtle);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .event-details-modal .unsupported-preview p {
-  margin: 16px 0 24px 0;
+  margin: var(--space-4) 0 var(--space-6) 0;
 }
 
 .event-details-modal .preview-footer {
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-6);
   border-top: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
@@ -978,7 +978,7 @@ section h3 {
 }
 
 .event-details-modal .folder-header {
-  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
   border-bottom: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
@@ -1000,38 +1000,38 @@ section h3 {
 .event-details-modal .folder-body {
   flex: 1;
   overflow: auto;
-  padding: 24px;
+  padding: var(--space-6);
   background: var(--surface-secondary);
 }
 
 .event-details-modal .empty-folder {
   text-align: center;
-  padding: 64px 24px;
+  padding: var(--space-16) var(--space-6);
   color: var(--text-subtle);
 }
 
 .event-details-modal .empty-folder svg {
   color: var(--border-subtle);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .event-details-modal .folder-files-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .event-details-modal .folder-file-card {
   background: var(--surface-primary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  padding: 16px;
+  padding: var(--space-4);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   position: relative;
 }
 
@@ -1097,7 +1097,7 @@ section h3 {
   font-size: var(--font-base);
   font-weight: 500;
   color: var(--text-heading);
-  margin: 0 0 4px 0;
+  margin: 0 0 var(--space-1) 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1111,7 +1111,7 @@ section h3 {
 }
 
 .event-details-modal .folder-footer {
-  padding: 16px 24px;
+  padding: var(--space-4) var(--space-6);
   border-top: 1px solid var(--border-default);
   display: flex;
   justify-content: space-between;
@@ -1164,7 +1164,7 @@ label.btn-primary:has(input:disabled) {
 
 /* ── Section Affaires liées ── */
 .event-details-modal .linked-affaires-section {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .event-details-modal .affaires-list {
@@ -1177,7 +1177,7 @@ label.btn-primary:has(input:disabled) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   background: var(--surface-secondary);
   border: 2px solid var(--border-strong);
   border-radius: var(--radius-md);
@@ -1192,7 +1192,7 @@ label.btn-primary:has(input:disabled) {
 .event-details-modal .affaire-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 1;
   min-width: 0;
 }

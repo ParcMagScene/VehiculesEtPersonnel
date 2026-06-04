@@ -128,9 +128,9 @@ function TaskPDFExportModal({
       groups[k] = [];
     });
 
-    // 1) Tâches manuelles (exclure uniquement les tâches terminées, et filtrer sur la date du jour)
+    // 1) Tâches manuelles (exclure uniquement les tâches terminées)
     (tasks || [])
-      .filter((t) => t.status !== STATUS.DONE && t.date === date)
+      .filter((t) => t.status !== STATUS.DONE)
       .forEach((t) => {
         const sec = normalizeSection(t.section || 'manual');
         const item = { uid: `task-${t.id}`, type: 'task', section: sec, data: t };
@@ -141,14 +141,12 @@ function TaskPDFExportModal({
 
     // 2) Affaires — exclues de l'export PDF (les tâches liées suffisent)
 
-    // 3) Événements d'affichage non liés à des tâches (exclure les terminés, filtrer sur la date du jour)
+    // 3) Événements d'affichage non liés à des tâches (exclure les terminés)
     const linkedEventIds = new Set(
-      (tasks || [])
-        .filter((t) => t.date === date && (t.display_event_id || t.displayEventId))
-        .map((t) => t.display_event_id || t.displayEventId),
+      (tasks || []).filter((t) => t.displayEventId).map((t) => t.displayEventId),
     );
     (displayEvents || [])
-      .filter((ev) => ev.date === date && !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE)
+      .filter((ev) => !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE)
       .forEach((ev) => {
         const sec = normalizeSection(mapEventToSection(ev));
         const item = { uid: `event-${ev.id}`, type: 'event', section: sec, data: ev };
@@ -199,7 +197,7 @@ function TaskPDFExportModal({
 
     const active = Object.keys(SECTIONS).filter((k) => (groups[k] || []).length > 0);
     return { allItems: dedupedItems, grouped: groups, activeSections: active };
-  }, [tasks, displayEvents, googleRdvEvents, date]);
+  }, [tasks, displayEvents, googleRdvEvents]);
 
   // Initialiser avec tout sélectionné (une seule fois)
   useEffect(() => {
@@ -369,9 +367,9 @@ function TaskPDFExportModal({
     // 2. Retirer label de section (redondant avec le bandeau)
     if (sectionInfo?.affaireOnly) {
       title = title
-        // Strip leading emoji sequences (handles ZWJ composites like 👨‍👩‍👧)
+        // eslint-disable-next-line no-misleading-character-class
         .replace(
-          /^(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*\s*)+/u,
+          /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
           '',
         )
         .replace(
@@ -440,8 +438,9 @@ function TaskPDFExportModal({
         else if (task.eventType && EVENT_COURSE[task.eventType])
           courseType = EVENT_COURSE[task.eventType];
         else {
+          // eslint-disable-next-line no-misleading-character-class
           const m = (task.title || '').match(
-            /^(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*)*\s*(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\b/iu,
+            /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\b/iu,
           );
           if (m) {
             const raw = m[1]
@@ -464,9 +463,9 @@ function TaskPDFExportModal({
       if (courseType) {
         displayTitle =
           displayTitle
-            // Strip leading emoji sequences (handles ZWJ composites)
+            // eslint-disable-next-line no-misleading-character-class
             .replace(
-              /^(?:\p{Extended_Pictographic}\uFE0F?(?:\u200D\p{Extended_Pictographic}\uFE0F?)*\s*)+/u,
+              /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
               '',
             )
             .replace(
@@ -730,7 +729,7 @@ function TaskPDFExportModal({
   };
 
   return (
-    <Modal open={true} onClose={onClose} size="xl" className="pdf-export-modal no-drag-resize">
+    <Modal open={true} onClose={onClose} size="xl" className="pdf-export-modal">
       <ModalHeader icon={<FileDown size={20} />} onClose={onClose} className="pdf-export-header">
         <div className="pdf-header-content">
           <span>Export PDF — Fiche du jour</span>

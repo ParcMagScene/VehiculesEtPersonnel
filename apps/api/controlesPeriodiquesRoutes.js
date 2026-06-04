@@ -149,6 +149,7 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
     '/api/controls/equipment/:entityType/:entityId',
     authenticateToken,
     safe((req, res) => {
+      res.set('Cache-Control', 'no-store');
       const { entityType, entityId } = req.params;
       if (!['vehicle', 'equipment'].includes(entityType)) {
         return res.status(400).json({ success: false, error: 'entity_type invalide' });
@@ -304,6 +305,10 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
     '/api/controls/dashboard',
     authenticateToken,
     safe((req, res) => {
+      // Pas de cache HTTP : le payload évolue dès qu'un contrôle est effectué /
+      // recalculé, et la cache 304 du navigateur conservait d'anciens payloads
+      // sans entity_name/entity_subtitle/type_code après enrichissement du SQL.
+      res.set('Cache-Control', 'no-store');
       const { status, assigned_to, entity_type, type_id } = req.query;
       const where = ['ec.is_active = 1'];
       const params = [];
@@ -334,12 +339,29 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
                CASE
                  WHEN ec.entity_type='equipment' THEN e.uid
                  ELSE NULL
-               END AS entity_uid
+               END AS entity_uid,
+               -- Sous-libellé entité : pour véhicule = "TYPE · BRAND MODEL",
+               -- pour équipement = nom de la catégorie feuille.
+               CASE
+                 WHEN ec.entity_type='vehicle' THEN
+                   TRIM(COALESCE(v.type,'') || ' · ' || COALESCE(v.brand,'') || ' ' || COALESCE(v.model,''))
+                 WHEN ec.entity_type='equipment' THEN cat.name
+               END AS entity_subtitle,
+               -- Photo : nom de fichier brut. Le frontend préfixe
+               -- /Photos/ (véhicule) ou /Photos/Matériel/ (équipement).
+               -- NULL ou valeur "generic:..." traités côté UI comme placeholder.
+               CASE
+                 WHEN ec.entity_type='vehicle'  THEN v.photo
+                 WHEN ec.entity_type='equipment' THEN e.photo
+               END AS entity_photo
           FROM equipment_controls ec
           JOIN control_types ct ON ct.id = ec.control_type_id
      LEFT JOIN users u  ON u.id = ec.assigned_to
      LEFT JOIN vehicles v  ON ec.entity_type='vehicle'  AND v.id  = ec.entity_id
-     LEFT JOIN equipment e ON ec.entity_type='equipment' AND CAST(e.id AS TEXT) = ec.entity_id
+     -- Cast côté entity_id (TEXT -> INTEGER) pour permettre l'usage du PRIMARY KEY equipment.id
+     -- (sinon CAST(e.id AS TEXT) bloque l'index et SCAN complet de equipment, ~340x plus lent).
+     LEFT JOIN equipment e ON ec.entity_type='equipment' AND e.id = CAST(ec.entity_id AS INTEGER)
+     LEFT JOIN equipment_categories cat ON cat.id = e.category_id
          WHERE ${where.join(' AND ')}
          ORDER BY ec.next_due_date ASC
       `;

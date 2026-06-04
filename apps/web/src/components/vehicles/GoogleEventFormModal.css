@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal-nested);
-  padding: 20px;
+  padding: var(--space-5);
   animation: eventFormFadeIn 0.2s ease-out;
 }
 
@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   background: var(
     --modal-header-bg,
     linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%)
@@ -86,11 +86,11 @@
 }
 
 .event-form-body {
-  padding: 20px;
+  padding: var(--space-5);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .event-form-field {
@@ -112,7 +112,7 @@
 .event-form-field input[type='date'],
 .event-form-field input[type='datetime-local'],
 .event-form-field textarea {
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -145,7 +145,7 @@
 .event-form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 /* Toggle switch */
@@ -199,13 +199,13 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--theme-border);
   background: var(--theme-border-light);
 }
 
 .event-form-footer .btn-secondary {
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border: 1px solid var(--theme-border);
   background: var(--theme-bg-card);
   color: var(--theme-text-subtle);
@@ -220,7 +220,7 @@
 }
 
 .event-form-footer .btn-primary {
-  padding: 8px 20px;
+  padding: var(--space-2) var(--space-5);
   border: none;
   background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
   color: var(--theme-text-inverse);

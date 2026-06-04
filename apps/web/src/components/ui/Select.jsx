@@ -1,6 +1,8 @@
 import { ChevronDown } from 'lucide-react';
 import { forwardRef } from 'react';
 
+import { warnBareOnce } from './_warnBareOnce';
+
 /**
  * Select — Composant atomique Design System
  *
@@ -10,6 +12,9 @@ import { forwardRef } from 'react';
  *
  * Mode bare     : avec children → rend un <select> nu (pas de wrapper)
  * Mode options  : avec options prop → wrapper div + chevron
+ *
+ * ⚠️ Sans `size`, le style est minimal (pas de bordure ni chevron).
+ *    Préférez explicitement `size="sm|md|lg"`.
  */
 const Select = forwardRef(
   (
@@ -25,6 +30,9 @@ const Select = forwardRef(
     },
     ref,
   ) => {
+    if (import.meta.env?.DEV && size === undefined && children) {
+      warnBareOnce('Select');
+    }
     /* ─── Mode bare (children pass-through) ─── */
     if (children) {
       const classes = [

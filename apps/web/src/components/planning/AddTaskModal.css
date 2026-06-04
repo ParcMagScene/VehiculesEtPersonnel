@@ -39,7 +39,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--border-color, var(--border-default));
 }
 
@@ -50,7 +50,7 @@
   color: var(--text-primary, var(--text-body));
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .atm-close {
@@ -58,7 +58,7 @@
   border: none;
   color: var(--text-secondary, var(--text-muted));
   cursor: pointer;
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
@@ -69,7 +69,7 @@
 
 /* Body */
 .atm-body {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -80,46 +80,49 @@
 .atm-field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .atm-field label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-secondary, var(--text-muted));
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .atm-required {
   color: var(--theme-danger);
 }
 
 .atm-field input,
-.atm-field select {
-  padding: 8px 10px;
-  border: 1px solid var(--border-color, var(--border-default));
+.atm-field select,
+.atm-field textarea {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
+  background: var(--surface-secondary);
+  color: var(--text-body);
   font-size: 0.88rem;
-  color: var(--text-primary, var(--text-body));
-  background: var(--bg-input, var(--surface-primary));
   transition: border-color 0.15s;
+  font-family: inherit;
 }
 .atm-field input:focus,
-.atm-field select:focus {
+.atm-field select:focus,
+.atm-field textarea:focus {
   outline: none;
-  border-color: var(--primary, var(--interactive-primary));
-  box-shadow: 0 0 0 3px var(--primary-tint-light);
+  border-color: var(--interactive-primary);
+  box-shadow: var(--focus-ring);
 }
 
-/* Row */
+/* Row : grid 2 colonnes (alignement coherent avec TaskEditModal) */
 .atm-row {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
 }
 .atm-field-half {
-  flex: 1;
+  /* utilise le placement implicite du grid parent */
 }
 
 /* ═══ Location dropdown ═══ */
@@ -135,7 +138,7 @@
   color: var(--primary, var(--interactive-primary));
   font-size: 0.78rem;
   cursor: pointer;
-  padding: 4px 0;
+  padding: var(--space-1) 0;
   font-weight: 500;
 }
 .atm-location-toggle:hover {
@@ -158,7 +161,7 @@
 .atm-location-option {
   display: block;
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   background: none;
   cursor: pointer;
@@ -207,14 +210,14 @@
   max-height: 200px;
   overflow-y: auto;
   z-index: var(--z-dropdown);
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 .atm-affaire-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: none;
   background: none;
   cursor: pointer;
@@ -235,7 +238,7 @@
   text-overflow: ellipsis;
 }
 .atm-affaire-empty {
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   font-size: 0.82rem;
   color: var(--text-secondary, var(--text-subtle));
 }
@@ -243,7 +246,7 @@
 .atm-affaire-selected {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 6px 10px;
   background: var(--bg-hover, var(--border-subtle));
   border-radius: var(--radius-md);
@@ -272,7 +275,7 @@
 .atm-location-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
   font-size: 0.88rem;
@@ -288,7 +291,7 @@
 /* ═══ Vehicle select ═══ */
 .atm-vehicle-select {
   margin-top: 6px;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
   font-size: 0.88rem;
@@ -301,12 +304,12 @@
 .atm-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 14px 20px;
+  gap: var(--space-2);
+  padding: 14px var(--space-5);
   border-top: 1px solid var(--border-color, var(--border-default));
 }
 .atm-btn-cancel {
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border: 1px solid var(--border-color, var(--border-default));
   border-radius: var(--radius-md);
   background: var(--bg-card, var(--surface-primary));
@@ -320,7 +323,7 @@
 }
 
 .atm-btn-submit {
-  padding: 8px 18px;
+  padding: var(--space-2) 18px;
   border: none;
   border-radius: var(--radius-md);
   background: var(--primary, var(--interactive-primary));

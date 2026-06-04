@@ -170,4 +170,45 @@ export default [
       'no-console': 'off',
     },
   },
+
+  // ─── DS adoption guard-rails (warn-only) ─────────────────────────────
+  // Audit UI/UX Sprint 2 : on signale (sans bloquer) les écarts au design system
+  // dans le code applicatif. Exclus :
+  //  - components/ui/      → source de vérité du DS, peut utiliser <button>/inline
+  //  - components/mobile/  → couche mobile spécialisée (refacto Sprint final)
+  //  - DisplayDashboard/   → écrans TV, styles dynamiques inévitables
+  //  - layouts/            → wrappers DS internes
+  {
+    files: ['src/components/**/*.{js,jsx}'],
+    ignores: [
+      'src/components/ui/**',
+      'src/components/mobile/**',
+      'src/components/DisplayDashboard/**',
+    ],
+    rules: {
+      // P2.1 : <button> HTML brut → utiliser <Button> du DS
+      'react/forbid-elements': [
+        'warn',
+        {
+          forbid: [
+            {
+              element: 'button',
+              message: 'Utiliser <Button> du @/design-system au lieu de <button> HTML.',
+            },
+          ],
+        },
+      ],
+      // P2.4 : style={{ color/background/border/padding/margin/gap }} inline
+      // → utiliser des classes CSS + tokens.
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector:
+            "JSXAttribute[name.name='style'] ObjectExpression > Property[key.name=/^(color|background|backgroundColor|border|borderColor|padding|margin|gap)$/]",
+          message:
+            'Évite les styles inline pour color/background/border/padding/margin/gap : utilise une classe CSS + tokens (var(--theme-*) / var(--space-*)).',
+        },
+      ],
+    },
+  },
 ];

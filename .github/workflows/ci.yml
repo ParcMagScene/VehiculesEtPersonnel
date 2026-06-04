@@ -129,3 +129,18 @@ jobs:
       - uses: ./.github/actions/setup-node-deps
       - name: Verifier la coherence docs ↔ code
         run: npm run docs:check
+
+  # ─── Adoption Design System (NON BLOQUANT) ──────────────────
+  # Informatif — mesure la dette UI (Stylelint warn-only +
+  # ESLint guard-rails warn-only). Voir docs/dashboards/ui-debt.md.
+  ui-debt:
+    name: Adoption DS (informatif)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-node-deps
+      - name: Stylelint (warn-only)
+        run: npm run lint:css --workspace=apps/web
+      - name: Mesurer la dette UI
+        run: node scripts/measure-ui-debt.mjs --format=summary

@@ -1,6 +1,16 @@
-name: 🛡️ Protection branche production
+# ─────────────────────────────────────────────────────────────
+# protect-prod.yml — Verifications additionnelles sur PR vers main
+# ─────────────────────────────────────────────────────────────
+# Le pipeline `ci.yml` couvre deja lint + tests + build sur les PR
+# vers main. Ce workflow ajoute uniquement des controles specifiques
+# a la production :
+#   • aucun fichier de base de donnees commit
+#   • detection de secrets potentiels dans le diff
+#   • presence du label `safe-to-merge` (informatif)
+# ─────────────────────────────────────────────────────────────
 
-# Déclenché sur les PR vers main (production)
+name: Protection branche production
+
 on:
   pull_request:
     branches: [main]
@@ -11,135 +21,58 @@ permissions:
   pull-requests: read
 
 jobs:
-  # ─── Vérifications de sécurité ───────────────────────
+  # ─── Verifications de securite ────────────────────────────────
   safety-checks:
-    name: 🔍 Vérifications de sécurité
+    name: Verifications de securite
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: 🚫 Vérifier qu'aucun fichier DB n'est inclus
+      - name: Aucun fichier DB versionne
         run: |
-          echo "🔍 Vérification des fichiers de base de données..."
           DB_FILES=$(git diff --name-only origin/main...HEAD | grep -E '\.(db|sqlite3|sqlite)$' || true)
           if [ -n "$DB_FILES" ]; then
-            echo "❌ ERREUR : Des fichiers de base de données sont inclus dans cette PR :"
+            echo "::error::Fichiers de base de donnees inclus dans la PR :"
             echo "$DB_FILES"
-            echo ""
-            echo "Les fichiers .db/.sqlite3 ne doivent JAMAIS être versionnés."
-            echo "Ajoutez-les au .gitignore et retirez-les du commit."
             exit 1
           fi
-          echo "✅ Aucun fichier DB détecté"
+          echo "Aucun fichier DB detecte"
 
-      - name: 🔐 Vérifier les fichiers sensibles modifiés
+      - name: Pas de secrets en clair
         run: |
-          echo "🔍 Vérification des fichiers sensibles..."
-          SENSITIVE_FILES=$(git diff --name-only origin/main...HEAD | grep -E '(ecosystem\.config|\.env|database\.js|server\.js|migrations\.js)' || true)
-          if [ -n "$SENSITIVE_FILES" ]; then
-            echo "⚠️  ATTENTION : Des fichiers sensibles sont modifiés :"
-            echo "$SENSITIVE_FILES"
-            echo ""
-            echo "Ces fichiers nécessitent une vérification manuelle approfondie."
-            echo "Assurez-vous qu'un reviewer a vérifié ces changements."
-            # Warning seulement, pas de blocage
-          else
-            echo "✅ Aucun fichier sensible modifié"
-          fi
-
-      - name: 🔑 Vérifier l'absence de secrets
-        run: |
-          echo "🔍 Recherche de secrets potentiels..."
           SECRETS=$(git diff origin/main...HEAD | grep -iE '(password|secret|api_key|token|private_key)\s*[:=]\s*["\x27][^"\x27]{8,}' || true)
           if [ -n "$SECRETS" ]; then
-            echo "❌ ERREUR : Des secrets potentiels ont été détectés dans le diff !"
-            echo "Ne commitez JAMAIS de mots de passe, tokens, ou clés API."
+            echo "::error::Secrets potentiels detectes dans le diff"
             exit 1
           fi
-          echo "✅ Aucun secret détecté"
+          echo "Aucun secret detecte"
 
-      - name: 📊 Résumé des changements
+      - name: Resume des changements
         run: |
-          echo "═══════════════════════════════════════════"
-          echo "  📊 Résumé de la PR vers main"
-          echo "═══════════════════════════════════════════"
-          echo ""
-          CHANGES=$(git diff --stat origin/main...HEAD)
-          echo "$CHANGES"
-          echo ""
           FILES_CHANGED=$(git diff --name-only origin/main...HEAD | wc -l | tr -d ' ')
           INSERTIONS=$(git diff --shortstat origin/main...HEAD | grep -oE '[0-9]+ insertion' | grep -oE '[0-9]+' || echo "0")
           DELETIONS=$(git diff --shortstat origin/main...HEAD | grep -oE '[0-9]+ deletion' | grep -oE '[0-9]+' || echo "0")
-          echo "Fichiers modifiés : $FILES_CHANGED"
+          echo "Fichiers modifies : $FILES_CHANGED"
           echo "Insertions        : +$INSERTIONS"
           echo "Suppressions      : -$DELETIONS"
 
-  # ─── Build de vérification ────────────────────────────
-  build-check:
-    name: 🏗️ Vérification du build
-    runs-on: ubuntu-latest
-    needs: safety-checks
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Installer les dépendances
-        run: npm ci
-
-      - name: ESLint + Prettier (api + web)
-        run: |
-          npm run lint
-          npm run format:check
-
-      - name: Vérifier la cohérence docs ↔ code
-        run: npm run docs:check
-
-      - name: Lancer les tests unitaires backend
-        run: npm test
-
-      - name: Lancer les tests unitaires frontend (Vitest)
-        run: npm run test --workspace=apps/web
-
-      - name: Build frontend
-        run: cd apps/web && npx vite build
-        env:
-          NODE_ENV: production
-
-      - name: Vérifier que le build a produit des fichiers
-        run: |
-          if [ ! -d "apps/web/dist" ]; then
-            echo "❌ Le dossier dist/ n'a pas été créé"
-            exit 1
-          fi
-          FILE_COUNT=$(find apps/web/dist -type f | wc -l | tr -d ' ')
-          echo "✅ Build réussi : $FILE_COUNT fichiers générés"
-
-  # ─── Vérification du label ────────────────────────────
+  # ─── Label safe-to-merge (NON BLOQUANT) ──────────────────────
+  # Informatif : la presence du label est conseillee mais ne bloque pas
+  # la PR (pour eviter les boucles label/unlabel sur PR de hotfix).
   label-check:
-    name: 🏷️ Vérification du label
+    name: Label safe-to-merge (informatif)
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
-      - name: Vérifier le label safe-to-merge
+      - name: Verifier le label safe-to-merge
         run: |
-          echo "🔍 Vérification du label 'safe-to-merge'..."
           LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
           if echo "$LABELS" | grep -q "safe-to-merge"; then
-            echo "✅ Label 'safe-to-merge' présent"
+            echo "Label safe-to-merge present"
           else
-            echo "⚠️  Le label 'safe-to-merge' n'est pas encore apposé."
-            echo "   Ajoutez ce label après validation manuelle pour confirmer"
-            echo "   que cette PR est prête pour la production."
-            echo ""
-            echo "   Pour ajouter le label :"
-            echo "   gh pr edit ${{ github.event.pull_request.number }} --add-label safe-to-merge"
+            echo "::warning::Label safe-to-merge absent — ajouter apres validation manuelle"
+            echo "  gh pr edit ${{ github.event.pull_request.number }} --add-label safe-to-merge"
             exit 1
           fi

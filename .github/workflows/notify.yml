@@ -21,7 +21,7 @@ name: Notify on main/prod failures
 
 on:
   workflow_run:
-    workflows: ['CI — Branche dev']
+    workflows: ['CI']
     types: [completed]
 
 permissions:

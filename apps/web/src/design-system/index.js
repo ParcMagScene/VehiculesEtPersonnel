@@ -12,7 +12,7 @@
  *
  *   ATOMES         Button, Input, Textarea, Select, Checkbox, Toggle,
  *                  Tag, Badge, Avatar, Tooltip, Spinner, LoadingOverlay,
- *                  ProgressBar, EmptyState, InlineAlert
+ *                  ProgressBar, EmptyState, InlineAlert, TabBadge
  *
  *   MOLÉCULES      DropdownMenu, DropdownItem, DropdownDivider,
  *                  Tabs, TabList, Tab, TabPanel,
@@ -91,6 +91,7 @@ export {
   SplitLayout,
   StatusBadge,
   Tab,
+  TabBadge,
   Table,
   TabList,
   TabPanel,

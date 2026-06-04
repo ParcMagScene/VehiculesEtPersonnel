@@ -1,0 +1,28 @@
+/* TabBadge.css — pastille compteur pour onglets */
+
+.ui-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 4px;
+  border-radius: 9px;
+  background: var(--theme-info);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  box-shadow: 0 1px 2px var(--shadow-xs, rgba(0, 0, 0, 0.15));
+}
+
+.ui-tab-badge--late {
+  background: var(--theme-danger);
+}
+
+.ui-tab-badge--soon {
+  background: var(--theme-warning);
+  color: var(--theme-text-primary);
+}

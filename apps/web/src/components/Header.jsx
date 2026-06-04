@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { HelpCircle, Moon, Sun, Upload } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 
-import { Button, Tooltip } from '@/design-system';
+import { Button, TabBadge, Tooltip } from '@/design-system';
 
 const ImportsHubModal = lazy(() => import('./imports/ImportsHubModal'));
 
@@ -318,7 +318,7 @@ const Header = ({
                 // échéances dépassées, sinon orange si échéances dans 7 jours.
                 const controlsCount =
                   controlsBadge.late > 0 ? controlsBadge.late : controlsBadge.soon;
-                const controlsVariant = controlsBadge.late > 0 ? 'is-late' : 'is-soon';
+                const controlsVariant = controlsBadge.late > 0 ? 'late' : 'soon';
                 return orderedTabs.map((tab) => {
                   const Icon = tab.icon;
                   const badgeCount = tabBadges[tab.id] || 0;
@@ -343,22 +343,17 @@ const Header = ({
                       <Icon size={18} />
                       <span>{tab.label}</span>
                       {badgeCount > 0 && (
-                        <span
-                          className="module-tab-badge"
-                          aria-label={`${badgeCount} demande(s) en attente`}
-                          title={`${badgeCount} demande(s) en attente`}
-                        >
-                          {badgeCount > 9 ? '9+' : badgeCount}
-                        </span>
+                        <TabBadge
+                          count={badgeCount}
+                          label={`${badgeCount} demande(s) en attente`}
+                        />
                       )}
                       {ctrlBadge && (
-                        <span
-                          className={`module-tab-badge ${controlsVariant}`}
-                          aria-label={ctrlTitle}
-                          title={ctrlTitle}
-                        >
-                          {controlsCount > 9 ? '9+' : controlsCount}
-                        </span>
+                        <TabBadge
+                          variant={controlsVariant}
+                          count={controlsCount}
+                          label={ctrlTitle}
+                        />
                       )}
                     </Button>
                   );

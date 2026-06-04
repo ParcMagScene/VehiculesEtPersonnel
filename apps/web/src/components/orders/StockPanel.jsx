@@ -33,9 +33,6 @@ import {
   EntityCombobox,
   InlineAlert,
   Input,
-  Modal,
-  ModalBody,
-  ModalHeader,
   ModalLayout,
   SearchBar,
   Select,
@@ -428,26 +425,28 @@ function StockPanel({
 
       {/* Panneau Gestion Catégories (via bouton Gestion du header) */}
       {showManagement && (
-        <Modal open={true} onClose={onCloseManagement} size="lg" className="stock-management-panel">
-          <ModalHeader icon={<Layers size={20} />} onClose={onCloseManagement}>
-            Gestion des catégories
-          </ModalHeader>
-          <ModalBody>
-            <CategoriesView
-              categories={categories}
-              onAdd={() => {
-                setEditingCategory(null);
-                setShowCategoryForm(true);
-              }}
-              onEdit={(cat) => {
-                setEditingCategory(cat);
-                setShowCategoryForm(true);
-              }}
-              onDelete={handleDeleteCategory}
-              isAdmin={isAdmin}
-            />
-          </ModalBody>
-        </Modal>
+        <ModalLayout
+          open
+          onClose={onCloseManagement}
+          size="lg"
+          className="stock-management-panel"
+          title="Gestion des catégories"
+          icon={<Layers size={20} />}
+        >
+          <CategoriesView
+            categories={categories}
+            onAdd={() => {
+              setEditingCategory(null);
+              setShowCategoryForm(true);
+            }}
+            onEdit={(cat) => {
+              setEditingCategory(cat);
+              setShowCategoryForm(true);
+            }}
+            onDelete={handleDeleteCategory}
+            isAdmin={isAdmin}
+          />
+        </ModalLayout>
       )}
     </div>
   );

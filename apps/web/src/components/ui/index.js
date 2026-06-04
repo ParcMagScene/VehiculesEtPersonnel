@@ -38,6 +38,8 @@ export { default as Textarea } from './Textarea';
 export { default as Tooltip } from './Tooltip';
 import './EmptyState.css';
 export { default as EmptyState } from './EmptyState';
+import './TabBadge.css';
+export { default as TabBadge } from './TabBadge';
 import './InlineAlert.css';
 export { default as InlineAlert } from './InlineAlert';
 export { LoadingOverlay, Spinner } from './Loader';

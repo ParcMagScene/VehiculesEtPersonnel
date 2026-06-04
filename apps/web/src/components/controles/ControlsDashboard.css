@@ -90,9 +90,9 @@
 
 /* ── Erreur ──────────────────────────────────────────────────── */
 .ctrl-error {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+  border: 1px solid var(--theme-danger-border);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   font-size: var(--font-sm);
@@ -248,8 +248,8 @@
 }
 
 .ctrl-kind-pill.is-vehicle {
-  background: #cffafe;
-  color: #0e7490;
+  background: var(--theme-cyan-bg);
+  color: var(--theme-cyan-dark);
 }
 
 .ctrl-uid {
@@ -285,11 +285,11 @@
 }
 
 .ctrl-due.is-late {
-  color: #991b1b;
+  color: var(--theme-danger-text);
 }
 
 .ctrl-due.is-soon {
-  color: #b45309;
+  color: var(--theme-warning-text);
 }
 
 .ctrl-due-rel {
@@ -299,11 +299,11 @@
 }
 
 .ctrl-due-rel.is-late {
-  color: #991b1b;
+  color: var(--theme-danger-text);
 }
 
 .ctrl-due-rel.is-soon {
-  color: #b45309;
+  color: var(--theme-warning-text);
 }
 
 /* Colonne Dernière */

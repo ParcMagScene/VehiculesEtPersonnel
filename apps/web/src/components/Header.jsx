@@ -1,43 +1,31 @@
 import './Header.css';
 
 import { format } from 'date-fns';
-import {
-  Boxes,
-  Briefcase,
-  Building2,
-  HelpCircle,
-  MapPin,
-  Moon,
-  Package,
-  Radio,
-  ShoppingCart,
-  Sun,
-  Truck,
-  Video,
-} from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { HelpCircle, Moon, Sun, Upload } from 'lucide-react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
 
+const ImportsHubModal = lazy(() => import('./imports/ImportsHubModal'));
+
 import { STATUS } from '../constants';
 import { useToast } from '../hooks/useToast';
+import { preloadModule } from '../router/moduleLoaders';
+import { DESKTOP_MODULES } from '../router/routes.config';
 import api from '../utils/api';
+import { isApiCoolingDown } from '../utils/api/base';
 import { getPeriodTimestamp } from '../utils/dateUtils';
+import { refreshBus } from '../utils/refresh-bus';
 import HeaderActions from './header/HeaderActions';
 import HeaderNotifications from './header/HeaderNotifications';
 import OverdueInterventionModal from './planning/OverdueInterventionModal';
 
 const Header = ({
-  _view,
-  _setView,
-  _currentDate,
-  _setCurrentDate,
   onOpenSettings,
   activeModule,
   setActiveModule,
   maintenances = [],
   vehicles = [],
-  _onOpenVehicleMaintenance,
   onOpenMaintenance,
   reservations = [],
   currentUser,
@@ -60,6 +48,7 @@ const Header = ({
   const [showNotificationsPopup, setShowNotificationsPopup] = useState(false);
   const [notificationFilter, setNotificationFilter] = useState('all');
   const [selectedOverdueIntervention, setSelectedOverdueIntervention] = useState(null);
+  const [showImportsHub, setShowImportsHub] = useState(false);
   const [showRequestsPopup, setShowRequestsPopup] = useState(false);
   const [pendingAccessRequests, setPendingAccessRequests] = useState(0);
   const [pendingRequestsCounts, setPendingRequestsCounts] = useState({
@@ -68,29 +57,75 @@ const Header = ({
     total: 0,
   });
   const [pendingReservationRequests, setPendingReservationRequests] = useState([]);
+  // #8 Notifications onglets : compteur demandes matériel en attente (badge sur l'onglet Commandes)
+  const [pendingMaterialRequests, setPendingMaterialRequests] = useState(0);
+  // Badge sur l'onglet Contrôles : rouge = au moins un contrôle dépassé (EN_RETARD/MANQUE),
+  // orange = sinon « sous 7 j ». Visible à tous les utilisateurs (pas uniquement admin).
+  const [controlsBadge, setControlsBadge] = useState({ late: 0, soon: 0 });
 
-  // Charger les demandes en attente (interventions + réservations) pour le badge admin
+  // [PERF Sprint 2] Fusion de deux setInterval(30s) en un seul, avec Promise.all
+  // pour grouper les requêtes (compteur demandes interventions/réservations + compteur
+  // demandes d'accès admin). Évite un timer redondant et déclenche les 2 fetch en parallèle.
   useEffect(() => {
-    const loadPendingRequestsCounts = async () => {
-      if (currentUser?.isAdmin) {
-        try {
-          const data = await api.getPendingRequestsCount();
-          setPendingRequestsCounts(data);
-        } catch {
-          // Silencieux : valeurs initiales conservées (badge = 0)
-        }
+    const loadAdminBadges = async () => {
+      if (!currentUser?.isAdmin) return;
+      if (isApiCoolingDown()) return;
+      const [countsRes, accessRes, matStatsRes] = await Promise.allSettled([
+        api.getPendingRequestsCount(),
+        api.getPendingAccessRequestsCount(),
+        api.getMaterialRequestsStats(),
+      ]);
+      if (countsRes.status === 'fulfilled' && countsRes.value) {
+        setPendingRequestsCounts(countsRes.value);
       }
+      if (accessRes.status === 'fulfilled' && accessRes.value) {
+        setPendingAccessRequests(accessRes.value.count || 0);
+      }
+      if (matStatsRes.status === 'fulfilled' && matStatsRes.value) {
+        setPendingMaterialRequests(Number(matStatsRes.value.pending) || 0);
+      }
+      // Erreurs silencieuses : valeurs initiales conservées (badges = 0)
     };
 
-    loadPendingRequestsCounts();
-    const interval = setInterval(loadPendingRequestsCounts, 30000);
+    loadAdminBadges();
+    const interval = setInterval(loadAdminBadges, 30000);
     return () => clearInterval(interval);
   }, [currentUser, maintenances]);
+
+  // Badge onglet Contrôles : rechargé à l'ouverture, périodiquement, et sur
+  // événement refreshBus('controls') publié après création/édition/effectuation.
+  useEffect(() => {
+    let cancelled = false;
+    const loadControlsBadge = async () => {
+      if (!currentUser) return;
+      if (isApiCoolingDown()) return;
+      try {
+        const r = await api.getControlsDashboard();
+        if (cancelled || !r?.success) return;
+        const s = r.stats || {};
+        setControlsBadge({
+          late: (Number(s.en_retard) || 0) + (Number(s.manque) || 0),
+          soon: Number(s.within_7) || 0,
+        });
+      } catch {
+        // silencieux : badge inchangé
+      }
+    };
+    loadControlsBadge();
+    const interval = setInterval(loadControlsBadge, 60000);
+    const unsub = refreshBus.subscribe('controls', loadControlsBadge);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      unsub();
+    };
+  }, [currentUser]);
 
   // Charger les demandes de réservation en attente (au démarrage + quand un popup s'ouvre)
   useEffect(() => {
     const loadPendingReservations = async () => {
       if (currentUser?.isAdmin) {
+        if (isApiCoolingDown()) return;
         try {
           const data = await api.getPendingReservationRequests();
           setPendingReservationRequests(data);
@@ -101,24 +136,6 @@ const Header = ({
     };
     loadPendingReservations();
   }, [showRequestsPopup, showNotificationsPopup, currentUser]);
-
-  // Charger le nombre de demandes d'accès en attente (pour admins uniquement)
-  useEffect(() => {
-    const loadPendingRequests = async () => {
-      if (currentUser?.isAdmin) {
-        try {
-          const data = await api.getPendingAccessRequestsCount();
-          setPendingAccessRequests(data.count || 0);
-        } catch {
-          // Silencieux : compteur à 0 conservé
-        }
-      }
-    };
-
-    loadPendingRequests();
-    const interval = setInterval(loadPendingRequests, 30000);
-    return () => clearInterval(interval);
-  }, [currentUser]);
 
   // Fonction pour détecter les conflits entre une intervention et les réservations
   const getMaintenanceConflicts = (maintenance) => {
@@ -246,39 +263,40 @@ const Header = ({
             <div className="header-logo-area">
               <img src="/Logos/LogoEmagTransp.png" alt="eM@g Scene" className="header-logo" />
               <Tooltip content="Aide — Guide d'utilisation" position="bottom">
-                <Button
-                  variant="ghost"
-                  className="help-trigger-btn"
-                  onClick={onOpenHelp}
-                  aria-label="Aide"
-                >
+                <Button variant="ghost" className="help-trigger-btn" onClick={onOpenHelp}>
                   <HelpCircle size={18} />
                   <span>Aide</span>
                 </Button>
               </Tooltip>
-              <Button
-                variant="ghost"
-                className="theme-toggle-btn"
-                onClick={onToggleTheme}
-                title={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
-                aria-label="Basculer le thème"
+              <Tooltip content="Imports & Documents" position="bottom">
+                <Button
+                  variant="ghost"
+                  className="header-imports-btn"
+                  onClick={() => setShowImportsHub(true)}
+                  aria-label="Ouvrir le hub d'imports"
+                >
+                  <Upload size={18} />
+                </Button>
+              </Tooltip>
+              <Tooltip
+                content={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                position="bottom"
               >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-              </Button>
+                <Button
+                  variant="ghost"
+                  className="theme-toggle-btn"
+                  onClick={onToggleTheme}
+                  aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+                >
+                  {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                </Button>
+              </Tooltip>
             </div>
             <div className="module-tabs" role="tablist" aria-label="Module principal">
               {(() => {
-                const allTabs = [
-                  { id: 'vehicles', label: 'Véhicules', icon: Truck },
-                  { id: 'planning', label: 'Personnel', icon: Radio },
-                  { id: 'équipement', label: 'Équipements', icon: Package },
-                  { id: 'affaires', label: 'Affaires', icon: Briefcase },
-                  { id: 'orders', label: 'Commandes', icon: ShoppingCart },
-                  { id: 'stock', label: 'Stocks', icon: Boxes },
-                  { id: 'annuaire', label: 'Annuaire', icon: Building2 },
-                  { id: 'lieux', label: 'Lieux', icon: MapPin },
-                  { id: 'video', label: 'Vidéo', icon: Video },
-                ];
+                // [Sprint B] Source unique : routes.config.js (évite la dérive entre Header,
+                // UserPreferencesModal et la validation URL).
+                const allTabs = DESKTOP_MODULES;
                 const hiddenTabs = tabPrefs.hiddenTabs || [];
                 const tabOrder = tabPrefs.tabOrder || allTabs.map((t) => t.id);
                 const orderedTabs = tabOrder
@@ -289,19 +307,59 @@ const Header = ({
                     orderedTabs.push(t);
                   }
                 });
+                // #8 Compteurs de notifications par onglet (admin uniquement)
+                const tabBadges = currentUser?.isAdmin
+                  ? {
+                      vehicles: pendingRequestsCounts.reservationRequests || 0,
+                      orders: pendingMaterialRequests || 0,
+                    }
+                  : {};
+                // Badge onglet Contrôles (tous utilisateurs) : rouge si
+                // échéances dépassées, sinon orange si échéances dans 7 jours.
+                const controlsCount =
+                  controlsBadge.late > 0 ? controlsBadge.late : controlsBadge.soon;
+                const controlsVariant = controlsBadge.late > 0 ? 'is-late' : 'is-soon';
                 return orderedTabs.map((tab) => {
                   const Icon = tab.icon;
+                  const badgeCount = tabBadges[tab.id] || 0;
+                  const isControls = tab.id === 'controles';
+                  const ctrlBadge = isControls && controlsCount > 0;
+                  const ctrlTitle = isControls
+                    ? controlsBadge.late > 0
+                      ? `${controlsBadge.late} contrôle(s) dépassé(s)`
+                      : `${controlsBadge.soon} contrôle(s) sous 7 jours`
+                    : '';
                   return (
                     <Button
                       variant="ghost"
                       key={tab.id}
                       className={`module-tab ${activeModule === tab.id ? 'active' : ''}`}
                       onClick={() => setActiveModule(tab.id)}
+                      onMouseEnter={() => preloadModule(tab.id)}
+                      onFocus={() => preloadModule(tab.id)}
                       role="tab"
                       aria-selected={activeModule === tab.id}
                     >
                       <Icon size={18} />
                       <span>{tab.label}</span>
+                      {badgeCount > 0 && (
+                        <span
+                          className="module-tab-badge"
+                          aria-label={`${badgeCount} demande(s) en attente`}
+                          title={`${badgeCount} demande(s) en attente`}
+                        >
+                          {badgeCount > 9 ? '9+' : badgeCount}
+                        </span>
+                      )}
+                      {ctrlBadge && (
+                        <span
+                          className={`module-tab-badge ${controlsVariant}`}
+                          aria-label={ctrlTitle}
+                          title={ctrlTitle}
+                        >
+                          {controlsCount > 9 ? '9+' : controlsCount}
+                        </span>
+                      )}
                     </Button>
                   );
                 });
@@ -367,6 +425,12 @@ const Header = ({
           onMarkPending={handleMarkPending}
           onReschedule={handleReschedule}
         />
+      )}
+
+      {showImportsHub && (
+        <Suspense fallback={null}>
+          <ImportsHubModal onClose={() => setShowImportsHub(false)} />
+        </Suspense>
       )}
     </>
   );

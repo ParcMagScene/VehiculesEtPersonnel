@@ -1155,7 +1155,7 @@
 }
 .pp-planning-search:focus-within {
   border-color: var(--theme-primary);
-  box-shadow: 0 0 0 2px var(--focus-ring, rgba(79, 70, 229, 0.15));
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 .pp-planning-search-input {
   border: none;
@@ -1408,7 +1408,7 @@
 }
 .pp-column-resize-handle:hover,
 .pp-column-resize-handle:active {
-  background: var(--accent-color, #60a5fa);
+  background: var(--accent-color);
   opacity: 0.6;
 }
 

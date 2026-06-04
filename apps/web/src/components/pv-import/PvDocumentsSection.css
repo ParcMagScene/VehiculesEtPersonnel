@@ -17,7 +17,7 @@
   margin: 0 0 var(--space-2, 0.5rem) 0;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--color-text, #0f172a);
+  color: var(--color-text);
 }
 
 .pv-lots-title {
@@ -40,12 +40,12 @@
   gap: var(--space-2, 0.5rem);
   padding: 6px var(--space-2, 0.5rem);
   border-radius: var(--radius-sm, 4px);
-  background: var(--color-bg-subtle, #f8fafc);
-  border: 1px solid var(--color-border, #e2e8f0);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
 }
 
 .pv-doc-icon {
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
   flex: 0 0 auto;
 }
 
@@ -63,7 +63,7 @@
   gap: var(--space-1);
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-primary, #2563eb);
+  color: var(--color-primary);
   text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -76,17 +76,17 @@
 
 .pv-doc-meta {
   font-size: 0.75rem;
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
 }
 
 .pv-doc-folder {
   flex: 0 0 auto;
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
   padding: var(--space-1);
   border-radius: var(--radius-sm, 4px);
 }
 
 .pv-doc-folder:hover {
-  color: var(--color-primary, #2563eb);
-  background: var(--color-bg, #fff);
+  color: var(--color-primary);
+  background: var(--color-bg);
 }

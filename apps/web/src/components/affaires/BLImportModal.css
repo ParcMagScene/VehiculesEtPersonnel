@@ -571,8 +571,8 @@
 
 .bl-import-modal .bl-item-supplier {
   font-size: 0.62rem;
-  background: var(--theme-info-bg, #164e63);
-  color: var(--theme-info-text, #67e8f9);
+  background: var(--theme-info-bg);
+  color: var(--theme-info-text);
   border-radius: 3px;
   padding: 1px 5px;
   white-space: nowrap;

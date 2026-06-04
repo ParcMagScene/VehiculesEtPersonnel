@@ -1627,7 +1627,7 @@
 }
 
 .dtv-sneaky-active {
-  background: var(--theme-success-bg, #ecfdf5);
+  background: var(--theme-success-bg);
   border: 1px solid var(--theme-success-border);
   border-radius: var(--radius-md);
   padding: 12px 16px;

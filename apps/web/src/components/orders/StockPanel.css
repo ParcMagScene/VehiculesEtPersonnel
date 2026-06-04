@@ -1786,7 +1786,7 @@
   font-size: 0.78rem;
 }
 .stock-zone-map-btn:hover {
-  background: var(--theme-info-bg-strong, rgba(59, 130, 246, 0.18));
+  background: var(--theme-info-bg-strong);
 }
 
 .stock-detail-map {

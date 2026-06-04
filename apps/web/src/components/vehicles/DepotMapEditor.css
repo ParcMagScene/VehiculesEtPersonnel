@@ -14,7 +14,7 @@
 }
 
 .depot-editor-panel {
-  background: var(--theme-bg-card, #1e1e2e);
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border, var(--theme-text-dark));
   border-radius: var(--radius-lg);
   display: flex;

@@ -18,9 +18,9 @@
   justify-content: center;
   gap: var(--space-2, 0.5rem);
   padding: var(--space-6, 1.5rem);
-  border: 2px dashed var(--color-border, #cbd5e1);
+  border: 2px dashed var(--color-border);
   border-radius: var(--radius-md, 8px);
-  background: var(--color-bg-subtle, #f8fafc);
+  background: var(--color-bg-subtle);
   text-align: center;
   cursor: pointer;
   transition:
@@ -30,18 +30,18 @@
 
 .pv-drop-zone:hover,
 .pv-drop-zone.is-drag-over {
-  border-color: var(--color-primary, #2563eb);
-  background: var(--color-primary-subtle, #eff6ff);
+  border-color: var(--color-primary);
+  background: var(--color-primary-subtle);
 }
 
 .pv-drop-zone p {
   margin: 0;
-  color: var(--color-text, #0f172a);
+  color: var(--color-text);
 }
 
 .pv-drop-hint {
   font-size: 0.875rem;
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
 }
 
 .pv-hidden-input {
@@ -53,7 +53,7 @@
   align-items: center;
   gap: var(--space-2, 0.5rem);
   margin-top: var(--space-2, 0.5rem);
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
 }
 
 /* ── Filtre ────────────────────────────────────────────────── */
@@ -79,9 +79,9 @@
   flex-direction: column;
   gap: var(--space-3, 0.75rem);
   padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-  border: 1px solid var(--color-border, #e2e8f0);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md, 8px);
-  background: var(--color-bg, #fff);
+  background: var(--color-bg);
 }
 
 .pv-card-header {
@@ -97,7 +97,7 @@
   align-items: center;
   gap: var(--space-2, 0.5rem);
   font-weight: 600;
-  color: var(--color-text, #0f172a);
+  color: var(--color-text);
 }
 
 .pv-card-title a {
@@ -112,7 +112,7 @@
 .pv-card-size {
   font-weight: 400;
   font-size: 0.85rem;
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
 }
 
 .pv-card-status {
@@ -139,7 +139,7 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
 }
 
 /* ── Résolution ────────────────────────────────────────────── */
@@ -148,7 +148,7 @@
   flex-direction: column;
   gap: var(--space-3, 0.75rem);
   padding: var(--space-3, 0.75rem);
-  background: var(--color-bg-subtle, #f8fafc);
+  background: var(--color-bg-subtle);
   border-radius: var(--radius-sm, 6px);
 }
 
@@ -184,6 +184,6 @@
 /* ── Bloc appliqué ────────────────────────────────────────── */
 .pv-applied-info {
   font-size: 0.85rem;
-  color: var(--color-text-muted, #64748b);
+  color: var(--color-text-muted);
   font-style: italic;
 }

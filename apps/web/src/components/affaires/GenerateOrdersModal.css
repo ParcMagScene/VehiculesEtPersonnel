@@ -88,11 +88,11 @@
   gap: 5px;
   padding: var(--space-1) 10px;
   border-radius: var(--radius-2xl);
-  background: var(--bg-tertiary, #f3f3f3);
+  background: var(--bg-tertiary);
 }
 .gen-orders-warn {
-  color: var(--theme-warning, #e67e22);
-  background: color-mix(in srgb, var(--theme-warning, #e67e22) 10%, transparent) !important;
+  color: var(--theme-warning);
+  background: color-mix(in srgb, var(--theme-warning) 10%, transparent) !important;
 }
 
 /* ── Liste fournisseurs ── */
@@ -123,7 +123,7 @@
   transition: background 0.15s;
 }
 .supplier-header:hover {
-  background: var(--bg-tertiary, #f3f3f3);
+  background: var(--bg-tertiary);
 }
 
 .supplier-expand {

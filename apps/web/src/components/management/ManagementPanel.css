@@ -1411,7 +1411,7 @@
 
 .item-rates {
   font-size: 0.75rem;
-  color: var(--theme-success, #16a34a);
+  color: var(--theme-success);
   font-weight: 500;
   margin-top: 2px;
 }

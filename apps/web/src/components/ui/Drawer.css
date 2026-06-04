@@ -151,7 +151,7 @@
   height: var(--close-btn-size, 32px);
   border-radius: var(--close-btn-radius, 8px);
   border: 1px solid var(--close-btn-border, var(--close-btn-border));
-  background: var(--close-btn-bg, rgba(255, 255, 255, 0.12));
+  background: var(--close-btn-bg);
   color: var(--close-btn-color, var(--theme-bg-card));
   cursor: pointer;
   transition:
@@ -162,7 +162,7 @@
 }
 
 .ui-drawer-close:hover {
-  background: var(--close-btn-hover-bg, rgba(255, 255, 255, 0.22));
+  background: var(--close-btn-hover-bg);
   border-color: var(--close-btn-hover-border, var(--glass));
 }
 

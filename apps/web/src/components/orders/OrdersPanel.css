@@ -336,12 +336,12 @@
   background: var(--theme-bg-page);
 }
 .orders-table tr.row-new-highlight {
-  background: color-mix(in srgb, var(--theme-success, #22c55e) 12%, transparent);
+  background: color-mix(in srgb, var(--theme-success) 12%, transparent);
   animation: rowHighlightFade 4s ease-out forwards;
 }
 @keyframes rowHighlightFade {
   0% {
-    background: color-mix(in srgb, var(--theme-success, #22c55e) 20%, transparent);
+    background: color-mix(in srgb, var(--theme-success) 20%, transparent);
   }
   100% {
     background: transparent;
@@ -1310,7 +1310,7 @@
   gap: var(--space-3);
   align-items: center;
   padding: 10px var(--space-3);
-  border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.24));
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   background: var(--theme-bg-card, transparent);
 }
@@ -1333,7 +1333,7 @@
 .material-request-lines {
   margin-top: var(--space-4);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--theme-border, rgba(148, 163, 184, 0.24));
+  border-top: 1px solid var(--theme-border);
 }
 .material-request-lines__head {
   display: flex;

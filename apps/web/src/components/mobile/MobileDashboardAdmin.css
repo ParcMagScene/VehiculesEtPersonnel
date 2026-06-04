@@ -101,7 +101,7 @@
   font-weight: 600;
   text-transform: uppercase;
   color: var(--theme-info);
-  background: var(--theme-info-bg, rgba(59, 130, 246, 0.1));
+  background: var(--theme-info-bg);
   padding: 1px var(--space-1-5);
   border-radius: var(--radius-sm);
 }

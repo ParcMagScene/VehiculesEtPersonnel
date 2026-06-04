@@ -404,7 +404,7 @@
 }
 
 .pull-stat--warn {
-  color: var(--theme-warning-text, #b45309);
+  color: var(--theme-warning-text);
 }
 
 .pull-stat--muted {

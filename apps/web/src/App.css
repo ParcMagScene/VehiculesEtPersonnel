@@ -120,7 +120,7 @@
 
 /* Bouton aide stylisé */
 .help-trigger-btn {
-  background: linear-gradient(135deg, var(--theme-bg-hover), var(--theme-purple-bg, #f5f3ff));
+  background: linear-gradient(135deg, var(--theme-bg-hover), var(--theme-purple-bg));
   border: 1px solid var(--theme-bg-indigo-lighter);
   color: var(--theme-indigo);
   padding: 0.3rem 0.65rem;

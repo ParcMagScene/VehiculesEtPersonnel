@@ -46,7 +46,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.04));
+  background: var(--theme-bg-hover);
   border: 1px solid var(--theme-border);
   border-radius: 16px;
   padding: var(--space-1) 10px;
@@ -85,7 +85,7 @@
     color 0.15s;
 }
 .sonos-icon-btn:hover {
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.06));
+  background: var(--theme-bg-hover);
   color: var(--theme-text-dark);
 }
 .sonos-icon-btn:disabled {
@@ -147,7 +147,7 @@
     transform 0.1s;
 }
 .sonos-tbtn:hover:not(:disabled) {
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.06));
+  background: var(--theme-bg-hover);
   color: var(--theme-primary);
 }
 .sonos-tbtn:active:not(:disabled) {
@@ -287,7 +287,7 @@
 }
 
 .sonos-vol-muted {
-  color: var(--btn-danger-color, #ef4444) !important;
+  color: var(--btn-danger-color) !important;
 }
 
 .sonos-vol-slider {
@@ -349,7 +349,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.04));
+  background: var(--theme-bg-hover);
   color: var(--theme-text-muted);
 }
 
@@ -402,7 +402,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.03));
+  background: var(--theme-bg-hover);
   border: 1px solid var(--theme-border);
   border-radius: 8px;
   cursor: pointer;
@@ -428,7 +428,7 @@
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--theme-text-muted);
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.06));
+  background: var(--theme-bg-hover);
   padding: 1px 7px;
   border-radius: 99px;
 }
@@ -456,7 +456,7 @@
   text-align: left;
 }
 .sonos-zones-item:hover {
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.04));
+  background: var(--theme-bg-hover);
 }
 
 .sonos-zones-active {
@@ -498,7 +498,7 @@
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--theme-text-muted);
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.06));
+  background: var(--theme-bg-hover);
   padding: 1px 7px;
   border-radius: 99px;
 }
@@ -517,7 +517,7 @@
   transition: background 0.12s;
 }
 .sonos-queue-item:hover {
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.03));
+  background: var(--theme-bg-hover);
 }
 .sonos-queue-active {
   background: color-mix(in srgb, var(--theme-primary) 8%, transparent);
@@ -545,7 +545,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.05));
+  background: var(--theme-bg-hover);
   color: var(--theme-text-muted);
 }
 .sonos-queue-meta {
@@ -617,7 +617,7 @@
 }
 .sonos-sources-badge {
   font-size: 0.65rem;
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.06));
+  background: var(--theme-bg-hover);
   padding: 1px 6px;
   border-radius: 99px;
   color: var(--theme-text-muted);
@@ -691,7 +691,7 @@
   padding: 14px var(--space-3);
   font-size: 0.82rem;
   color: var(--theme-text-secondary);
-  background: var(--theme-bg-secondary, rgba(255, 255, 255, 0.04));
+  background: var(--theme-bg-secondary);
   border-radius: 6px;
   margin: var(--space-2) 6px;
   line-height: 1.4;
@@ -708,7 +708,7 @@
   gap: 10px;
   padding: var(--space-2) 10px;
   border: none;
-  border-bottom: 1px solid var(--theme-border-light, rgba(0, 0, 0, 0.04));
+  border-bottom: 1px solid var(--theme-border-light);
   background: none;
   cursor: pointer;
   text-align: left;
@@ -716,7 +716,7 @@
   min-height: 42px;
 }
 .sonos-sources-item:hover {
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.03));
+  background: var(--theme-bg-hover);
 }
 .sonos-sources-item:last-child {
   border-bottom: none;
@@ -729,7 +729,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.04));
+  background: var(--theme-bg-hover);
   color: var(--theme-text-secondary);
 }
 .sonos-sources-art {
@@ -764,7 +764,7 @@
 .sonos-sources-count {
   font-size: 0.7rem;
   color: var(--theme-text-secondary);
-  background: var(--theme-bg-hover, rgba(0, 0, 0, 0.04));
+  background: var(--theme-bg-hover);
   padding: 1px 6px;
   border-radius: 8px;
 }

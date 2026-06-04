@@ -41,8 +41,8 @@
 }
 
 .rental-kpi {
-  background: var(--theme-bg-card, #fff);
-  border: 1px solid var(--theme-border, #e5e7eb);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
   border-radius: var(--radius-md, 8px);
   padding: 1rem;
   text-align: center;
@@ -51,7 +51,7 @@
 .rental-kpi-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--theme-text-accent, #2563eb);
+  color: var(--theme-text-accent);
 }
 
 .rental-kpi-label {
@@ -76,7 +76,7 @@
 .rental-reporting-table td {
   padding: 0.5rem 0.75rem;
   text-align: left;
-  border-bottom: 1px solid var(--theme-border, #e5e7eb);
+  border-bottom: 1px solid var(--theme-border);
 }
 
 .rental-reporting-table th {
@@ -88,7 +88,7 @@
 
 .rental-amount {
   font-weight: 600;
-  color: var(--theme-text-success, #16a34a);
+  color: var(--theme-text-success);
 }
 
 .rental-reg {
@@ -105,8 +105,8 @@
 }
 
 .rental-occupancy-card {
-  background: var(--theme-bg-card, #fff);
-  border: 1px solid var(--theme-border, #e5e7eb);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border);
   border-radius: var(--radius-md, 8px);
   padding: 0.75rem;
 }
@@ -119,14 +119,14 @@
 
 .rental-occupancy-bar-wrap {
   height: 8px;
-  background: var(--theme-bg-secondary, #f3f4f6);
+  background: var(--theme-bg-secondary);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .rental-occupancy-bar {
   height: 100%;
-  background: var(--theme-text-accent, #2563eb);
+  background: var(--theme-text-accent);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -134,7 +134,7 @@
 .rental-occupancy-rate {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--theme-text-accent, #2563eb);
+  color: var(--theme-text-accent);
   margin-top: 0.25rem;
   text-align: right;
 }

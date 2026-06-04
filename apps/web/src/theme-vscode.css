@@ -851,11 +851,11 @@
 
 [data-palette^='vscode'] .theme-btn-danger {
   background: transparent;
-  color: var(--vscode-error, #f14c4c);
-  border-color: var(--vscode-error, #f14c4c);
+  color: var(--vscode-error);
+  border-color: var(--vscode-error);
 }
 [data-palette^='vscode'] .theme-btn-danger:hover {
-  background: var(--vscode-error, #f14c4c);
+  background: var(--vscode-error);
   color: #ffffff;
   transform: none;
 }

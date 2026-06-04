@@ -591,7 +591,7 @@
   overflow-y: auto;
   font-size: 0.78rem;
   font-family: var(--font-mono);
-  background: var(--theme-bg-secondary, #f8f8f8);
+  background: var(--theme-bg-secondary);
   border-radius: var(--radius-md);
   padding: 0.75rem;
 }

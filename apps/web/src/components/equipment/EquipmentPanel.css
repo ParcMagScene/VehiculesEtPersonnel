@@ -1707,7 +1707,7 @@
   background: none;
   text-align: left;
   cursor: pointer;
-  border-bottom: 1px solid var(--theme-border-light, rgba(0, 0, 0, 0.06));
+  border-bottom: 1px solid var(--theme-border-light);
   transition: background 0.1s;
 }
 .sav-search-item:last-child {
@@ -1752,7 +1752,7 @@
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--theme-border-light, rgba(0, 0, 0, 0.08));
+  background: var(--theme-border-light);
 }
 
 .eq-form-field {
@@ -4047,7 +4047,7 @@ tr.eq-sav-row-clickable {
 
 .eq-sav-selected-serial {
   font-size: 0.7rem;
-  color: var(--theme-accent, #2563eb);
+  color: var(--theme-accent);
   font-weight: 500;
 }
 
@@ -4088,7 +4088,7 @@ tr.eq-sav-row-clickable {
   right: 0;
   z-index: 200;
   margin-top: -1px;
-  background: var(--theme-bg-card, #fff);
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-top: none;
   border-radius: 0 0 10px 10px;
@@ -4106,7 +4106,7 @@ tr.eq-sav-row-clickable {
   padding: 0.65rem 0.75rem;
   width: 100%;
   text-align: left;
-  background: var(--theme-bg-card, #fff);
+  background: var(--theme-bg-card);
   border: none;
   border-bottom: 1px solid var(--theme-border);
   cursor: pointer;
@@ -4146,7 +4146,7 @@ tr.eq-sav-row-clickable {
 
 .eq-sav-dropdown-serial {
   font-size: 0.7rem;
-  color: var(--theme-accent, #2563eb);
+  color: var(--theme-accent);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -4157,7 +4157,7 @@ tr.eq-sav-row-clickable {
   position: relative;
   z-index: 200;
   margin-top: -1px;
-  background: var(--theme-bg-card, #fff);
+  background: var(--theme-bg-card);
   border: 1px solid var(--theme-border);
   border-top: none;
   border-radius: 0 0 10px 10px;

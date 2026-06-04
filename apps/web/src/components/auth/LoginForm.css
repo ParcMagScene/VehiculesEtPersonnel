@@ -163,7 +163,7 @@
     gap: 6px;
     background: none;
     border: none;
-    color: var(--text-secondary, #94a3b8);
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 0.8rem;
     padding: var(--space-1) 0;
@@ -243,9 +243,9 @@
 }
 
 .login-email-authorized {
-  background: var(--theme-success-bg, #ecfdf5);
-  border: 1px solid var(--theme-success, #10b981);
-  color: var(--theme-success-dark, #065f46);
+  background: var(--theme-success-bg);
+  border: 1px solid var(--theme-success);
+  color: var(--theme-success-dark);
 }
 
 .login-email-unknown {

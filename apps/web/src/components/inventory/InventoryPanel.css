@@ -9,7 +9,7 @@
   flex-direction: column;
   height: 100%;
   background: var(--surface-page, var(--surface-secondary));
-  color: var(--text-body, #1a1a2e);
+  color: var(--text-body);
 }
 
 .inv-header {
@@ -79,7 +79,7 @@
   font-size: var(--font-sm);
   font-weight: 600;
   background: var(--surface-hover, var(--shadow-inner));
-  color: var(--text-muted, #555);
+  color: var(--text-muted);
 }
 .inv-stat-badge.warning {
   background: rgba(255, 152, 0, 0.15);
@@ -226,7 +226,7 @@
   top: 0;
 }
 .inv-table tr:hover td {
-  background: var(--surface-hover, rgba(0, 0, 0, 0.02));
+  background: var(--surface-hover);
 }
 .inv-row-warning td {
   background: rgba(255, 193, 7, 0.06);

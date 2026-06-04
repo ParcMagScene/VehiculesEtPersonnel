@@ -1909,7 +1909,7 @@ select.edit-input {
 }
 
 .wh-date {
-  color: var(--theme-text-secondary, #666);
+  color: var(--theme-text-secondary);
   min-width: 70px;
 }
 
@@ -1924,23 +1924,23 @@ select.edit-input {
 }
 
 .wh-arrow {
-  color: var(--theme-text-secondary, #999);
+  color: var(--theme-text-secondary);
   flex-shrink: 0;
 }
 
 .wh-user {
-  color: var(--theme-text-secondary, #888);
+  color: var(--theme-text-secondary);
   font-style: italic;
 }
 
 .wh-notes {
-  color: var(--theme-text-secondary, #888);
+  color: var(--theme-text-secondary);
   font-size: 0.72rem;
 }
 
 .wh-empty {
   font-size: 0.78rem;
-  color: var(--theme-text-secondary, #999);
+  color: var(--theme-text-secondary);
   margin: 6px 0 0;
   font-style: italic;
 }

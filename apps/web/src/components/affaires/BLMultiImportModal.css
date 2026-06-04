@@ -689,7 +689,7 @@
 }
 .detail-article-row .item-supplier {
   font-size: 0.6rem;
-  background: var(--theme-info-bg, #164e63);
+  background: var(--theme-info-bg);
   color: var(--theme-info-text, var(--theme-cyan-border));
   border-radius: var(--radius-xs);
   padding: 1px 5px;

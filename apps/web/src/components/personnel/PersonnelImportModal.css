@@ -229,7 +229,7 @@
 }
 
 [data-theme='dark'] .pi-collision-list {
-  border-color: var(--border-dark, #3a3a3a);
+  border-color: var(--border-dark);
 }
 
 [data-theme='dark'] .pi-collision-match {

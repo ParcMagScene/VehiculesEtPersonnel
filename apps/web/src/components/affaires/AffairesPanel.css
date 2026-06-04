@@ -4,7 +4,7 @@
 
 .affaires-panel {
   width: 100%;
-  padding: 16px;
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   height: calc(100dvh - 70px);
@@ -17,9 +17,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 60px var(--space-5);
   color: var(--theme-text-muted);
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 /* ═══ Erreur ═══ */
@@ -27,14 +27,14 @@
 .affaires-error {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: var(--space-2);
+  padding: 10px var(--space-4);
   background: var(--theme-danger-bg);
   border: 1px solid var(--btn-danger-hover-bg);
   border-radius: var(--radius-md);
   color: var(--theme-danger-dark);
   font-size: var(--font-base);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .affaires-error button {
@@ -43,7 +43,7 @@
   color: var(--theme-text-inverse);
   border: none;
   border-radius: var(--radius-sm);
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   cursor: pointer;
   font-size: var(--font-sm);
 }
@@ -51,27 +51,27 @@
 .affaires-warning {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   background: var(--theme-warning-bg);
   border: 1px solid var(--theme-warning-border);
   border-radius: var(--radius-md);
   color: var(--theme-warning-dark);
   font-size: var(--font-base);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .affaires-google-loading {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
+  gap: var(--space-2);
+  padding: 6px var(--space-4);
   background: var(--theme-info-bg);
   border: 1px solid var(--theme-info-border);
   border-radius: var(--radius-md);
   color: var(--theme-info, #0284c7);
   font-size: var(--font-sm);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .affaires-google-loading .loading-spinner.small {
@@ -169,8 +169,8 @@
 .affaires-type-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: var(--space-1);
+  padding: var(--space-1) 10px;
   border: none;
   background: transparent;
   border-radius: var(--radius-sm);
@@ -219,7 +219,7 @@
 }
 
 .affaires-tb-view-btn {
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -248,7 +248,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
@@ -278,7 +278,7 @@
   color: var(--theme-text-primary);
   cursor: pointer;
   white-space: nowrap;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   transition: all 0.2s;
   flex-shrink: 0;
@@ -331,7 +331,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 12px;
+  padding: 5px var(--space-3);
   border: 1px solid var(--theme-primary);
   border-radius: var(--radius-sm);
   background: var(--accent-tint-extra);
@@ -365,8 +365,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
-  padding: 4px 0;
+  margin-bottom: var(--space-2);
+  padding: var(--space-1) 0;
 }
 
 .affaires-count-box {
@@ -375,7 +375,7 @@
   align-items: center;
   justify-content: center;
   min-width: 56px;
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   background: var(--theme-border-light);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
@@ -404,7 +404,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   background: var(
     --theme-gradient,
     linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%)
@@ -440,7 +440,7 @@
   position: relative;
   cursor: crosshair;
   user-select: none;
-  margin-left: 8px;
+  margin-left: var(--space-2);
   overflow: visible;
 }
 
@@ -577,7 +577,7 @@
   text-align: center;
   margin-top: 1px;
   background: var(--theme-bg-card);
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   border-radius: var(--radius-xs);
   box-shadow: var(--shadow-sm);
   line-height: 1.4;
@@ -643,9 +643,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 60px var(--space-5);
   color: var(--theme-text-muted);
-  gap: 12px;
+  gap: var(--space-3);
   text-align: center;
 }
 
@@ -666,7 +666,7 @@
   align-items: center;
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--theme-gradient);
   border-bottom: 2px solid var(--theme-border);
   font-size: var(--font-xs);
@@ -677,7 +677,7 @@
   position: sticky;
   top: 0;
   z-index: var(--z-base);
-  gap: 8px;
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
@@ -795,11 +795,11 @@
   align-items: center;
   width: 100%;
   box-sizing: border-box;
-  padding: 7px 12px;
+  padding: 7px var(--space-3);
   border-bottom: 1px solid var(--theme-border-light);
   font-size: var(--font-base);
   color: var(--theme-text-dark);
-  gap: 8px;
+  gap: var(--space-2);
   transition: background 0.15s;
   flex-shrink: 0;
   cursor: pointer;
@@ -910,7 +910,7 @@
 }
 
 .affaire-type-tag {
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-2xl);
   color: var(--theme-text-inverse);
   font-size: var(--font-2xs);
@@ -999,14 +999,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .ar-icon-badge {
   display: inline-flex;
   align-items: center;
   gap: 1px;
-  padding: 1px 4px;
+  padding: 1px var(--space-1);
   border-radius: var(--radius-md);
   font-size: 9px;
   font-weight: 700;
@@ -1058,7 +1058,7 @@
   gap: 1px;
   font-size: 0.7rem;
   line-height: 1;
-  padding: 2px 4px;
+  padding: 2px var(--space-1);
   border-radius: var(--radius-md);
   border: 1px solid;
   white-space: nowrap;
@@ -1097,7 +1097,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
   overflow: hidden;
 }
 
@@ -1105,7 +1105,7 @@
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-2xl);
   background: var(--theme-info-bg-strong);
   color: var(--theme-info-dark);
@@ -1125,7 +1125,7 @@
 
 @media (max-width: 768px) {
   .affaires-toolbar-bar {
-    padding: 6px 8px;
+    padding: 6px var(--space-2);
   }
 
   .affaires-toolbar-actions {
@@ -1142,12 +1142,12 @@
   }
 
   .affaires-stats {
-    gap: 8px;
+    gap: var(--space-2);
   }
 
   .affaires-stat-card {
     min-width: 80px;
-    padding: 8px 12px;
+    padding: var(--space-2) var(--space-3);
   }
 
   .stat-value {
@@ -1205,12 +1205,12 @@
   }
 
   .affaires-type-btn {
-    padding: 4px 8px;
+    padding: var(--space-1) var(--space-2);
   }
 
   .affaires-stat-card {
     min-width: 60px;
-    padding: 6px 8px;
+    padding: 6px var(--space-2);
   }
 
   .stat-value {

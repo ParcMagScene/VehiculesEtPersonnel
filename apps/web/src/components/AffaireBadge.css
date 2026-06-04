@@ -20,16 +20,16 @@
 
 .affaire-badge-unified.sm {
   font-size: 0.6rem;
-  padding: 0px 4px;
+  padding: 0 var(--space-1);
   border-radius: var(--radius-xs);
   gap: 2px;
 }
 
 .affaire-badge-unified.lg {
   font-size: var(--font-sm);
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-sm);
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .affaire-badge-unified.clickable {

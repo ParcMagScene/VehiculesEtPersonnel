@@ -15,12 +15,12 @@
   border-radius: var(--radius-md) !important;
   box-shadow: 0 4px 15px var(--shadow-xl) !important;
   border: 1px solid var(--theme-border-medium) !important;
-  margin-top: 4px !important;
+  margin-top: var(--space-1) !important;
   font-family: inherit !important;
 }
 
 .pac-item {
-  padding: 8px 12px !important;
+  padding: var(--space-2) var(--space-3) !important;
   font-size: 13px !important;
   cursor: pointer !important;
   border-top: 1px solid var(--theme-bg-tertiary) !important;
@@ -73,7 +73,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   background: var(--surface-primary, var(--theme-bg-card, #fff));
   border: 1px solid var(--border-default, var(--theme-border, #d0d7de));
   border-radius: var(--radius-md, 6px);
@@ -81,11 +81,11 @@
   max-height: 280px;
   overflow-y: auto;
   z-index: var(--z-dropdown);
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .address-autocomplete-section-header {
-  padding: 6px 10px 4px;
+  padding: 6px 10px var(--space-1);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -103,9 +103,9 @@
 .address-autocomplete-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: none;
   background: none;
   cursor: pointer;

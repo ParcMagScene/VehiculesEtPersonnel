@@ -59,7 +59,7 @@
 }
 
 .access-request-modal .form-group {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .access-request-modal .form-group label {
@@ -76,7 +76,7 @@
 
 .access-request-modal .form-group input {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -160,7 +160,7 @@
 .success-banner {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
   background: var(--theme-success-bg);
   border: 1px solid var(--btn-success-hover-bg);
   border-left: 4px solid var(--theme-success-alt);
@@ -176,7 +176,7 @@
 }
 
 .success-banner p {
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: var(--font-base);
   color: var(--theme-success-text);
 }
@@ -207,9 +207,9 @@
 .pending-email-info {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   background: var(--theme-bg-tertiary);
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-2xl);
   font-weight: 500;
   color: var(--theme-text-body);

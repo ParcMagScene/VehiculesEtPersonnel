@@ -83,7 +83,7 @@ const inlineStyleSpacing = grepCount(
   },
 );
 
-const buttonHtml = grepCount('<button[^A-Za-z]', {
+const buttonHtml = grepCount('<button\\b', {
   paths: ['src/components'],
   exts: ['*.jsx'],
   excludes: ['/ui/', '/mobile/', '/DisplayDashboard/'],

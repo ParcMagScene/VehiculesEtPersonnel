@@ -156,7 +156,7 @@
 .ctrl-th-sort-icon {
   display: inline-block;
   vertical-align: middle;
-  margin-left: 4px;
+  margin-left: var(--space-1);
   opacity: 0.45;
 }
 
@@ -237,7 +237,7 @@
 .ctrl-kind-pill {
   display: inline-flex;
   align-items: center;
-  padding: 1px 8px;
+  padding: 1px var(--space-2);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -342,7 +342,7 @@
 }
 
 .ctrl-actions-cell > * + * {
-  margin-left: 4px;
+  margin-left: var(--space-1);
 }
 
 /* ── Responsive ──────────────────────────────────────────────── */

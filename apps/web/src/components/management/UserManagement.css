@@ -5,7 +5,7 @@
 }
 
 .user-management-loading {
-  padding: 40px;
+  padding: var(--space-10);
   text-align: center;
   color: var(--theme-text-gray);
   font-size: var(--font-md);
@@ -121,8 +121,8 @@
 .user-management-section {
   background: var(--theme-bg-card);
   border-radius: var(--radius-lg);
-  padding: 24px;
-  margin-bottom: 24px;
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
   box-shadow: var(--shadow-sm);
 }
 
@@ -130,7 +130,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 20px 0;
+  margin: 0 0 var(--space-5) 0;
   font-size: var(--font-lg);
   color: var(--theme-bg-dark);
 }
@@ -138,7 +138,7 @@
 .add-email-form {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .add-email-form input {
@@ -187,7 +187,7 @@
 .users-list th,
 .requests-history th {
   text-align: left;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   background: var(--theme-bg-secondary);
   color: var(--theme-text-gray);
   font-weight: 600;
@@ -200,7 +200,7 @@
 .emails-list td,
 .users-list td,
 .requests-history td {
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-top: 1px solid var(--theme-border-medium);
   font-size: var(--font-sm);
   line-height: 1.2;
@@ -211,7 +211,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 1px 8px;
+  padding: 1px var(--space-2);
   border-radius: var(--radius-md-lg);
   font-size: var(--font-xs);
   font-weight: 500;
@@ -232,7 +232,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 1px 8px;
+  padding: 1px var(--space-2);
   border-radius: var(--radius-md-lg);
   font-size: var(--font-xs);
   font-weight: 500;
@@ -250,7 +250,7 @@
 }
 
 .btn-icon {
-  padding: 2px 4px;
+  padding: 2px var(--space-1);
   border: none;
   border-radius: var(--radius-xs);
   cursor: pointer;
@@ -313,7 +313,7 @@
 }
 
 .btn-sm {
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   border: none;
   border-radius: var(--btn-radius);
   cursor: pointer;
@@ -342,7 +342,7 @@
 
 .no-data {
   text-align: center;
-  padding: 40px 20px;
+  padding: var(--space-10) var(--space-5);
   color: var(--theme-text-muted);
   font-size: var(--font-base);
 }
@@ -382,13 +382,13 @@
 .permissions-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px 8px;
+  gap: 3px var(--space-2);
 }
 
 .permission-checkbox {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
@@ -447,8 +447,8 @@
 .approve-modal-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px 24px;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
   background: var(--modal-header-bg);
   color: var(--modal-header-color);
   border-radius: var(--modal-header-border-radius);
@@ -476,7 +476,7 @@
 .approve-modal-user {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .approve-modal-user strong {
@@ -492,14 +492,14 @@
 .approve-modal-options {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .approve-checkbox-label {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 10px var(--space-3);
   border: 1px solid var(--theme-border-medium);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -530,10 +530,10 @@
 .approve-email-hint {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   width: 100%;
-  margin-left: 28px;
-  margin-top: 4px;
+  margin-left: var(--space-7);
+  margin-top: var(--space-1);
   font-size: var(--font-sm);
   color: var(--theme-text-muted);
   font-weight: 400;
@@ -553,7 +553,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   font-size: var(--font-sm);
   font-weight: 500;
   color: var(--btn-success-color);
@@ -574,8 +574,8 @@
 .personnel-linked-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
+  gap: var(--space-1);
+  padding: 3px var(--space-2);
   font-size: var(--font-xs);
   font-weight: 500;
   color: var(--theme-text-gray);
@@ -615,7 +615,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
   background: var(--modal-header-bg);
   color: var(--modal-header-color);
   border-radius: var(--modal-header-border-radius);
@@ -641,7 +641,7 @@
 .create-personnel-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--space-3);
   margin-bottom: 1.25rem;
 }
 .create-personnel-field label {
@@ -649,11 +649,11 @@
   font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-body);
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 .create-personnel-field input {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   font-size: var(--font-base);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-md);
@@ -674,7 +674,7 @@
   font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-body);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 .create-personnel-type-cards {
@@ -715,13 +715,13 @@
 .create-personnel-contract-options {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .contract-type-option {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   background: var(--theme-bg-secondary);
   border: 1px solid var(--theme-border-medium);
   border-radius: var(--radius-md);
@@ -752,11 +752,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .create-user-card {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 
 .create-user-form {
@@ -773,20 +773,20 @@
 
 .create-user-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .create-user-permissions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   width: 100%;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 .create-user-permissions-label {
   font-size: var(--font-sm);
   font-weight: 600;
   color: var(--theme-text-gray);
-  margin-right: 4px;
+  margin-right: var(--space-1);
 }

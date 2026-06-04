@@ -336,7 +336,7 @@
 }
 
 .location-dialog .form-group {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .location-dialog .form-group label {
@@ -353,7 +353,7 @@
 
 .location-dialog .form-group input {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
   font-size: var(--font-base);

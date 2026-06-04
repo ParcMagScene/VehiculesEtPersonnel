@@ -5,8 +5,8 @@
 .lpp-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+  gap: var(--space-3);
+  padding: var(--space-3);
   height: 100%;
   min-height: 0;
 }
@@ -14,10 +14,10 @@
 .lpp-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--surface-2, #f8f9fa);
   border-radius: 8px;
 }
@@ -25,7 +25,7 @@
 .lpp-toolbar-left,
 .lpp-toolbar-right {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex-wrap: wrap;
 }
@@ -33,7 +33,7 @@
 .lpp-counter {
   font-weight: 600;
   font-size: 0.9rem;
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   background: var(--primary-100, #e3f2fd);
   color: var(--primary-700, #1976d2);
   border-radius: 12px;
@@ -127,7 +127,7 @@
 .lpp-mag-cell {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .lpp-mag-apply {
@@ -154,21 +154,21 @@
 
 .lpp-pagination {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: var(--space-2);
   font-size: 0.85rem;
 }
 
 .lpp-preview {
   border: 1px dashed var(--border, #ccc);
   background: #fff;
-  padding: 8px;
+  padding: var(--space-2);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -182,13 +182,13 @@
 
 .lpp-empty,
 .lpp-loading {
-  padding: 40px;
+  padding: var(--space-10);
   text-align: center;
   color: var(--text-secondary, #888);
 }
 
 .lpp-error {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--danger-bg);
   color: var(--danger-dark);
   border-radius: 6px;

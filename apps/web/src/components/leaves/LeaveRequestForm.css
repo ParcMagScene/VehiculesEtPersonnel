@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
-  padding: 20px;
+  padding: var(--space-5);
   backdrop-filter: blur(2px);
 }
 
@@ -32,7 +32,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--theme-border);
   background: linear-gradient(135deg, var(--theme-info-text) 0%, var(--theme-info) 100%);
   color: var(--theme-text-inverse);
@@ -57,7 +57,7 @@
 .lrf-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .lrf-btn-info {
@@ -94,7 +94,7 @@
 .lrf-legal-info {
   background: var(--theme-info-bg);
   border-bottom: 1px solid var(--theme-info-border);
-  padding: 12px 20px;
+  padding: var(--space-3) var(--space-5);
   font-size: var(--font-sm);
   color: var(--theme-info-text);
 }
@@ -106,10 +106,10 @@
 
 .lrf-legal-info ul {
   margin: 0;
-  padding-left: 16px;
+  padding-left: var(--space-4);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2px 16px;
+  gap: 2px var(--space-4);
 }
 
 .lrf-legal-info li {
@@ -118,10 +118,10 @@
 
 /* ─── FORM ─── */
 .lrf-form {
-  padding: 20px;
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -144,7 +144,7 @@
 
 .lrf-select,
 .lrf-input {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -163,7 +163,7 @@
 }
 
 .lrf-textarea {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -182,7 +182,7 @@
 }
 
 .lrf-person-display {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--theme-bg-page);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
@@ -195,7 +195,7 @@
 .lrf-error {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 14px;
   background: var(--theme-danger-bg);
   border: 1px solid var(--btn-danger-hover-bg);
@@ -208,14 +208,14 @@
 .lrf-warnings {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .lrf-warning {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--theme-warning-bg);
   border: 1px solid var(--btn-warning-hover-bg);
   border-radius: var(--radius-sm);
@@ -233,8 +233,8 @@
 .lrf-type-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border: 2px solid var(--theme-border);
   border-radius: var(--radius-md);
   background: var(--theme-bg-card);
@@ -271,7 +271,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   background: var(--theme-success-bg);
   border: 1px solid var(--theme-success-border);
   border-radius: var(--radius-sm);
@@ -283,7 +283,7 @@
 .lrf-dates-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .lrf-date-field {
@@ -302,13 +302,13 @@
 
 .lrf-period-btns {
   display: flex;
-  gap: 4px;
-  margin-top: 4px;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
 }
 
 .lrf-period-btn {
   flex: 1;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
@@ -336,13 +336,13 @@
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .lrf-calc-main {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: var(--font-base);
   color: var(--theme-info-text);
 }
@@ -363,7 +363,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
@@ -374,7 +374,7 @@
 
 .lrf-holiday-chip {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   background: var(--theme-warning-bg);
   border-radius: var(--radius-md-lg);
   font-size: var(--font-2xs);
@@ -403,13 +403,13 @@
 
 .lrf-balance-grid {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .lrf-balance-item {
   flex: 1;
   text-align: center;
-  padding: 8px;
+  padding: var(--space-2);
   background: var(--theme-bg-card);
   border-radius: var(--radius-md);
   border: 1px solid var(--theme-border);
@@ -451,7 +451,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: var(--space-2);
   padding: 6px 10px;
   background: var(--theme-danger-bg);
   border-radius: var(--radius-sm);
@@ -464,7 +464,7 @@
 .lrf-upload-zone {
   border: 2px dashed var(--theme-border-muted);
   border-radius: var(--radius-md);
-  padding: 12px;
+  padding: var(--space-3);
   text-align: center;
 }
 
@@ -472,9 +472,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
-  padding: 12px;
+  padding: var(--space-3);
   border: none;
   background: transparent;
   cursor: pointer;
@@ -490,8 +490,8 @@
 .lrf-upload-file {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
+  gap: var(--space-2);
+  padding: var(--space-2);
   background: var(--theme-info-bg);
   border-radius: var(--radius-sm);
   font-size: var(--font-base);
@@ -504,7 +504,7 @@
   border: none;
   cursor: pointer;
   color: var(--theme-danger);
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--radius-xs);
 }
 
@@ -551,8 +551,8 @@
 .lrf-btn-clear {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: var(--space-1);
+  padding: var(--space-1) 10px;
   border: 1px solid var(--theme-border-muted);
   border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
@@ -570,7 +570,7 @@
 .lrf-signature-ok {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: var(--font-xs);
   color: var(--btn-success-color);
   font-weight: 500;
@@ -581,7 +581,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 12px 20px;
+  padding: var(--space-3) var(--space-5);
   border-top: 1px solid var(--theme-border);
   flex-shrink: 0;
   background: var(--theme-bg-card);
@@ -591,7 +591,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 20px;
+  padding: 10px var(--space-5);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;

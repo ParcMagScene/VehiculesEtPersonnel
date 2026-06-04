@@ -43,14 +43,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   color: var(--text-inverse);
 }
 
 .pcm-header-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .pcm-header-emoji {
@@ -87,21 +87,21 @@
 
 /* ── Body ── */
 .pcm-body {
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   overflow-y: auto;
   flex: 1;
 }
 
 /* ── Calendar ── */
 .pcm-calendar {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .pcm-cal-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 .pcm-cal-month {
@@ -141,7 +141,7 @@
   font-size: var(--font-xs);
   font-weight: 600;
   color: var(--text-subtle);
-  padding: 4px 0;
+  padding: var(--space-1) 0;
   text-transform: uppercase;
 }
 
@@ -239,7 +239,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-top: 12px;
+  padding-top: var(--space-3);
   border-top: 1px solid var(--border-default);
 }
 
@@ -265,7 +265,7 @@
 }
 
 .pcm-period-toggle button {
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   border: none;
   background: none;
   font-size: var(--font-xs);
@@ -296,7 +296,7 @@
 .pcm-reason {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .pcm-reason label {
@@ -306,7 +306,7 @@
 }
 
 .pcm-reason input {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -322,8 +322,8 @@
 .pcm-conflicts {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   background: var(--feedback-warning-bg);
   border: 1px solid var(--feedback-warning-border);
   border-radius: var(--radius-md);
@@ -335,8 +335,8 @@
 .pcm-approval-notice {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   background: var(--feedback-info-bg);
   border: 1px solid var(--feedback-info-border);
   border-radius: var(--radius-md);
@@ -348,8 +348,8 @@
 .pcm-error {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   background: var(--feedback-error-bg);
   border: 1px solid var(--feedback-error-border);
   border-radius: var(--radius-md);
@@ -361,9 +361,9 @@
 .pcm-success-banner {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 14px;
-  margin: 0 20px 12px;
+  margin: 0 var(--space-5) var(--space-3);
   background: var(--feedback-success-bg);
   border: 1px solid var(--feedback-success-border);
   border-radius: var(--radius-md);
@@ -378,13 +378,13 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 20px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
   border-top: 1px solid var(--border-default);
 }
 
 .pcm-btn-cancel {
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border: 1px solid var(--border-default);
   background: var(--surface-primary);
   border-radius: var(--radius-md);
@@ -404,7 +404,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 18px;
+  padding: var(--space-2) 18px;
   border: none;
   border-radius: var(--radius-md);
   font-size: var(--font-base);
@@ -445,7 +445,7 @@
 .pcm-time-inputs {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .pcm-time-input {
@@ -473,7 +473,7 @@
 
 /* Pro / Perso toggle */
 .pcm-rdv-category {
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .pcm-category-toggle {

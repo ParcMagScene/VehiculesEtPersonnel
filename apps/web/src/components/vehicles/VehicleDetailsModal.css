@@ -20,7 +20,7 @@
 .vehicle-details-modal .header-content {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex: 1;
 }
 
@@ -51,7 +51,7 @@
 .vehicle-details-modal .vehicle-type-badge {
   display: inline-block;
   background: var(--glass-light);
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-lg);
   font-size: var(--font-base);
   font-weight: 500;
@@ -61,7 +61,7 @@
   display: inline-block;
   background: var(--close-btn-bg);
   border: 1px solid var(--close-btn-hover-bg);
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-lg);
   font-size: var(--font-base);
   font-weight: 600;
@@ -71,8 +71,8 @@
 
 .vehicle-details-modal .header-badges {
   display: flex;
-  gap: 8px;
-  margin-top: 4px;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
   flex-wrap: wrap;
 }
 
@@ -82,7 +82,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--space-5);
-  padding-right: 20px;
+  padding-right: var(--space-5);
   flex: 1;
   scroll-padding: 12px;
 }
@@ -94,7 +94,7 @@
 .vehicle-details-modal .modal-body::-webkit-scrollbar-track {
   background: var(--theme-border-light);
   border-radius: var(--radius-xs);
-  margin: 8px 0;
+  margin: var(--space-2) 0;
 }
 
 .vehicle-details-modal .modal-body::-webkit-scrollbar-thumb {
@@ -108,16 +108,16 @@
 
 /* Section Informations */
 .vehicle-details-modal .info-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 /* .vehicle-details-modal .info-section h3 + svg → .shared-section-title (theme.css) */
 
 .vehicle-details-modal .info-container {
   display: flex;
-  gap: 20px;
+  gap: var(--space-5);
   background: var(--theme-bg-card);
-  padding: 14px 16px;
+  padding: 14px var(--space-4);
   border-radius: var(--radius-md-lg);
   border: 1px solid var(--theme-border);
   align-items: flex-start;
@@ -141,7 +141,7 @@
 .vehicle-details-modal .info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 16px;
+  gap: 10px var(--space-4);
   flex: 1;
 }
 
@@ -180,7 +180,7 @@
   border: 1px solid var(--theme-info-border);
   border-radius: var(--radius-md-lg);
   padding: 14px 18px;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .vehicle-details-modal .info-item-km .info-label {
@@ -208,7 +208,7 @@
 .vehicle-details-modal .info-km-meta .km-meta-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 12.5px;
   color: var(--theme-text-subtle);
   font-weight: 500;
@@ -217,15 +217,15 @@
 /* Tags maintenance */
 .vehicle-details-modal .maintenance-tags {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
   flex-wrap: wrap;
 }
 
 .vehicle-details-modal .maintenance-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   padding: 3px 10px;
   border-radius: var(--radius-2xl);
   font-size: var(--font-sm);
@@ -247,8 +247,8 @@
 /* Boutons d'action */
 .vehicle-details-modal .action-buttons {
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
   flex-wrap: wrap;
 }
 
@@ -258,8 +258,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px 20px;
+  gap: var(--space-2);
+  padding: 14px var(--space-5);
   border: none;
   border-radius: var(--btn-radius);
   font-size: 15px;
@@ -310,18 +310,18 @@
 
 /* Section Historique */
 .vehicle-details-modal .history-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .vehicle-details-modal .history-section h3 {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 12px 0;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3) 0;
   font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-primary-dark);
-  padding-bottom: 8px;
+  padding-bottom: var(--space-2);
   border-bottom: 2px solid var(--theme-bg-indigo-light);
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -334,14 +334,14 @@
 .vehicle-details-modal .maintenance-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .vehicle-details-modal .maintenance-item {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
   border-radius: var(--radius-md-lg);
-  padding: 16px;
+  padding: var(--space-4);
   transition: all 0.2s;
   border-left: 4px solid var(--theme-border-medium);
   box-shadow: 0 1px 3px var(--shadow-xs);
@@ -411,15 +411,15 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 8px;
-  gap: 12px;
+  margin-bottom: var(--space-2);
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
 .vehicle-details-modal .maintenance-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 
@@ -433,7 +433,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   border-radius: var(--radius-2xl);
   font-size: var(--font-xs);
   font-weight: 700;
@@ -483,7 +483,7 @@
 }
 
 .vehicle-details-modal .maintenance-description {
-  margin-top: 8px;
+  margin-top: var(--space-2);
   font-size: var(--font-base);
   color: var(--theme-text-subtle);
   line-height: 1.5;
@@ -510,7 +510,7 @@
 
 .vehicle-details-modal .empty-history {
   text-align: center;
-  padding: 40px 20px;
+  padding: var(--space-10) var(--space-5);
   color: var(--theme-text-muted);
   background: var(--theme-bg-secondary);
   border-radius: var(--radius-md);
@@ -524,18 +524,18 @@
 
 /* Section Deadlines */
 .vehicle-details-modal .deadlines-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .vehicle-details-modal .deadlines-section h3 {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 12px 0;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3) 0;
   font-size: var(--font-base);
   font-weight: 700;
   color: var(--theme-primary-dark);
-  padding-bottom: 8px;
+  padding-bottom: var(--space-2);
   border-bottom: 2px solid var(--theme-bg-indigo-light);
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -548,14 +548,14 @@
 .vehicle-details-modal .deadlines-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .vehicle-details-modal .deadline-item {
   background: var(--theme-bg-card);
   border: 1px solid var(--theme-border-medium);
   border-radius: var(--radius-md-lg);
-  padding: 16px;
+  padding: var(--space-4);
   transition: all 0.2s;
   box-shadow: 0 1px 3px var(--shadow-xs);
 }
@@ -569,8 +569,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  gap: 12px;
+  margin-bottom: var(--space-3);
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -582,7 +582,7 @@
 
 .vehicle-details-modal .deadline-badge {
   display: inline-block;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-2xl);
   font-size: var(--font-xs);
   font-weight: 700;
@@ -625,14 +625,14 @@
 .vehicle-details-modal .deadline-dates {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .vehicle-details-modal .deadline-date-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .vehicle-details-modal .deadline-date-label {
@@ -650,9 +650,9 @@
 .vehicle-details-modal .ct-periodicity-info {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin-top: 8px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: 10px var(--space-3);
   background: linear-gradient(135deg, var(--theme-info-bg) 0%, var(--theme-info-bg) 100%);
   border: 1px solid var(--theme-info-border);
   border-radius: var(--radius-md);
@@ -677,14 +677,14 @@
 
 .vehicle-details-modal .empty-deadlines {
   text-align: center;
-  padding: 32px 20px;
+  padding: var(--space-8) var(--space-5);
   background: var(--theme-bg-secondary);
   border-radius: var(--radius-md);
   border: 1px dashed var(--theme-border-muted);
 }
 
 .vehicle-details-modal .empty-deadlines p {
-  margin: 0 0 16px 0;
+  margin: 0 0 var(--space-4) 0;
   font-size: 15px;
   color: var(--theme-text-gray);
 }
@@ -692,7 +692,7 @@
 .vehicle-details-modal .add-control-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   height: var(--btn-height);
   padding: var(--btn-padding);
   background: var(--btn-primary-bg);
@@ -719,7 +719,7 @@
   }
 
   .vehicle-details-modal .modal-header {
-    padding: 16px;
+    padding: var(--space-4);
   }
 
   .vehicle-details-modal .header-info h2 {
@@ -727,7 +727,7 @@
   }
 
   .vehicle-details-modal .modal-body {
-    padding: 16px;
+    padding: var(--space-4);
   }
 
   .vehicle-details-modal .info-container {

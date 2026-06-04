@@ -31,7 +31,7 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .pv-doc-item {
@@ -60,7 +60,7 @@
 .pv-doc-name {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-primary, #2563eb);
@@ -82,7 +82,7 @@
 .pv-doc-folder {
   flex: 0 0 auto;
   color: var(--color-text-muted, #64748b);
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--radius-sm, 4px);
 }
 

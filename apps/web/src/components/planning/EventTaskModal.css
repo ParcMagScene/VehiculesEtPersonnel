@@ -54,7 +54,7 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
@@ -75,7 +75,7 @@
 .etm-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   font-size: 0.78rem;
   padding: 3px 10px;
   border-radius: var(--radius-2xl);
@@ -199,7 +199,7 @@
 
 .etm-field input,
 .etm-field select {
-  padding: 5px 8px;
+  padding: 5px var(--space-2);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-default);
   /* Évite le rendu translucide de la liste native dans le modal */
@@ -269,7 +269,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 16px;
+  padding: 7px var(--space-4);
   border-radius: var(--radius-md);
   border: none;
   font-size: 0.82rem;

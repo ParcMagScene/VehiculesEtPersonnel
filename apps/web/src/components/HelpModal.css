@@ -58,12 +58,12 @@
   color: var(--theme-text-inverse);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .help-header-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -71,7 +71,7 @@
   background: var(--close-btn-bg);
   border: 1px solid var(--close-btn-border);
   color: var(--theme-text-inverse);
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   border-radius: var(--close-btn-radius);
   cursor: pointer;
   font-size: var(--font-sm);
@@ -88,7 +88,7 @@
 
 .help-header-actions .help-close-btn {
   border: 1px solid var(--close-btn-border);
-  padding: 4px;
+  padding: var(--space-1);
   border-radius: var(--close-btn-radius);
   width: var(--close-btn-size);
   height: var(--close-btn-size);
@@ -111,7 +111,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border: none;
   background: none;
   border-radius: var(--radius-md);
@@ -139,9 +139,9 @@
 .help-search {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 12px 24px;
-  padding: 8px 12px;
+  gap: var(--space-2);
+  margin: var(--space-3) var(--space-6);
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md-lg);
   background: var(--theme-bg-card);
@@ -205,7 +205,7 @@
 
 /* ═══ Sections ═══ */
 .help-section {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
   animation: helpCardIn 0.25s ease both;
 }
 
@@ -249,7 +249,7 @@
   margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding-bottom: 6px;
   border-bottom: 2px solid var(--theme-border-light);
 }
@@ -258,7 +258,7 @@
 .help-card {
   background: var(--theme-bg-page);
   border-radius: var(--radius-md-lg);
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   margin-bottom: 6px;
   border-left: 3px solid var(--theme-border);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -308,15 +308,15 @@
 .help-shortcuts-grid {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
 }
 
 .help-shortcut-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 12px;
+  gap: var(--space-3);
+  padding: 6px var(--space-3);
   border-radius: var(--radius-md);
   transition: background 0.15s;
 }
@@ -340,7 +340,7 @@
 .help-faq {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .faq-item {
@@ -360,7 +360,7 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   border: none;
   background: var(--theme-bg-page);
   cursor: pointer;
@@ -369,7 +369,7 @@
   color: var(--theme-text-primary);
   text-align: left;
   transition: all 0.15s;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .faq-question:hover {
@@ -387,7 +387,7 @@
 }
 
 .faq-answer {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   font-size: 0.82rem;
   color: var(--theme-text-secondary);
   line-height: 1.6;
@@ -413,8 +413,8 @@
   text-align: center;
   font-size: var(--font-xs);
   color: var(--theme-text-muted);
-  padding-top: 16px;
-  margin-top: 20px;
+  padding-top: var(--space-4);
+  margin-top: var(--space-5);
   border-top: 1px solid var(--theme-border-light);
 }
 
@@ -426,13 +426,13 @@
     border-radius: var(--radius-lg);
   }
   .help-body {
-    padding: 16px;
+    padding: var(--space-4);
   }
   .help-tabs {
-    padding: 6px 16px;
+    padding: 6px var(--space-4);
   }
   .help-search {
-    margin: 8px 16px;
+    margin: var(--space-2) var(--space-4);
   }
   .help-shortcut-keys {
     min-width: 80px;

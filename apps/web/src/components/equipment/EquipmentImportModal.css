@@ -11,20 +11,20 @@
 .eq-import-body {
   overflow-y: auto;
   flex: 1;
-  padding: 20px !important;
+  padding: var(--space-5) !important;
 }
 
 /* Erreur */
 .eq-import-error {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   padding: 10px 14px;
   background: var(--theme-danger-bg);
   border: 1px solid var(--btn-danger-hover-bg);
   border-radius: var(--radius-md);
   color: var(--theme-danger-dark);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   font-size: var(--font-base);
 }
 .eq-import-error button {
@@ -39,7 +39,7 @@
 .eq-import-upload {
   display: flex;
   justify-content: center;
-  padding: 20px 0;
+  padding: var(--space-5) 0;
 }
 
 .eq-import-dropzone {
@@ -47,7 +47,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 40px;
+  padding: var(--space-10);
   border: 2px dashed var(--theme-border-muted);
   border-radius: var(--radius-lg);
   background: var(--theme-bg-secondary);
@@ -91,20 +91,20 @@
 /* Résumé / Stats preview */
 .eq-import-summary {
   display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
   flex-wrap: wrap;
 }
 .eq-import-stat {
   flex: 1;
   min-width: 100px;
-  padding: 12px;
+  padding: var(--space-3);
   background: var(--theme-info-bg);
   border-radius: var(--radius-md);
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .eq-import-stat-value {
   font-size: var(--font-2xl);
@@ -120,7 +120,7 @@
 
 /* Section */
 .eq-import-section {
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 .eq-import-section h4 {
   display: flex;
@@ -139,19 +139,19 @@
   overflow-y: auto;
   border: 1px solid var(--theme-border-medium);
   border-radius: var(--radius-md);
-  padding: 8px;
+  padding: var(--space-2);
   background: var(--theme-bg-page);
 }
 
 .eq-tree-family {
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .eq-tree-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px;
+  padding: 6px var(--space-2);
   cursor: pointer;
   border-radius: var(--radius-xs);
   transition: background 0.15s;
@@ -167,7 +167,7 @@
   color: var(--theme-info-text-alt);
 }
 .eq-tree-level-2 {
-  padding-left: 28px;
+  padding-left: var(--space-7);
   color: var(--theme-text-body);
   cursor: default;
 }
@@ -177,20 +177,20 @@
   font-size: var(--font-sm);
   color: var(--theme-text-muted);
   background: var(--theme-border-medium);
-  padding: 1px 8px;
+  padding: 1px var(--space-2);
   border-radius: var(--radius-md-lg);
 }
 
 .eq-tree-categories {
-  padding-left: 48px;
-  padding-bottom: 4px;
+  padding-left: var(--space-12);
+  padding-bottom: var(--space-1);
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .eq-tree-cat-tag {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   background: var(--theme-bg-indigo-light);
   color: var(--theme-info-text-alt);
   border-radius: var(--radius-xs);
@@ -211,7 +211,7 @@
 }
 .eq-import-table th {
   background: var(--theme-bg-tertiary);
-  padding: 8px 10px;
+  padding: var(--space-2) 10px;
   text-align: left;
   font-weight: 600;
   color: var(--theme-text-body);
@@ -239,7 +239,7 @@
   text-align: center;
   color: var(--theme-text-muted);
   font-size: var(--font-base);
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
   font-style: italic;
 }
 
@@ -248,8 +248,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 40px 0;
+  gap: var(--space-3);
+  padding: var(--space-10) 0;
 }
 .eq-import-progress h4 {
   margin: 0;
@@ -266,7 +266,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
   padding: 30px 0;
 }
 .eq-import-success-icon {
@@ -280,7 +280,7 @@
 .eq-import-result-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: center;
   width: 100%;
   max-width: 600px;
@@ -289,12 +289,12 @@
   flex: 1;
   min-width: 100px;
   text-align: center;
-  padding: 12px;
+  padding: var(--space-3);
   background: var(--theme-success-bg);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .eq-import-result-stat span:last-child {
   font-size: var(--font-sm);

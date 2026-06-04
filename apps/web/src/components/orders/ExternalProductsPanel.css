@@ -269,7 +269,7 @@
 
 .eshop-star {
   color: var(--theme-warning);
-  margin-left: 4px;
+  margin-left: var(--space-1);
   vertical-align: middle;
 }
 

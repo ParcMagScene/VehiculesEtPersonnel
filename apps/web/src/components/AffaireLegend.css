@@ -3,11 +3,11 @@
 .affaire-legend-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   background: none;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-sm);
-  padding: 4px 10px;
+  padding: var(--space-1) 10px;
   font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   cursor: help;
@@ -27,7 +27,7 @@
   flex-direction: column;
   gap: 6px;
   min-width: 160px;
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .affaire-legend-title {
@@ -42,7 +42,7 @@
 .affaire-legend-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: var(--font-sm);
   line-height: 1.2;
 }

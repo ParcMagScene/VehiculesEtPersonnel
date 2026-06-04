@@ -248,7 +248,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   border-left: 4px solid;
   background: var(--theme-bg-darker);
 }
@@ -263,14 +263,14 @@
   font-weight: 600;
   color: var(--theme-warning);
   background: var(--theme-warning) 20;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-md-lg);
 }
 
 .depot-tooltip-codes {
   display: flex;
-  gap: 4px;
-  padding: 6px 12px;
+  gap: var(--space-1);
+  padding: 6px var(--space-3);
   flex-wrap: wrap;
   border-bottom: 1px solid var(--theme-text-dark);
 }
@@ -285,22 +285,22 @@
 }
 
 .depot-tooltip-loading {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   font-style: italic;
 }
 
 .depot-tooltip-items {
-  padding: 4px 0;
+  padding: var(--space-1) 0;
   max-height: 200px;
   overflow-y: auto;
 }
 
 .depot-tooltip-item {
   display: flex;
-  gap: 8px;
-  padding: 4px 12px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
   font-size: var(--font-sm);
   transition: background 0.1s;
 }
@@ -325,14 +325,14 @@
 }
 
 .depot-tooltip-more {
-  padding: 4px 12px 6px;
+  padding: var(--space-1) var(--space-3) 6px;
   font-size: 0.7rem;
   color: var(--theme-text-secondary);
   font-style: italic;
 }
 
 .depot-tooltip-empty {
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-size: var(--font-sm);
   color: var(--theme-text-subtle);
 }
@@ -348,7 +348,7 @@
 .legend-count.search-count {
   color: var(--theme-warning);
   background: var(--theme-warning) 20;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   border-radius: var(--radius-md);
 }
 
@@ -572,7 +572,7 @@
   .depot-map-header {
     flex-wrap: wrap;
     gap: 6px;
-    padding: 8px 10px;
+    padding: var(--space-2) 10px;
   }
   .depot-map-title {
     font-size: var(--font-base);
@@ -581,7 +581,7 @@
     min-width: 36px;
     min-height: 36px;
     font-size: var(--font-sm);
-    padding: 4px 10px;
+    padding: var(--space-1) 10px;
   }
   .depot-map-search input {
     font-size: var(--font-md); /* prevent iOS zoom on focus */
@@ -597,7 +597,7 @@
   }
   .depot-map-legend {
     padding: 6px 10px;
-    gap: 8px;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
 }

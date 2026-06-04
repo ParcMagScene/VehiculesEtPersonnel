@@ -59,7 +59,7 @@
 .depot-editor-msg {
   font-size: var(--font-sm);
   font-weight: 500;
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radius-xs);
 }
 .depot-editor-msg-success {
@@ -331,8 +331,8 @@
 .dep-ed-palette {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  padding: 4px 0;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
 }
 
 .dep-ed-palette-sm {

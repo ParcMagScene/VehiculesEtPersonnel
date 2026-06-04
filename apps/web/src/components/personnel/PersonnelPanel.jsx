@@ -2834,9 +2834,9 @@ const PlanningTab = ({
       ) : (
         <div className="pp-planning-with-panel">
           <div className="pp-calendar-container">
-            {/* Recherche personnel (alignée avec la colonne) */}
+            {/* Recherche personnel (bandeau intégré pleine largeur) */}
             <div className="pp-planning-search-row">
-              <div className="pp-planning-search-wrap" style={{ width: personColumnWidth }}>
+              <div className="pp-planning-search-wrap">
                 <SearchBar
                   value={planningSearch}
                   onChange={setPlanningSearch}

@@ -1270,18 +1270,19 @@
   border-bottom: 2px solid var(--theme-border-medium);
 }
 
-/* ── Recherche personnel (alignée avec la colonne, style Suivi) ── */
+/* ── Recherche personnel (bandeau pleine largeur, intégré à la toolbar) ── */
 .pp-planning-search-row {
   display: flex;
+  align-items: center;
   flex-shrink: 0;
-  background: var(--theme-bg-card);
+  background: var(--theme-bg-secondary, var(--theme-bg-card));
   border-bottom: 1px solid var(--theme-border-medium);
+  padding: 6px 10px;
 }
 .pp-planning-search-wrap {
-  flex-shrink: 0;
-  padding: 8px 10px;
-  border-right: 2px solid var(--theme-border-medium);
-  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 360px;
 }
 .pp-planning-search-wrap > * {
   width: 100%;

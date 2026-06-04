@@ -2804,6 +2804,17 @@ const PlanningTab = ({
           <Star size={14} fill={sortByFavorites ? 'currentColor' : 'none'} />
           Favoris
         </Button>
+        {onPersonCreate && (
+          <Button
+            variant="primary"
+            className="pp-planning-add-btn"
+            onClick={onPersonCreate}
+            title="Ajouter une personne (modification/suppression : clic droit sur la ligne)"
+          >
+            <Plus size={14} />
+            Nouveau
+          </Button>
+        )}
       </div>
 
       {googleBanner}

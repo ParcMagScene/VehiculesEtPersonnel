@@ -1227,6 +1227,16 @@
   color: var(--theme-warning-dark);
 }
 
+.pp-planning-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  font-size: var(--font-sm);
+  white-space: nowrap;
+  margin-left: 4px;
+}
+
 /* ── Favorite star on person cells ── */
 .pp-fav-star {
   background: none;

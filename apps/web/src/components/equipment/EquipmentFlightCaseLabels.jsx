@@ -180,9 +180,9 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //   • Zone CLIENT       : bande haute, world_x ∈ [142.7 ; 177.7] (35 mm)
   //   • Zone DESIGNATION  : grande zone, world_x ∈ [ 27.7 ; 142.7] (115 mm)
   //   • Centre zone CLIENT       ≈ (160, -98)
-  //   • Centre zone DESIGNATION  ≈ ( 85, -98)
+  //   • Centre zone DESIGNATION  ≈ ( 85, -98) — réservé (le contenu de cette
+  //     zone est désormais empilé sous le QR, pas centré).
   const ZONE_CLIENT_CENTER = { x: 157.7, y: -98 };
-  const ZONE_DESIGN_CENTER = { x: 85.2, y: -98 };
 
   // 2) Libellé « CLIENT » — posé à partir du coin haut-gauche EXACT du
   //    gabarit (ancre placeholder), puis ajusté :
@@ -245,32 +245,44 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   );
 
   // 5) Infos matériel AU CENTRE de la zone DESIGNATION.
-  //    Format : « Marque: <BRAND>, <DESIGNATION>, Qté: <QTY> »
-  //    (sans label « Désignation » qui ferait doublon avec le titre de zone).
-  //    Mode CUT (ligne, stroke noir, fill none).
-  const designParts = [];
+  // 5) Infos matériel : 3 lignes empilées, alignées à GAUCHE en paysage.
+  //    Format :
+  //       ligne 1 : <BRAND>             (sans label)
+  //       ligne 2 : Réf : <REFERENCE>
+  //       ligne 3 : Qté : <QUANTITY>
+  //    Police 14 (double du précédent 7). Placées à droite du QR dans la
+  //    zone DESIGNATION : world_y commun = -149 (= bord droit QR + 5 mm de
+  //    marge). Empilage « vers le bas en paysage » = world_x décroissant
+  //    avec gap de 16 mm. `topAlign` cale le HAUT des caps de la première
+  //    ligne sur le HAUT du QR (world_x = 139).
   const brand = cleanText(fields.brand);
-  const design = cleanText(fields.designation);
+  const reference = cleanText(fields.reference);
   const qty = cleanText(fields.quantity);
-  if (brand) designParts.push(`Marque: ${brand}`);
-  if (design) designParts.push(design);
-  if (qty) designParts.push(`Qté: ${qty}`);
-  if (designParts.length > 0) {
+  const infoLines = [];
+  if (brand) infoLines.push(brand);
+  if (reference) infoLines.push(`Réf : ${reference}`);
+  if (qty) infoLines.push(`Qté : ${qty}`);
+  const INFO_BASE_X = 139; // même world_x que le HAUT paysage du QR
+  const INFO_BASE_Y = -149; // world_y commun (bord droit QR + 5 mm)
+  const INFO_GAP = 16; // mm en paysage entre deux lignes
+  const INFO_FONT_SIZE = 14;
+  infoLines.forEach((line, i) => {
     svg.appendChild(
       createPlateText(doc, {
-        x: ZONE_DESIGN_CENTER.x,
-        y: ZONE_DESIGN_CENTER.y,
-        content: designParts.join(', '),
-        fontSize: 7,
-        fontWeight: 500,
+        x: INFO_BASE_X - i * INFO_GAP,
+        y: INFO_BASE_Y,
+        content: line,
+        fontSize: INFO_FONT_SIZE,
+        fontWeight: 600,
         fontFamily: FONT_FAMILY,
         fill: 'none',
         stroke: '#000000',
         strokeWidth: 0.1,
-        textAnchor: 'middle',
+        textAnchor: 'start',
+        topAlign: true,
       }),
     );
-  }
+  });
 
   // ─── Repère paysage (utilisation lecteur) ─────────────────────────────────
   // Le rect-cadre 210×150 du gabarit est centré en world (102.72, -98).
@@ -284,22 +296,22 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //   « GAUCHE » paysage = world_y faible (≈ -200, côté Désignation)
   //   « DROITE » paysage = world_y élevé (≈ 0, côté logo MAG SCENE)
 
-  // 4) QR « en haut à gauche » paysage  → world_x élevé, world_y faible.
-  //    Marges : 4 mm depuis le bord intérieur du cadre, taille 40 mm.
+  // 4) QR placé dans la zone DESIGNATION, coin HAUT-GAUCHE paysage.
+  //    Zone DESIGNATION (path SVG) : world_x ∈ [32 ; 144], world_y ∈ [-199 ; -1].
+  //    Coin haut-gauche paysage de la zone = (world_x=144, world_y=-199).
+  //    Avec marge 5 mm et QR 40×40 mm : le QR en world va de
+  //    (A, B) à (A+40, B+40) où A+40 = 144-5 = 139 et B = -199+5 = -194.
+  //    Donc A = 99, B = -194.
+  //    ATTENTION : attributs SVG x/y du <image> = world_x/world_y direct.
   if (qrDataUrl) {
     const QR = 40;
-    const margin = 4;
-    const X_TOP = 177.7; // bord intérieur droit du cadre en world
-    const Y_LEFT = -203.0; // bord intérieur haut du cadre en world (paysage : gauche)
-    // Coin haut-gauche paysage = (X_TOP - margin, Y_LEFT + margin) ; le QR
-    // est posé avec son ANGLE haut-droit (en world) sur ce point.
-    const qrX = Y_LEFT + margin; // coin gauche world_y
-    const qrY = X_TOP - margin - QR; // coin haut world_x (on descend de QR)
+    const qrSvgX = 99; // world_x du coin haut-gauche SVG = BAS paysage du QR
+    const qrSvgY = -194; // world_y du coin haut-gauche SVG = GAUCHE paysage du QR
     const qrImg = doc.createElementNS(SVG_NS, 'image');
     qrImg.setAttributeNS(XLINK_NS, 'xlink:href', qrDataUrl);
     qrImg.setAttribute('href', qrDataUrl);
-    qrImg.setAttribute('x', String(qrX));
-    qrImg.setAttribute('y', String(qrY));
+    qrImg.setAttribute('x', String(qrSvgX));
+    qrImg.setAttribute('y', String(qrSvgY));
     qrImg.setAttribute('width', String(QR));
     qrImg.setAttribute('height', String(QR));
     qrImg.setAttribute('preserveAspectRatio', 'none');
@@ -319,7 +331,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   // Offsets d'ajustement fin (paysage) : +6 mm « vers le haut » (= world_x +6)
   // et -12 mm « vers la gauche » (= world_y -12) par rapport à la marge.
   const testWorldX = X_BOT + tMargin + 6; // coin haut-gauche en SVG = world_x
-  const testWorldY = Y_RIGHT - tMargin - TEST - 12; // coin haut-gauche en SVG = world_y
+  const testWorldY = Y_RIGHT - tMargin - TEST - 11; // coin haut-gauche en SVG = world_y
   const testRect = doc.createElementNS(SVG_NS, 'rect');
   testRect.setAttribute('x', String(testWorldX));
   testRect.setAttribute('y', String(testWorldY));
@@ -374,7 +386,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //    (rotation 90° CCW PURE) qui produit le même rendu visuel mais sans
   //    mirroring du PNG.
   if (logoDataUrl) {
-    const LOGO_SCALE = 0.037345; // ~30 mm de large (30 / 803.31897)
+    const LOGO_SCALE = 0.043592; // ~35 mm de large (35 / 803.31897)
     const LOGO_CX = 159.520294;
     const LOGO_CY = -14.578194;
     const m = `matrix(0,${LOGO_SCALE},${-LOGO_SCALE},0,${LOGO_CX},${LOGO_CY})`;

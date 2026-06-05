@@ -62,15 +62,6 @@ const TPL = { a: -0.000168, b: 0.961539, c: 0.961539, d: 0.000168 };
 const tplMatrix = (x, y) =>
   `matrix(${TPL.a},${TPL.b},${TPL.c},${TPL.d},${x.toFixed(4)},${y.toFixed(4)})`;
 
-// Direction « ligne suivante » dans le repère world : ce sont les coefficients
-// (c, d) du gabarit appliqués à un déplacement local +y → ≈ (+0.96, 0)
-// = vers world_x croissant (donc en paysage : la pile va vers le HAUT,
-// dans le sens de Client).
-const LINE_DIR = { dx: TPL.c, dy: TPL.d };
-
-// Gap inter-lignes (mm) appliqué dans la direction LINE_DIR.
-const FIELD_LINE_GAP = 8;
-
 // Police par défaut des champs CUT (Marque/Référence/Désignation/Quantité).
 const FONT_FAMILY = "'Liberation Sans','DejaVu Sans',Arial,Helvetica,sans-serif";
 // Police imposée pour les libellés Client & Désignation (fallback inclus).
@@ -88,7 +79,7 @@ const XLINK_NS = 'http://www.w3.org/1999/xlink';
  */
 function createPlateText(
   doc,
-  { x, y, content, fontSize, fontFamily, fill, stroke, strokeWidth, fontWeight },
+  { x, y, content, fontSize, fontFamily, fill, stroke, strokeWidth, fontWeight, textAnchor },
 ) {
   const g = doc.createElementNS(SVG_NS, 'g');
   g.setAttribute('transform', tplMatrix(x, y));
@@ -109,6 +100,7 @@ function createPlateText(
   } else {
     t.setAttribute('stroke', 'none');
   }
+  if (textAnchor) t.setAttribute('text-anchor', textAnchor);
   t.textContent = content;
   g.appendChild(t);
   return g;
@@ -157,13 +149,28 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     }
   }
 
-  // 2) Libellé « Client : … » à l'ancre EXACTE du placeholder, FILL rouge,
-  //    police Astronomus (imposée par le client).
+  // ─── Géométrie des zones (déduite des ancres EXACTES du gabarit) ──────────
+  // Le rect-cadre 210×150 du gabarit a son intérieur en :
+  //   world_x ∈ [27.7 ; 177.7]   world_y ∈ [-203.0 ; 7.0]
+  // Les 2 placeholders « Client » et « DEsignation » sont posés dans le coin
+  // haut-gauche (en paysage) de leur zone respective :
+  //   ANCHOR_CLIENT       (172.735, -178.04) → coin haut-gauche zone CLIENT
+  //   ANCHOR_DESIGNATION  (142.735, -179.0)  → coin haut-gauche zone DESIGNATION
+  // Donc en paysage (le lecteur incline la tête 90° à droite) :
+  //   • Zone CLIENT       : bande haute, world_x ∈ [142.7 ; 177.7] (35 mm)
+  //   • Zone DESIGNATION  : grande zone, world_x ∈ [ 27.7 ; 142.7] (115 mm)
+  //   • Centre zone CLIENT       ≈ (160, -98)
+  //   • Centre zone DESIGNATION  ≈ ( 85, -98)
+  const ZONE_CLIENT_CENTER = { x: 157.7, y: -98 };
+  const ZONE_DESIGN_CENTER = { x: 85.2, y: -98 };
+
+  // 2) Libellé « CLIENT » au coin EXACT du gabarit (ancre placeholder),
+  //    sans « : », sans valeur. FILL rouge, police Astronomus.
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_CLIENT.x,
       y: ANCHOR_CLIENT.y,
-      content: `Client : ${cleanText(fields.client)}`,
+      content: 'CLIENT',
       fontSize: 6,
       fontWeight: 700,
       fontFamily: FONT_FAMILY_ASTRO,
@@ -171,45 +178,65 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     }),
   );
 
-  // 3) 4 lignes (Marque / Référence / Désignation / Quantité) empilées depuis
-  //    l'ancre EXACTE de « DEsignation » (142.735, -178.99). La ligne
-  //    « Désignation » utilise la police Astronomus et le FILL rouge (comme
-  //    dans le gabarit) ; les 3 autres sont en mode CUT (stroke noir, fill
-  //    none) avec la police standard.
-  const fieldRows = [
-    {
-      content: `Marque : ${cleanText(fields.brand)}`,
-      mode: 'cut',
-    },
-    {
-      content: `Référence : ${cleanText(fields.reference)}`,
-      mode: 'cut',
-    },
-    {
-      content: `Désignation : ${cleanText(fields.designation)}`,
-      mode: 'fill-astro',
-    },
-    {
-      content: `Quantité : ${cleanText(fields.quantity)}`,
-      mode: 'cut',
-    },
-  ];
-  for (let i = 0; i < fieldRows.length; i++) {
-    const row = fieldRows[i];
-    const wx = ANCHOR_DESIGNATION.x + i * FIELD_LINE_GAP * LINE_DIR.dx;
-    const wy = ANCHOR_DESIGNATION.y + i * FIELD_LINE_GAP * LINE_DIR.dy;
-    const isDesignation = row.mode === 'fill-astro';
+  // 3) Valeur du client (nom saisi) AU CENTRE de la zone CLIENT.
+  //    Mode CUT (ligne, stroke noir).
+  const clientValue = cleanText(fields.client);
+  if (clientValue) {
     svg.appendChild(
       createPlateText(doc, {
-        x: wx,
-        y: wy,
-        content: row.content,
-        fontSize: isDesignation ? 6 : 5,
-        fontWeight: isDesignation ? 700 : 500,
-        fontFamily: isDesignation ? FONT_FAMILY_ASTRO : FONT_FAMILY,
-        fill: isDesignation ? '#FF0000' : 'none',
-        stroke: isDesignation ? null : '#000000',
-        strokeWidth: isDesignation ? null : 0.08,
+        x: ZONE_CLIENT_CENTER.x,
+        y: ZONE_CLIENT_CENTER.y,
+        content: clientValue,
+        fontSize: 7,
+        fontWeight: 600,
+        fontFamily: FONT_FAMILY,
+        fill: 'none',
+        stroke: '#000000',
+        strokeWidth: 0.1,
+        textAnchor: 'middle',
+      }),
+    );
+  }
+
+  // 4) Libellé « DESIGNATION » au coin EXACT du gabarit (ancre placeholder),
+  //    sans « : », sans valeur, en MAJUSCULES sans accent. FILL rouge,
+  //    police Astronomus.
+  svg.appendChild(
+    createPlateText(doc, {
+      x: ANCHOR_DESIGNATION.x,
+      y: ANCHOR_DESIGNATION.y,
+      content: 'DESIGNATION',
+      fontSize: 6,
+      fontWeight: 700,
+      fontFamily: FONT_FAMILY_ASTRO,
+      fill: '#FF0000',
+    }),
+  );
+
+  // 5) Infos matériel AU CENTRE de la zone DESIGNATION.
+  //    Format : « Marque: <BRAND>, <DESIGNATION>, Qté: <QTY> »
+  //    (sans label « Désignation » qui ferait doublon avec le titre de zone).
+  //    Mode CUT (ligne, stroke noir, fill none).
+  const designParts = [];
+  const brand = cleanText(fields.brand);
+  const design = cleanText(fields.designation);
+  const qty = cleanText(fields.quantity);
+  if (brand) designParts.push(`Marque: ${brand}`);
+  if (design) designParts.push(design);
+  if (qty) designParts.push(`Qté: ${qty}`);
+  if (designParts.length > 0) {
+    svg.appendChild(
+      createPlateText(doc, {
+        x: ZONE_DESIGN_CENTER.x,
+        y: ZONE_DESIGN_CENTER.y,
+        content: designParts.join(', '),
+        fontSize: 7,
+        fontWeight: 500,
+        fontFamily: FONT_FAMILY,
+        fill: 'none',
+        stroke: '#000000',
+        strokeWidth: 0.1,
+        textAnchor: 'middle',
       }),
     );
   }
@@ -301,22 +328,18 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     svg.appendChild(cross);
   }
 
-  // 6) Logo MAG SCENE — réinjection AGRANDIE et non-miroitée.
-  //    Le bitmap original (803×666 px) était posé avec matrice det=0 (flip).
-  //    On le remet à l'emplacement d'origine (~ centre du « côté droit »
-  //    paysage = world (159, -14)) mais avec rotation 90° CCW PURE et un
-  //    scale plus grand pour que le logo soit lisible.
+  // 6) Logo MAG SCENE — taille et position EXACTES du gabarit.
+  //    Bitmap original 803×666 px posé avec scale 0.032661 → 26.24 mm de large.
+  //    Le gabarit utilisait matrix(0, +scale, +scale, 0, CX, CY) avec un PNG
+  //    pré-flippé. Notre PNG (Logos/Logo_MAGSCENE_Noir_Transp.png) n'est PAS
+  //    pré-flippé : on utilise donc matrix(0, +scale, -scale, 0, CX, CY)
+  //    (rotation 90° CCW PURE) qui produit le même rendu visuel mais sans
+  //    mirroring du PNG.
   if (logoDataUrl) {
-    const LOGO_W = 70; // mm, largeur visible en paysage
-    const ratio = 666.497314 / 803.31897; // ≈ 0.829
-    const LOGO_H = LOGO_W * ratio; // ≈ 58 mm
-    // Position du centre du logo en world (haut-droite paysage,
-    // au-dessus du pied de page) — calé sur l'ancre originale du gabarit.
+    const LOGO_SCALE = 0.032661; // EXACTEMENT comme dans le gabarit
     const LOGO_CX = 159.520294;
     const LOGO_CY = -14.578194;
-    const scale = LOGO_W / 803.31897;
-    // matrix(0, scale, -scale, 0, CX, CY)  → rotation CCW pure + scale
-    const m = `matrix(0,${scale},${-scale},0,${LOGO_CX},${LOGO_CY})`;
+    const m = `matrix(0,${LOGO_SCALE},${-LOGO_SCALE},0,${LOGO_CX},${LOGO_CY})`;
     const logoG = doc.createElementNS(SVG_NS, 'g');
     logoG.setAttribute('transform', m);
     const logoImg = doc.createElementNS(SVG_NS, 'image');
@@ -329,8 +352,6 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     logoImg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     logoG.appendChild(logoImg);
     svg.appendChild(logoG);
-    // marquer LOGO_H comme utilisé (réservé à un calcul futur de marge)
-    void LOGO_H;
   }
 
   return new XMLSerializer().serializeToString(doc);

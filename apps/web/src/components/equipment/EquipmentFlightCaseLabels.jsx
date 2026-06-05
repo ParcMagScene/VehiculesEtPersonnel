@@ -40,19 +40,32 @@ import TEMPLATE_SVG from './templates/PlaquesIDVierges.svg?raw';
 // affiche la liste des unités de cette référence et l'utilisateur choisit.
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Ancres extraites du gabarit (matrice de translation des 2 textes gravés).
+// ─── Ancres EXACTES du gabarit (NE PAS BOUGER) ─────────────────────────────
+// Position des deux libellés gravés « Client » et « DEsignation » dans le
+// gabarit officiel. Source : matrices `transform` des paths 0 et 1.
 const ANCHOR_CLIENT = { x: 172.735138, y: -178.038361 };
 const ANCHOR_DESIGNATION = { x: 142.735275, y: -178.992889 };
 
-// Matrice de rotation utilisée par les textes gravés du gabarit :
-// matrix(-0.000168, 0.961539, 0.961539, 0.000168, X, Y). On la conserve
-// telle quelle pour nos nouveaux textes afin de coller à la mise en page.
-const TPL_ROT = { a: -0.000168, b: 0.961539, c: 0.961539, d: 0.000168 };
-const matrixAt = (x, y) =>
-  `matrix(${TPL_ROT.a},${TPL_ROT.b},${TPL_ROT.c},${TPL_ROT.d},${x.toFixed(4)},${y.toFixed(4)})`;
+// ─── Matrice texte ──────────────────────────────────────────────────────────
+// Le gabarit utilise matrix(-0.000168, 0.961539, 0.961539, 0.000168, X, Y).
+// Son déterminant est NÉGATIF (≈ -0.92) — c'est une rotation 90° CCW + flip
+// horizontal. Les textes du gabarit sont des <path> pré-tracés en miroir
+// pour ANNULER ce flip ; mais un <text> SVG normal s'afficherait en miroir
+// avec cette matrice. On utilise donc la rotation 90° CCW PURE (det=+1)
+// pour que le texte soit LISIBLE quand on incline la plaque 90° à droite.
+//   matrix(0, 1, -1, 0, X, Y)  ≡  translate(X,Y) rotate(90)
+//   local(1,0) → world(0,+1)   : baseline descend dans la page (= droite-en-paysage)
+//   local(0,1) → world(-1,0)   : « ligne suivante » va vers world_x décroissant
+const TEXT_ROT = { a: 0, b: 1, c: -1, d: 0 };
+const textMatrixAt = (x, y) =>
+  `matrix(${TEXT_ROT.a},${TEXT_ROT.b},${TEXT_ROT.c},${TEXT_ROT.d},${x.toFixed(4)},${y.toFixed(4)})`;
 
-// Décalage entre 2 lignes empilées sous DEsignation (en mm dans le repère
-// LOCAL des glyphes, avant matrice — direction +y locale = world +x).
+// Direction « ligne suivante » dans le repère world : ce sont les coefficients
+// (c, d) de la matrice appliqués à un déplacement local +y.
+// Avec TEXT_ROT (0,1,-1,0) → ΔWorld = (-1, 0) par unité de local-y.
+const LINE_DIR = { dx: TEXT_ROT.c, dy: TEXT_ROT.d };
+
+// Gap inter-lignes (mm) appliqué dans la direction LINE_DIR.
 const FIELD_LINE_GAP = 8;
 
 const FONT_FAMILY = "'Liberation Sans','DejaVu Sans',Arial,Helvetica,sans-serif";
@@ -102,9 +115,10 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     }
   }
 
-  // 2) Libellé « Client : … » à l'ancre du placeholder, FILL rouge (gravé plein).
+  // 2) Libellé « Client : … » à l'ancre EXACTE du placeholder, FILL rouge.
+  //    Matrice rotation 90° CCW PURE (det=+1) → texte lisible (non miroité).
   const clientText = doc.createElementNS(SVG_NS, 'text');
-  clientText.setAttribute('transform', matrixAt(ANCHOR_CLIENT.x, ANCHOR_CLIENT.y));
+  clientText.setAttribute('transform', textMatrixAt(ANCHOR_CLIENT.x, ANCHOR_CLIENT.y));
   clientText.setAttribute('font-family', FONT_FAMILY);
   clientText.setAttribute('font-size', '6');
   clientText.setAttribute('font-weight', '700');
@@ -116,7 +130,8 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   svg.appendChild(clientText);
 
   // 3) 4 lignes (Marque / Référence / Désignation / Quantité) au point
-  //    d'ancrage de DEsignation, empilées dans la direction LOCAL +y = world +x.
+  //    d'ancrage EXACT de DEsignation, empilées dans la direction LINE_DIR
+  //    (world_x décroissant avec la rotation CCW pure).
   //    Mode CUT : stroke noir, fill none.
   const labels = [
     `Marque : ${cleanText(fields.brand)}`,
@@ -125,10 +140,10 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     `Quantité : ${cleanText(fields.quantity)}`,
   ];
   for (let i = 0; i < labels.length; i++) {
-    const wx = ANCHOR_DESIGNATION.x + i * FIELD_LINE_GAP * TPL_ROT.c;
-    const wy = ANCHOR_DESIGNATION.y + i * FIELD_LINE_GAP * TPL_ROT.d;
+    const wx = ANCHOR_DESIGNATION.x + i * FIELD_LINE_GAP * LINE_DIR.dx;
+    const wy = ANCHOR_DESIGNATION.y + i * FIELD_LINE_GAP * LINE_DIR.dy;
     const t = doc.createElementNS(SVG_NS, 'text');
-    t.setAttribute('transform', matrixAt(wx, wy));
+    t.setAttribute('transform', textMatrixAt(wx, wy));
     t.setAttribute('font-family', FONT_FAMILY);
     t.setAttribute('font-size', '5');
     t.setAttribute('font-weight', '500');
@@ -141,82 +156,120 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     svg.appendChild(t);
   }
 
-  // 4) QR code par référence — 35 mm, centré dans la zone libre côté gauche
-  //    en paysage (loin du logo MAG SCENE qui est côté bas-droit du gabarit).
+  // ─── Repère paysage (utilisation lecteur) ─────────────────────────────────
+  // Le rect-cadre 210×150 du gabarit est centré en world (102.72, -98).
+  // Bornes utiles (intérieur du cadre) :
+  //   world_x ∈ [27.7 ; 177.7]   (= longueur 150 mm portrait)
+  //   world_y ∈ [-203.0 ; 7.0]   (= longueur 210 mm portrait)
+  // Quand l'utilisateur incline sa tête 90° à droite (= rotation CCW de la
+  // page), on perçoit :
+  //   « HAUT » paysage  = world_x élevé (côté Client à 172)
+  //   « BAS » paysage   = world_x faible
+  //   « GAUCHE » paysage = world_y faible (≈ -200, côté Désignation)
+  //   « DROITE » paysage = world_y élevé (≈ 0, côté logo MAG SCENE)
+
+  // 4) QR « en haut à gauche » paysage  → world_x élevé, world_y faible.
+  //    Marges : 4 mm depuis le bord intérieur du cadre, taille 40 mm.
   if (qrDataUrl) {
-    const QR = 35;
-    const cx = 80;
-    const cy = -85;
-    const qrG = doc.createElementNS(SVG_NS, 'g');
-    qrG.setAttribute('transform', matrixAt(cx, cy));
-    qrG.setAttribute('style', 'image-rendering:pixelated');
+    const QR = 40;
+    const margin = 4;
+    const X_TOP = 177.7; // bord intérieur droit du cadre en world
+    const Y_LEFT = -203.0; // bord intérieur haut du cadre en world (paysage : gauche)
+    // Coin haut-gauche paysage = (X_TOP - margin, Y_LEFT + margin) ; le QR
+    // est posé avec son ANGLE haut-droit (en world) sur ce point.
+    const qrX = Y_LEFT + margin; // coin gauche world_y
+    const qrY = X_TOP - margin - QR; // coin haut world_x (on descend de QR)
     const qrImg = doc.createElementNS(SVG_NS, 'image');
     qrImg.setAttributeNS(XLINK_NS, 'xlink:href', qrDataUrl);
     qrImg.setAttribute('href', qrDataUrl);
-    qrImg.setAttribute('x', String(-QR / 2));
-    qrImg.setAttribute('y', String(-QR / 2));
+    qrImg.setAttribute('x', String(qrX));
+    qrImg.setAttribute('y', String(qrY));
     qrImg.setAttribute('width', String(QR));
     qrImg.setAttribute('height', String(QR));
     qrImg.setAttribute('preserveAspectRatio', 'none');
-    qrG.appendChild(qrImg);
-    svg.appendChild(qrG);
+    qrImg.setAttribute('style', 'image-rendering:pixelated');
+    svg.appendChild(qrImg);
   }
 
-  // 5) Case « Testé » 20×20 mm — contour CUT (noir), label FILL rouge,
-  //    coche FILL rouge si cochée.
+  // 5) Case « Testé » 20×20 mm « en bas à droite » paysage
+  //    → world_x faible, world_y élevé. Marges 6 mm.
   const TEST = 20;
-  const testG = doc.createElementNS(SVG_NS, 'g');
-  testG.setAttribute('transform', matrixAt(80, -45));
+  const tMargin = 6;
+  const X_BOT = 27.7; // bord intérieur gauche du cadre (paysage : bas)
+  const Y_RIGHT = 7.0; // bord intérieur bas du cadre   (paysage : droite)
+  const testX = Y_RIGHT - tMargin - TEST; // coin gauche world_y
+  const testY = X_BOT + tMargin; // coin haut world_x
   const testRect = doc.createElementNS(SVG_NS, 'rect');
-  testRect.setAttribute('x', String(-TEST / 2));
-  testRect.setAttribute('y', String(-TEST / 2));
+  testRect.setAttribute('x', String(testX));
+  testRect.setAttribute('y', String(testY));
   testRect.setAttribute('width', String(TEST));
   testRect.setAttribute('height', String(TEST));
   testRect.setAttribute('fill', 'none');
   testRect.setAttribute('stroke', '#000000');
   testRect.setAttribute('stroke-width', '0.1');
-  testG.appendChild(testRect);
+  svg.appendChild(testRect);
+  // Label « Testé » lisible en paysage → on utilise la même matrice CCW pure
+  // ancrée au centre-bas de la case (côté « bas » paysage = world_x élevé).
+  const labelAnchorX = testY + TEST + 5; // 5 mm sous la case en paysage
+  const labelAnchorY = testX + TEST / 2; // centré horizontalement (paysage)
   const testLabel = doc.createElementNS(SVG_NS, 'text');
-  testLabel.setAttribute('x', '0');
-  testLabel.setAttribute('y', String(TEST / 2 + 5));
+  testLabel.setAttribute('transform', textMatrixAt(labelAnchorX, labelAnchorY));
   testLabel.setAttribute('font-family', FONT_FAMILY);
   testLabel.setAttribute('font-size', '5');
   testLabel.setAttribute('font-weight', '700');
   testLabel.setAttribute('fill', '#FF0000');
   testLabel.setAttribute('stroke', 'none');
   testLabel.setAttribute('text-anchor', 'middle');
+  testLabel.setAttribute('x', '0');
+  testLabel.setAttribute('y', '0');
   testLabel.textContent = 'Testé';
-  testG.appendChild(testLabel);
+  svg.appendChild(testLabel);
   if (fields.tested) {
+    const cx = testX + TEST / 2;
+    const cy = testY + TEST / 2;
     const halfA = (TEST - 6) / 2;
     const cross = doc.createElementNS(SVG_NS, 'path');
     cross.setAttribute(
       'd',
-      `M ${-halfA} ${-halfA} L ${halfA} ${halfA} M ${halfA} ${-halfA} L ${-halfA} ${halfA}`,
+      `M ${cx - halfA} ${cy - halfA} L ${cx + halfA} ${cy + halfA} M ${cx + halfA} ${cy - halfA} L ${cx - halfA} ${cy + halfA}`,
     );
     cross.setAttribute('stroke', '#FF0000');
     cross.setAttribute('stroke-width', '2.5');
     cross.setAttribute('stroke-linecap', 'round');
     cross.setAttribute('fill', 'none');
-    testG.appendChild(cross);
+    svg.appendChild(cross);
   }
-  svg.appendChild(testG);
 
-  // 6) Logo MAG SCENE — réinjection à la position d'origine (le bitmap base64
-  //    a été strippé du gabarit pour réduire le bundle).
+  // 6) Logo MAG SCENE — réinjection AGRANDIE et non-miroitée.
+  //    Le bitmap original (803×666 px) était posé avec matrice det=0 (flip).
+  //    On le remet à l'emplacement d'origine (~ centre du « côté droit »
+  //    paysage = world (159, -14)) mais avec rotation 90° CCW PURE et un
+  //    scale plus grand pour que le logo soit lisible.
   if (logoDataUrl) {
+    const LOGO_W = 70; // mm, largeur visible en paysage
+    const ratio = 666.497314 / 803.31897; // ≈ 0.829
+    const LOGO_H = LOGO_W * ratio; // ≈ 58 mm
+    // Position du centre du logo en world (haut-droite paysage,
+    // au-dessus du pied de page) — calé sur l'ancre originale du gabarit.
+    const LOGO_CX = 159.520294;
+    const LOGO_CY = -14.578194;
+    const scale = LOGO_W / 803.31897;
+    // matrix(0, scale, -scale, 0, CX, CY)  → rotation CCW pure + scale
+    const m = `matrix(0,${scale},${-scale},0,${LOGO_CX},${LOGO_CY})`;
     const logoG = doc.createElementNS(SVG_NS, 'g');
-    logoG.setAttribute('transform', 'matrix(0,0.032661,0.032661,0,159.520294,-14.578194)');
+    logoG.setAttribute('transform', m);
     const logoImg = doc.createElementNS(SVG_NS, 'image');
     logoImg.setAttributeNS(XLINK_NS, 'xlink:href', logoDataUrl);
     logoImg.setAttribute('href', logoDataUrl);
-    logoImg.setAttribute('x', '-401.659485');
-    logoImg.setAttribute('y', '-333.248657');
+    logoImg.setAttribute('x', String(-803.31897 / 2));
+    logoImg.setAttribute('y', String(-666.497314 / 2));
     logoImg.setAttribute('width', '803.31897');
     logoImg.setAttribute('height', '666.497314');
     logoImg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     logoG.appendChild(logoImg);
     svg.appendChild(logoG);
+    // marquer LOGO_H comme utilisé (réservé à un calcul futur de marge)
+    void LOGO_H;
   }
 
   return new XMLSerializer().serializeToString(doc);

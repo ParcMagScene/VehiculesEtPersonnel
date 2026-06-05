@@ -4,6 +4,8 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { formatDateSimple, safeDate } from '../../utils/formatUtils';
 
+import { APP_BASE_URL } from './equipmentConstants';
+
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
 // Échappement HTML anti-XSS
@@ -14,9 +16,6 @@ const esc = (s) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-
-// URL de base pour les QR codes
-const APP_BASE_URL = window.location.origin;
 
 const SAV_STATUS = {
   open: { label: 'Ouvert', color: STATUS_COLORS.info },

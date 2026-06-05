@@ -16,12 +16,12 @@ import { useMemo, useState } from 'react';
 
 import { Button, SearchBar } from '@/design-system';
 
+import { APP_BASE_URL } from './equipmentConstants';
+
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
 const PAGE_SIZE_MM = 200; // 200×200 mm
 const LABEL_GAP_MM = 2;
-
-const APP_BASE_URL = window.location.origin;
 
 const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 

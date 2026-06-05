@@ -6,9 +6,11 @@ import { useEffect, useRef } from 'react';
 
 import { Button, ModalLayout } from '@/design-system';
 
+const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_URL || 'https://magsav.duckdns.org';
+
 function QRCodeModal({ onClose }) {
   const canvasRef = useRef(null);
-  const mobileUrl = `${window.location.origin}/#/mobile`;
+  const mobileUrl = `${PUBLIC_BASE}/#/mobile`;
 
   useEffect(() => {
     generateQRCode();

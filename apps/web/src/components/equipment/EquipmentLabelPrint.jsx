@@ -7,6 +7,8 @@ import { useRef, useState } from 'react';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader } from '@/design-system';
 
+import { APP_BASE_URL } from './equipmentConstants';
+
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
 const LABEL_FORMATS = [
@@ -18,8 +20,6 @@ const LABEL_FORMATS = [
 ];
 
 const EXPORT_FORMATS = ['SVG', 'PNG', 'JPG'];
-
-const APP_BASE_URL = window.location.origin;
 
 const escSvg = (s) =>
   String(s)

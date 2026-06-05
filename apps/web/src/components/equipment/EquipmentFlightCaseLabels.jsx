@@ -151,7 +151,7 @@ const cleanText = (s) => String(s == null ? '' : s).trim();
 
 /**
  * Construit le SVG d'UNE plaque à partir du gabarit officiel.
- *  fields = { client, brand, reference, designation, quantity, tested }
+ *  fields = { client, brand, reference, quantity }
  *  qrDataUrl = string (PNG dataURL) ou null
  *  logoDataUrl = string (PNG dataURL) ou null (réinjecte le logo strippé)
  */
@@ -252,8 +252,8 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //        RÉFÉRENCE : police 28 (encore x2), sans label « Réf : ».
   //      • QUANTITÉ : en BAS-DROITE paysage, juste à GAUCHE de la case
   //        Testé (= world_y inférieur au coin gauche-paysage de Testé).
-  //        Police 14.
-  //    Toutes les lignes sont en mode CUT (stroke noir, fill none).
+  //        Police 14, descendue de 5 mm en paysage.
+  //    Toutes les lignes en mode REMPLISSAGE (fill noir).
   const brand = cleanText(fields.brand);
   const reference = cleanText(fields.reference);
   const qty = cleanText(fields.quantity);
@@ -272,9 +272,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
         fontSize: 14,
         fontWeight: 600,
         fontFamily: FONT_FAMILY,
-        fill: 'none',
-        stroke: '#000000',
-        strokeWidth: 0.1,
+        fill: '#000000',
         textAnchor: 'start',
         topAlign: true,
       }),
@@ -282,8 +280,10 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   }
   if (reference) {
     // La référence (police 28) est placée SOUS la marque en paysage
-    // (= world_x plus petit). Gap = ascender brand (~14) + petit espace.
-    const REF_X = INFO_TOP_X - 18;
+    // (= world_x plus petit). Descendue de 15 mm de plus (total : ~33 mm
+    // sous le top paysage), ce qui la centre verticalement entre la
+    // marque (en haut) et la quantité (en bas de zone).
+    const REF_X = INFO_TOP_X - 33;
     svg.appendChild(
       createPlateText(doc, {
         x: REF_X,
@@ -292,9 +292,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
         fontSize: 28,
         fontWeight: 700,
         fontFamily: FONT_FAMILY,
-        fill: 'none',
-        stroke: '#000000',
-        strokeWidth: 0.15,
+        fill: '#000000',
         textAnchor: 'start',
         topAlign: true,
       }),
@@ -378,36 +376,23 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   testLabel.textContent = 'Testé';
   testLabelG.appendChild(testLabel);
   svg.appendChild(testLabelG);
-  if (fields.tested) {
-    const cx = testWorldX + TEST / 2;
-    const cy = testWorldY + TEST / 2;
-    const halfA = (TEST - 6) / 2;
-    const cross = doc.createElementNS(SVG_NS, 'path');
-    cross.setAttribute(
-      'd',
-      `M ${cx - halfA} ${cy - halfA} L ${cx + halfA} ${cy + halfA} M ${cx + halfA} ${cy - halfA} L ${cx - halfA} ${cy + halfA}`,
-    );
-    cross.setAttribute('stroke', '#FF0000');
-    cross.setAttribute('stroke-width', '2.5');
-    cross.setAttribute('stroke-linecap', 'round');
-    cross.setAttribute('fill', 'none');
-    svg.appendChild(cross);
-  }
+  // (La case sera cochee physiquement au feutre apres gravure ; pas de
+  // croix superposee, pas de champ `tested` dans les fields.)
 
   // 5bis) Quantité — placée en BAS-DROITE paysage de la zone DESIGNATION,
   //       juste à GAUCHE paysage de la case Testé, format « Quantité : <N> ».
+  //       Descendue de 5 mm en paysage par rapport à sa position précédente
+  //       (= world_x -5 par rapport au top paysage de Testé).
   if (qty) {
     svg.appendChild(
       createPlateText(doc, {
-        x: testWorldX + TEST,
+        x: testWorldX + TEST - 5,
         y: testWorldY - 5,
         content: `Quantité : ${qty}`,
         fontSize: 14,
         fontWeight: 600,
         fontFamily: FONT_FAMILY,
-        fill: 'none',
-        stroke: '#000000',
-        strokeWidth: 0.1,
+        fill: '#000000',
         textAnchor: 'end',
         topAlign: true,
       }),
@@ -503,11 +488,8 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
     return {
       client: '',
       brand: cleanText(first.brand || ''),
-      reference: ref === '(Sans référence)' ? '' : ref,
-      // user a demandé : Désignation = Référence par défaut
-      designation: ref === '(Sans référence)' ? cleanText(first.name || '') : ref,
+      reference: ref === '(Sans référence)' ? cleanText(first.name || '') : ref,
       quantity: '1',
-      tested: false,
     };
   };
 
@@ -779,14 +761,6 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
                         onChange={(e) => setField(ref, 'reference', e.target.value)}
                       />
                     </label>
-                    <label className="efc-field">
-                      <span>Désignation</span>
-                      <input
-                        type="text"
-                        value={fields.designation}
-                        onChange={(e) => setField(ref, 'designation', e.target.value)}
-                      />
-                    </label>
                     <label className="efc-field efc-field-qty">
                       <span>Quantité</span>
                       <input
@@ -794,14 +768,6 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
                         value={fields.quantity}
                         onChange={(e) => setField(ref, 'quantity', e.target.value)}
                       />
-                    </label>
-                    <label className="efc-field efc-field-tested">
-                      <input
-                        type="checkbox"
-                        checked={!!fields.tested}
-                        onChange={(e) => setField(ref, 'tested', e.target.checked)}
-                      />
-                      <span>Cocher « Testé »</span>
                     </label>
                   </div>
                 </div>

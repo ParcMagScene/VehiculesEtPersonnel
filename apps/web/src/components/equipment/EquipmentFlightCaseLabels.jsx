@@ -52,9 +52,12 @@ const ANCHOR_DESIGNATION = { x: 142.735275, y: -178.992889 };
 // pré-tracés en MIROIR pour que la matrice les remette à l'endroit. Pour
 // obtenir EXACTEMENT la même position visuelle qu'un placeholder du gabarit
 // avec un <text> SVG natif, on conserve la matrice du gabarit telle quelle
-// et on enveloppe le texte dans un wrapper qui flippe localement les
-// glyphes (scale(-1,1)) — le flip local est ré-inversé par la matrice
-// → texte LISIBLE et au mm près à la position du placeholder d'origine.
+// et on enveloppe le texte dans un wrapper qui flippe les glyphes
+// VERTICALEMENT (scale(1,-1)) :
+//   • det(M * scale(1,-1)) = +0.92  → glyphes lisibles (non miroités)
+//   • la combinaison équivaut à une rotation 90° CW pure, donc le texte
+//     est lisible quand la plaque est tenue en paysage et il pointe dans
+//     le sens normal de lecture (180° par rapport à la version précédente).
 const TPL = { a: -0.000168, b: 0.961539, c: 0.961539, d: 0.000168 };
 const tplMatrix = (x, y) =>
   `matrix(${TPL.a},${TPL.b},${TPL.c},${TPL.d},${x.toFixed(4)},${y.toFixed(4)})`;
@@ -76,10 +79,12 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
 
 /**
- * Crée un <g> + <text> positionné à (x,y) avec la matrice du gabarit
- * et un scale(-1,1) interne pour que les glyphes restent lisibles malgré
- * le flip de la matrice. Permet de coller pile-poil sur les placeholders
- * « Client » / « DEsignation » du gabarit officiel.
+ * Crée un <g> + <text> positionné à (x,y) avec la matrice EXACTE du
+ * gabarit officiel (= même point d'ancrage et même orientation 90° que
+ * les placeholders Client/DEsignation) et un scale(1,-1) interne qui :
+ *   • neutralise le mirror de la matrice (det final positif, glyphes lisibles)
+ *   • oriente le texte dans le sens de lecture normal en paysage
+ *     (= rotation 180° par rapport à un simple scale(-1,1)).
  */
 function createPlateText(
   doc,
@@ -88,8 +93,10 @@ function createPlateText(
   const g = doc.createElementNS(SVG_NS, 'g');
   g.setAttribute('transform', tplMatrix(x, y));
   const t = doc.createElementNS(SVG_NS, 'text');
-  // scale(-1,1) annule le mirror horizontal de la matrice du gabarit.
-  t.setAttribute('transform', 'scale(-1,1)');
+  // scale(1,-1) : flip vertical local. Combiné avec la matrice gabarit
+  // (rot 90° + flip horizontal), ça donne une rotation 90° CW pure →
+  // texte LISIBLE en orientation paysage normale.
+  t.setAttribute('transform', 'scale(1,-1)');
   t.setAttribute('x', '0');
   t.setAttribute('y', '0');
   t.setAttribute('font-family', fontFamily || FONT_FAMILY);
@@ -102,9 +109,6 @@ function createPlateText(
   } else {
     t.setAttribute('stroke', 'none');
   }
-  // Avec scale(-1,1) le texte démarre en local_x=0 et s'étend vers -x ; la
-  // matrice du gabarit le ramène à world_y croissant depuis l'ancre, ce qui
-  // reproduit EXACTEMENT la disposition d'un placeholder gabarit.
   t.textContent = content;
   g.appendChild(t);
   return g;
@@ -262,16 +266,14 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   testRect.setAttribute('stroke', '#000000');
   testRect.setAttribute('stroke-width', '0.1');
   svg.appendChild(testRect);
-  // Label « Testé » lisible en paysage → on utilise la matrice gabarit (avec
-  // wrapper scale(-1,1) interne) ancrée au centre-bas de la case en paysage.
+  // Label « Testé » lisible en paysage — même mécanique matrix gabarit
+  // + scale(1,-1) interne (rotation 180° par rapport à scale(-1,1)).
   const labelAnchorX = testY + TEST + 5; // 5 mm sous la case en paysage
   const labelAnchorY = testX + TEST / 2; // centré horizontalement (paysage)
-  // Pour text-anchor:middle on doit construire à la main (createPlateText
-  // n'expose pas cet attribut) — on garde la même mécanique matrix+scale.
   const testLabelG = doc.createElementNS(SVG_NS, 'g');
   testLabelG.setAttribute('transform', tplMatrix(labelAnchorX, labelAnchorY));
   const testLabel = doc.createElementNS(SVG_NS, 'text');
-  testLabel.setAttribute('transform', 'scale(-1,1)');
+  testLabel.setAttribute('transform', 'scale(1,-1)');
   testLabel.setAttribute('font-family', FONT_FAMILY);
   testLabel.setAttribute('font-size', '5');
   testLabel.setAttribute('font-weight', '700');

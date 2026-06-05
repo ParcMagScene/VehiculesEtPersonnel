@@ -104,11 +104,16 @@
   width: calc(250px - 2rem);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 0.5rem;
   flex-shrink: 0;
   height: 100%;
   margin-left: -10px;
-  padding-right: 0.5rem;
+  padding-right: 2rem;
+}
+
+.header-logo-area .header-logo {
+  margin-right: 0.5rem;
 }
 
 .header-logo {
@@ -118,34 +123,9 @@
   object-fit: contain;
 }
 
-/* Bouton aide stylisé */
-.help-trigger-btn {
-  background: linear-gradient(135deg, var(--theme-bg-hover), var(--theme-purple-bg));
-  border: 1px solid var(--theme-bg-indigo-lighter);
-  color: var(--theme-indigo);
-  padding: 0.3rem 0.65rem;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-  font-size: var(--font-sm);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.help-trigger-btn:hover {
-  background: linear-gradient(135deg, var(--theme-bg-indigo-light), var(--theme-purple-bg));
-  color: var(--theme-primary-dark);
-  border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px var(--accent-tint-vivid);
-}
-
-/* Bouton toggle thème (dark/light) */
+/* Boutons header unifiés : Aide / Imports / Mode S·L */
+.help-trigger-btn,
+.header-imports-btn,
 .theme-toggle-btn {
   background: var(--theme-bg-tertiary, var(--theme-bg-tertiary));
   border: 1px solid var(--theme-border-medium, var(--theme-border-medium));
@@ -160,12 +140,31 @@
   flex-shrink: 0;
 }
 
+.help-trigger-btn span {
+  display: none;
+}
+
+.help-trigger-btn {
+  color: var(--theme-indigo);
+}
+
+.help-trigger-btn:hover,
+.header-imports-btn:hover,
 .theme-toggle-btn:hover {
   background: var(--theme-bg-hover, var(--theme-bg-hover));
-  color: var(--theme-warning, var(--theme-warning));
   border-color: var(--theme-border-muted, var(--theme-border-muted));
   transform: translateY(-1px);
   box-shadow: 0 2px 8px var(--shadow-sm);
+}
+
+.help-trigger-btn:hover {
+  color: var(--theme-primary-dark);
+  border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
+  box-shadow: 0 2px 8px var(--accent-tint-vivid);
+}
+
+.theme-toggle-btn:hover {
+  color: var(--theme-warning, var(--theme-warning));
 }
 
 [data-theme='dark'] .theme-toggle-btn:hover {
@@ -1720,11 +1719,6 @@
     padding: 0;
     justify-content: center;
     border-radius: var(--radius-full);
-  }
-
-  /* Aide responsive */
-  .help-trigger-btn span {
-    display: none;
   }
 }
 

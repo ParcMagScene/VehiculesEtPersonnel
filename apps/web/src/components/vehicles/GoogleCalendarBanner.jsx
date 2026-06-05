@@ -25,8 +25,10 @@ import { TIMING } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useGoogleSync } from '../../hooks/useGoogleSync';
 import { useToast } from '../../hooks/useToast';
+import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
 import { capitalizeText } from '../../utils/dateUtils';
+import { computeGridColumnsCss } from '../../utils/planningGridColumns';
 import EventDetailsModal from '../planning/EventDetailsModal';
 
 // Code splitting - Lazy loading
@@ -103,6 +105,9 @@ function GoogleCalendarBanner({
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
   const [eventFormEvent, setEventFormEvent] = useState(null);
+
+  // Largeur fenetre pour computeGridColumnsCss (responsive minmax)
+  const windowWidth = useWindowWidth();
 
   // ── Synchronisation intelligente via useGoogleSync ──
   const {
@@ -607,7 +612,11 @@ function GoogleCalendarBanner({
   }, [view, currentDate]);
 
   const eventBlocks = useMemo(() => {
-    const isPersonnelMode = activeModule === 'personnel';
+    // [fix banner alignment] Le module Personnel utilise activeModule='planning'
+    // (cf. routes.config.js id:'planning'). Pas de subdivision AM/PM en mode
+    // planning : 1 colonne par jour, comme .pp-grid (computeGridColumnsCss).
+    const isPlanningMode = activeModule === 'planning';
+    const isPersonnelMode = isPlanningMode;
     const eventBlocks = [];
     const processedEvents = new Set();
 
@@ -827,14 +836,14 @@ function GoogleCalendarBanner({
                 onClick={
                   activeModule === 'affaires'
                     ? onNewAffaire
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? onNewAssignment
                       : onNewReservation
                 }
                 title={
                   activeModule === 'affaires'
                     ? 'Nouvelle affaire'
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? 'Nouvelle affectation'
                       : 'Nouvelle réservation'
                 }
@@ -843,7 +852,7 @@ function GoogleCalendarBanner({
                 <span>
                   {activeModule === 'affaires'
                     ? 'Nouvelle affaire'
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? 'Nouvelle affectation'
                       : 'Nouvelle réservation'}
                 </span>
@@ -869,13 +878,23 @@ function GoogleCalendarBanner({
             onScroll={handleScroll}
             style={displayMode === 'compact' ? { height: `${bannerHeight}px` } : undefined}
           >
-            <div className={`banner-grid ${view}-view`}>
+            <div
+              className={`banner-grid ${view}-view`}
+              style={{
+                gridTemplateColumns: computeGridColumnsCss({
+                  view,
+                  days,
+                  module: activeModule === 'planning' ? 'planning' : 'vehicles',
+                  windowWidth,
+                }),
+              }}
+            >
               {/* Lignes de séparation alignées sur les colonnes */}
               <div className="banner-grid-lines">
                 {view === 'week' &&
                   days.flatMap((day, dayIndex) => {
                     const dayIsToday = isToday(day);
-                    if (activeModule === 'personnel') {
+                    if (activeModule === 'planning') {
                       return [
                         <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />,
                       ];
@@ -894,7 +913,7 @@ function GoogleCalendarBanner({
                 {view === 'month' &&
                   days.flatMap((day, dayIndex) => {
                     const dayIsToday = isToday(day);
-                    if (activeModule === 'personnel') {
+                    if (activeModule === 'planning') {
                       return [
                         <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />,
                       ];

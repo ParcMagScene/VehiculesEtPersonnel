@@ -221,6 +221,12 @@
   --sec-color: var(--theme-info);
   --sec-text: var(--theme-text-primary);
 
+  /* Alias manquants (utilisés par SuiviPanel & autres modules) */
+  --accent-color: var(--theme-primary);
+  --accent-bg: var(--theme-bg-indigo-light);
+  --text-muted: var(--theme-text-muted);
+  --btn-warning-text: var(--theme-warning);
+
   /* ─── [AUDIT] Design Tokens — Spacing Scale ─── */
   --space-0: 0;
   --space-px: 1px;

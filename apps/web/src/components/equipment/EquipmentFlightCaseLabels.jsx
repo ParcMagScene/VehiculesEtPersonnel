@@ -225,10 +225,12 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
 
   // 4) Libellé « DESIGNATION » — posé à partir du coin haut-gauche EXACT du
   //    gabarit (ancre placeholder), puis ajusté :
-  //      • « gauche en paysage » = world_y plus négatif → -13 mm sur y
+  //      • « gauche en paysage » = world_y plus négatif → -20 mm sur y
   //      • « relever de 2 mm en paysage » = world_x plus grand → +2 mm sur x
-  //    Sans « : », sans valeur, en MAJUSCULES sans accent. FILL rouge,
-  //    police Astronomus. `topAlign` calé sur le bord haut de la zone.
+  //    Sans « : », sans valeur, en MAJUSCULES sans accent. Mode LIGNE
+  //    (stroke rouge, fill none) car la zone DESIGNATION est en gravure
+  //    vectorielle ligne, pas remplissage. Police Astronomus. `topAlign`
+  //    calé sur le bord haut de la zone.
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_DESIGNATION.x + 2,
@@ -237,7 +239,9 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
       fontSize: 6,
       fontWeight: 700,
       fontFamily: FONT_FAMILY_ASTRO,
-      fill: '#FF0000',
+      fill: 'none',
+      stroke: '#FF0000',
+      strokeWidth: 0.1,
       topAlign: true,
     }),
   );
@@ -306,16 +310,19 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   }
 
   // 5) Case « Testé » 20×20 mm « en bas à droite » paysage
-  //    → world_x faible, world_y élevé. Marges 6 mm.
+  //    → world_x faible (BAS paysage), world_y élevé (DROITE paysage). Marges 6 mm.
+  //    ATTENTION : un <rect> placé directement (sans tplMatrix) reçoit ses
+  //    attributs SVG x/y dans le repère world du viewBox. SVG `x` = world_x,
+  //    SVG `y` = world_y (PAS l'inverse comme la convention « paysage »).
   const TEST = 20;
   const tMargin = 6;
   const X_BOT = 27.7; // bord intérieur gauche du cadre (paysage : bas)
   const Y_RIGHT = 7.0; // bord intérieur bas du cadre   (paysage : droite)
-  const testX = Y_RIGHT - tMargin - TEST; // coin gauche world_y
-  const testY = X_BOT + tMargin; // coin haut world_x
+  const testWorldX = X_BOT + tMargin; // coin haut-gauche en SVG = world_x
+  const testWorldY = Y_RIGHT - tMargin - TEST; // coin haut-gauche en SVG = world_y
   const testRect = doc.createElementNS(SVG_NS, 'rect');
-  testRect.setAttribute('x', String(testX));
-  testRect.setAttribute('y', String(testY));
+  testRect.setAttribute('x', String(testWorldX));
+  testRect.setAttribute('y', String(testWorldY));
   testRect.setAttribute('width', String(TEST));
   testRect.setAttribute('height', String(TEST));
   testRect.setAttribute('fill', 'none');
@@ -324,8 +331,10 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   svg.appendChild(testRect);
   // Label « Testé » lisible en paysage — même mécanique matrix gabarit
   // + scale(1,-1) interne (rotation 180° par rapport à scale(-1,1)).
-  const labelAnchorX = testY + TEST + 5; // 5 mm sous la case en paysage
-  const labelAnchorY = testX + TEST / 2; // centré horizontalement (paysage)
+  // tplMatrix attend (world_x, world_y) ; on positionne le label « sous »
+  // la case en paysage = world_x plus faible, même centre world_y.
+  const labelAnchorX = testWorldX - 5; // 5 mm sous la case en paysage
+  const labelAnchorY = testWorldY + TEST / 2; // centré horizontalement (paysage)
   const testLabelG = doc.createElementNS(SVG_NS, 'g');
   testLabelG.setAttribute('transform', tplMatrix(labelAnchorX, labelAnchorY));
   const testLabel = doc.createElementNS(SVG_NS, 'text');
@@ -342,8 +351,8 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   testLabelG.appendChild(testLabel);
   svg.appendChild(testLabelG);
   if (fields.tested) {
-    const cx = testX + TEST / 2;
-    const cy = testY + TEST / 2;
+    const cx = testWorldX + TEST / 2;
+    const cy = testWorldY + TEST / 2;
     const halfA = (TEST - 6) / 2;
     const cross = doc.createElementNS(SVG_NS, 'path');
     cross.setAttribute(
@@ -365,7 +374,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //    (rotation 90° CCW PURE) qui produit le même rendu visuel mais sans
   //    mirroring du PNG.
   if (logoDataUrl) {
-    const LOGO_SCALE = 0.033611; // ~27 mm de large (27 / 803.31897)
+    const LOGO_SCALE = 0.037345; // ~30 mm de large (30 / 803.31897)
     const LOGO_CX = 159.520294;
     const LOGO_CY = -14.578194;
     const m = `matrix(0,${LOGO_SCALE},${-LOGO_SCALE},0,${LOGO_CX},${LOGO_CY})`;

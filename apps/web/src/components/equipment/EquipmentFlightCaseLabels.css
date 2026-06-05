@@ -182,6 +182,10 @@
   background: var(--theme-bg-card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-modal);
+  /* Force le modal à prendre une grande portion du viewport pour que
+     l'aperçu paysage soit confortable à lire. */
+  width: 95vw;
+  height: 95vh;
   max-width: 95vw;
   max-height: 95vh;
   display: flex;
@@ -225,8 +229,12 @@
  */
 .efc-preview-rot-wrap {
   position: relative;
-  width: min(100%, calc(85vh * 210 / 152));
-  max-width: 100%;
+  /* On prend le MAX possible :
+     - largeur limitée par la hauteur dispo (après ratio paysage 210/152)
+     - hauteur limitée par la largeur dispo (ratio inverse)
+     Le min() garde toujours l'aspect-ratio 210/152. */
+  width: min(100%, calc((100vh - 120px) * 210 / 152));
+  height: min(100%, calc(95vw * 152 / 210));
   aspect-ratio: 210 / 152;
   background: #fff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);

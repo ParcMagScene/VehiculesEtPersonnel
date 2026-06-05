@@ -79,7 +79,19 @@ const XLINK_NS = 'http://www.w3.org/1999/xlink';
  */
 function createPlateText(
   doc,
-  { x, y, content, fontSize, fontFamily, fill, stroke, strokeWidth, fontWeight, textAnchor },
+  {
+    x,
+    y,
+    content,
+    fontSize,
+    fontFamily,
+    fill,
+    stroke,
+    strokeWidth,
+    fontWeight,
+    textAnchor,
+    topAlign,
+  },
 ) {
   const g = doc.createElementNS(SVG_NS, 'g');
   g.setAttribute('transform', tplMatrix(x, y));
@@ -89,7 +101,15 @@ function createPlateText(
   // texte LISIBLE en orientation paysage normale.
   t.setAttribute('transform', 'scale(1,-1)');
   t.setAttribute('x', '0');
-  t.setAttribute('y', '0');
+  // Par défaut le texte est ancré sur sa BASELINE (text-y = 0).
+  // Avec `topAlign: true`, on décale la baseline de `+0.8 * fontSize` en
+  // local. Après scale(1,-1) puis matrice gabarit, le HAUT des capitales
+  // (ascender) atterrit EXACTEMENT sur l'ancre passée en (x, y). C'est ce
+  // qu'on veut pour les libellés CLIENT/DESIGNATION : le haut du texte
+  // doit être collé au bord HAUT de la zone (= l'ancre du gabarit), pas
+  // sa baseline.
+  const yLocal = topAlign ? fontSize * 0.8 : 0;
+  t.setAttribute('y', String(yLocal));
   t.setAttribute('font-family', fontFamily || FONT_FAMILY);
   t.setAttribute('font-size', String(fontSize));
   if (fontWeight) t.setAttribute('font-weight', String(fontWeight));
@@ -166,6 +186,8 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
 
   // 2) Libellé « CLIENT » au coin EXACT du gabarit (ancre placeholder),
   //    sans « : », sans valeur. FILL rouge, police Astronomus.
+  //    `topAlign` : le HAUT des caps (et non la baseline) est calé sur
+  //    l'ancre, pour que le label soit aligné au bord HAUT de la zone.
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_CLIENT.x,
@@ -175,6 +197,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
       fontWeight: 700,
       fontFamily: FONT_FAMILY_ASTRO,
       fill: '#FF0000',
+      topAlign: true,
     }),
   );
 
@@ -200,7 +223,8 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
 
   // 4) Libellé « DESIGNATION » au coin EXACT du gabarit (ancre placeholder),
   //    sans « : », sans valeur, en MAJUSCULES sans accent. FILL rouge,
-  //    police Astronomus.
+  //    police Astronomus. `topAlign` : haut des caps calé sur le bord haut
+  //    de la zone DESIGNATION.
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_DESIGNATION.x,
@@ -210,6 +234,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
       fontWeight: 700,
       fontFamily: FONT_FAMILY_ASTRO,
       fill: '#FF0000',
+      topAlign: true,
     }),
   );
 

@@ -1,6 +1,8 @@
 import './EquipmentBatchLabels.css';
 
 import {
+  AlertTriangle,
+  CheckCircle2,
   CheckSquare,
   ChevronDown,
   ChevronRight,
@@ -17,6 +19,7 @@ import { useMemo, useState } from 'react';
 import { Button, SearchBar } from '@/design-system';
 
 import { APP_BASE_URL } from './equipmentConstants';
+import { analyzeQrBaseUrl } from './qrSafety';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -30,6 +33,10 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   const [search, setSearch] = useState('');
   const [showLogo, setShowLogo] = useState(true);
   const [collapsedRefs, setCollapsedRefs] = useState(new Set());
+
+  // Verrou sécurité : vérifie que l'URL embarquée dans les QR est publique HTTPS.
+  // Une gravée laser sur Raven XIP est PERMANENTE — on ne prend AUCUN risque.
+  const qrSafety = useMemo(() => analyzeQrBaseUrl(APP_BASE_URL), []);
 
   // Grouper par référence
   const groupedByRef = useMemo(() => {
@@ -114,6 +121,13 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   };
 
   const handlePrintBatch = async () => {
+    if (!qrSafety.safe) {
+      // eslint-disable-next-line no-alert
+      window.alert(
+        `⛔ Impression bloquée — URL non publique : ${APP_BASE_URL}\n\n${qrSafety.reason}\n\nOuvrez l'application via https://magsav.duckdns.org avant de générer les étiquettes.`,
+      );
+      return;
+    }
     const selected = equipment.filter((eq) => selectedIds.has(eq.id));
     if (selected.length === 0) return;
 
@@ -241,6 +255,13 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
   //   • Multi-pages : génère N fichiers "plaque-etiquettes-<ts>-X-sur-N.svg"
   // ═══════════════════════════════════════════════════════════════════════
   const handleExportBatchSVG = async () => {
+    if (!qrSafety.safe) {
+      // eslint-disable-next-line no-alert
+      window.alert(
+        `⛔ Génération bloquée — URL non publique : ${APP_BASE_URL}\n\n${qrSafety.reason}\n\nOuvrez l'application via https://magsav.duckdns.org avant de générer les étiquettes.`,
+      );
+      return;
+    }
     const selected = equipment.filter((eq) => selectedIds.has(eq.id));
     if (selected.length === 0) return;
 
@@ -482,6 +503,35 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
 
   return (
     <div className="ebl-container">
+      {/* Bandeau sécurité — affiche l'URL qui sera gravée dans les QR.
+          Bloque export/impression si l'URL pointe vers localhost / IP privée / non-HTTPS. */}
+      <div className={`ebl-qr-safety ${qrSafety.safe ? 'ok' : 'danger'}`}>
+        {qrSafety.safe ? (
+          <>
+            <CheckCircle2 size={16} aria-hidden="true" />
+            <span>
+              Les QR pointeront vers&nbsp;:{' '}
+              <code>{APP_BASE_URL}/#/mobile/equipment/&lt;UID&gt;</code>
+            </span>
+          </>
+        ) : (
+          <>
+            <AlertTriangle size={18} aria-hidden="true" />
+            <div className="ebl-qr-safety-text">
+              <strong>⛔ Gravé LASER bloqué — URL non publique</strong>
+              <div>
+                Les QR encoderaient&nbsp;: <code>{APP_BASE_URL}</code>
+              </div>
+              <div>{qrSafety.reason}</div>
+              <div>
+                Ouvrez l'application via <code>https://magsav.duckdns.org</code> avant de générer
+                les étiquettes.
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Barre de sélection */}
       <div className="ebl-toolbar">
         <SearchBar
@@ -519,7 +569,8 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
             variant="ghost"
             className="ebl-btn-export"
             onClick={handleExportBatchSVG}
-            disabled={totalSelected === 0}
+            disabled={totalSelected === 0 || !qrSafety.safe}
+            title={qrSafety.safe ? undefined : qrSafety.reason}
           >
             <Download size={16} />
             Exporter (200 × 200 mm) {totalSelected > 0 ? `— ${totalSelected}` : ''}
@@ -528,7 +579,8 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
             variant="ghost"
             className="ebl-btn-print"
             onClick={handlePrintBatch}
-            disabled={totalSelected === 0}
+            disabled={totalSelected === 0 || !qrSafety.safe}
+            title={qrSafety.safe ? undefined : qrSafety.reason}
           >
             <Printer size={16} />
             Imprimer (A4){' '}

@@ -10,6 +10,45 @@
   gap: 0;
 }
 
+/* Bandeau sécurité QR — affiche l'URL embarquée + bloque si hôte privé */
+.ebl-qr-safety {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--theme-border);
+  flex-shrink: 0;
+}
+.ebl-qr-safety code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.ebl-qr-safety.ok {
+  background: var(--theme-bg-success-light, #ecfdf5);
+  color: var(--theme-success, #047857);
+}
+.ebl-qr-safety.danger {
+  background: var(--theme-bg-error-light, #fef2f2);
+  color: var(--theme-error, #b91c1c);
+  border-bottom-color: var(--theme-error, #b91c1c);
+  border-bottom-width: 2px;
+  align-items: flex-start;
+}
+.ebl-qr-safety.danger strong {
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 2px;
+}
+.ebl-qr-safety-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* Toolbar */
 .ebl-toolbar {
   display: flex;

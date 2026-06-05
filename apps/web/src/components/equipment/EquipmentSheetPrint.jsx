@@ -5,6 +5,7 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { formatDateSimple, safeDate } from '../../utils/formatUtils';
 
 import { APP_BASE_URL } from './equipmentConstants';
+import { analyzeQrBaseUrl } from './qrSafety';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -48,6 +49,16 @@ const EQUIPMENT_STATUS = {
 
 export async function printEquipmentSheet(eq, photosList = [], logosList = []) {
   if (!eq) return;
+
+  // Verrou sécurité : ne PAS imprimer si l'URL QR n'est pas publique HTTPS
+  const qrSafety = analyzeQrBaseUrl(APP_BASE_URL);
+  if (!qrSafety.safe) {
+    // eslint-disable-next-line no-alert
+    window.alert(
+      `⛔ Impression bloquée — URL non publique : ${APP_BASE_URL}\n\n${qrSafety.reason}\n\nOuvrez l'application via https://magsav.duckdns.org avant d'imprimer la fiche.`,
+    );
+    return;
+  }
 
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const qrUrl = eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : null;

@@ -90,6 +90,38 @@
   flex: 1;
 }
 
+/* Bandeau sécurité QR — affiche l'URL embarquée + bloque si hôte privé */
+.elp-qr-safety {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  border-radius: var(--radius-md, 6px);
+  margin-bottom: var(--space-4);
+}
+.elp-qr-safety code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  word-break: break-all;
+}
+.elp-qr-safety.ok {
+  background: var(--theme-bg-success-light, #ecfdf5);
+  color: var(--theme-success, #047857);
+}
+.elp-qr-safety.danger {
+  background: var(--theme-bg-error-light, #fef2f2);
+  color: var(--theme-error, #b91c1c);
+  border: 1px solid var(--theme-error, #b91c1c);
+}
+.elp-qr-safety.danger strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
 /* Aperçu */
 .elp-preview-container {
   display: flex;

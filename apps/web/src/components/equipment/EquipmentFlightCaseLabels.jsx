@@ -184,17 +184,16 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   const ZONE_CLIENT_CENTER = { x: 157.7, y: -98 };
   const ZONE_DESIGN_CENTER = { x: 85.2, y: -98 };
 
-  // 2) Libellé « CLIENT » — posé au coin haut-gauche EXACT du gabarit
-  //    (ancre placeholder), puis décalé de 8 mm « vers la gauche en paysage ».
-  //    En paysage la matrice gabarit fait une rotation 90° CW » : la
-  //    direction « gauche écran » correspond aux world_y plus négatifs.
-  //    On soustrait donc 8 mm à ANCHOR_CLIENT.y pour le décalage.
+  // 2) Libellé « CLIENT » — posé à partir du coin haut-gauche EXACT du
+  //    gabarit (ancre placeholder), puis ajusté :
+  //      • « gauche en paysage » = world_y plus négatif → -4 mm sur y
+  //      • « relever de 2 mm en paysage » = world_x plus grand → +2 mm sur x
   //    `topAlign` : le HAUT des caps (et non la baseline) est calé sur
   //    l'ancre, pour que le label soit aligné au bord HAUT de la zone.
   svg.appendChild(
     createPlateText(doc, {
-      x: ANCHOR_CLIENT.x,
-      y: ANCHOR_CLIENT.y - 8,
+      x: ANCHOR_CLIENT.x + 2,
+      y: ANCHOR_CLIENT.y - 4,
       content: 'CLIENT',
       fontSize: 7,
       fontWeight: 700,
@@ -224,15 +223,16 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     );
   }
 
-  // 4) Libellé « DESIGNATION » — posé au coin haut-gauche EXACT du gabarit
-  //    (ancre placeholder), puis décalé de 8 mm « vers la gauche en paysage »
-  //    (= -8 sur world_y, même logique que CLIENT). Sans « : », sans valeur,
-  //    en MAJUSCULES sans accent. FILL rouge, police Astronomus. `topAlign`
-  //    calé sur le bord haut de la zone.
+  // 4) Libellé « DESIGNATION » — posé à partir du coin haut-gauche EXACT du
+  //    gabarit (ancre placeholder), puis ajusté :
+  //      • « gauche en paysage » = world_y plus négatif → -13 mm sur y
+  //      • « relever de 2 mm en paysage » = world_x plus grand → +2 mm sur x
+  //    Sans « : », sans valeur, en MAJUSCULES sans accent. FILL rouge,
+  //    police Astronomus. `topAlign` calé sur le bord haut de la zone.
   svg.appendChild(
     createPlateText(doc, {
-      x: ANCHOR_DESIGNATION.x,
-      y: ANCHOR_DESIGNATION.y - 8,
+      x: ANCHOR_DESIGNATION.x + 2,
+      y: ANCHOR_DESIGNATION.y - 13,
       content: 'DESIGNATION',
       fontSize: 7,
       fontWeight: 700,

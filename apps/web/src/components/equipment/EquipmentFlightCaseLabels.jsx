@@ -18,93 +18,63 @@ import { Button, SearchBar } from '@/design-system';
 
 import { APP_BASE_URL } from './equipmentConstants';
 import { analyzeQrBaseUrl } from './qrSafety';
+import TEMPLATE_SVG from './templates/PlaquesIDVierges.svg?raw';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Plaques ID alu (flight-cases) — Génération SVG pour LightBurn
 //
-// • Une plaque = une RÉFÉRENCE (collée sur le flight-case qui contient les
-//   unités). Le QR encode la référence : au scan, l'utilisateur voit la
-//   liste des unités de cette référence sur mobile et choisit la sienne.
-// • Géométrie reproduite du gabarit fourni (PlaquesIDVierges.svg / lbrn2) :
-//   - SVG en orientation portrait (152×210mm) avec le contenu paysage
-//     (210×150mm) rotaté 90° à droite (rotate(90) translate(0,-150)).
-//   - Cadre extérieur arrondi avec 2 oreilles de fixation latérales.
-//   - Cadre intérieur 210×150mm.
-// • Modes LightBurn (par convention couleur) :
-//   - CUT (ligne, stroke #000000) → contour plaque, oreilles, cadre intérieur,
-//     champs Marque/Référence/Quantité/Désignation, contour case Testé.
-//   - FILL (remplissage, fill #FF0000) → label "Client", ligne pied de page
-//     (MAG SCENE…), label "Testé", coche éventuelle.
-//   - IMAGE (raster) → QR code par référence + logo MAG SCENE.
+// Approche : on PART du gabarit officiel MAG SCENE
+// (apps/web/src/components/equipment/templates/PlaquesIDVierges.svg, version
+// sans le bitmap logo embarqué). On garde la FORME EXACTE (cadre 210×150 mm,
+// oreilles décoratives grises, marques bleues d'alignement, pied de page
+// « MAG SCENE … contact@mag-scene.com … ») et on remplace UNIQUEMENT les
+// deux libellés gravés « Client » et « DEsignation » par notre contenu
+// éditable, plus l'ajout d'un QR (par référence) et d'une case « Testé ».
+//
+// Modes LightBurn (convention couleur) :
+//   • CUT  (ligne)       : stroke #000000 → 4 champs Marque/Réf/Désig/Quantité
+//   • FILL (remplissage) : fill #FF0000   → libellé Client + label Testé
+//   • IMAGE (raster)     : QR PNG + logo MAG SCENE
+//
+// Une plaque = une RÉFÉRENCE (collée sur le flight-case). Au scan, le mobile
+// affiche la liste des unités de cette référence et l'utilisateur choisit.
 // ═══════════════════════════════════════════════════════════════════════════
 
-const escHtml = (s) =>
-  String(s == null ? '' : s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+// Ancres extraites du gabarit (matrice de translation des 2 textes gravés).
+const ANCHOR_CLIENT = { x: 172.735138, y: -178.038361 };
+const ANCHOR_DESIGNATION = { x: 142.735275, y: -178.992889 };
 
-const FONT_FAMILY = "'Liberation Sans', 'DejaVu Sans', Arial, Helvetica, sans-serif";
+// Matrice de rotation utilisée par les textes gravés du gabarit :
+// matrix(-0.000168, 0.961539, 0.961539, 0.000168, X, Y). On la conserve
+// telle quelle pour nos nouveaux textes afin de coller à la mise en page.
+const TPL_ROT = { a: -0.000168, b: 0.961539, c: 0.961539, d: 0.000168 };
+const matrixAt = (x, y) =>
+  `matrix(${TPL_ROT.a},${TPL_ROT.b},${TPL_ROT.c},${TPL_ROT.d},${x.toFixed(4)},${y.toFixed(4)})`;
 
-// Géométrie en mm (coordonnées paysage logiques 240×170 ≈ 210×150 + oreilles)
-const GEO = {
-  // Cadre intérieur (zone de gravage utile)
-  innerW: 210,
-  innerH: 150,
-  // Plaque hors-tout (avec oreilles latérales pour fixation)
-  outerW: 240,
-  outerH: 170,
-  // Décalage du cadre intérieur dans la plaque
-  offsetX: 15,
-  offsetY: 10,
-  // Oreilles : 2 zones de fixation arrondies à gauche et droite
-  earTopH: 20,
-  earBotH: 20,
-};
+// Décalage entre 2 lignes empilées sous DEsignation (en mm dans le repère
+// LOCAL des glyphes, avant matrice — direction +y locale = world +x).
+const FIELD_LINE_GAP = 8;
 
-// Construit le path "plaque + oreilles" (forme générale de la plaque alu).
-function buildOuterPath() {
-  const { outerW, outerH, offsetX, offsetY, innerW, innerH } = GEO;
-  const r = 4; // rayon des coins arrondis
-  // x range global : 0..outerW, y : 0..outerH
-  // Oreilles à gauche (x: 0..offsetX) et à droite (x: offsetX+innerW..outerW)
-  const leftEarX = 0;
-  const earsW = offsetX;
-  const innerTop = offsetY;
-  const innerBot = offsetY + innerH;
-  const innerLeft = offsetX;
-  const innerRight = offsetX + innerW;
-  const earTop = innerTop + (innerH - GEO.earTopH) / 2;
-  const earBot = earTop + GEO.earTopH;
-  // Path qui contourne la plaque entière
-  void leftEarX;
-  void earsW;
-  // Forme simplifiée : un rectangle arrondi pour la plaque + 2 oreilles
-  // rectangulaires latérales centrées verticalement.
-  return [
-    `M ${innerLeft} 0`,
-    `H ${innerRight}`,
-    `Q ${innerRight + r} 0 ${innerRight + r} ${r}`,
-    `V ${earTop}`,
-    `H ${outerW - r}`,
-    `Q ${outerW} ${earTop} ${outerW} ${earTop + r}`,
-    `V ${earBot - r}`,
-    `Q ${outerW} ${earBot} ${outerW - r} ${earBot}`,
-    `H ${innerRight + r}`,
-    `V ${innerBot - r}`,
-    `Q ${innerRight + r} ${outerH} ${innerRight} ${outerH}`,
-    `H ${innerLeft}`,
-    `Q ${innerLeft - r} ${outerH} ${innerLeft - r} ${innerBot - r}`,
-    `V ${earBot}`,
-    `H ${r}`,
-    `Q 0 ${earBot} 0 ${earBot - r}`,
-    `V ${earTop + r}`,
-    `Q 0 ${earTop} ${r} ${earTop}`,
-    `H ${innerLeft - r}`,
-    `V ${r}`,
-    `Q ${innerLeft - r} 0 ${innerLeft} 0`,
-    'Z',
-  ].join(' ');
+const FONT_FAMILY = "'Liberation Sans','DejaVu Sans',Arial,Helvetica,sans-serif";
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
+// Repère les <path> du gabarit qui rendent les textes « Client » et
+// « DEsignation » (gravés en placeholders) : leur matrice translation
+// correspond aux ancres connues. On les supprime avant d'injecter notre
+// contenu éditable.
+function isPlaceholderPath(transform) {
+  if (!transform) return false;
+  const m = transform.replace(/\s+/g, '').match(/matrix\(([^)]+)\)/);
+  if (!m) return false;
+  const parts = m[1].split(',').map(parseFloat);
+  if (parts.length !== 6 || parts.some((n) => Number.isNaN(n))) return false;
+  const [, , , , tx, ty] = parts;
+  const near = (x1, y1, x2, y2) => Math.abs(x1 - x2) < 0.5 && Math.abs(y1 - y2) < 0.5;
+  return (
+    near(tx, ty, ANCHOR_CLIENT.x, ANCHOR_CLIENT.y) ||
+    near(tx, ty, ANCHOR_DESIGNATION.x, ANCHOR_DESIGNATION.y)
+  );
 }
 
 const buildPlateUrl = (reference) =>
@@ -113,141 +83,143 @@ const buildPlateUrl = (reference) =>
 const cleanText = (s) => String(s == null ? '' : s).trim();
 
 /**
- * Construit le SVG pour UNE plaque flight-case.
+ * Construit le SVG d'UNE plaque à partir du gabarit officiel.
  *  fields = { client, brand, reference, designation, quantity, tested }
- *  qrDataUrl = string (PNG dataURL) — peut être null
- *  logoDataUrl = string (PNG dataURL) ou null
+ *  qrDataUrl = string (PNG dataURL) ou null
+ *  logoDataUrl = string (PNG dataURL) ou null (réinjecte le logo strippé)
  */
 function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
-  const { outerW, outerH, offsetX, offsetY, innerW, innerH } = GEO;
-  // SVG en portrait (outerH × outerW) avec rotation 90° du contenu paysage
-  // (reproduit le gabarit du user : width=152mm height=210mm).
-  const svgW = outerH;
-  const svgH = outerW;
+  const doc = new DOMParser().parseFromString(TEMPLATE_SVG, 'image/svg+xml');
+  const svg = doc.documentElement;
+  if (svg.tagName === 'parsererror' || svg.querySelector('parsererror')) {
+    throw new Error('Gabarit SVG invalide');
+  }
 
-  // Position des éléments dans le repère paysage (avant rotation)
-  const innerLeft = offsetX;
-  const innerTop = offsetY;
+  // 1) Supprimer les 2 paths-textes placeholders « Client » et « DEsignation ».
+  for (const p of Array.from(svg.querySelectorAll('path'))) {
+    if (isPlaceholderPath(p.getAttribute('transform'))) {
+      p.parentNode.removeChild(p);
+    }
+  }
 
-  // Logo MAG SCENE en haut à gauche (zone usable)
-  const logoW = 38;
-  const logoH = 22;
-  const logoX = innerLeft + 6;
-  const logoY = innerTop + 4;
+  // 2) Libellé « Client : … » à l'ancre du placeholder, FILL rouge (gravé plein).
+  const clientText = doc.createElementNS(SVG_NS, 'text');
+  clientText.setAttribute('transform', matrixAt(ANCHOR_CLIENT.x, ANCHOR_CLIENT.y));
+  clientText.setAttribute('font-family', FONT_FAMILY);
+  clientText.setAttribute('font-size', '6');
+  clientText.setAttribute('font-weight', '700');
+  clientText.setAttribute('fill', '#FF0000');
+  clientText.setAttribute('stroke', 'none');
+  clientText.setAttribute('x', '0');
+  clientText.setAttribute('y', '0');
+  clientText.textContent = `Client : ${cleanText(fields.client)}`;
+  svg.appendChild(clientText);
 
-  // Champs textuels (mode CUT/ligne, stroke noir, no fill)
-  const lineX = innerLeft + 8;
-  let lineY = innerTop + 38;
-  const lineGap = 13;
-
-  // Texte "Client" + valeur (FILL rouge)
-  const clientLabelX = innerLeft + 60;
-  const clientLabelY = innerTop + 16;
-
-  // Cadre "Testé" + label (FILL rouge), 20×20mm
-  const testW = 20;
-  const testH = 20;
-  const testX = innerLeft + innerW - testW - 10;
-  const testY = innerTop + innerH - testH - 28;
-
-  // QR en bas à droite — taille 38mm (laisse de la place pour pied de page)
-  const qrSize = 38;
-  const qrX = innerLeft + innerW - qrSize - 6;
-  const qrY = innerTop + 8;
-
-  // Pied de page (FILL rouge)
-  const footerY = innerTop + innerH - 6;
-
-  const lines = [];
-  lines.push(`<?xml version="1.0" encoding="UTF-8"?>`);
-  lines.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${svgW}mm" height="${svgH}mm" viewBox="0 0 ${svgW} ${svgH}">`,
-  );
-  lines.push(
-    `  <!-- Plaque ID flight-case ${innerW}x${innerH}mm — réf "${escHtml(fields.reference)}" -->`,
-  );
-  // Tout le contenu est dessiné en coordonnées paysage (outerW × outerH)
-  // puis tourné 90° à droite pour tenir dans le viewport portrait.
-  lines.push(`  <g transform="rotate(90) translate(0,-${outerH})">`);
-
-  // Calque CUT (ligne) : contours plaque + cadre intérieur + champs textes
-  lines.push(
-    `    <g id="CUT" inkscape:label="CUT" inkscape:groupmode="layer" fill="none" stroke="#000000" stroke-width="0.1">`,
-  );
-  // Contour plaque + oreilles
-  lines.push(`      <path d="${buildOuterPath()}" />`);
-  // Cadre intérieur 210×150mm
-  lines.push(
-    `      <rect x="${innerLeft}" y="${innerTop}" width="${innerW}" height="${innerH}" />`,
-  );
-  // Champs en mode LIGNE (texte stroke noir, no fill)
-  const fieldEntries = [
-    ['Marque', fields.brand],
-    ['Référence', fields.reference],
-    ['Désignation', fields.designation],
-    ['Quantité', fields.quantity],
+  // 3) 4 lignes (Marque / Référence / Désignation / Quantité) au point
+  //    d'ancrage de DEsignation, empilées dans la direction LOCAL +y = world +x.
+  //    Mode CUT : stroke noir, fill none.
+  const labels = [
+    `Marque : ${cleanText(fields.brand)}`,
+    `Référence : ${cleanText(fields.reference)}`,
+    `Désignation : ${cleanText(fields.designation)}`,
+    `Quantité : ${cleanText(fields.quantity)}`,
   ];
-  fieldEntries.forEach(([label, value]) => {
-    const v = cleanText(value);
-    lines.push(
-      `      <text x="${lineX.toFixed(2)}" y="${lineY.toFixed(2)}" font-family="${FONT_FAMILY}" font-size="6" stroke="#000000" stroke-width="0.08" fill="none">${escHtml(label)} : ${escHtml(v)}</text>`,
-    );
-    lineY += lineGap;
-  });
-  // Contour case "Testé"
-  lines.push(`      <rect x="${testX}" y="${testY}" width="${testW}" height="${testH}" />`);
-  lines.push('    </g>');
-
-  // Calque FILL (remplissage rouge) : label Client, label Testé, pied de page,
-  // coche dans la case si tested, contour épais Testé.
-  lines.push(
-    `    <g id="FILL" inkscape:label="FILL" inkscape:groupmode="layer" fill="#FF0000" stroke="none">`,
-  );
-  // "Client : <valeur>"
-  lines.push(
-    `      <text x="${clientLabelX}" y="${clientLabelY}" font-family="${FONT_FAMILY}" font-size="6" font-weight="700">Client : ${escHtml(fields.client)}</text>`,
-  );
-  // Label "Testé" sous la case
-  lines.push(
-    `      <text x="${(testX + testW / 2).toFixed(2)}" y="${(testY + testH + 5).toFixed(2)}" font-family="${FONT_FAMILY}" font-size="4.5" font-weight="700" text-anchor="middle">Testé</text>`,
-  );
-  // Coche si tested
-  if (fields.tested) {
-    const cx = testX + testW / 2;
-    const cy = testY + testH / 2;
-    // Croix en remplissage (2 rectangles fins)
-    lines.push(
-      `      <rect x="${(cx - 7).toFixed(2)}" y="${(cy - 1).toFixed(2)}" width="14" height="2" transform="rotate(45 ${cx} ${cy})" />`,
-    );
-    lines.push(
-      `      <rect x="${(cx - 7).toFixed(2)}" y="${(cy - 1).toFixed(2)}" width="14" height="2" transform="rotate(-45 ${cx} ${cy})" />`,
-    );
+  for (let i = 0; i < labels.length; i++) {
+    const wx = ANCHOR_DESIGNATION.x + i * FIELD_LINE_GAP * TPL_ROT.c;
+    const wy = ANCHOR_DESIGNATION.y + i * FIELD_LINE_GAP * TPL_ROT.d;
+    const t = doc.createElementNS(SVG_NS, 'text');
+    t.setAttribute('transform', matrixAt(wx, wy));
+    t.setAttribute('font-family', FONT_FAMILY);
+    t.setAttribute('font-size', '5');
+    t.setAttribute('font-weight', '500');
+    t.setAttribute('fill', 'none');
+    t.setAttribute('stroke', '#000000');
+    t.setAttribute('stroke-width', '0.08');
+    t.setAttribute('x', '0');
+    t.setAttribute('y', '0');
+    t.textContent = labels[i];
+    svg.appendChild(t);
   }
-  // Pied de page
-  lines.push(
-    `      <text x="${(innerLeft + innerW / 2).toFixed(2)}" y="${footerY.toFixed(2)}" font-family="${FONT_FAMILY}" font-size="3.6" font-weight="500" text-anchor="middle">MAG SCENE - contact@mag-scene.com - 04 77 81 50 25</text>`,
-  );
-  lines.push('    </g>');
 
-  // Calque IMAGE : QR code + logo MAG SCENE (raster)
-  lines.push(
-    `    <g id="IMAGE" inkscape:label="IMAGE" inkscape:groupmode="layer" style="image-rendering:pixelated">`,
-  );
+  // 4) QR code par référence — 35 mm, centré dans la zone libre côté gauche
+  //    en paysage (loin du logo MAG SCENE qui est côté bas-droit du gabarit).
   if (qrDataUrl) {
-    lines.push(
-      `      <image href="${qrDataUrl}" x="${qrX}" y="${qrY}" width="${qrSize}" height="${qrSize}" preserveAspectRatio="none" />`,
-    );
+    const QR = 35;
+    const cx = 80;
+    const cy = -85;
+    const qrG = doc.createElementNS(SVG_NS, 'g');
+    qrG.setAttribute('transform', matrixAt(cx, cy));
+    qrG.setAttribute('style', 'image-rendering:pixelated');
+    const qrImg = doc.createElementNS(SVG_NS, 'image');
+    qrImg.setAttributeNS(XLINK_NS, 'xlink:href', qrDataUrl);
+    qrImg.setAttribute('href', qrDataUrl);
+    qrImg.setAttribute('x', String(-QR / 2));
+    qrImg.setAttribute('y', String(-QR / 2));
+    qrImg.setAttribute('width', String(QR));
+    qrImg.setAttribute('height', String(QR));
+    qrImg.setAttribute('preserveAspectRatio', 'none');
+    qrG.appendChild(qrImg);
+    svg.appendChild(qrG);
   }
-  if (logoDataUrl) {
-    lines.push(
-      `      <image href="${logoDataUrl}" x="${logoX}" y="${logoY}" width="${logoW}" height="${logoH}" preserveAspectRatio="xMidYMid meet" />`,
-    );
-  }
-  lines.push('    </g>');
 
-  lines.push('  </g>');
-  lines.push('</svg>');
-  return lines.join('\n');
+  // 5) Case « Testé » 20×20 mm — contour CUT (noir), label FILL rouge,
+  //    coche FILL rouge si cochée.
+  const TEST = 20;
+  const testG = doc.createElementNS(SVG_NS, 'g');
+  testG.setAttribute('transform', matrixAt(80, -45));
+  const testRect = doc.createElementNS(SVG_NS, 'rect');
+  testRect.setAttribute('x', String(-TEST / 2));
+  testRect.setAttribute('y', String(-TEST / 2));
+  testRect.setAttribute('width', String(TEST));
+  testRect.setAttribute('height', String(TEST));
+  testRect.setAttribute('fill', 'none');
+  testRect.setAttribute('stroke', '#000000');
+  testRect.setAttribute('stroke-width', '0.1');
+  testG.appendChild(testRect);
+  const testLabel = doc.createElementNS(SVG_NS, 'text');
+  testLabel.setAttribute('x', '0');
+  testLabel.setAttribute('y', String(TEST / 2 + 5));
+  testLabel.setAttribute('font-family', FONT_FAMILY);
+  testLabel.setAttribute('font-size', '5');
+  testLabel.setAttribute('font-weight', '700');
+  testLabel.setAttribute('fill', '#FF0000');
+  testLabel.setAttribute('stroke', 'none');
+  testLabel.setAttribute('text-anchor', 'middle');
+  testLabel.textContent = 'Testé';
+  testG.appendChild(testLabel);
+  if (fields.tested) {
+    const halfA = (TEST - 6) / 2;
+    const cross = doc.createElementNS(SVG_NS, 'path');
+    cross.setAttribute(
+      'd',
+      `M ${-halfA} ${-halfA} L ${halfA} ${halfA} M ${halfA} ${-halfA} L ${-halfA} ${halfA}`,
+    );
+    cross.setAttribute('stroke', '#FF0000');
+    cross.setAttribute('stroke-width', '2.5');
+    cross.setAttribute('stroke-linecap', 'round');
+    cross.setAttribute('fill', 'none');
+    testG.appendChild(cross);
+  }
+  svg.appendChild(testG);
+
+  // 6) Logo MAG SCENE — réinjection à la position d'origine (le bitmap base64
+  //    a été strippé du gabarit pour réduire le bundle).
+  if (logoDataUrl) {
+    const logoG = doc.createElementNS(SVG_NS, 'g');
+    logoG.setAttribute('transform', 'matrix(0,0.032661,0.032661,0,159.520294,-14.578194)');
+    const logoImg = doc.createElementNS(SVG_NS, 'image');
+    logoImg.setAttributeNS(XLINK_NS, 'xlink:href', logoDataUrl);
+    logoImg.setAttribute('href', logoDataUrl);
+    logoImg.setAttribute('x', '-401.659485');
+    logoImg.setAttribute('y', '-333.248657');
+    logoImg.setAttribute('width', '803.31897');
+    logoImg.setAttribute('height', '666.497314');
+    logoImg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    logoG.appendChild(logoImg);
+    svg.appendChild(logoG);
+  }
+
+  return new XMLSerializer().serializeToString(doc);
 }
 
 const loadImageAsDataUrl = (src) =>
@@ -499,8 +471,9 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
       <div className="efc-rotate-hint">
         <RotateCw size={14} />
         <span>
-          Les plaques sont générées en orientation portrait avec une rotation 90° à droite par
-          défaut (alignée sur le gabarit MAG SCENE).
+          Plaque générée à partir du gabarit MAG SCENE — forme et mise en page exactes
+          (210×150&nbsp;mm, marques bleues, pied de page conservés). Seuls les libellés Client et
+          les 4 champs sont injectés, plus le QR et la case Testé.
         </span>
       </div>
 

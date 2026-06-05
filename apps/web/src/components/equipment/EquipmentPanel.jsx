@@ -9,6 +9,7 @@ import {
   FileText,
   Hash,
   Image as ImageIcon,
+  Layers,
   Map,
   MapPin,
   Package,
@@ -45,10 +46,10 @@ import EquipmentBatchLabels from './EquipmentBatchLabels';
 import EquipmentCategoriesTree from './EquipmentCategoriesTree';
 import { SAV_STATUS } from './equipmentConstants';
 import { EquipmentDetailDialog, EquipmentSlidePanel } from './EquipmentDetail';
+import EquipmentFlightCaseLabels from './EquipmentFlightCaseLabels';
 import EquipmentFormModal from './EquipmentFormModal';
 import EquipmentGrid from './EquipmentGrid';
 import EquipmentLabelPrint from './EquipmentLabelPrint';
-import LocmatImportModal from './import/LocmatImportModal';
 import EquipmentMediaManager from './EquipmentMediaManager';
 import {
   MobileSavRequestForm,
@@ -58,6 +59,7 @@ import {
   SavTicketsList,
 } from './EquipmentSAV';
 import { printEquipmentSheet } from './EquipmentSheetPrint';
+import LocmatImportModal from './import/LocmatImportModal';
 import { useEquipment } from './useEquipment';
 
 // ═══ COMPOSANT PRINCIPAL ═══
@@ -809,6 +811,12 @@ const EquipmentPanel = ({
                   color: ACCENT_COLORS.violet,
                 },
                 { id: 'labels', label: 'Étiquettes', icon: Printer, color: ACCENT_COLORS.orange },
+                {
+                  id: 'flightcase',
+                  label: 'Plaques flight-case',
+                  icon: Layers,
+                  color: ACCENT_COLORS.cyan || ACCENT_COLORS.violet,
+                },
                 { id: 'stats', label: 'Statistiques', icon: Hash, color: STATUS_COLORS.success },
                 { id: 'media', label: 'Médias', icon: ImageIcon, color: ACCENT_COLORS.pink },
               ].map((tab) => (
@@ -826,7 +834,7 @@ const EquipmentPanel = ({
             </div>
 
             <div
-              className={`eq-management-content ${mgmtTab === 'labels' ? 'eq-mgmt-content-labels' : ''}`}
+              className={`eq-management-content ${mgmtTab === 'labels' || mgmtTab === 'flightcase' ? 'eq-mgmt-content-labels' : ''}`}
             >
               {/* Onglet Imports */}
               {mgmtTab === 'imports' && (
@@ -908,6 +916,13 @@ const EquipmentPanel = ({
                     equipment={equipment}
                     onPrintSingle={(eq) => setLabelPrintEquipment(eq)}
                   />
+                </div>
+              )}
+
+              {/* Onglet Plaques flight-case */}
+              {mgmtTab === 'flightcase' && (
+                <div className="eq-management-section eq-mgmt-labels-section">
+                  <EquipmentFlightCaseLabels equipment={equipment} />
                 </div>
               )}
 

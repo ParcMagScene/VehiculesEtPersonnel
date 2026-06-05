@@ -51,6 +51,9 @@ export function registerEquipmentMethods(ApiClient) {
     async getEquipmentByUid(uid) {
       return this.request(`/equipment/by-uid/${uid}`);
     },
+    async getEquipmentByReference(reference) {
+      return this.request(`/equipment/by-reference/${encodeURIComponent(reference)}`);
+    },
 
     // Assignments matériel
     async getEquipmentAssignments(params = {}) {

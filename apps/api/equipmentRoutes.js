@@ -1689,6 +1689,35 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     }
   });
 
+  // GET /api/equipment/by-reference/:reference — Liste des unités d'une même référence
+  // (pour les QR codes "plaques flight-case" qui pointent sur la référence).
+  app.get('/api/equipment/by-reference/:reference', authenticateToken, (req, res) => {
+    try {
+      const reference = req.params.reference;
+      if (!reference) {
+        return res.status(400).json({ success: false, error: 'Référence manquante' });
+      }
+      const list = db
+        .prepare(
+          `
+        SELECT e.id, e.uid, e.name, e.reference, e.serial_number, e.numero_mag,
+               e.brand, e.status, e.location, e.location_depot, e.location_zone,
+               e.location_code, e.location_floor, e.photo, e.stock_quantity,
+               ec.name as category_name, ec.icon as category_icon, ec.color as category_color
+        FROM equipment e
+        LEFT JOIN equipment_categories ec ON e.category_id = ec.id
+        WHERE e.reference = ?
+        ORDER BY COALESCE(e.serial_number, ''), COALESCE(e.numero_mag, ''), e.id
+      `,
+        )
+        .all(reference);
+      res.json({ reference, count: list.length, items: list });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // GET /api/equipment-photos — Liste des photos/logos disponibles
   app.get('/api/equipment-photos', authenticateToken, (req, res) => {
     try {

@@ -1,0 +1,215 @@
+/* ═══ EquipmentFlightCaseLabels — Plaques ID alu flight-case ═══ */
+
+.efc-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+.efc-qr-safety {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  border: 1px solid transparent;
+}
+
+.efc-qr-safety.ok {
+  background: var(--theme-success-bg, rgba(16, 185, 129, 0.08));
+  border-color: var(--theme-success, #10b981);
+  color: var(--theme-success-text, #065f46);
+}
+
+.efc-qr-safety.danger {
+  background: var(--theme-danger-bg, rgba(239, 68, 68, 0.08));
+  border-color: var(--theme-danger, #ef4444);
+  color: var(--theme-danger-text, #991b1b);
+  font-weight: 500;
+}
+
+.efc-qr-safety code {
+  font-family: var(--font-mono);
+  background: var(--theme-bg-card-secondary, rgba(0, 0, 0, 0.05));
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.efc-qr-safety-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.efc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.efc-toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-2);
+}
+
+.efc-rotate-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+  background: var(--theme-bg-card-secondary, rgba(0, 0, 0, 0.03));
+  border-radius: var(--radius-sm);
+}
+
+.efc-selection-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+}
+
+.efc-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.efc-group {
+  border: 1px solid var(--theme-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.efc-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--theme-bg-card-secondary, rgba(0, 0, 0, 0.03));
+  cursor: pointer;
+  user-select: none;
+}
+
+.efc-group-title {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.efc-group-title strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.efc-group-count {
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+}
+
+.efc-checkbox.checked {
+  color: var(--theme-primary);
+}
+
+.efc-group-body {
+  padding: var(--space-3);
+  background: var(--theme-bg-card);
+}
+
+.efc-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-2);
+}
+
+.efc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-sm);
+}
+
+.efc-field span {
+  color: var(--theme-text-secondary);
+  font-weight: 500;
+}
+
+.efc-field input[type='text'] {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--theme-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+  font-size: var(--font-sm);
+}
+
+.efc-field-qty input[type='text'] {
+  max-width: 80px;
+}
+
+.efc-field-tested {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  grid-column: span 2;
+}
+
+/* ── Aperçu plein écran ── */
+.efc-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.efc-preview-card {
+  background: var(--theme-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  max-width: 95vw;
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.efc-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--theme-border-light);
+}
+
+.efc-preview-svg {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-3);
+  background: var(--theme-bg-darker, #f3f4f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.efc-preview-svg svg {
+  max-width: 100%;
+  max-height: 80vh;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}

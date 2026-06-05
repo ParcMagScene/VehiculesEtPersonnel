@@ -15,6 +15,7 @@ import MobileHome from './MobileHome';
 import MobileLogin from './MobileLogin';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileQRLanding from './MobileQRLanding';
+import MobileQRRefLanding from './MobileQRRefLanding';
 
 const MobilePlanning = lazy(() => import('./MobilePlanning'));
 const MobileAvailability = lazy(() => import('./MobileAvailability'));
@@ -45,9 +46,16 @@ function MobileScreenFallback() {
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const { currentScreen, qrUid: routerQrUid, navigate, goBack } = useMobileRouter();
+  const {
+    currentScreen,
+    qrUid: routerQrUid,
+    qrRef: routerQrRef,
+    navigate,
+    goBack,
+  } = useMobileRouter();
   const setCurrentScreen = navigate; // Bridge — migration progressive
   const [qrEquipmentUid, setQrEquipmentUid] = useState(null);
+  const [qrEquipmentRef, setQrEquipmentRef] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [maintenances, setMaintenances] = useState([]);
@@ -236,6 +244,11 @@ function MobileApp({ onSwitchToDesktop }) {
     if (routerQrUid) setQrEquipmentUid(routerQrUid);
   }, [routerQrUid]);
 
+  // Sync QR Référence depuis le router hash (plaques flight-case)
+  useEffect(() => {
+    if (routerQrRef) setQrEquipmentRef(routerQrRef);
+  }, [routerQrRef]);
+
   // Polling notifications messages non lus — remplacé par SSE (useMessagingSSE)
 
   const handleLogin = (user) => {
@@ -288,6 +301,23 @@ function MobileApp({ onSwitchToDesktop }) {
         onGoToEquipment={() => setCurrentScreen('equipment-qr')}
         onGoHome={() => {
           setQrEquipmentUid(null);
+          navigate('home');
+        }}
+      />
+    );
+  }
+
+  // Écran d'atterrissage QR par référence — plaques flight-case
+  if (currentScreen === 'qr-ref-landing' && qrEquipmentRef) {
+    return (
+      <MobileQRRefLanding
+        reference={qrEquipmentRef}
+        onSelectUid={(uid) => {
+          setQrEquipmentUid(uid);
+          setCurrentScreen('equipment-qr');
+        }}
+        onGoHome={() => {
+          setQrEquipmentRef(null);
           navigate('home');
         }}
       />

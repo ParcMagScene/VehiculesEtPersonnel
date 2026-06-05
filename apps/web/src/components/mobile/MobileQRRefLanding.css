@@ -1,0 +1,69 @@
+/* ═══ QR REF LANDING — LISTE DES UNITÉS D'UNE RÉFÉRENCE ═══ */
+
+.qr-ref-card {
+  max-width: 480px;
+}
+
+.qr-ref-count {
+  font-size: var(--font-base);
+  color: var(--theme-text-secondary);
+  margin-top: var(--space-2);
+}
+
+.qr-ref-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5) 0;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.qr-ref-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--theme-bg-card-secondary, var(--theme-border-light));
+  border: 1px solid var(--theme-border-light);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.qr-ref-item:hover,
+.qr-ref-item:active {
+  background: var(--theme-bg-hover, var(--theme-border-light));
+}
+
+.qr-ref-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.qr-ref-item-name {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qr-ref-item-sub {
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qr-ref-item-status {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  margin-top: 4px;
+}

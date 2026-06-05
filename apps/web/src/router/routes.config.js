@@ -136,3 +136,10 @@ export const MOBILE_ACTIVE_TAB_KEY = 'mobileActiveTab';
  * étiquettes imprimées.
  */
 export const MOBILE_QR_PATTERN = /^#\/mobile\/equipment\/(EMAG-\d+)/i;
+
+/**
+ * Pattern QR code par référence (plaques ID flight-case) :
+ * `#/mobile/equipment-ref/<referenceURIEncodée>`.
+ * Affiche la liste des unités partageant cette référence.
+ */
+export const MOBILE_QR_REF_PATTERN = /^#\/mobile\/equipment-ref\/([^?]+)/i;

@@ -199,6 +199,7 @@
 
 .efc-preview-svg {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: var(--space-3);
   background: var(--theme-bg-darker, #f3f4f6);
@@ -208,17 +209,43 @@
 }
 
 /*
- * Aperçu en orientation PAYSAGE : le SVG est généré en portrait (gabarit
- * 152×210 mm) mais on tourne l'affichage de 90° à gauche pour voir la
- * plaque telle qu'elle sera lue par l'opérateur.
- * On utilise transform: rotate(-90deg) + on intervertit les contraintes
- * de taille (max-width/max-height) car la box visible est inversée.
+ * Aperçu en orientation PAYSAGE.
+ *
+ * Le SVG généré est en portrait (gabarit MAG SCENE 152×210 mm). Pour le
+ * visualiser tel qu'il sera lu (à plat sur le flight-case), on l'affiche
+ * tourné de 90° à gauche.
+ *
+ * Problème : `transform: rotate()` ne change pas la box DOM de l'élément,
+ * donc un SVG portrait tourné déborde de son conteneur. On utilise donc
+ * un double wrapper :
+ *   .efc-preview-rot-wrap   : réserve la box VISUELLE paysage (ratio 210/152)
+ *   .efc-preview-rot-inner  : a des dimensions INVERSÉES (portrait) + la
+ *                             rotation -90° ; centré dans le wrapper.
+ * Ainsi le SVG portrait remplit exactement la box paysage après rotation.
  */
-.efc-preview-svg svg {
-  max-width: 80vh; /* après rotation : devient max-height visuel */
-  max-height: 100%; /* après rotation : devient max-width visuel */
+.efc-preview-rot-wrap {
+  position: relative;
+  width: min(100%, calc(85vh * 210 / 152));
+  max-width: 100%;
+  aspect-ratio: 210 / 152;
   background: #fff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-  transform: rotate(-90deg);
+  overflow: hidden;
+}
+
+.efc-preview-rot-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* Dimensions du wrapper inversées (portrait) */
+  width: calc(100% * 152 / 210);
+  height: calc(100% * 210 / 152);
+  transform: translate(-50%, -50%) rotate(-90deg);
   transform-origin: center center;
+}
+
+.efc-preview-rot-inner svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }

@@ -716,11 +716,22 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
                 Fermer
               </Button>
             </div>
-            <div
-              className="efc-preview-svg"
-              // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: previewSvg.svg }}
-            />
+            <div className="efc-preview-svg">
+              {/*
+                Wrapper paysage : le SVG est généré en portrait (152×210 mm)
+                mais on l'affiche en paysage via une rotation -90°. Le
+                wrapper réserve la box visuelle paysage ; l'inner div a les
+                dimensions inversées (portrait) et porte la rotation pour
+                que le SVG remplisse exactement la box visible.
+              */}
+              <div className="efc-preview-rot-wrap">
+                <div
+                  className="efc-preview-rot-inner"
+                  // eslint-disable-next-line react/no-danger
+                  dangerouslySetInnerHTML={{ __html: previewSvg.svg }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

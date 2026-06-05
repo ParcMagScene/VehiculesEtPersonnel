@@ -245,34 +245,31 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   );
 
   // 5) Infos matériel AU CENTRE de la zone DESIGNATION.
-  // 5) Infos matériel : 3 lignes empilées, alignées à GAUCHE en paysage.
-  //    Format :
-  //       ligne 1 : <BRAND>             (sans label)
-  //       ligne 2 : Réf : <REFERENCE>
-  //       ligne 3 : Qté : <QUANTITY>
-  //    Police 14 (double du précédent 7). Placées à droite du QR dans la
-  //    zone DESIGNATION : world_y commun = -149 (= bord droit QR + 5 mm de
-  //    marge). Empilage « vers le bas en paysage » = world_x décroissant
-  //    avec gap de 16 mm. `topAlign` cale le HAUT des caps de la première
-  //    ligne sur le HAUT du QR (world_x = 139).
+  // 5) Infos matériel :
+  //      • BRAND + RÉFÉRENCE empilées en haut-paysage de la zone
+  //        DESIGNATION, sous le QR à droite paysage (= world_y plus grand).
+  //        BRAND  : police 14, sans label.
+  //        RÉFÉRENCE : police 28 (encore x2), sans label « Réf : ».
+  //      • QUANTITÉ : en BAS-DROITE paysage, juste à GAUCHE de la case
+  //        Testé (= world_y inférieur au coin gauche-paysage de Testé).
+  //        Police 14.
+  //    Toutes les lignes sont en mode CUT (stroke noir, fill none).
   const brand = cleanText(fields.brand);
   const reference = cleanText(fields.reference);
   const qty = cleanText(fields.quantity);
-  const infoLines = [];
-  if (brand) infoLines.push(brand);
-  if (reference) infoLines.push(`Réf : ${reference}`);
-  if (qty) infoLines.push(`Qté : ${qty}`);
-  const INFO_BASE_X = 139; // même world_x que le HAUT paysage du QR
-  const INFO_BASE_Y = -149; // world_y commun (bord droit QR + 5 mm)
-  const INFO_GAP = 16; // mm en paysage entre deux lignes
-  const INFO_FONT_SIZE = 14;
-  infoLines.forEach((line, i) => {
+
+  // Après déplacement, le QR fait 30×30 mm et occupe world_x ∈ [105,135],
+  // world_y ∈ [-196,-166]. Le bord DROIT paysage du QR (= max world_y) est
+  // à -166. On pose les lignes brand/réf à 5 mm à droite de ce bord.
+  const INFO_BASE_Y = -161; // world_y commun pour brand + réf
+  const INFO_TOP_X = 135; // top paysage = top du QR (max world_x après descente)
+  if (brand) {
     svg.appendChild(
       createPlateText(doc, {
-        x: INFO_BASE_X - i * INFO_GAP,
+        x: INFO_TOP_X,
         y: INFO_BASE_Y,
-        content: line,
-        fontSize: INFO_FONT_SIZE,
+        content: brand,
+        fontSize: 14,
         fontWeight: 600,
         fontFamily: FONT_FAMILY,
         fill: 'none',
@@ -282,7 +279,27 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
         topAlign: true,
       }),
     );
-  });
+  }
+  if (reference) {
+    // La référence (police 28) est placée SOUS la marque en paysage
+    // (= world_x plus petit). Gap = ascender brand (~14) + petit espace.
+    const REF_X = INFO_TOP_X - 18;
+    svg.appendChild(
+      createPlateText(doc, {
+        x: REF_X,
+        y: INFO_BASE_Y,
+        content: reference,
+        fontSize: 28,
+        fontWeight: 700,
+        fontFamily: FONT_FAMILY,
+        fill: 'none',
+        stroke: '#000000',
+        strokeWidth: 0.15,
+        textAnchor: 'start',
+        topAlign: true,
+      }),
+    );
+  }
 
   // ─── Repère paysage (utilisation lecteur) ─────────────────────────────────
   // Le rect-cadre 210×150 du gabarit est centré en world (102.72, -98).
@@ -297,16 +314,15 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //   « DROITE » paysage = world_y élevé (≈ 0, côté logo MAG SCENE)
 
   // 4) QR placé dans la zone DESIGNATION, coin HAUT-GAUCHE paysage.
-  //    Zone DESIGNATION (path SVG) : world_x ∈ [32 ; 144], world_y ∈ [-199 ; -1].
-  //    Coin haut-gauche paysage de la zone = (world_x=144, world_y=-199).
-  //    Avec marge 5 mm et QR 40×40 mm : le QR en world va de
-  //    (A, B) à (A+40, B+40) où A+40 = 144-5 = 139 et B = -199+5 = -194.
-  //    Donc A = 99, B = -194.
-  //    ATTENTION : attributs SVG x/y du <image> = world_x/world_y direct.
+  //    Taille 30×30 mm. Après ajustement :
+  //      • descendu de 4 mm en paysage (= top world_x : 139 → 135)
+  //      • décalé de 2 mm vers la gauche paysage (= left world_y : -194 → -196)
+  //    Coin haut-gauche paysage = (world_x=135, world_y=-196).
+  //    Avec QR 30 mm : SVG x = 135-30 = 105, SVG y = -196, w=h=30.
   if (qrDataUrl) {
-    const QR = 40;
-    const qrSvgX = 99; // world_x du coin haut-gauche SVG = BAS paysage du QR
-    const qrSvgY = -194; // world_y du coin haut-gauche SVG = GAUCHE paysage du QR
+    const QR = 30;
+    const qrSvgX = 105;
+    const qrSvgY = -196;
     const qrImg = doc.createElementNS(SVG_NS, 'image');
     qrImg.setAttributeNS(XLINK_NS, 'xlink:href', qrDataUrl);
     qrImg.setAttribute('href', qrDataUrl);
@@ -376,6 +392,32 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     cross.setAttribute('stroke-linecap', 'round');
     cross.setAttribute('fill', 'none');
     svg.appendChild(cross);
+  }
+
+  // 5bis) Quantité — placée en BAS-DROITE paysage de la zone DESIGNATION,
+  //       juste à GAUCHE paysage de la case Testé.
+  //       Anchor sur le bord GAUCHE paysage de Testé (= min world_y = testWorldY)
+  //       avec 5 mm de marge → world_y = testWorldY - 5.
+  //       textAnchor:'end' : la FIN du texte (droite paysage) atterrit à
+  //       cette ancre → le texte s'étend vers la gauche paysage. topAlign
+  //       cale le haut des caps sur le top paysage de Testé (= max world_x
+  //       de Testé = testWorldX + TEST).
+  if (qty) {
+    svg.appendChild(
+      createPlateText(doc, {
+        x: testWorldX + TEST,
+        y: testWorldY - 5,
+        content: qty,
+        fontSize: 14,
+        fontWeight: 600,
+        fontFamily: FONT_FAMILY,
+        fill: 'none',
+        stroke: '#000000',
+        strokeWidth: 0.1,
+        textAnchor: 'end',
+        topAlign: true,
+      }),
+    );
   }
 
   // 6) Logo MAG SCENE — taille et position EXACTES du gabarit.

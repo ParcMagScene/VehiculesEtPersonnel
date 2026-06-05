@@ -229,6 +229,9 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
             </span>
             <div>
               <h3>{equipment.name}</h3>
+              {equipment.reference && (
+                <span className="m-eq-qr-ref">Réf : {equipment.reference}</span>
+              )}
               <span className="m-eq-qr-status" style={{ background: st.color }}>
                 {st.icon} {st.label}
               </span>
@@ -350,7 +353,10 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
         ) : (
           <div className="m-eq-qr-form">
             <p className="m-eq-qr-eq-label">
-              {equipment.categoryIcon || '📦'} {equipment.name} — <code>{equipment.uid}</code>
+              {equipment.categoryIcon || '📦'} {equipment.name} — <code>{equipment.uid}</code>{' '}
+              {equipment.reference && (
+                <span className="m-eq-qr-eq-ref">Réf : {equipment.reference}</span>
+              )}{' '}
             </p>
             <label>Quel est le problème ? *</label>
             <Input
@@ -398,6 +404,9 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           <div className="m-eq-qr-form">
             <p className="m-eq-qr-eq-label">
               {equipment.categoryIcon || '📦'} {equipment.name} — <code>{equipment.uid}</code>
+              {equipment.reference && (
+                <span className="m-eq-qr-eq-ref">Réf : {equipment.reference}</span>
+              )}
             </p>
             <label>Type d'intervention</label>
             <Select
@@ -464,6 +473,9 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
           <div className="m-eq-qr-form">
             <p className="m-eq-qr-eq-label">
               {equipment.categoryIcon || '📦'} {equipment.name} — <code>{equipment.uid}</code>
+              {equipment.reference && (
+                <span className="m-eq-qr-eq-ref">Réf : {equipment.reference}</span>
+              )}
             </p>
             <label>Type</label>
             <Select

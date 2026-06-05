@@ -503,6 +503,14 @@
   font-size: var(--font-sm);
 }
 
+.m-eq-qr-eq-ref {
+  flex-basis: 100%;
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
 .m-eq-qr-form label {
   display: block;
   font-size: var(--font-base);

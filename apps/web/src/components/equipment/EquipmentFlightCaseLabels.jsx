@@ -227,10 +227,10 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //    gabarit (ancre placeholder), puis ajusté :
   //      • « gauche en paysage » = world_y plus négatif → -20 mm sur y
   //      • « relever de 2 mm en paysage » = world_x plus grand → +2 mm sur x
-  //    Sans « : », sans valeur, en MAJUSCULES sans accent. Mode LIGNE
-  //    (stroke rouge, fill none) car la zone DESIGNATION est en gravure
-  //    vectorielle ligne, pas remplissage. Police Astronomus. `topAlign`
-  //    calé sur le bord haut de la zone.
+  //    Sans « : », sans valeur, en MAJUSCULES sans accent. FILL rouge
+  //    (le LIBELLÉ reste en remplissage ; c'est la ZONE qui passe en
+  //    ligne, modifiée directement dans PlaquesIDVierges.svg). Police
+  //    Astronomus. `topAlign` calé sur le bord haut de la zone.
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_DESIGNATION.x + 2,
@@ -239,9 +239,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
       fontSize: 6,
       fontWeight: 700,
       fontFamily: FONT_FAMILY_ASTRO,
-      fill: 'none',
-      stroke: '#FF0000',
-      strokeWidth: 0.1,
+      fill: '#FF0000',
       topAlign: true,
     }),
   );
@@ -318,8 +316,10 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   const tMargin = 6;
   const X_BOT = 27.7; // bord intérieur gauche du cadre (paysage : bas)
   const Y_RIGHT = 7.0; // bord intérieur bas du cadre   (paysage : droite)
-  const testWorldX = X_BOT + tMargin; // coin haut-gauche en SVG = world_x
-  const testWorldY = Y_RIGHT - tMargin - TEST; // coin haut-gauche en SVG = world_y
+  // Offsets d'ajustement fin (paysage) : +6 mm « vers le haut » (= world_x +6)
+  // et -12 mm « vers la gauche » (= world_y -12) par rapport à la marge.
+  const testWorldX = X_BOT + tMargin + 6; // coin haut-gauche en SVG = world_x
+  const testWorldY = Y_RIGHT - tMargin - TEST - 12; // coin haut-gauche en SVG = world_y
   const testRect = doc.createElementNS(SVG_NS, 'rect');
   testRect.setAttribute('x', String(testWorldX));
   testRect.setAttribute('y', String(testWorldY));

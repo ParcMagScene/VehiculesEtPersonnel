@@ -46,31 +46,69 @@ import TEMPLATE_SVG from './templates/PlaquesIDVierges.svg?raw';
 const ANCHOR_CLIENT = { x: 172.735138, y: -178.038361 };
 const ANCHOR_DESIGNATION = { x: 142.735275, y: -178.992889 };
 
-// ─── Matrice texte ──────────────────────────────────────────────────────────
-// Le gabarit utilise matrix(-0.000168, 0.961539, 0.961539, 0.000168, X, Y).
-// Son déterminant est NÉGATIF (≈ -0.92) — c'est une rotation 90° CCW + flip
-// horizontal. Les textes du gabarit sont des <path> pré-tracés en miroir
-// pour ANNULER ce flip ; mais un <text> SVG normal s'afficherait en miroir
-// avec cette matrice. On utilise donc la rotation 90° CCW PURE (det=+1)
-// pour que le texte soit LISIBLE quand on incline la plaque 90° à droite.
-//   matrix(0, 1, -1, 0, X, Y)  ≡  translate(X,Y) rotate(90)
-//   local(1,0) → world(0,+1)   : baseline descend dans la page (= droite-en-paysage)
-//   local(0,1) → world(-1,0)   : « ligne suivante » va vers world_x décroissant
-const TEXT_ROT = { a: 0, b: 1, c: -1, d: 0 };
-const textMatrixAt = (x, y) =>
-  `matrix(${TEXT_ROT.a},${TEXT_ROT.b},${TEXT_ROT.c},${TEXT_ROT.d},${x.toFixed(4)},${y.toFixed(4)})`;
+// ─── Matrice texte EXACTEMENT identique au gabarit ─────────────────────────
+// Le gabarit utilise matrix(-0.000168, 0.961539, 0.961539, 0.000168, X, Y)
+// (rotation 90° + flip horizontal, det ≈ -0.92). Les paths du gabarit sont
+// pré-tracés en MIROIR pour que la matrice les remette à l'endroit. Pour
+// obtenir EXACTEMENT la même position visuelle qu'un placeholder du gabarit
+// avec un <text> SVG natif, on conserve la matrice du gabarit telle quelle
+// et on enveloppe le texte dans un wrapper qui flippe localement les
+// glyphes (scale(-1,1)) — le flip local est ré-inversé par la matrice
+// → texte LISIBLE et au mm près à la position du placeholder d'origine.
+const TPL = { a: -0.000168, b: 0.961539, c: 0.961539, d: 0.000168 };
+const tplMatrix = (x, y) =>
+  `matrix(${TPL.a},${TPL.b},${TPL.c},${TPL.d},${x.toFixed(4)},${y.toFixed(4)})`;
 
 // Direction « ligne suivante » dans le repère world : ce sont les coefficients
-// (c, d) de la matrice appliqués à un déplacement local +y.
-// Avec TEXT_ROT (0,1,-1,0) → ΔWorld = (-1, 0) par unité de local-y.
-const LINE_DIR = { dx: TEXT_ROT.c, dy: TEXT_ROT.d };
+// (c, d) du gabarit appliqués à un déplacement local +y → ≈ (+0.96, 0)
+// = vers world_x croissant (donc en paysage : la pile va vers le HAUT,
+// dans le sens de Client).
+const LINE_DIR = { dx: TPL.c, dy: TPL.d };
 
 // Gap inter-lignes (mm) appliqué dans la direction LINE_DIR.
 const FIELD_LINE_GAP = 8;
 
+// Police par défaut des champs CUT (Marque/Référence/Désignation/Quantité).
 const FONT_FAMILY = "'Liberation Sans','DejaVu Sans',Arial,Helvetica,sans-serif";
+// Police imposée pour les libellés Client & Désignation (fallback inclus).
+const FONT_FAMILY_ASTRO = "'Astronomus','Liberation Sans',Arial,Helvetica,sans-serif";
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
+/**
+ * Crée un <g> + <text> positionné à (x,y) avec la matrice du gabarit
+ * et un scale(-1,1) interne pour que les glyphes restent lisibles malgré
+ * le flip de la matrice. Permet de coller pile-poil sur les placeholders
+ * « Client » / « DEsignation » du gabarit officiel.
+ */
+function createPlateText(
+  doc,
+  { x, y, content, fontSize, fontFamily, fill, stroke, strokeWidth, fontWeight },
+) {
+  const g = doc.createElementNS(SVG_NS, 'g');
+  g.setAttribute('transform', tplMatrix(x, y));
+  const t = doc.createElementNS(SVG_NS, 'text');
+  // scale(-1,1) annule le mirror horizontal de la matrice du gabarit.
+  t.setAttribute('transform', 'scale(-1,1)');
+  t.setAttribute('x', '0');
+  t.setAttribute('y', '0');
+  t.setAttribute('font-family', fontFamily || FONT_FAMILY);
+  t.setAttribute('font-size', String(fontSize));
+  if (fontWeight) t.setAttribute('font-weight', String(fontWeight));
+  t.setAttribute('fill', fill || 'none');
+  if (stroke) {
+    t.setAttribute('stroke', stroke);
+    t.setAttribute('stroke-width', String(strokeWidth ?? 0.08));
+  } else {
+    t.setAttribute('stroke', 'none');
+  }
+  // Avec scale(-1,1) le texte démarre en local_x=0 et s'étend vers -x ; la
+  // matrice du gabarit le ramène à world_y croissant depuis l'ancre, ce qui
+  // reproduit EXACTEMENT la disposition d'un placeholder gabarit.
+  t.textContent = content;
+  g.appendChild(t);
+  return g;
+}
 
 // Repère les <path> du gabarit qui rendent les textes « Client » et
 // « DEsignation » (gravés en placeholders) : leur matrice translation
@@ -115,45 +153,61 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     }
   }
 
-  // 2) Libellé « Client : … » à l'ancre EXACTE du placeholder, FILL rouge.
-  //    Matrice rotation 90° CCW PURE (det=+1) → texte lisible (non miroité).
-  const clientText = doc.createElementNS(SVG_NS, 'text');
-  clientText.setAttribute('transform', textMatrixAt(ANCHOR_CLIENT.x, ANCHOR_CLIENT.y));
-  clientText.setAttribute('font-family', FONT_FAMILY);
-  clientText.setAttribute('font-size', '6');
-  clientText.setAttribute('font-weight', '700');
-  clientText.setAttribute('fill', '#FF0000');
-  clientText.setAttribute('stroke', 'none');
-  clientText.setAttribute('x', '0');
-  clientText.setAttribute('y', '0');
-  clientText.textContent = `Client : ${cleanText(fields.client)}`;
-  svg.appendChild(clientText);
+  // 2) Libellé « Client : … » à l'ancre EXACTE du placeholder, FILL rouge,
+  //    police Astronomus (imposée par le client).
+  svg.appendChild(
+    createPlateText(doc, {
+      x: ANCHOR_CLIENT.x,
+      y: ANCHOR_CLIENT.y,
+      content: `Client : ${cleanText(fields.client)}`,
+      fontSize: 6,
+      fontWeight: 700,
+      fontFamily: FONT_FAMILY_ASTRO,
+      fill: '#FF0000',
+    }),
+  );
 
-  // 3) 4 lignes (Marque / Référence / Désignation / Quantité) au point
-  //    d'ancrage EXACT de DEsignation, empilées dans la direction LINE_DIR
-  //    (world_x décroissant avec la rotation CCW pure).
-  //    Mode CUT : stroke noir, fill none.
-  const labels = [
-    `Marque : ${cleanText(fields.brand)}`,
-    `Référence : ${cleanText(fields.reference)}`,
-    `Désignation : ${cleanText(fields.designation)}`,
-    `Quantité : ${cleanText(fields.quantity)}`,
+  // 3) 4 lignes (Marque / Référence / Désignation / Quantité) empilées depuis
+  //    l'ancre EXACTE de « DEsignation » (142.735, -178.99). La ligne
+  //    « Désignation » utilise la police Astronomus et le FILL rouge (comme
+  //    dans le gabarit) ; les 3 autres sont en mode CUT (stroke noir, fill
+  //    none) avec la police standard.
+  const fieldRows = [
+    {
+      content: `Marque : ${cleanText(fields.brand)}`,
+      mode: 'cut',
+    },
+    {
+      content: `Référence : ${cleanText(fields.reference)}`,
+      mode: 'cut',
+    },
+    {
+      content: `Désignation : ${cleanText(fields.designation)}`,
+      mode: 'fill-astro',
+    },
+    {
+      content: `Quantité : ${cleanText(fields.quantity)}`,
+      mode: 'cut',
+    },
   ];
-  for (let i = 0; i < labels.length; i++) {
+  for (let i = 0; i < fieldRows.length; i++) {
+    const row = fieldRows[i];
     const wx = ANCHOR_DESIGNATION.x + i * FIELD_LINE_GAP * LINE_DIR.dx;
     const wy = ANCHOR_DESIGNATION.y + i * FIELD_LINE_GAP * LINE_DIR.dy;
-    const t = doc.createElementNS(SVG_NS, 'text');
-    t.setAttribute('transform', textMatrixAt(wx, wy));
-    t.setAttribute('font-family', FONT_FAMILY);
-    t.setAttribute('font-size', '5');
-    t.setAttribute('font-weight', '500');
-    t.setAttribute('fill', 'none');
-    t.setAttribute('stroke', '#000000');
-    t.setAttribute('stroke-width', '0.08');
-    t.setAttribute('x', '0');
-    t.setAttribute('y', '0');
-    t.textContent = labels[i];
-    svg.appendChild(t);
+    const isDesignation = row.mode === 'fill-astro';
+    svg.appendChild(
+      createPlateText(doc, {
+        x: wx,
+        y: wy,
+        content: row.content,
+        fontSize: isDesignation ? 6 : 5,
+        fontWeight: isDesignation ? 700 : 500,
+        fontFamily: isDesignation ? FONT_FAMILY_ASTRO : FONT_FAMILY,
+        fill: isDesignation ? '#FF0000' : 'none',
+        stroke: isDesignation ? null : '#000000',
+        strokeWidth: isDesignation ? null : 0.08,
+      }),
+    );
   }
 
   // ─── Repère paysage (utilisation lecteur) ─────────────────────────────────
@@ -208,12 +262,16 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   testRect.setAttribute('stroke', '#000000');
   testRect.setAttribute('stroke-width', '0.1');
   svg.appendChild(testRect);
-  // Label « Testé » lisible en paysage → on utilise la même matrice CCW pure
-  // ancrée au centre-bas de la case (côté « bas » paysage = world_x élevé).
+  // Label « Testé » lisible en paysage → on utilise la matrice gabarit (avec
+  // wrapper scale(-1,1) interne) ancrée au centre-bas de la case en paysage.
   const labelAnchorX = testY + TEST + 5; // 5 mm sous la case en paysage
   const labelAnchorY = testX + TEST / 2; // centré horizontalement (paysage)
+  // Pour text-anchor:middle on doit construire à la main (createPlateText
+  // n'expose pas cet attribut) — on garde la même mécanique matrix+scale.
+  const testLabelG = doc.createElementNS(SVG_NS, 'g');
+  testLabelG.setAttribute('transform', tplMatrix(labelAnchorX, labelAnchorY));
   const testLabel = doc.createElementNS(SVG_NS, 'text');
-  testLabel.setAttribute('transform', textMatrixAt(labelAnchorX, labelAnchorY));
+  testLabel.setAttribute('transform', 'scale(-1,1)');
   testLabel.setAttribute('font-family', FONT_FAMILY);
   testLabel.setAttribute('font-size', '5');
   testLabel.setAttribute('font-weight', '700');
@@ -223,7 +281,8 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   testLabel.setAttribute('x', '0');
   testLabel.setAttribute('y', '0');
   testLabel.textContent = 'Testé';
-  svg.appendChild(testLabel);
+  testLabelG.appendChild(testLabel);
+  svg.appendChild(testLabelG);
   if (fields.tested) {
     const cx = testX + TEST / 2;
     const cy = testY + TEST / 2;

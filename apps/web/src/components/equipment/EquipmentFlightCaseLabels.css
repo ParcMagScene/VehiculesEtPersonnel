@@ -207,9 +207,18 @@
   justify-content: center;
 }
 
+/*
+ * Aperçu en orientation PAYSAGE : le SVG est généré en portrait (gabarit
+ * 152×210 mm) mais on tourne l'affichage de 90° à gauche pour voir la
+ * plaque telle qu'elle sera lue par l'opérateur.
+ * On utilise transform: rotate(-90deg) + on intervertit les contraintes
+ * de taille (max-width/max-height) car la box visible est inversée.
+ */
 .efc-preview-svg svg {
-  max-width: 100%;
-  max-height: 80vh;
+  max-width: 80vh; /* après rotation : devient max-height visuel */
+  max-height: 100%; /* après rotation : devient max-width visuel */
   background: #fff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  transform: rotate(-90deg);
+  transform-origin: center center;
 }

@@ -193,7 +193,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_CLIENT.x + 2,
-      y: ANCHOR_CLIENT.y - 12,
+      y: ANCHOR_CLIENT.y - 11,
       content: 'CLIENT',
       fontSize: 6,
       fontWeight: 700,
@@ -232,7 +232,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_DESIGNATION.x + 2,
-      y: ANCHOR_DESIGNATION.y - 21,
+      y: ANCHOR_DESIGNATION.y - 20,
       content: 'DESIGNATION',
       fontSize: 6,
       fontWeight: 700,
@@ -365,7 +365,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //    (rotation 90° CCW PURE) qui produit le même rendu visuel mais sans
   //    mirroring du PNG.
   if (logoDataUrl) {
-    const LOGO_SCALE = 0.032661; // EXACTEMENT comme dans le gabarit
+    const LOGO_SCALE = 0.033611; // ~27 mm de large (27 / 803.31897)
     const LOGO_CX = 159.520294;
     const LOGO_CY = -14.578194;
     const m = `matrix(0,${LOGO_SCALE},${-LOGO_SCALE},0,${LOGO_CX},${LOGO_CY})`;

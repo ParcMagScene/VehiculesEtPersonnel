@@ -184,16 +184,19 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   const ZONE_CLIENT_CENTER = { x: 157.7, y: -98 };
   const ZONE_DESIGN_CENTER = { x: 85.2, y: -98 };
 
-  // 2) Libellé « CLIENT » au coin EXACT du gabarit (ancre placeholder),
-  //    sans « : », sans valeur. FILL rouge, police Astronomus.
+  // 2) Libellé « CLIENT » — posé au coin haut-gauche EXACT du gabarit
+  //    (ancre placeholder), puis décalé de 8 mm « vers la gauche en paysage ».
+  //    En paysage la matrice gabarit fait une rotation 90° CW » : la
+  //    direction « gauche écran » correspond aux world_y plus négatifs.
+  //    On soustrait donc 8 mm à ANCHOR_CLIENT.y pour le décalage.
   //    `topAlign` : le HAUT des caps (et non la baseline) est calé sur
   //    l'ancre, pour que le label soit aligné au bord HAUT de la zone.
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_CLIENT.x,
-      y: ANCHOR_CLIENT.y,
+      y: ANCHOR_CLIENT.y - 8,
       content: 'CLIENT',
-      fontSize: 6,
+      fontSize: 7,
       fontWeight: 700,
       fontFamily: FONT_FAMILY_ASTRO,
       fill: '#FF0000',
@@ -221,16 +224,17 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     );
   }
 
-  // 4) Libellé « DESIGNATION » au coin EXACT du gabarit (ancre placeholder),
-  //    sans « : », sans valeur, en MAJUSCULES sans accent. FILL rouge,
-  //    police Astronomus. `topAlign` : haut des caps calé sur le bord haut
-  //    de la zone DESIGNATION.
+  // 4) Libellé « DESIGNATION » — posé au coin haut-gauche EXACT du gabarit
+  //    (ancre placeholder), puis décalé de 8 mm « vers la gauche en paysage »
+  //    (= -8 sur world_y, même logique que CLIENT). Sans « : », sans valeur,
+  //    en MAJUSCULES sans accent. FILL rouge, police Astronomus. `topAlign`
+  //    calé sur le bord haut de la zone.
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_DESIGNATION.x,
-      y: ANCHOR_DESIGNATION.y,
+      y: ANCHOR_DESIGNATION.y - 8,
       content: 'DESIGNATION',
-      fontSize: 6,
+      fontSize: 7,
       fontWeight: 700,
       fontFamily: FONT_FAMILY_ASTRO,
       fill: '#FF0000',

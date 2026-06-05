@@ -4,7 +4,14 @@ import logger from '../logger.js';
 
 // Construire la liste d'origines autorisées à partir de ALLOWED_ORIGINS (env)
 // Fallback sur localhost uniquement si rien n'est configuré
-const fallbackOrigins = ['http://localhost:4173', 'http://127.0.0.1:4173'];
+const fallbackOrigins = [
+  'http://localhost:4173',
+  'http://127.0.0.1:4173',
+  'http://localhost:4273',
+  'http://127.0.0.1:4273',
+  'https://magsav.duckdns.org',
+  'https://magsav.duckdns.org:4173',
+];
 if (process.env.NODE_ENV === 'development') {
   fallbackOrigins.push(
     'http://localhost:5174',

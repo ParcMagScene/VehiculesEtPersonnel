@@ -117,9 +117,9 @@ export default defineConfig(({ mode }) => ({
     }
   },
   preview: {
-    // MODE PROD — proxy vers le backend PROD sur port 3002
-    host: '0.0.0.0',
-    port: 4173,
+    // MODE PROD — servi en interne (loopback), Caddy publie en HTTPS sur :443 et :4173
+    host: '127.0.0.1',
+    port: 4273,
     allowedHosts: true,
     headers: {
       'Pragma': 'no-cache',

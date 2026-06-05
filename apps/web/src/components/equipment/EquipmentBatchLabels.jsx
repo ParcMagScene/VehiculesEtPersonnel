@@ -612,30 +612,93 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
                           )}
                           {eq.name && <span className="ebl-name">{cleanName(eq.name)}</span>}
                         </div>
-                        {/* Mini-aperçu */}
+                        {/* Mini-aperçu — réplique fidèle du SVG laser (50×25 mm) */}
                         <div className="ebl-mini-preview">
-                          <div className="ebl-mini-label">
-                            {showLogo && (
-                              <img
-                                src="/Logos/logo_Noir_Transp.png"
-                                alt="Logo eM@g"
-                                className="ebl-mini-logo"
-                              />
-                            )}
-                            <div>
-                              <div className="ebl-mini-ref">{eq.reference}</div>
-                              {eq.uid && (
-                                <div className="ebl-mini-uid">
-                                  <b>{eq.uid}</b>
-                                </div>
-                              )}
-                            </div>
-                            <QRCodeSVG
-                              value={eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : '#'}
-                              size={24}
-                              level="L"
+                          <svg
+                            className="ebl-mini-svg"
+                            viewBox="0 0 50 25"
+                            xmlns="http://www.w3.org/2000/svg"
+                            aria-label="Aperçu étiquette"
+                          >
+                            <rect
+                              x="0.05"
+                              y="0.05"
+                              width="49.9"
+                              height="24.9"
+                              fill="#ffffff"
+                              stroke="#888"
+                              strokeWidth="0.1"
                             />
-                          </div>
+                            {eq.uid && (
+                              <g transform="translate(0,0)">
+                                <QRCodeSVG
+                                  value={`${APP_BASE_URL}/#/mobile/equipment/${eq.uid}`}
+                                  size={25}
+                                  level="H"
+                                  marginSize={1}
+                                  imageSettings={
+                                    showLogo
+                                      ? {
+                                          src: '/Logos/Logo_MAGSCENE_Noir_Transp.png',
+                                          height: 7,
+                                          width: 7,
+                                          excavate: true,
+                                        }
+                                      : undefined
+                                  }
+                                />
+                              </g>
+                            )}
+                            {eq.reference && (
+                              <text
+                                x="26"
+                                y="3.56"
+                                fontFamily="'Liberation Sans', Arial, sans-serif"
+                                fontSize="3.2"
+                                fontWeight="700"
+                                fill="#FF0000"
+                              >
+                                {cleanName(eq.reference).slice(0, 9)}
+                              </text>
+                            )}
+                            {(eq.numeroMag || eq.numero_mag) && (
+                              <text
+                                x="37.5"
+                                y="15.5"
+                                fontFamily="'Liberation Sans', Arial, sans-serif"
+                                fontSize="7.5"
+                                fontWeight="700"
+                                fill="#FF0000"
+                                textAnchor="middle"
+                              >
+                                {String(eq.numeroMag || eq.numero_mag).trim()}
+                              </text>
+                            )}
+                            {eq.uid && (
+                              <text
+                                x="26"
+                                y="20.855"
+                                fontFamily="'Liberation Sans', Arial, sans-serif"
+                                fontSize="2.8"
+                                fontWeight="600"
+                                fill="#FF0000"
+                              >
+                                {eq.uid}
+                              </text>
+                            )}
+                            {(eq.serialNumber || eq.serial_number) && (
+                              <text
+                                x="26"
+                                y="23.5"
+                                fontFamily="'Liberation Sans', Arial, sans-serif"
+                                fontSize="2.25"
+                                fontWeight="400"
+                                fill="#FF0000"
+                              >
+                                SN: {eq.serialNumber || eq.serial_number}
+                              </text>
+                            )}
+                          </svg>
                         </div>
                       </div>
                     ))}

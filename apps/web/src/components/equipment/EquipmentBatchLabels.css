@@ -392,39 +392,18 @@
   text-overflow: ellipsis;
 }
 
-/* Mini aperçu */
+/* Mini aperçu — réplique du SVG laser (ratio 50:25 = 2:1) */
 .ebl-mini-preview {
   flex-shrink: 0;
 }
 
-.ebl-mini-label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 2px var(--space-1);
-  background: var(--theme-bg-secondary);
+.ebl-mini-svg {
+  width: 140px;
+  height: 70px;
+  display: block;
+  background: #ffffff;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-xs);
-}
-
-.ebl-mini-logo {
-  height: 18px;
-  width: auto;
-  flex-shrink: 0;
-}
-
-.ebl-mini-ref {
-  font-size: 8px;
-  font-weight: 800;
-  color: var(--theme-text-primary);
-  white-space: nowrap;
-}
-
-.ebl-mini-uid {
-  font-size: 6px;
-  color: var(--theme-text-secondary);
-  font-family: var(--font-mono);
-  white-space: nowrap;
 }
 
 /* Actions dans la toolbar */

@@ -129,6 +129,13 @@
   margin-bottom: var(--space-1);
 }
 
+.qr-landing-reference {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--theme-primary);
+  margin-bottom: var(--space-1-5);
+}
+
 .qr-landing-detail {
   font-size: var(--font-base);
   color: var(--theme-text-secondary);

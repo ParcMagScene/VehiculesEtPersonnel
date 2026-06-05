@@ -193,7 +193,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_CLIENT.x + 2,
-      y: ANCHOR_CLIENT.y - 4,
+      y: ANCHOR_CLIENT.y - 12,
       content: 'CLIENT',
       fontSize: 7,
       fontWeight: 700,
@@ -232,7 +232,7 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   svg.appendChild(
     createPlateText(doc, {
       x: ANCHOR_DESIGNATION.x + 2,
-      y: ANCHOR_DESIGNATION.y - 13,
+      y: ANCHOR_DESIGNATION.y - 21,
       content: 'DESIGNATION',
       fontSize: 7,
       fontWeight: 700,

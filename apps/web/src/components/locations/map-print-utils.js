@@ -136,6 +136,8 @@ async function captureLeafletTiles(container) {
     await new Promise((r) => setTimeout(r, 300));
 
     // Masquer les éléments inutiles avant capture
+    // (les indicateurs offscreen .map-offscreen-layer doivent rester visibles
+    // pour afficher la direction des lieux extérieurs à la carte)
     const hideSelectors = [
       '.leaflet-control-zoom',
       '.leaflet-control-attribution',
@@ -144,7 +146,6 @@ async function captureLeafletTiles(container) {
       '.map-route-panel',
       '.map-radius-control',
       '.map-print-control',
-      '.map-offscreen-layer',
     ];
     const hidden = [];
     for (const sel of hideSelectors) {

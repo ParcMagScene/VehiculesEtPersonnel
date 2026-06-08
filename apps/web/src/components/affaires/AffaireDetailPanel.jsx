@@ -65,11 +65,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { AFFAIRE_TYPE_SECTIONS, AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
-import {
-  AFFAIRE_STATUS_MAP,
-  getAvailableTransitions,
-  STEP_TEMPLATES,
-} from '../../utils/affaireWorkflow';
+import { AFFAIRE_STATUS_MAP, getAvailableTransitions } from '../../utils/affaireWorkflow';
 import api, { getApiUrl } from '../../utils/api';
 import { groupBpItemsBySectionMap } from '../../utils/bpItemsGrouping';
 import { capitalizeText } from '../../utils/dateUtils';
@@ -173,12 +169,10 @@ const TASK_STEPS = [
   },
 ];
 
-// Étapes filtrées par type d'affaire (Phase 9)
-const getVisibleSteps = (type) => {
-  const templateKeys = STEP_TEMPLATES[type];
-  if (!templateKeys) return TASK_STEPS;
-  return TASK_STEPS.filter((s) => templateKeys.includes(s.key));
-};
+// Toutes les étapes de tâches sont disponibles dans la planification,
+// indépendamment du type d'affaire. Les `STEP_TEMPLATES` ne sont utilisés
+// que pour suggérer un workflow, pas pour restreindre les options.
+const getVisibleSteps = () => TASK_STEPS;
 
 const TASK_STATUS_MAP = {
   pending: { label: 'En attente', color: '#94a3b8', bg: '#f1f5f9' },
@@ -928,8 +922,8 @@ const AffaireDetailContent = ({
     }
   }, [taskSteps, affaire, getSectionForStep, showFeedback, loadAffaireTasks, onDataChanged]);
 
-  // Nombre d'étapes activées
-  const visibleSteps = useMemo(() => getVisibleSteps(affaire.type), [affaire.type]);
+  // Nombre d'étapes activées (toutes les étapes sont disponibles, indépendamment du type)
+  const visibleSteps = useMemo(() => getVisibleSteps(), []);
   const enabledStepCount = useMemo(
     () => visibleSteps.filter((s) => taskSteps[s.key]?.enabled).length,
     [taskSteps, visibleSteps],

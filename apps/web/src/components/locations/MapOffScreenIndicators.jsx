@@ -23,7 +23,7 @@ export default function MapOffScreenIndicators({ locations }) {
     const size = map.getSize();
     const center = { x: size.x / 2, y: size.y / 2 };
     const edgePadding = 14;
-    const minGap = 30;
+    const minGap = 36;
 
     const withEdge = (x, y) => {
       const distances = {

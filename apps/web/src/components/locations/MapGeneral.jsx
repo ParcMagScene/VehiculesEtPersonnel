@@ -15,6 +15,7 @@ import {
   TILE_DARK,
   TILE_LIGHT,
 } from './map-utils';
+import { computeLabelPlacements } from './map-label-placement';
 import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapOffScreenIndicators from './MapOffScreenIndicators';
 import MapPopup from './MapPopup';
@@ -22,13 +23,15 @@ import MapRouteControl from './MapRouteControl';
 import MapSearchControl from './MapSearchControl';
 
 const DIRECTIONS = ['top', 'right', 'bottom', 'left'];
-const DIR_OFFSETS = { top: [0, -12], right: [12, 0], bottom: [0, 12], left: [-12, 0] };
 
-function sameSet(a, b) {
+function sameMap(a, b) {
   if (a === b) return true;
   if (a.size !== b.size) return false;
-  for (const value of a) {
-    if (!b.has(value)) return false;
+  for (const [key, value] of a) {
+    const other = b.get(key);
+    if (!other) return false;
+    if (other.dir !== value.dir) return false;
+    if (other.offset[0] !== value.offset[0] || other.offset[1] !== value.offset[1]) return false;
   }
   return true;
 }
@@ -86,7 +89,7 @@ function RefreshMapOnRender({ deps = [] }) {
   return null;
 }
 
-function LabelCollisionManager({ locations, getDirection, offsets, onChange }) {
+function LabelPlacementManager({ locations, preferredDirections, onChange }) {
   const map = useMap();
   const [revision, setRevision] = useState(0);
 
@@ -97,50 +100,9 @@ function LabelCollisionManager({ locations, getDirection, offsets, onChange }) {
   });
 
   useEffect(() => {
-    const bounds = map.getBounds();
-    const size = map.getSize();
-    const occupied = [];
-    const visible = new Set();
-
-    const intersects = (a, b) =>
-      !(a.x + a.w + 6 < b.x || b.x + b.w + 6 < a.x || a.y + a.h + 4 < b.y || b.y + b.h + 4 < a.y);
-
-    locations.forEach((loc, index) => {
-      if (!bounds.contains([loc.lat, loc.lng])) return;
-
-      const pt = map.latLngToContainerPoint([loc.lat, loc.lng]);
-      const dir = getDirection(loc, index);
-      const [ox, oy] = offsets[dir] || [0, -24];
-      const width = Math.min(260, Math.max(88, (loc.name?.length || 0) * 8 + 24));
-      const height = 28;
-
-      let x = pt.x;
-      let y = pt.y;
-      if (dir === 'top') {
-        x = pt.x + ox - width / 2;
-        y = pt.y + oy - height;
-      } else if (dir === 'bottom') {
-        x = pt.x + ox - width / 2;
-        y = pt.y + oy;
-      } else if (dir === 'right') {
-        x = pt.x + ox;
-        y = pt.y + oy - height / 2;
-      } else {
-        x = pt.x + ox - width;
-        y = pt.y + oy - height / 2;
-      }
-
-      const box = { x, y, w: width, h: height };
-
-      if (box.x < 0 || box.y < 0 || box.x + box.w > size.x || box.y + box.h > size.y) return;
-      if (occupied.some((other) => intersects(box, other))) return;
-
-      occupied.push(box);
-      visible.add(loc.id);
-    });
-
-    onChange(visible);
-  }, [map, locations, getDirection, offsets, onChange, revision]);
+    const placements = computeLabelPlacements({ map, locations, preferredDirections });
+    onChange(placements);
+  }, [map, locations, preferredDirections, onChange, revision]);
 
   return null;
 }
@@ -160,7 +122,7 @@ export default function MapGeneral({
   const hasInitialView = Boolean(bootView?.center && Number.isFinite(bootView?.zoom));
   const mapCenter = hasInitialView ? bootView.center : MAG_SCENE;
   const mapZoom = hasInitialView ? bootView.zoom : DEFAULT_ZOOM;
-  const [visibleLabelIds, setVisibleLabelIds] = useState(() => new Set());
+  const [labelPlacements, setLabelPlacements] = useState(() => new Map());
   const sortedLocs = useMemo(() => [...geoLocations].sort((a, b) => b.lat - a.lat), [geoLocations]);
 
   // Calcul de la meilleure direction pour chaque label (évite les voisins proches)
@@ -199,15 +161,8 @@ export default function MapGeneral({
     return dirs;
   }, [sortedLocs]);
 
-  const resolveDirection = useMemo(
-    () => (loc) => labelDirections[loc.id] || 'top',
-    [labelDirections],
-  );
-
-  const handleVisibleLabelsChange = useCallback((nextVisibleIds) => {
-    setVisibleLabelIds((prevVisibleIds) =>
-      sameSet(prevVisibleIds, nextVisibleIds) ? prevVisibleIds : nextVisibleIds,
-    );
+  const handlePlacementsChange = useCallback((nextPlacements) => {
+    setLabelPlacements((prev) => (sameMap(prev, nextPlacements) ? prev : nextPlacements));
   }, []);
 
   return (
@@ -244,26 +199,25 @@ export default function MapGeneral({
           <MapSearchControl locations={locations} />
           <MapRouteControl locations={locations} />
           <MapOffScreenIndicators locations={geoLocations} />
-          <LabelCollisionManager
+          <LabelPlacementManager
             locations={sortedLocs}
-            getDirection={resolveDirection}
-            offsets={DIR_OFFSETS}
-            onChange={handleVisibleLabelsChange}
+            preferredDirections={labelDirections}
+            onChange={handlePlacementsChange}
           />
 
           {sortedLocs.map((loc) => {
-            const dir = labelDirections[loc.id] || 'top';
+            const placement = labelPlacements.get(loc.id);
             return (
               <Marker
                 key={loc.id}
                 position={[loc.lat, loc.lng]}
                 icon={loc.isCompanyLocation ? createHQIcon() : createLocationIcon(loc.type)}
               >
-                {visibleLabelIds.has(loc.id) && (
+                {placement && (
                   <Tooltip
                     permanent
-                    direction={dir}
-                    offset={DIR_OFFSETS[dir]}
+                    direction={placement.dir}
+                    offset={placement.offset}
                     className={`map-name-tooltip map-name-tooltip--${getLocationTypeClass(loc.type, { isCompanyLocation: loc.isCompanyLocation })}`}
                   >
                     {loc.name}

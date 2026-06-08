@@ -144,6 +144,7 @@ async function captureLeafletTiles(container) {
       '.map-route-panel',
       '.map-radius-control',
       '.map-print-control',
+      '.map-offscreen-layer',
     ];
     const hidden = [];
     for (const sel of hideSelectors) {

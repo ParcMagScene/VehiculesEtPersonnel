@@ -32,6 +32,7 @@ import {
 } from './map-utils';
 import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapOffScreenIndicators from './MapOffScreenIndicators';
+import { computeLabelPlacements } from './map-label-placement';
 
 // Constantes module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
 const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
@@ -123,7 +124,7 @@ function ViewportSync({ onViewChange }) {
 function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
   const map = useMap();
   const [revision, setRevision] = useState(0);
-  const [visibleLabelIds, setVisibleLabelIds] = useState(() => new Set());
+  const [labelPlacements, setLabelPlacements] = useState(() => new Map());
 
   const sorted = useMemo(() => [...locations].sort((a, b) => b.lat - a.lat), [locations]);
   const allItems = useMemo(() => {
@@ -153,79 +154,47 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
   }, [allItems.length]);
 
   useEffect(() => {
-    const bounds = map.getBounds();
-    const size = map.getSize();
-    const occupied = [];
-    const visible = new Set();
-
-    const intersects = (a, b) =>
-      !(a.x + a.w + 6 < b.x || b.x + b.w + 6 < a.x || a.y + a.h + 4 < b.y || b.y + b.h + 4 < a.y);
-
-    allItems.forEach((loc) => {
-      if (!bounds.contains([loc.lat, loc.lng])) return;
-
-      const pt = map.latLngToContainerPoint([loc.lat, loc.lng]);
-      const dir = directionById[loc.id] || 'top';
-      const [ox, oy] = DIR_OFFSETS[dir] || [0, -24];
-      const width = Math.min(260, Math.max(88, (loc.name?.length || 0) * 8 + 24));
-      const height = 28;
-
-      let x = pt.x;
-      let y = pt.y;
-      if (dir === 'top') {
-        x = pt.x + ox - width / 2;
-        y = pt.y + oy - height;
-      } else if (dir === 'bottom') {
-        x = pt.x + ox - width / 2;
-        y = pt.y + oy;
-      } else if (dir === 'right') {
-        x = pt.x + ox;
-        y = pt.y + oy - height / 2;
-      } else {
-        x = pt.x + ox - width;
-        y = pt.y + oy - height / 2;
-      }
-
-      const box = { x, y, w: width, h: height };
-      if (box.x < 0 || box.y < 0 || box.x + box.w > size.x || box.y + box.h > size.y) return;
-      if (occupied.some((other) => intersects(box, other))) return;
-
-      occupied.push(box);
-      visible.add(loc.id);
+    const placements = computeLabelPlacements({
+      map,
+      locations: allItems,
+      preferredDirections: directionById,
     });
-
-    setVisibleLabelIds(visible);
+    setLabelPlacements(placements);
   }, [map, allItems, directionById, revision]);
 
   return (
     <>
       {showHQ && (
         <Marker position={hqPosition} icon={createHQIcon()} zIndexOffset={1000}>
-          {visibleLabelIds.has('__hq__') && (
-            <Tooltip
-              permanent
-              direction="top"
-              offset={DIR_OFFSETS.top}
-              className="map-name-tooltip map-name-tooltip--siege"
-            >
-              Mag Scène
-            </Tooltip>
-          )}
+          {labelPlacements.has('__hq__') &&
+            (() => {
+              const placement = labelPlacements.get('__hq__');
+              return (
+                <Tooltip
+                  permanent
+                  direction={placement.dir}
+                  offset={placement.offset}
+                  className="map-name-tooltip map-name-tooltip--siege"
+                >
+                  Mag Scène
+                </Tooltip>
+              );
+            })()}
         </Marker>
       )}
       {sorted.map((loc) => {
-        const dir = directionById[loc.id] || 'top';
+        const placement = labelPlacements.get(loc.id);
         return (
           <Marker
             key={loc.id}
             position={[loc.lat, loc.lng]}
             icon={loc.isCompanyLocation ? createHQIcon() : createLocationIcon(loc.type)}
           >
-            {visibleLabelIds.has(loc.id) && (
+            {placement && (
               <Tooltip
                 permanent
-                direction={dir}
-                offset={DIR_OFFSETS[dir]}
+                direction={placement.dir}
+                offset={placement.offset}
                 className={`map-name-tooltip map-name-tooltip--${getLocationTypeClass(loc.type, { isCompanyLocation: loc.isCompanyLocation })}`}
               >
                 {loc.name}
@@ -267,6 +236,7 @@ async function captureElement(element) {
       '.map-route-toggle',
       '.map-route-panel',
       '.map-radius-control',
+      '.map-offscreen-layer',
     ];
     const hidden = [];
     for (const sel of hideSelectors) {

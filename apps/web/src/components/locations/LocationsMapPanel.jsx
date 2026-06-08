@@ -5,7 +5,7 @@
 import 'leaflet/dist/leaflet.css';
 import './LocationsMapPanel.css';
 
-import { Building2, Map } from 'lucide-react';
+import { Building2, Map, Maximize2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Modal, ModalBody, ModalHeader } from '@/design-system';
@@ -21,6 +21,8 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
   const [activeView, setActiveView] = useState('general'); // 'general' | 'local'
   const [showDualPrint, setShowDualPrint] = useState(false);
   const [mapViewState, setMapViewState] = useState(() => loadMapViewState());
+  const [generalKey, setGeneralKey] = useState(0);
+  const [localKey, setLocalKey] = useState(0);
   const mapContainerRef = useRef(null);
 
   const geoCount = useMemo(() => filterGeoLocations(locations).length, [locations]);
@@ -51,6 +53,23 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
       };
     });
   }, []);
+
+  const handleRecenter = useCallback(() => {
+    setMapViewState((prev) => {
+      const next = { ...prev };
+      if (activeView === 'general') {
+        next.generalView = null;
+      } else {
+        next.localView = null;
+      }
+      return next;
+    });
+    if (activeView === 'general') {
+      setGeneralKey((k) => k + 1);
+    } else {
+      setLocalKey((k) => k + 1);
+    }
+  }, [activeView]);
 
   const updateLocalZone = useCallback((nextZone) => {
     if (!nextZone) return;
@@ -104,6 +123,15 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
               {geoCount}/{totalCount} géolocalisé{geoCount !== 1 ? 's' : ''}
             </span>
             <div className="locations-map-header-actions">
+              <button
+                type="button"
+                className="locations-map-recenter-btn"
+                onClick={handleRecenter}
+                title="Recadrer la carte pour afficher tous les lieux"
+              >
+                <Maximize2 size={14} />
+                Recadrer
+              </button>
               <MapPrintControl
                 mapContainerRef={mapContainerRef}
                 title={activeView === 'general' ? 'Carte générale' : 'Autour du dépôt'}
@@ -145,6 +173,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
         <div className="locations-map-body no-drag" ref={mapContainerRef}>
           {activeView === 'general' ? (
             <MapGeneral
+              key={`general-${generalKey}`}
               locations={locations}
               onEditLocation={onEditLocation}
               initialView={mapViewState.generalView}
@@ -152,6 +181,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
             />
           ) : (
             <MapLocal
+              key={`local-${localKey}`}
               locations={locations}
               onEditLocation={onEditLocation}
               initialView={mapViewState.localView}

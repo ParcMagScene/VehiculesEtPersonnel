@@ -158,6 +158,7 @@ function SmartMarkers({ locations, showHQ = false, hqPosition = MAG_SCENE }) {
       map,
       locations: allItems,
       preferredDirections: directionById,
+      frameInset: 32,
     });
     setLabelPlacements(placements);
   }, [map, allItems, directionById, revision]);

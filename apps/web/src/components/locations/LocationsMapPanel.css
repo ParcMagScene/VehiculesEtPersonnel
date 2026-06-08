@@ -1332,8 +1332,8 @@
   white-space: nowrap;
   cursor: pointer;
   pointer-events: auto;
-  max-width: 132px;
-  backdrop-filter: blur(4px);
+  max-width: 140px;
+  /* backdrop-filter retiré : non rendu par html2canvas (capture des cartes) */
   transition: background 0.15s;
 }
 
@@ -1360,13 +1360,19 @@
 
 .map-offscreen-arrow {
   display: inline-block;
-  font-size: 0.9rem;
-  line-height: 1;
+  width: 14px;
+  height: 14px;
+  color: var(--theme-primary, currentColor);
+  flex-shrink: 0;
+}
+
+.map-offscreen-pill:hover .map-offscreen-arrow {
+  color: var(--color-white);
 }
 
 .map-offscreen-label {
   display: inline-block;
-  max-width: 96px;
+  max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
 }

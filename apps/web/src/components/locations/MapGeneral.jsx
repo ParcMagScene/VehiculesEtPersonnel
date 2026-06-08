@@ -100,7 +100,12 @@ function LabelPlacementManager({ locations, preferredDirections, onChange }) {
   });
 
   useEffect(() => {
-    const placements = computeLabelPlacements({ map, locations, preferredDirections });
+    const placements = computeLabelPlacements({
+      map,
+      locations,
+      preferredDirections,
+      frameInset: 32,
+    });
     onChange(placements);
   }, [map, locations, preferredDirections, onChange, revision]);
 

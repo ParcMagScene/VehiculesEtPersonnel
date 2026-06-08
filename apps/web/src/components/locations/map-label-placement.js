@@ -79,8 +79,11 @@ const placeBox = (pt, dir, offset, dims) => {
 const intersects = (a, b) =>
   !(a.x + a.w + 4 < b.x || b.x + b.w + 4 < a.x || a.y + a.h + 2 < b.y || b.y + b.h + 2 < a.y);
 
-const insideFrame = (box, size) =>
-  box.x >= 0 && box.y >= 0 && box.x + box.w <= size.x && box.y + box.h <= size.y;
+const insideFrame = (box, size, inset = 0) =>
+  box.x >= inset &&
+  box.y >= inset &&
+  box.x + box.w <= size.x - inset &&
+  box.y + box.h <= size.y - inset;
 
 /**
  * Calcule, pour chaque marker visible dans la vue, la meilleure direction
@@ -90,9 +93,15 @@ const insideFrame = (box, size) =>
  * @param {import('leaflet').Map} args.map
  * @param {Array<{id: any, name: string, lat: number, lng: number}>} args.locations
  * @param {Object<string,string>} [args.preferredDirections] - direction préférée par id de location
+ * @param {number} [args.frameInset=0] - marge réservée le long des bords (pour les indicateurs offscreen)
  * @returns {Map<any, { dir: 'top'|'right'|'bottom'|'left', offset: [number,number] }>}
  */
-export function computeLabelPlacements({ map, locations, preferredDirections = {} }) {
+export function computeLabelPlacements({
+  map,
+  locations,
+  preferredDirections = {},
+  frameInset = 0,
+}) {
   const placements = new Map();
   if (!map || !Array.isArray(locations) || locations.length === 0) return placements;
 
@@ -125,7 +134,7 @@ export function computeLabelPlacements({ map, locations, preferredDirections = {
       for (const dir of dirOrder) {
         const offset = extra === 0 ? baseOffsetFor(dir) : grownOffset(dir, extra);
         const box = placeBox(pt, dir, offset, dims);
-        if (!insideFrame(box, size)) continue;
+        if (!insideFrame(box, size, frameInset)) continue;
         if (occupied.some((other) => intersects(box, other))) continue;
         placed = { dir, offset, box };
         break;

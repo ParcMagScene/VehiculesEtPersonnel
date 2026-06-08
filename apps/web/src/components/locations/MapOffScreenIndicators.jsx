@@ -23,7 +23,11 @@ export default function MapOffScreenIndicators({ locations }) {
     const size = map.getSize();
     const center = { x: size.x / 2, y: size.y / 2 };
     const edgePadding = 14;
-    const minGap = 36;
+    // Espacement minimal entre pills :
+    // - bords gauche/droite : empilement vertical (hauteur ~26px + marge)
+    // - bords haut/bas : empilement horizontal (pill ~140px de large)
+    const minGapVertical = 32;
+    const minGapHorizontal = 148;
 
     const withEdge = (x, y) => {
       const distances = {
@@ -45,7 +49,7 @@ export default function MapOffScreenIndicators({ locations }) {
 
     const clampToFrame = (value, max) => Math.max(edgePadding, Math.min(max - edgePadding, value));
 
-    const spreadOnEdge = (items, axis, max) => {
+    const spreadOnEdge = (items, axis, max, minGap) => {
       const sorted = [...items].sort((a, b) => a[axis] - b[axis]);
       for (let i = 1; i < sorted.length; i += 1) {
         if (sorted[i][axis] - sorted[i - 1][axis] < minGap) {
@@ -112,10 +116,10 @@ export default function MapOffScreenIndicators({ locations }) {
       bottom: raw.filter((item) => item.edge === 'bottom'),
     };
 
-    spreadOnEdge(byEdge.left, 'y', size.y);
-    spreadOnEdge(byEdge.right, 'y', size.y);
-    spreadOnEdge(byEdge.top, 'x', size.x);
-    spreadOnEdge(byEdge.bottom, 'x', size.x);
+    spreadOnEdge(byEdge.left, 'y', size.y, minGapVertical);
+    spreadOnEdge(byEdge.right, 'y', size.y, minGapVertical);
+    spreadOnEdge(byEdge.top, 'x', size.x, minGapHorizontal);
+    spreadOnEdge(byEdge.bottom, 'x', size.x, minGapHorizontal);
 
     return [...byEdge.left, ...byEdge.right, ...byEdge.top, ...byEdge.bottom];
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,12 +138,24 @@ export default function MapOffScreenIndicators({ locations }) {
           onClick={() => map.flyTo([loc.lat, loc.lng], 14)}
           title={`Aller vers ${loc.name}`}
         >
-          <span
+          <svg
             className="map-offscreen-arrow"
+            viewBox="0 0 16 16"
+            width="14"
+            height="14"
+            aria-hidden="true"
             style={{ transform: `rotate(${loc.angle * (180 / Math.PI)}deg)` }}
           >
-            ▸
-          </span>
+            {/* Flèche pointant vers la droite (référence 0°) */}
+            <path
+              d="M2 8 L11 8 M11 8 L7 4 M11 8 L7 12"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </svg>
           <span className="map-offscreen-label">{loc.name}</span>
         </button>
       ))}

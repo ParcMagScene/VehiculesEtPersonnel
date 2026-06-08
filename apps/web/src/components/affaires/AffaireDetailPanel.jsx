@@ -181,6 +181,31 @@ const TASK_STATUS_MAP = {
   cancelled: { label: 'Annulé', color: STATUS_COLORS.danger, bg: '#fee2e2' },
 };
 
+// Détecte la période (AM / PM / JOURNEE) à partir d'une plage horaire HH:MM→HH:MM.
+// Retourne null si aucune heure n'est renseignée (n'écrase rien).
+const detectPeriodFromTimes = (time, endTime) => {
+  const toMin = (t) => {
+    if (!t || typeof t !== 'string' || !t.includes(':')) return null;
+    const [h, m] = t.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return h * 60 + m;
+  };
+  const startMin = toMin(time);
+  const endMin = toMin(endTime);
+  if (startMin == null && endMin == null) return null;
+  const NOON = 12 * 60;
+  // 12:00 → début PM ; fin ≤ 12:00 → reste AM
+  const startIsAM = startMin != null ? startMin < NOON : null;
+  const endIsAM = endMin != null ? endMin <= NOON : null;
+  if (startIsAM != null && endIsAM == null) return startIsAM ? 'AM' : 'PM';
+  if (startIsAM == null && endIsAM != null) return endIsAM ? 'AM' : 'PM';
+  if (startIsAM && endIsAM) return 'AM';
+  if (!startIsAM && !endIsAM) return 'PM';
+  if (startIsAM && !endIsAM) return 'JOURNEE';
+  // start PM + end AM : incohérent, on conserve PM
+  return 'PM';
+};
+
 const fmtDate = (dateStr) => {
   if (!dateStr) return '—';
   try {
@@ -801,7 +826,7 @@ const AffaireDetailContent = ({
               date: existing.date || '',
               time: existing.time || '',
               endTime: existing.end_time || '',
-              period: existing.period || '',
+              period: existing.all_day === 1 ? 'JOURNEE' : existing.period || '',
               notes: existing.notes || '',
               taskId: existing.id,
               status: existing.status || 'pending',
@@ -837,7 +862,18 @@ const AffaireDetailContent = ({
   }, []);
 
   const updateTaskStep = (key, field, value) => {
-    setTaskSteps((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+    setTaskSteps((prev) => {
+      const next = { ...prev[key], [field]: value };
+      // Auto-détection de la période (AM / Journée / PM) selon les heures saisies
+      if (field === 'time' || field === 'endTime') {
+        const detected = detectPeriodFromTimes(
+          field === 'time' ? value : next.time,
+          field === 'endTime' ? value : next.endTime,
+        );
+        if (detected) next.period = detected;
+      }
+      return { ...prev, [key]: next };
+    });
   };
 
   const getSectionForStep = useCallback(
@@ -863,13 +899,15 @@ const AffaireDetailContent = ({
       for (const step of TASK_STEPS) {
         const s = taskSteps[step.key];
         if (!s) continue;
+        const isAllDay = s.period === 'JOURNEE';
         if (s.enabled && !s.taskId) {
           // Nouvelle étape activée → créer
           toCreate.push({
             date: s.date,
-            period: s.period || null,
+            period: isAllDay ? null : s.period || null,
             time: s.time || null,
             end_time: s.endTime || null,
+            all_day: isAllDay ? 1 : 0,
             section: getSectionForStep(step.key),
             title: `${step.emoji} ${step.label}`,
             notes: s.notes || '',
@@ -884,9 +922,10 @@ const AffaireDetailContent = ({
           toUpdate.push({
             id: s.taskId,
             date: s.date,
-            period: s.period || null,
+            period: isAllDay ? null : s.period || null,
             time: s.time || null,
             end_time: s.endTime || null,
+            all_day: isAllDay ? 1 : 0,
             section: getSectionForStep(step.key),
             title: `${step.emoji} ${step.label}`,
             google_event_title: eventName,
@@ -940,7 +979,8 @@ const AffaireDetailContent = ({
         if (s.date !== (existingTask.date || '')) return true;
         if (s.time !== (existingTask.time || '')) return true;
         if (s.endTime !== (existingTask.end_time || '')) return true;
-        if (s.period !== (existingTask.period || '')) return true;
+        const existingPeriod = existingTask.all_day === 1 ? 'JOURNEE' : existingTask.period || '';
+        if (s.period !== existingPeriod) return true;
         if (s.notes !== (existingTask.notes || '')) return true;
       }
     }
@@ -1941,7 +1981,9 @@ const AffaireDetailContent = ({
                       {s.enabled && s.date && (
                         <span className="task-step-date">
                           {fmtDate(s.date)}
-                          {s.period ? ` · ${s.period === 'AM' ? 'Matin' : 'Après-midi'}` : ''}
+                          {s.period
+                            ? ` · ${s.period === 'AM' ? 'Matin' : s.period === 'PM' ? 'Après-midi' : 'Journée'}`
+                            : ''}
                         </span>
                       )}
                     </div>
@@ -1973,6 +2015,7 @@ const AffaireDetailContent = ({
                           >
                             <option value="AM">Matin</option>
                             <option value="PM">Après-midi</option>
+                            <option value="JOURNEE">Journée entière</option>
                           </Select>
                         </div>
                         <div className="tsf-row">

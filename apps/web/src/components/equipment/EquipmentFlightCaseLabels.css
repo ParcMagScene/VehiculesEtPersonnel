@@ -43,19 +43,6 @@
   gap: 2px;
 }
 
-.efc-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.efc-toolbar-actions {
-  margin-left: auto;
-  display: flex;
-  gap: var(--space-2);
-}
-
 .efc-rotate-hint {
   display: flex;
   align-items: center;
@@ -67,65 +54,29 @@
   border-radius: var(--radius-sm);
 }
 
-.efc-selection-info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--font-sm);
+.efc-empty {
+  padding: var(--space-4);
+  text-align: center;
   color: var(--theme-text-secondary);
+  font-size: var(--font-sm);
+  border: 1px dashed var(--theme-border-light);
+  border-radius: var(--radius-md);
 }
 
-.efc-list {
+/* ── Carte de sélection + édition ── */
+.efc-form-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  max-height: 60vh;
-  overflow-y: auto;
-  padding-right: var(--space-1);
-}
-
-.efc-group {
+  gap: var(--space-3);
+  padding: var(--space-3);
   border: 1px solid var(--theme-border-light);
   border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.efc-group-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  background: var(--theme-bg-card-secondary, rgba(0, 0, 0, 0.03));
-  cursor: pointer;
-  user-select: none;
-}
-
-.efc-group-title {
-  flex: 1;
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.efc-group-title strong {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.efc-group-count {
-  font-size: var(--font-sm);
-  color: var(--theme-text-secondary);
-}
-
-.efc-checkbox.checked {
-  color: var(--theme-primary);
-}
-
-.efc-group-body {
-  padding: var(--space-3);
   background: var(--theme-bg-card);
+}
+
+.efc-form-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .efc-fields {
@@ -166,75 +117,26 @@
   grid-column: span 2;
 }
 
-/* ── Aperçu plein écran ── */
-.efc-preview-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 9999;
+/* ── Aperçu inline (sous la sélection) ──
+ * Le SVG est généré en portrait (gabarit MAG SCENE 152×210 mm). On l'affiche
+ * en paysage via une rotation -90°. Comme `transform: rotate()` ne change
+ * pas la box DOM, on utilise un double wrapper :
+ *   .efc-preview-rot-wrap   : réserve la box VISUELLE paysage (ratio 210/152)
+ *   .efc-preview-rot-inner  : dimensions INVERSÉES (portrait) + rotation -90°
+ */
+.efc-inline-preview {
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: var(--space-4);
-}
-
-.efc-preview-card {
-  background: var(--theme-bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-modal);
-  /* Force le modal à prendre une grande portion du viewport pour que
-     l'aperçu paysage soit confortable à lire. */
-  width: 95vw;
-  height: 95vh;
-  max-width: 95vw;
-  max-height: 95vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.efc-preview-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--theme-border-light);
-}
-
-.efc-preview-svg {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
   padding: var(--space-3);
   background: var(--theme-bg-darker, #f3f4f6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: 1px solid var(--theme-border-light);
+  border-radius: var(--radius-md);
 }
 
-/*
- * Aperçu en orientation PAYSAGE.
- *
- * Le SVG généré est en portrait (gabarit MAG SCENE 152×210 mm). Pour le
- * visualiser tel qu'il sera lu (à plat sur le flight-case), on l'affiche
- * tourné de 90° à gauche.
- *
- * Problème : `transform: rotate()` ne change pas la box DOM de l'élément,
- * donc un SVG portrait tourné déborde de son conteneur. On utilise donc
- * un double wrapper :
- *   .efc-preview-rot-wrap   : réserve la box VISUELLE paysage (ratio 210/152)
- *   .efc-preview-rot-inner  : a des dimensions INVERSÉES (portrait) + la
- *                             rotation -90° ; centré dans le wrapper.
- * Ainsi le SVG portrait remplit exactement la box paysage après rotation.
- */
 .efc-preview-rot-wrap {
   position: relative;
-  /* On prend le MAX possible :
-     - largeur limitée par la hauteur dispo (après ratio paysage 210/152)
-     - hauteur limitée par la largeur dispo (ratio inverse)
-     Le min() garde toujours l'aspect-ratio 210/152. */
-  width: min(100%, calc((100vh - 120px) * 210 / 152));
-  height: min(100%, calc(95vw * 152 / 210));
+  /* Largeur max ~80% du conteneur, hauteur déduite par aspect-ratio paysage */
+  width: min(100%, 720px);
   aspect-ratio: 210 / 152;
   background: #fff;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);

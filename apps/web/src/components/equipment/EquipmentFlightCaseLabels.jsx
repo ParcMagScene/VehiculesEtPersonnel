@@ -1,20 +1,10 @@
 import './EquipmentFlightCaseLabels.css';
 
-import {
-  AlertTriangle,
-  CheckCircle2,
-  CheckSquare,
-  ChevronDown,
-  ChevronRight,
-  Download,
-  RotateCw,
-  Square,
-  Tag,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Download, RotateCw } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, SearchBar } from '@/design-system';
+import { Button, Select } from '@/design-system';
 
 import { APP_BASE_URL } from './equipmentConstants';
 import { analyzeQrBaseUrl } from './qrSafety';
@@ -449,17 +439,16 @@ const loadImageAsDataUrl = (src) =>
   });
 
 const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
-  const [selectedRefs, setSelectedRefs] = useState(new Set());
-  const [search, setSearch] = useState('');
-  const [collapsedRefs, setCollapsedRefs] = useState(new Set());
-  // overrides[ref] = { client, brand, reference, designation, quantity, tested }
+  const [selectedRef, setSelectedRef] = useState(null);
+  // overrides[ref] = { client, brand, reference, quantity }
   const [overrides, setOverrides] = useState({});
   const [previewSvg, setPreviewSvg] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [logoDataUrl, setLogoDataUrl] = useState(null);
 
   const qrSafety = useMemo(() => analyzeQrBaseUrl(APP_BASE_URL), []);
 
-  // Grouper par référence
+  // Grouper par référence (1 plaque = 1 référence)
   const groupedByRef = useMemo(() => {
     const groups = {};
     equipment.forEach((eq) => {
@@ -470,72 +459,16 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [equipment]);
 
-  const filteredGroups = useMemo(() => {
-    if (!search.trim()) return groupedByRef;
-    const q = search.toLowerCase();
-    return groupedByRef.filter(([ref, items]) => {
-      if (ref.toLowerCase().includes(q)) return true;
-      return items.some(
-        (eq) =>
-          (eq.name || '').toLowerCase().includes(q) || (eq.brand || '').toLowerCase().includes(q),
-      );
-    });
-  }, [groupedByRef, search]);
-
-  // Valeurs par défaut pour une référence donnée (déduites du premier item)
-  const defaultsFor = (ref, items) => {
-    const first = items?.[0] || {};
-    return {
-      client: '',
-      brand: cleanText(first.brand || ''),
-      reference: ref === '(Sans référence)' ? cleanText(first.name || '') : ref,
-      quantity: '1',
-    };
-  };
-
-  const getFields = (ref, items) => {
-    const o = overrides[ref] || {};
-    return { ...defaultsFor(ref, items), ...o };
-  };
-
-  const setField = (ref, key, value) => {
-    setOverrides((prev) => ({ ...prev, [ref]: { ...(prev[ref] || {}), [key]: value } }));
-  };
-
-  const toggleRef = (ref) => {
-    setSelectedRefs((prev) => {
-      const next = new Set(prev);
-      if (next.has(ref)) next.delete(ref);
-      else next.add(ref);
-      return next;
-    });
-  };
-
-  const selectAll = () => {
-    if (selectedRefs.size === filteredGroups.length) {
-      setSelectedRefs(new Set());
-    } else {
-      setSelectedRefs(new Set(filteredGroups.map(([ref]) => ref)));
+  // Sélection par défaut : première référence dispo
+  useEffect(() => {
+    if (!selectedRef && groupedByRef.length > 0) {
+      setSelectedRef(groupedByRef[0][0]);
+    } else if (selectedRef && !groupedByRef.some(([ref]) => ref === selectedRef)) {
+      setSelectedRef(groupedByRef[0]?.[0] || null);
     }
-  };
-
-  const toggleCollapse = (ref) => {
-    setCollapsedRefs((prev) => {
-      const next = new Set(prev);
-      if (next.has(ref)) next.delete(ref);
-      else next.add(ref);
-      return next;
-    });
-  };
-
-  // Génère le QR PNG pour une référence donnée
-  const buildQrDataUrl = async (reference) => {
-    const url = buildPlateUrl(reference);
-    return QRCode.toDataURL(url, { width: 600, margin: 1, errorCorrectionLevel: 'H' });
-  };
+  }, [groupedByRef, selectedRef]);
 
   // Charge le logo MAG SCENE une seule fois
-  const [logoDataUrl, setLogoDataUrl] = useState(null);
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -558,20 +491,69 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
     };
   }, []);
 
-  const handlePreview = async (ref, items) => {
-    if (!qrSafety.safe) return;
-    setBusy(true);
-    try {
-      const fields = getFields(ref, items);
-      const qrDataUrl = await buildQrDataUrl(fields.reference || ref);
-      const svg = buildPlateSvg({ fields, qrDataUrl, logoDataUrl });
-      setPreviewSvg({ ref, svg });
-    } finally {
-      setBusy(false);
-    }
+  // Valeurs par défaut pour une référence donnée (déduites du premier item)
+  const defaultsFor = (ref, items) => {
+    const first = items?.[0] || {};
+    return {
+      client: '',
+      brand: cleanText(first.brand || ''),
+      reference: ref === '(Sans référence)' ? cleanText(first.name || '') : ref,
+      quantity: '1',
+    };
   };
 
-  const handleExportSelected = async () => {
+  const currentItems = useMemo(() => {
+    if (!selectedRef) return [];
+    const found = groupedByRef.find(([ref]) => ref === selectedRef);
+    return found ? found[1] : [];
+  }, [groupedByRef, selectedRef]);
+
+  const fields = useMemo(() => {
+    if (!selectedRef) return null;
+    const o = overrides[selectedRef] || {};
+    return { ...defaultsFor(selectedRef, currentItems), ...o };
+  }, [selectedRef, currentItems, overrides]);
+
+  const setField = (key, value) => {
+    if (!selectedRef) return;
+    setOverrides((prev) => ({
+      ...prev,
+      [selectedRef]: { ...(prev[selectedRef] || {}), [key]: value },
+    }));
+  };
+
+  // Génère le QR PNG pour une référence donnée
+  const buildQrDataUrl = async (reference) => {
+    const url = buildPlateUrl(reference);
+    return QRCode.toDataURL(url, { width: 600, margin: 1, errorCorrectionLevel: 'H' });
+  };
+
+  // Aperçu auto : régénère le SVG dès que la sélection ou les champs changent
+  useEffect(() => {
+    if (!selectedRef || !fields || !qrSafety.safe) {
+      setPreviewSvg(null);
+      return undefined;
+    }
+    let alive = true;
+    setBusy(true);
+    (async () => {
+      try {
+        const qrDataUrl = await buildQrDataUrl(fields.reference || selectedRef);
+        const svg = buildPlateSvg({ fields, qrDataUrl, logoDataUrl });
+        if (alive) setPreviewSvg(svg);
+      } catch (err) {
+        console.error('[FlightCase] Preview build failed:', err);
+        if (alive) setPreviewSvg(null);
+      } finally {
+        if (alive) setBusy(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [selectedRef, fields, logoDataUrl, qrSafety.safe]);
+
+  const handleExport = async () => {
     if (!qrSafety.safe) {
       // eslint-disable-next-line no-alert
       window.alert(
@@ -579,29 +561,22 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
       );
       return;
     }
-    const selected = filteredGroups.filter(([ref]) => selectedRefs.has(ref));
-    if (selected.length === 0) return;
+    if (!selectedRef || !fields) return;
     setBusy(true);
     try {
-      const ts = Date.now();
-      for (const [ref, items] of selected) {
-        const fields = getFields(ref, items);
-        // eslint-disable-next-line no-await-in-loop
-        const qrDataUrl = await buildQrDataUrl(fields.reference || ref);
-        const svg = buildPlateSvg({ fields, qrDataUrl, logoDataUrl });
-        const blob = new Blob([svg], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const safeRef = (fields.reference || ref).replace(/[^A-Za-z0-9_.-]/g, '_');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `plaque-flightcase-${safeRef}-${ts}.svg`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise((r) => setTimeout(r, 150));
-        URL.revokeObjectURL(url);
-      }
+      const qrDataUrl = await buildQrDataUrl(fields.reference || selectedRef);
+      const svg = buildPlateSvg({ fields, qrDataUrl, logoDataUrl });
+      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const safeRef = (fields.reference || selectedRef).replace(/[^A-Za-z0-9_.-]/g, '_');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `plaque-flightcase-${safeRef}-${Date.now()}.svg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      await new Promise((r) => setTimeout(r, 150));
+      URL.revokeObjectURL(url);
     } finally {
       setBusy(false);
     }
@@ -637,40 +612,6 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
         )}
       </div>
 
-      <div className="efc-toolbar">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Rechercher par référence, marque, nom..."
-          size="sm"
-        />
-        <Button variant="ghost" className="efc-select-all" onClick={selectAll}>
-          {selectedRefs.size === filteredGroups.length && filteredGroups.length > 0 ? (
-            <CheckSquare size={14} />
-          ) : (
-            <Square size={14} />
-          )}
-          {selectedRefs.size === filteredGroups.length && filteredGroups.length > 0
-            ? 'Tout désélectionner'
-            : 'Tout sélectionner'}
-        </Button>
-        <div className="efc-toolbar-actions">
-          <Button
-            variant="ghost"
-            className="efc-btn-export"
-            onClick={handleExportSelected}
-            disabled={selectedRefs.size === 0 || !qrSafety.safe || busy}
-            title={qrSafety.safe ? undefined : qrSafety.reason}
-          >
-            <Download size={16} />
-            Exporter SVG{' '}
-            {selectedRefs.size > 0
-              ? `— ${selectedRefs.size} plaque${selectedRefs.size > 1 ? 's' : ''}`
-              : ''}
-          </Button>
-        </div>
-      </div>
-
       <div className="efc-rotate-hint">
         <RotateCw size={14} />
         <span>
@@ -680,133 +621,84 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
         </span>
       </div>
 
-      <div className="efc-selection-info">
-        <Tag size={14} />
-        <span>
-          {selectedRefs.size} référence{selectedRefs.size > 1 ? 's' : ''} sélectionnée
-          {selectedRefs.size > 1 ? 's' : ''}
-        </span>
-      </div>
+      {/* Sélection + champs éditables */}
+      {groupedByRef.length === 0 ? (
+        <div className="efc-empty">Aucun équipement disponible.</div>
+      ) : (
+        <div className="efc-form-card">
+          <label className="efc-field efc-field-ref">
+            <span>Référence à graver</span>
+            <Select value={selectedRef || ''} onChange={(e) => setSelectedRef(e.target.value)}>
+              {groupedByRef.map(([ref, items]) => (
+                <option key={ref} value={ref}>
+                  {ref} — {items.length} unité{items.length > 1 ? 's' : ''}
+                </option>
+              ))}
+            </Select>
+          </label>
 
-      <div className="efc-list">
-        {filteredGroups.map(([ref, items]) => {
-          const checked = selectedRefs.has(ref);
-          const collapsed = collapsedRefs.has(ref);
-          const fields = getFields(ref, items);
-          return (
-            <div key={ref} className="efc-group">
-              <div
-                className="efc-group-header"
-                role="button"
-                tabIndex={0}
-                onClick={() => toggleCollapse(ref)}
-              >
-                <Button variant="ghost" className="efc-collapse-btn">
-                  {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  className={`efc-checkbox ${checked ? 'checked' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleRef(ref);
-                  }}
-                >
-                  {checked ? <CheckSquare size={14} /> : <Square size={14} />}
-                </Button>
-                <div className="efc-group-title">
-                  <strong>{ref}</strong>
-                  <span className="efc-group-count">
-                    {items.length} unité{items.length > 1 ? 's' : ''}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  className="efc-preview-btn"
-                  disabled={busy || !qrSafety.safe}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePreview(ref, items);
-                  }}
-                >
-                  Aperçu
-                </Button>
-              </div>
-
-              {!collapsed && (
-                <div className="efc-group-body">
-                  <div className="efc-fields">
-                    <label className="efc-field">
-                      <span>Client</span>
-                      <input
-                        type="text"
-                        value={fields.client}
-                        onChange={(e) => setField(ref, 'client', e.target.value)}
-                        placeholder="(vide)"
-                      />
-                    </label>
-                    <label className="efc-field">
-                      <span>Marque</span>
-                      <input
-                        type="text"
-                        value={fields.brand}
-                        onChange={(e) => setField(ref, 'brand', e.target.value)}
-                      />
-                    </label>
-                    <label className="efc-field">
-                      <span>Référence</span>
-                      <input
-                        type="text"
-                        value={fields.reference}
-                        onChange={(e) => setField(ref, 'reference', e.target.value)}
-                      />
-                    </label>
-                    <label className="efc-field efc-field-qty">
-                      <span>Quantité</span>
-                      <input
-                        type="text"
-                        value={fields.quantity}
-                        onChange={(e) => setField(ref, 'quantity', e.target.value)}
-                      />
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {previewSvg && (
-        <div
-          className="efc-preview-overlay"
-          role="dialog"
-          aria-label="Aperçu plaque flight-case"
-          onClick={() => setPreviewSvg(null)}
-        >
-          <div className="efc-preview-card" onClick={(e) => e.stopPropagation()} role="document">
-            <div className="efc-preview-header">
-              <strong>Aperçu — {previewSvg.ref}</strong>
-              <Button variant="ghost" onClick={() => setPreviewSvg(null)}>
-                Fermer
-              </Button>
-            </div>
-            <div className="efc-preview-svg">
-              {/*
-                Wrapper paysage : le SVG est généré en portrait (152×210 mm)
-                mais on l'affiche en paysage via une rotation -90°. Le
-                wrapper réserve la box visuelle paysage ; l'inner div a les
-                dimensions inversées (portrait) et porte la rotation pour
-                que le SVG remplisse exactement la box visible.
-              */}
-              <div className="efc-preview-rot-wrap">
-                <div
-                  className="efc-preview-rot-inner"
-                  // eslint-disable-next-line react/no-danger
-                  dangerouslySetInnerHTML={{ __html: previewSvg.svg }}
+          {fields && (
+            <div className="efc-fields">
+              <label className="efc-field">
+                <span>Client</span>
+                <input
+                  type="text"
+                  value={fields.client}
+                  onChange={(e) => setField('client', e.target.value)}
+                  placeholder="(vide)"
                 />
-              </div>
+              </label>
+              <label className="efc-field">
+                <span>Marque</span>
+                <input
+                  type="text"
+                  value={fields.brand}
+                  onChange={(e) => setField('brand', e.target.value)}
+                />
+              </label>
+              <label className="efc-field">
+                <span>Référence</span>
+                <input
+                  type="text"
+                  value={fields.reference}
+                  onChange={(e) => setField('reference', e.target.value)}
+                />
+              </label>
+              <label className="efc-field efc-field-qty">
+                <span>Quantité</span>
+                <input
+                  type="text"
+                  value={fields.quantity}
+                  onChange={(e) => setField('quantity', e.target.value)}
+                />
+              </label>
             </div>
+          )}
+
+          <div className="efc-form-actions">
+            <Button
+              variant="primary"
+              className="efc-btn-export"
+              onClick={handleExport}
+              disabled={!selectedRef || !qrSafety.safe || busy}
+              title={qrSafety.safe ? undefined : qrSafety.reason}
+            >
+              <Download size={16} />
+              Exporter SVG
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Aperçu inline (paysage) */}
+      {previewSvg && (
+        <div className="efc-inline-preview" aria-label="Aperçu plaque flight-case">
+          <div className="efc-preview-rot-wrap">
+            <div
+              className="efc-preview-rot-inner"
+              // eslint-disable-next-line react/no-danger
+              dangerouslySetInnerHTML={{ __html: previewSvg }}
+            />
           </div>
         </div>
       )}

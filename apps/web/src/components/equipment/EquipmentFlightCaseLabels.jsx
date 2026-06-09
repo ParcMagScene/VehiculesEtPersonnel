@@ -676,7 +676,11 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
     setBusy(true);
     (async () => {
       try {
-        const qrDataUrl = await buildQrDataUrl(fields.reference || selectedRef);
+        // Le QR pointe TOUJOURS vers la référence canonique de la DB
+        // (selectedRef), JAMAIS vers le texte affiché modifiable
+        // (fields.reference) — sinon le QR scanné mènerait à une URL
+        // inexistante en cas d'override visuel.
+        const qrDataUrl = await buildQrDataUrl(selectedRef);
         const svg = buildPlateSvg({ fields, qrDataUrl, logoDataUrl });
         if (alive) setPreviewSvg(svg);
       } catch (err) {
@@ -702,11 +706,13 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
     if (!selectedRef || !fields) return;
     setBusy(true);
     try {
-      const qrDataUrl = await buildQrDataUrl(fields.reference || selectedRef);
+      // Le QR utilise TOUJOURS selectedRef (DB), pas le texte affiché override.
+      const qrDataUrl = await buildQrDataUrl(selectedRef);
       const svg = buildPlateSvg({ fields, qrDataUrl, logoDataUrl });
       const blob = new Blob([svg], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
-      const safeRef = (fields.reference || selectedRef).replace(/[^A-Za-z0-9_.-]/g, '_');
+      // Nom de fichier basé sur la référence DB (cohérence avec le QR).
+      const safeRef = selectedRef.replace(/[^A-Za-z0-9_.-]/g, '_');
       const a = document.createElement('a');
       a.href = url;
       a.download = `plaque-flightcase-${safeRef}-${Date.now()}.svg`;
@@ -810,6 +816,10 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
                   value={fields.reference}
                   onChange={(e) => setField('reference', e.target.value)}
                 />
+                <small className="efc-field-hint">
+                  Affichage uniquement — le QR pointe toujours vers la référence d'origine&nbsp;:{' '}
+                  <code>{selectedRef}</code>
+                </small>
               </label>
               <label className="efc-field efc-field-qty">
                 <span>Quantité</span>

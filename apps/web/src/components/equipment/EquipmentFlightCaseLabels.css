@@ -110,6 +110,24 @@
   max-width: 80px;
 }
 
+.efc-field-ref {
+  position: relative;
+}
+
+.efc-field-ref input[type='text'] {
+  width: 100%;
+}
+
+.efc-field-hint {
+  font-size: var(--font-xs, 0.72rem);
+  color: var(--theme-text-secondary);
+  font-weight: 400;
+}
+
+.efc-field-hint-warn {
+  color: var(--theme-warning, #d97706);
+}
+
 .efc-field-tested {
   flex-direction: row;
   align-items: center;

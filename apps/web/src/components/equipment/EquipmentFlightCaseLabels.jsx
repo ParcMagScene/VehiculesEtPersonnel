@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, Download, RotateCw } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, Select } from '@/design-system';
+import { Button } from '@/design-system';
 
 import { APP_BASE_URL } from './equipmentConstants';
 import { analyzeQrBaseUrl } from './qrSafety';
@@ -139,6 +139,76 @@ const buildPlateUrl = (reference) =>
 
 const cleanText = (s) => String(s == null ? '' : s).trim();
 
+// Largeur moyenne approximative d'un caractère en sans-serif gras, en mm
+// quand fontSize = 1mm. Calibré sur des références typiques.
+const CHAR_WIDTH_FACTOR = 0.58;
+
+const measureWidth = (text, fontSize) => text.length * fontSize * CHAR_WIDTH_FACTOR;
+
+/**
+ * Coupe un texte en 2 lignes équilibrées (séparateur préféré : espace,
+ * tiret ou underscore). Retourne [text] si pas de séparateur acceptable.
+ */
+const splitTwoLines = (text) => {
+  if (!text) return [text];
+  const ideal = text.length / 2;
+  const seps = [' ', '-', '_', '/', '.'];
+  let bestIdx = -1;
+  let bestDist = Infinity;
+  for (let i = 1; i < text.length - 1; i += 1) {
+    if (seps.includes(text[i])) {
+      const dist = Math.abs(i - ideal);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    }
+  }
+  if (bestIdx === -1) {
+    // Pas de séparateur : coupe arbitraire au milieu
+    bestIdx = Math.floor(text.length / 2);
+    return [text.slice(0, bestIdx).trim(), text.slice(bestIdx).trim()];
+  }
+  // On garde le séparateur sur la ligne du haut s'il s'agit d'un tiret/_/etc,
+  // mais on enlève les espaces autour
+  const left = text.slice(0, bestIdx).trim();
+  const right = text.slice(bestIdx + 1).trim();
+  return [left, right];
+};
+
+/**
+ * Détermine la taille de police et le découpage d'un texte de référence
+ * pour tenir sur 1 à 2 lignes max dans une largeur donnée.
+ *
+ * @param {string} text
+ * @param {number} maxWidth   - largeur disponible en mm
+ * @param {number} maxFontSize - taille de police idéale (utilisée si tient sur 1 ligne)
+ * @param {number} minFontSize - plancher si tout déborde
+ * @returns {{ lines: string[], fontSize: number }}
+ */
+function fitReferenceLayout(text, maxWidth, maxFontSize = 28, minFontSize = 12) {
+  const t = cleanText(text);
+  if (!t) return { lines: [t], fontSize: maxFontSize };
+
+  // Étape 1 : essayer 1 ligne, du plus grand au plus petit
+  for (let fs = maxFontSize; fs >= minFontSize; fs -= 1) {
+    if (measureWidth(t, fs) <= maxWidth) {
+      return { lines: [t], fontSize: fs };
+    }
+  }
+
+  // Étape 2 : 2 lignes, du plus grand au plus petit
+  const [a, b] = splitTwoLines(t);
+  for (let fs = maxFontSize; fs >= minFontSize; fs -= 1) {
+    if (measureWidth(a, fs) <= maxWidth && measureWidth(b, fs) <= maxWidth) {
+      return { lines: [a, b], fontSize: fs };
+    }
+  }
+
+  // Étape 3 : plancher minimum, peut déborder légèrement
+  return { lines: [a, b], fontSize: minFontSize };
+}
+
 /**
  * Construit le SVG d'UNE plaque à partir du gabarit officiel.
  *  fields = { client, brand, reference, quantity }
@@ -269,24 +339,35 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     );
   }
   if (reference) {
-    // La référence (police 28) est placée SOUS la marque en paysage
-    // (= world_x plus petit). Descendue de 15 mm de plus (total : ~33 mm
-    // sous le top paysage), ce qui la centre verticalement entre la
-    // marque (en haut) et la quantité (en bas de zone).
+    // La référence (police 28 par défaut) est placée SOUS la marque en
+    // paysage (= world_x plus petit). Descendue de 15 mm de plus (total :
+    // ~33 mm sous le top paysage), ce qui la centre verticalement entre
+    // la marque (en haut) et la quantité (en bas de zone).
+    //
+    // La taille de police s'ADAPTE à la longueur du texte pour tenir sur
+    // 1 ou 2 lignes maximum dans la largeur disponible (~115 mm en
+    // paysage, soit world_y de -151 jusqu'à ~-36).
     const REF_X = INFO_TOP_X - 33;
-    svg.appendChild(
-      createPlateText(doc, {
-        x: REF_X,
-        y: INFO_BASE_Y,
-        content: reference,
-        fontSize: 28,
-        fontWeight: 700,
-        fontFamily: FONT_FAMILY,
-        fill: '#000000',
-        textAnchor: 'start',
-        topAlign: true,
-      }),
-    );
+    const REF_MAX_WIDTH_MM = 115; // largeur dispo en paysage (le long de world_y)
+    const layout = fitReferenceLayout(reference, REF_MAX_WIDTH_MM, 28, 12);
+    layout.lines.forEach((line, idx) => {
+      // En paysage, les lignes successives s'empilent vers le BAS = world_x
+      // décroissant. Espace entre lignes = 1.1 × fontSize.
+      const lineOffset = idx * layout.fontSize * 1.1;
+      svg.appendChild(
+        createPlateText(doc, {
+          x: REF_X - lineOffset,
+          y: INFO_BASE_Y,
+          content: line,
+          fontSize: layout.fontSize,
+          fontWeight: 700,
+          fontFamily: FONT_FAMILY,
+          fill: '#000000',
+          textAnchor: 'start',
+          topAlign: true,
+        }),
+      );
+    });
   }
 
   // ─── Repère paysage (utilisation lecteur) ─────────────────────────────────
@@ -440,6 +521,7 @@ const loadImageAsDataUrl = (src) =>
 
 const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
   const [selectedRef, setSelectedRef] = useState(null);
+  const [refSearch, setRefSearch] = useState('');
   // overrides[ref] = { client, brand, reference, quantity }
   const [overrides, setOverrides] = useState({});
   const [previewSvg, setPreviewSvg] = useState(null);
@@ -462,11 +544,39 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
   // Sélection par défaut : première référence dispo
   useEffect(() => {
     if (!selectedRef && groupedByRef.length > 0) {
-      setSelectedRef(groupedByRef[0][0]);
+      const firstRef = groupedByRef[0][0];
+      setSelectedRef(firstRef);
+      setRefSearch(firstRef);
     } else if (selectedRef && !groupedByRef.some(([ref]) => ref === selectedRef)) {
-      setSelectedRef(groupedByRef[0]?.[0] || null);
+      const fallback = groupedByRef[0]?.[0] || null;
+      setSelectedRef(fallback);
+      setRefSearch(fallback || '');
     }
   }, [groupedByRef, selectedRef]);
+
+  // Suggestions filtrées (limitées) selon ce que l'utilisateur tape
+  const refSuggestions = useMemo(() => {
+    const q = refSearch.trim().toLowerCase();
+    if (!q) return groupedByRef.slice(0, 50);
+    return groupedByRef
+      .filter(([ref, items]) => {
+        if (ref.toLowerCase().includes(q)) return true;
+        return items.some(
+          (eq) =>
+            (eq.name || '').toLowerCase().includes(q) || (eq.brand || '').toLowerCase().includes(q),
+        );
+      })
+      .slice(0, 50);
+  }, [groupedByRef, refSearch]);
+
+  const handleRefSearchChange = (value) => {
+    setRefSearch(value);
+    // Si la valeur correspond exactement à une référence connue, on la sélectionne
+    const exact = groupedByRef.find(([ref]) => ref === value);
+    if (exact) {
+      setSelectedRef(exact[0]);
+    }
+  };
 
   // Charge le logo MAG SCENE une seule fois
   useEffect(() => {
@@ -627,14 +737,32 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
       ) : (
         <div className="efc-form-card">
           <label className="efc-field efc-field-ref">
-            <span>Référence à graver</span>
-            <Select value={selectedRef || ''} onChange={(e) => setSelectedRef(e.target.value)}>
-              {groupedByRef.map(([ref, items]) => (
+            <span>Référence à graver — tapez pour rechercher</span>
+            <input
+              type="text"
+              list="efc-ref-suggestions"
+              value={refSearch}
+              onChange={(e) => handleRefSearchChange(e.target.value)}
+              placeholder="Tapez une référence, marque ou nom…"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <datalist id="efc-ref-suggestions">
+              {refSuggestions.map(([ref, items]) => (
                 <option key={ref} value={ref}>
-                  {ref} — {items.length} unité{items.length > 1 ? 's' : ''}
+                  {items.length} unité{items.length > 1 ? 's' : ''}
+                  {items[0]?.brand ? ` — ${items[0].brand}` : ''}
+                  {items[0]?.name ? ` — ${items[0].name}` : ''}
                 </option>
               ))}
-            </Select>
+            </datalist>
+            {refSearch.trim() && refSearch !== selectedRef && (
+              <small className="efc-field-hint efc-field-hint-warn">
+                {refSuggestions.length === 0
+                  ? 'Aucune référence trouvée.'
+                  : 'Choisissez une suggestion pour valider la sélection.'}
+              </small>
+            )}
           </label>
 
           {fields && (

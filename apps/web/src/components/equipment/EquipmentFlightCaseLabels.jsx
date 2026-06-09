@@ -347,8 +347,12 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
     // La taille de police s'ADAPTE à la longueur du texte pour tenir sur
     // 1 ou 2 lignes maximum dans la largeur disponible (~115 mm en
     // paysage, soit world_y de -151 jusqu'à ~-36).
+    //
+    // La référence est CENTRÉE horizontalement (en paysage) dans sa zone
+    // → text-anchor='middle' au centre de la largeur disponible.
     const REF_X = INFO_TOP_X - 33;
     const REF_MAX_WIDTH_MM = 115; // largeur dispo en paysage (le long de world_y)
+    const REF_CENTER_Y = INFO_BASE_Y + REF_MAX_WIDTH_MM / 2; // centre de zone en world_y
     const layout = fitReferenceLayout(reference, REF_MAX_WIDTH_MM, 28, 12);
     layout.lines.forEach((line, idx) => {
       // En paysage, les lignes successives s'empilent vers le BAS = world_x
@@ -357,13 +361,13 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
       svg.appendChild(
         createPlateText(doc, {
           x: REF_X - lineOffset,
-          y: INFO_BASE_Y,
+          y: REF_CENTER_Y,
           content: line,
           fontSize: layout.fontSize,
           fontWeight: 700,
           fontFamily: FONT_FAMILY,
           fill: '#000000',
-          textAnchor: 'start',
+          textAnchor: 'middle',
           topAlign: true,
         }),
       );
@@ -451,16 +455,40 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   // croix superposee, pas de champ `tested` dans les fields.)
 
   // 5bis) Quantité — placée en BAS-DROITE paysage de la zone DESIGNATION,
-  //       juste à GAUCHE paysage de la case Testé, format « Quantité : <N> ».
-  //       Descendue de 5 mm en paysage par rapport à sa position précédente
-  //       (= world_x -5 par rapport au top paysage de Testé).
+  //       juste à GAUCHE paysage de la case Testé.
+  //       Le LABEL « Quantité : » est rendu en PLUS PETIT (police 8) que la
+  //       valeur numérique (police 14) : deux <text> séparés, ancrés à
+  //       droite, alignés sur le même HAUT de capitales (topAlign).
   if (qty) {
+    const QTY_VALUE_FONT = 14;
+    const QTY_LABEL_FONT = 8;
+    const QTY_GAP_MM = 2; // espace entre label et valeur
+    const qtyAnchorX = testWorldX + TEST - 5; // world_x (vertical en paysage)
+    const qtyAnchorY = testWorldY - 5; // world_y (horizontal en paysage)
+    // Valeur numérique (grande) — ancrée à droite paysage
     svg.appendChild(
       createPlateText(doc, {
-        x: testWorldX + TEST - 5,
-        y: testWorldY - 5,
-        content: `Quantité : ${qty}`,
-        fontSize: 14,
+        x: qtyAnchorX,
+        y: qtyAnchorY,
+        content: qty,
+        fontSize: QTY_VALUE_FONT,
+        fontWeight: 600,
+        fontFamily: FONT_FAMILY,
+        fill: '#000000',
+        textAnchor: 'end',
+        topAlign: true,
+      }),
+    );
+    // Label « Quantité : » (plus petit) — placé juste à GAUCHE paysage de
+    // la valeur (= world_y plus petit). Largeur estimée de la valeur via
+    // CHAR_WIDTH_FACTOR.
+    const qtyValueWidth = measureWidth(qty, QTY_VALUE_FONT);
+    svg.appendChild(
+      createPlateText(doc, {
+        x: qtyAnchorX,
+        y: qtyAnchorY - qtyValueWidth - QTY_GAP_MM,
+        content: 'Quantité :',
+        fontSize: QTY_LABEL_FONT,
         fontWeight: 600,
         fontFamily: FONT_FAMILY,
         fill: '#000000',
@@ -767,15 +795,6 @@ const EquipmentFlightCaseLabels = ({ equipment = [] }) => {
 
           {fields && (
             <div className="efc-fields">
-              <label className="efc-field">
-                <span>Client</span>
-                <input
-                  type="text"
-                  value={fields.client}
-                  onChange={(e) => setField('client', e.target.value)}
-                  placeholder="(vide)"
-                />
-              </label>
               <label className="efc-field">
                 <span>Marque</span>
                 <input

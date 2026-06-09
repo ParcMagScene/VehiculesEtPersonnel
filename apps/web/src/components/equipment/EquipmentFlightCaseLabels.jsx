@@ -458,13 +458,19 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
   //       juste à GAUCHE paysage de la case Testé.
   //       Le LABEL « Quantité : » est rendu en PLUS PETIT (police 8) que la
   //       valeur numérique (police 14) : deux <text> séparés, ancrés à
-  //       droite, alignés sur le même HAUT de capitales (topAlign).
+  //       droite, alignés sur la même BASELINE pour qu'ils ressemblent à
+  //       un texte continu « Quantité : N ».
   if (qty) {
     const QTY_VALUE_FONT = 14;
     const QTY_LABEL_FONT = 8;
     const QTY_GAP_MM = 2; // espace entre label et valeur
     const qtyAnchorX = testWorldX + TEST - 5; // world_x (vertical en paysage)
     const qtyAnchorY = testWorldY - 5; // world_y (horizontal en paysage)
+    // Avec topAlign:true, l'ancre est sur le HAUT des capitales. Pour que
+    // les BASELINES soient alignées (apparence d'un texte sur la même
+    // ligne), on remonte l'ancre du petit label de (FS_value - FS_label)
+    // × 0.8 vers le bas paysage (= world_x plus petit).
+    const labelTopOffset = (QTY_VALUE_FONT - QTY_LABEL_FONT) * 0.8;
     // Valeur numérique (grande) — ancrée à droite paysage
     svg.appendChild(
       createPlateText(doc, {
@@ -480,12 +486,11 @@ function buildPlateSvg({ fields, qrDataUrl, logoDataUrl }) {
       }),
     );
     // Label « Quantité : » (plus petit) — placé juste à GAUCHE paysage de
-    // la valeur (= world_y plus petit). Largeur estimée de la valeur via
-    // CHAR_WIDTH_FACTOR.
+    // la valeur (= world_y plus petit), baseline alignée avec la valeur.
     const qtyValueWidth = measureWidth(qty, QTY_VALUE_FONT);
     svg.appendChild(
       createPlateText(doc, {
-        x: qtyAnchorX,
+        x: qtyAnchorX - labelTopOffset,
         y: qtyAnchorY - qtyValueWidth - QTY_GAP_MM,
         content: 'Quantité :',
         fontSize: QTY_LABEL_FONT,

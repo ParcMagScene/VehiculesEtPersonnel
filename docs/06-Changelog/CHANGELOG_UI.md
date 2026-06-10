@@ -5,6 +5,39 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.4.0] — 2026-06-XX
+
+### Added
+- **Auth éphémère par action** côté frontend (compagnon backend `1.3.0`) :
+  - `contexts/AuthContext.jsx` : détection compte Équipe via
+    `isTeamAccountEmail(email)` (`VITE_TEAM_ACCOUNT_EMAIL`).
+  - `components/auth/PersonalActionDialog.jsx` : modal PIN/mot de passe,
+    accepte une prop `title` (défaut « Authentification personnelle »).
+  - `hooks/usePersonalActionGuard.js` : hook décidant entre appel API
+    direct (compte perso) et ouverture de la modal (compte Équipe).
+    Callback `onCancel` pour rollback côté appelant si PIN annulé.
+  - `utils/api/personalActions.js` : client `personalActions.perform()`.
+- Wiring dans 3 composants existants :
+  - `LeaveRequestForm` → `request_leave` (compte Équipe : PIN avant POST congé).
+  - `PeriodCalendarModal` → `declare_unavailability`.
+  - `AssignmentDialog` → `create_assignment`. Compte Équipe : crée d'abord
+    la mission (action neutre), puis PIN éphémère pour l'affectation.
+    Rollback `deleteMission` si annulé. Multi-affectation bloquée depuis
+    le compte Équipe (PIN authentifie une seule personne).
+- Tests : `usePersonalActionGuard.test.jsx` (7), `isTeamAccountEmail.test.js` (3).
+  Suite frontend : 653/653.
+
+### Notes
+- Coexiste avec la **session personnelle** historique
+  (`PersonalAuthContext` / `PersonalSuiviWrapper` / `PersonalPlanningWrapper`)
+  utilisée pour la consultation/modification libre du Suivi et du Planning
+  par un personnel sur tablette compte Équipe. Cas d'usage différents :
+  l'auth éphémère est par action ponctuelle, la session est persistante.
+- `MobileLeaves` n'est volontairement pas câblé sur l'auth éphémère
+  (mobile = compte personnel typiquement, pas la tablette Équipe).
+
+---
+
 ## [2.3.0] — 2026-04-11
 
 ### Added

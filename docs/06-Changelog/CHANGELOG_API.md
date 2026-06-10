@@ -5,6 +5,45 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.3.0] — 2026-06-XX
+
+### Added
+- **Auth éphémère « actions personnelles »** :
+  `POST /api/personal-actions/perform` — permet au compte Équipe partagé
+  (`commun@magsav.com`, configurable via `TEAM_ACCOUNT_EMAIL`) d'exécuter
+  une action au nom d'un personnel via PIN/mot de passe ponctuel, sans
+  changer de session JWT.
+  Voir [docs/api/personal-actions.md](../api/personal-actions.md).
+- Migration `personal-actions-log-v1.js` — table `personal_actions_log`
+  (audit succès/échec : `context_user_id`, `personal_user_id`, `person_id`,
+  `action_type`, `target_type`, `target_id`, `payload_summary`, `success`,
+  `error_code`, `ip`, `user_agent`).
+- Schéma Zod `personalActionPerformSchema` (`apps/api/schemas/auth.js`)
+  validant `actionType ∈ {create_assignment, request_leave, declare_unavailability}`
+  et exigeant PIN OU password.
+- Service `services/personalAuth.js` (`verifyPersonalCredentials`) :
+  vérification PIN/mot de passe avec verrouillage compte.
+- Service `services/personalActionHandlers.js` :
+  3 handlers (`handleCreateAssignment`, `handleRequestLeave`,
+  `handleDeclareUnavailability`).
+- Rate limiter dédié `personalActionsLimiter` (`config/rateLimiter.js`).
+
+### Security
+- **Invariant clé** : tous les handlers forcent `person_id` depuis le
+  contexte d'authentification PIN — le `payload` ne peut jamais surcharger
+  cette valeur. Voir `SECURITY.md`.
+- Le compte appelant doit être `TEAM_ACCOUNT_EMAIL` (sinon `403`).
+- Comptes en lecture seule rejetés (`READ_ONLY`).
+- Audit obligatoire (succès et échec) ; payloads expurgés de `pin`,
+  `password`, `password_hash` avant log, tronqués à 1000 chars.
+- Message d'erreur générique « Identifiants incorrects » pour brute-force.
+
+### Tests
+- `tests/personal-actions.test.js` — 30 tests
+  (20 infrastructure + 10 handlers métier). Suite backend : 171/171.
+
+---
+
 ## [1.2.0] — 2026-04-11
 
 ### Added

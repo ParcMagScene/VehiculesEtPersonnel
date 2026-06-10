@@ -1,12 +1,13 @@
 {
   "version": "1.0.0",
-  "generated": "2026-06-04",
+  "generated": "2026-06-10",
   "sections": {
     "api": {
       "path": "docs/api/",
       "index": "docs/api/README.md",
       "files": [
         "docs/api/auth.md",
+        "docs/api/personal-actions.md",
         "docs/api/vehicles.md",
         "docs/api/personnel.md",
         "docs/api/equipment.md",
@@ -58,7 +59,7 @@
       ]
     }
   },
-  "totalFiles": 121,
+  "totalFiles": 122,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

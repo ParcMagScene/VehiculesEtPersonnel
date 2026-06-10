@@ -5,6 +5,27 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.3.0] — 2026-06-XX
+
+### Added
+- `docs/api/personal-actions.md` — Documentation complète de l'endpoint
+  `POST /api/personal-actions/perform` (auth éphémère par action) :
+  pré-requis serveur, schéma de requête, payloads des 3 handlers
+  (`create_assignment`, `request_leave`, `declare_unavailability`),
+  codes d'erreur, invariant de sécurité, audit `personal_actions_log`,
+  intégration frontend.
+- `docs/api/README.md` — Référencement du nouveau module dans l'index.
+
+### Changed
+- `SECURITY.md` — Section « Authentification éphémère » : invariant
+  `person_id` forcé depuis le contexte PIN, mesures associées (rate
+  limit dédié, comptes read-only rejetés, audit obligatoire avec
+  expurgation `pin`/`password`/`password_hash`).
+- `CHANGELOG_API.md` — Entrée [1.3.0].
+- `CHANGELOG_UI.md` — Entrée [2.4.0].
+
+---
+
 ## [1.2.1] — 2026-04-20
 
 ### Added

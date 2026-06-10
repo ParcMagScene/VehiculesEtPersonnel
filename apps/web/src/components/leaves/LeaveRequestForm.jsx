@@ -35,9 +35,11 @@ import {
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
+import usePersonalActionGuard from '../../hooks/usePersonalActionGuard';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
+import PersonalActionDialog from '../auth/PersonalActionDialog';
 
 // ═══════════════════════════════════════
 // COMPOSANT SIGNATURE CANVAS
@@ -342,33 +344,57 @@ const LeaveRequestForm = ({
     }
 
     setSaving(true);
-    try {
-      const data = {
-        personId: parseInt(selectedPersonId),
-        leaveType,
-        exceptionalType: leaveType === 'exceptionnel' ? exceptionalType : undefined,
-        startDate,
-        endDate,
-        startPeriod,
-        endPeriod,
-        employeeComment: comment || undefined,
-        signatureEmployee: signature || undefined,
-      };
+    const data = {
+      personId: parseInt(selectedPersonId),
+      leaveType,
+      exceptionalType: leaveType === 'exceptionnel' ? exceptionalType : undefined,
+      startDate,
+      endDate,
+      startPeriod,
+      endPeriod,
+      employeeComment: comment || undefined,
+      signatureEmployee: signature || undefined,
+    };
 
-      const result = await api.createLeaveRequest(data);
-
-      // Upload du justificatif si présent
-      if (justificationFile && result.id) {
-        await api.uploadLeaveJustification(result.id, justificationName, justificationFile);
+    // Post-traitement commun (upload justif + refresh + callback).
+    // `payload` est soit la leave_request directement (compte perso normal),
+    // soit l'enveloppe `{ success, result: leaveRequest, … }` (compte Équipe).
+    const handleSuccess = async (payload) => {
+      const leave = payload?.result ?? payload;
+      try {
+        if (justificationFile && leave?.id) {
+          await api.uploadLeaveJustification(leave.id, justificationName, justificationFile);
+        }
+        refreshBus.publish('leaves');
+        if (onCreated) onCreated(leave);
+        onClose();
+      } catch (err) {
+        const msg = err.error || err.message || 'Erreur upload justificatif';
+        setError(msg);
+      } finally {
+        setSaving(false);
       }
+    };
 
-      refreshBus.publish('leaves');
-      if (onCreated) onCreated(result);
-      onClose();
+    try {
+      await guard.run({
+        actionType: 'request_leave',
+        payload: data,
+        defaultPersonId: data.personId,
+        actionLabel: 'Soumettre ma demande',
+        description:
+          'Confirmez avec votre PIN ou mot de passe pour déposer la demande en votre nom.',
+        direct: () => api.createLeaveRequest(data),
+        onSuccess: handleSuccess,
+      });
+      // Si compte Équipe : la modal est ouverte, on garde saving=true jusqu'à
+      // ce que handleSuccess soit appelé (ou jusqu'au close manuel via finally).
+      if (guard.isTeamAccount) {
+        setSaving(false);
+      }
     } catch (err) {
       const msg = err.error || err.message || 'Erreur lors de la création';
       setError(msg);
-    } finally {
       setSaving(false);
     }
   };
@@ -387,6 +413,7 @@ const LeaveRequestForm = ({
   const _currentTypeInfo = leaveTypes[leaveType];
 
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const guard = usePersonalActionGuard();
   const formSnapshot = {
     selectedPersonId,
     leaveType,
@@ -773,6 +800,11 @@ const LeaveRequestForm = ({
         </form>
       </Modal>
       {ConfirmDialogRenderer}
+      <PersonalActionDialog
+        personnel={sortedPersons}
+        title="Demande de congé"
+        {...guard.dialogProps}
+      />
     </>
   );
 };

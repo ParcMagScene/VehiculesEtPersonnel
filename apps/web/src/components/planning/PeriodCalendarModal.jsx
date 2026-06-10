@@ -40,7 +40,9 @@ import {
 } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import usePersonalActionGuard from '../../hooks/usePersonalActionGuard';
 import api from '../../utils/api';
+import PersonalActionDialog from '../auth/PersonalActionDialog';
 import { PERIOD_MENU_ITEMS } from '../personnel/PersonnelContextMenu';
 
 // Jours ouvrés entre deux dates
@@ -57,6 +59,7 @@ const PeriodCalendarModal = ({
   isAdmin = false,
   initialDate,
 }) => {
+  const guard = usePersonalActionGuard();
   const [currentMonth, setCurrentMonth] = useState(initialDate || new Date());
   const [startDate, setStartDate] = useState(initialDate || null);
   const [endDate, setEndDate] = useState(initialDate || null);
@@ -237,7 +240,7 @@ const PeriodCalendarModal = ({
         if (googleEventId) setGoogleSynced(true);
       }
 
-      await api.createAvailability({
+      const availabilityPayload = {
         person_id: person.id,
         start_date: dateStr,
         end_date: endDateStr,
@@ -255,21 +258,32 @@ const PeriodCalendarModal = ({
               google_event_id: googleEventId || undefined,
             }
           : {}),
+      };
+
+      await guard.run({
+        actionType: 'declare_unavailability',
+        payload: availabilityPayload,
+        defaultPersonId: person.id,
+        actionLabel: 'Déclarer en mon nom',
+        description: `Confirmez avec votre PIN ou mot de passe pour déclarer cette période.`,
+        direct: () => api.createAvailability(availabilityPayload),
+        onSuccess: () => {
+          if (onCreated) onCreated();
+          setSuccessCount((c) => c + 1);
+          setSavedRanges((prev) => [...prev, { start: new Date(startDate), end: new Date(end) }]);
+          setStartDate(null);
+          setEndDate(null);
+          setHoverDate(null);
+          setStartPeriod('AM');
+          setEndPeriod('PM');
+          setReason('');
+          setConflicts([]);
+          setGoogleSynced(false);
+        },
       });
 
-      if (onCreated) onCreated();
-      setSuccessCount((c) => c + 1);
-      // Sauvegarder la plage pour la garder surlignée
-      setSavedRanges((prev) => [...prev, { start: new Date(startDate), end: new Date(end) }]);
-      // Reset pour permettre un nouvel ajout
-      setStartDate(null);
-      setEndDate(null);
-      setHoverDate(null);
-      setStartPeriod('AM');
-      setEndPeriod('PM');
-      setReason('');
-      setConflicts([]);
-      setGoogleSynced(false);
+      // Cas compte perso direct — le reset a déjà été fait via onSuccess.
+      // Cas compte Équipe — on attend la confirmation via la modal.
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Erreur lors de la création');
     } finally {
@@ -280,287 +294,294 @@ const PeriodCalendarModal = ({
   const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
   return (
-    <Modal open onClose={onClose} size="lg" className="pcm-modal no-drag-resize">
-      <ModalHeader onClose={onClose} style={{ background: periodInfo.color }}>
-        <span className="pcm-header-emoji">{periodInfo.emoji}</span>
-        <div>
-          <div className="pcm-header-title">{periodInfo.label}</div>
-          <div className="pcm-header-person">
-            {person.firstName} {person.lastName || ''}
+    <>
+      <Modal open onClose={onClose} size="lg" className="pcm-modal no-drag-resize">
+        <ModalHeader onClose={onClose} style={{ background: periodInfo.color }}>
+          <span className="pcm-header-emoji">{periodInfo.emoji}</span>
+          <div>
+            <div className="pcm-header-title">{periodInfo.label}</div>
+            <div className="pcm-header-person">
+              {person.firstName} {person.lastName || ''}
+            </div>
           </div>
-        </div>
-      </ModalHeader>
+        </ModalHeader>
 
-      <ModalBody className="pcm-body">
-        <div className="pcm-calendar">
-          <div className="pcm-cal-nav">
-            <Button
-              variant="ghost"
-              onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
-              className="pcm-nav-btn"
-            >
-              <ChevronLeft size={18} />
-            </Button>
-            <span className="pcm-cal-month">
-              {format(currentMonth, 'MMMM yyyy', { locale: fr })}
-            </span>
-            <Button
-              variant="ghost"
-              onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-              className="pcm-nav-btn"
-            >
-              <ChevronRight size={18} />
-            </Button>
+        <ModalBody className="pcm-body">
+          <div className="pcm-calendar">
+            <div className="pcm-cal-nav">
+              <Button
+                variant="ghost"
+                onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
+                className="pcm-nav-btn"
+              >
+                <ChevronLeft size={18} />
+              </Button>
+              <span className="pcm-cal-month">
+                {format(currentMonth, 'MMMM yyyy', { locale: fr })}
+              </span>
+              <Button
+                variant="ghost"
+                onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
+                className="pcm-nav-btn"
+              >
+                <ChevronRight size={18} />
+              </Button>
+            </div>
+
+            <div className="pcm-cal-grid">
+              {dayNames.map((d) => (
+                <div key={d} className="pcm-cal-dayname">
+                  {d}
+                </div>
+              ))}
+              {calendarDays.map((day, i) => {
+                const inMonth = isSameMonth(day, currentMonth);
+                const weekend = isWeekend(day);
+                const inRange = isInRange(day);
+                const rangeStart = isRangeStart(day);
+                const rangeEnd = isRangeEnd(day);
+                const today = isSameDay(day, new Date());
+                const isSaved = savedRanges.some(
+                  (r) =>
+                    (isSameDay(day, r.start) || isAfter(day, r.start)) &&
+                    (isSameDay(day, r.end) || isBefore(day, r.end)),
+                );
+
+                return (
+                  <Button
+                    variant="ghost"
+                    key={i}
+                    className={[
+                      'pcm-cal-day',
+                      !inMonth && 'other-month',
+                      weekend && 'weekend',
+                      inRange && 'in-range',
+                      rangeStart && 'range-start',
+                      rangeEnd && 'range-end',
+                      isSaved && 'saved',
+                      today && 'today',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    style={inRange || isSaved ? { '--range-color': periodInfo.color } : undefined}
+                    onClick={() => handleDayClick(day)}
+                    onMouseEnter={() => {
+                      if (startDate && !endDate) setHoverDate(day);
+                    }}
+                    onMouseLeave={() => setHoverDate(null)}
+                  >
+                    {format(day, 'd')}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="pcm-cal-grid">
-            {dayNames.map((d) => (
-              <div key={d} className="pcm-cal-dayname">
-                {d}
-              </div>
-            ))}
-            {calendarDays.map((day, i) => {
-              const inMonth = isSameMonth(day, currentMonth);
-              const weekend = isWeekend(day);
-              const inRange = isInRange(day);
-              const rangeStart = isRangeStart(day);
-              const rangeEnd = isRangeEnd(day);
-              const today = isSameDay(day, new Date());
-              const isSaved = savedRanges.some(
-                (r) =>
-                  (isSameDay(day, r.start) || isAfter(day, r.start)) &&
-                  (isSameDay(day, r.end) || isBefore(day, r.end)),
-              );
-
-              return (
-                <Button
-                  variant="ghost"
-                  key={i}
-                  className={[
-                    'pcm-cal-day',
-                    !inMonth && 'other-month',
-                    weekend && 'weekend',
-                    inRange && 'in-range',
-                    rangeStart && 'range-start',
-                    rangeEnd && 'range-end',
-                    isSaved && 'saved',
-                    today && 'today',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  style={inRange || isSaved ? { '--range-color': periodInfo.color } : undefined}
-                  onClick={() => handleDayClick(day)}
-                  onMouseEnter={() => {
-                    if (startDate && !endDate) setHoverDate(day);
-                  }}
-                  onMouseLeave={() => setHoverDate(null)}
-                >
-                  {format(day, 'd')}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Options demi-journées */}
-        {startDate && (
-          <div className="pcm-options">
-            {/* ═══ RDV : Horaires précis ═══ */}
-            {isRdv ? (
-              <>
-                <div className="pcm-option-row pcm-rdv-times">
-                  <label>
-                    <Clock size={14} /> Horaires :
-                  </label>
-                  <div className="pcm-time-inputs">
-                    <Input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="pcm-time-input"
-                    />
-                    <span className="pcm-time-sep">→</span>
-                    <Input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="pcm-time-input"
-                    />
-                  </div>
-                  <span className="pcm-date-display">
-                    {format(startDate, 'dd MMM yyyy', { locale: fr })}
-                  </span>
-                </div>
-
-                {/* Pro / Perso toggle */}
-                <div className="pcm-option-row pcm-rdv-category">
-                  <label>Type :</label>
-                  <div className="pcm-category-toggle">
-                    <Button
-                      variant="ghost"
-                      className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
-                      onClick={() => setRdvCategory('pro')}
-                    >
-                      <Briefcase size={14} /> Pro
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
-                      onClick={() => setRdvCategory('perso')}
-                    >
-                      <User size={14} /> Perso
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Google Calendar sync toggle */}
-                <div className="pcm-option-row pcm-google-sync">
-                  <label className="pcm-checkbox-label">
-                    <Checkbox
-                      checked={syncGoogle}
-                      disabled={!canWriteGoogle}
-                      onChange={(e) => setSyncGoogle(e.target.checked)}
-                    />
-                    <CalendarPlus size={14} />
-                    <span>Synchroniser Google Agenda</span>
-                  </label>
-                  {!canWriteGoogle && (
-                    <span className="pcm-google-warn">⚠ Service Account en lecture seule</span>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="pcm-option-row">
-                  <label>Début :</label>
-                  <div className="pcm-period-toggle">
-                    <Button
-                      variant="ghost"
-                      className={startPeriod === 'AM' ? 'active' : ''}
-                      onClick={() => setStartPeriod('AM')}
-                    >
-                      Matin
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className={startPeriod === 'PM' ? 'active' : ''}
-                      onClick={() => setStartPeriod('PM')}
-                    >
-                      Après-midi
-                    </Button>
-                  </div>
-                  <span className="pcm-date-display">
-                    {format(startDate, 'dd MMM yyyy', { locale: fr })}
-                  </span>
-                </div>
-                <div className="pcm-option-row">
-                  <label>Fin :</label>
-                  <div className="pcm-period-toggle">
-                    <Button
-                      variant="ghost"
-                      className={endPeriod === 'AM' ? 'active' : ''}
-                      onClick={() => setEndPeriod('AM')}
-                    >
-                      Matin
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      className={endPeriod === 'PM' ? 'active' : ''}
-                      onClick={() => setEndPeriod('PM')}
-                    >
-                      Journée entière
-                    </Button>
-                  </div>
-                  <span className="pcm-date-display">
-                    {endDate
-                      ? format(endDate, 'dd MMM yyyy', { locale: fr })
-                      : format(startDate, 'dd MMM yyyy', { locale: fr })}
-                  </span>
-                </div>
-              </>
-            )}
-
-            <div className="pcm-days-count" style={{ color: periodInfo.color }}>
+          {/* Options demi-journées */}
+          {startDate && (
+            <div className="pcm-options">
+              {/* ═══ RDV : Horaires précis ═══ */}
               {isRdv ? (
                 <>
-                  {startTime} — {endTime}
+                  <div className="pcm-option-row pcm-rdv-times">
+                    <label>
+                      <Clock size={14} /> Horaires :
+                    </label>
+                    <div className="pcm-time-inputs">
+                      <Input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="pcm-time-input"
+                      />
+                      <span className="pcm-time-sep">→</span>
+                      <Input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="pcm-time-input"
+                      />
+                    </div>
+                    <span className="pcm-date-display">
+                      {format(startDate, 'dd MMM yyyy', { locale: fr })}
+                    </span>
+                  </div>
+
+                  {/* Pro / Perso toggle */}
+                  <div className="pcm-option-row pcm-rdv-category">
+                    <label>Type :</label>
+                    <div className="pcm-category-toggle">
+                      <Button
+                        variant="ghost"
+                        className={`pcm-cat-btn ${rdvCategory === 'pro' ? 'active pro' : ''}`}
+                        onClick={() => setRdvCategory('pro')}
+                      >
+                        <Briefcase size={14} /> Pro
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className={`pcm-cat-btn ${rdvCategory === 'perso' ? 'active perso' : ''}`}
+                        onClick={() => setRdvCategory('perso')}
+                      >
+                        <User size={14} /> Perso
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Google Calendar sync toggle */}
+                  <div className="pcm-option-row pcm-google-sync">
+                    <label className="pcm-checkbox-label">
+                      <Checkbox
+                        checked={syncGoogle}
+                        disabled={!canWriteGoogle}
+                        onChange={(e) => setSyncGoogle(e.target.checked)}
+                      />
+                      <CalendarPlus size={14} />
+                      <span>Synchroniser Google Agenda</span>
+                    </label>
+                    {!canWriteGoogle && (
+                      <span className="pcm-google-warn">⚠ Service Account en lecture seule</span>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
-                  {selectedDays} jour{selectedDays > 1 ? 's' : ''} ouvré
-                  {selectedDays > 1 ? 's' : ''}
+                  <div className="pcm-option-row">
+                    <label>Début :</label>
+                    <div className="pcm-period-toggle">
+                      <Button
+                        variant="ghost"
+                        className={startPeriod === 'AM' ? 'active' : ''}
+                        onClick={() => setStartPeriod('AM')}
+                      >
+                        Matin
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className={startPeriod === 'PM' ? 'active' : ''}
+                        onClick={() => setStartPeriod('PM')}
+                      >
+                        Après-midi
+                      </Button>
+                    </div>
+                    <span className="pcm-date-display">
+                      {format(startDate, 'dd MMM yyyy', { locale: fr })}
+                    </span>
+                  </div>
+                  <div className="pcm-option-row">
+                    <label>Fin :</label>
+                    <div className="pcm-period-toggle">
+                      <Button
+                        variant="ghost"
+                        className={endPeriod === 'AM' ? 'active' : ''}
+                        onClick={() => setEndPeriod('AM')}
+                      >
+                        Matin
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className={endPeriod === 'PM' ? 'active' : ''}
+                        onClick={() => setEndPeriod('PM')}
+                      >
+                        Journée entière
+                      </Button>
+                    </div>
+                    <span className="pcm-date-display">
+                      {endDate
+                        ? format(endDate, 'dd MMM yyyy', { locale: fr })
+                        : format(startDate, 'dd MMM yyyy', { locale: fr })}
+                    </span>
+                  </div>
                 </>
               )}
-            </div>
 
-            {/* Motif */}
-            <div className="pcm-reason">
-              <label>Motif (optionnel) :</label>
-              <Input
-                type="text"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={`Motif de ${periodInfo.label.toLowerCase()}…`}
-              />
-            </div>
-
-            {/* Conflits */}
-            {conflicts.length > 0 && (
-              <div className="pcm-conflicts">
-                <AlertTriangle size={14} />
-                <span>
-                  {conflicts.length} période{conflicts.length > 1 ? 's' : ''} existante
-                  {conflicts.length > 1 ? 's' : ''} sur cette plage
-                </span>
+              <div className="pcm-days-count" style={{ color: periodInfo.color }}>
+                {isRdv ? (
+                  <>
+                    {startTime} — {endTime}
+                  </>
+                ) : (
+                  <>
+                    {selectedDays} jour{selectedDays > 1 ? 's' : ''} ouvré
+                    {selectedDays > 1 ? 's' : ''}
+                  </>
+                )}
               </div>
-            )}
 
-            {/* Avertissement approbation */}
-            {periodInfo.requiresApproval && !isAdmin && (
-              <InlineAlert variant="info">
-                Cette demande sera soumise à validation par les administrateurs
-              </InlineAlert>
-            )}
+              {/* Motif */}
+              <div className="pcm-reason">
+                <label>Motif (optionnel) :</label>
+                <Input
+                  type="text"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={`Motif de ${periodInfo.label.toLowerCase()}…`}
+                />
+              </div>
 
-            {error && <InlineAlert>{error}</InlineAlert>}
-          </div>
-        )}
+              {/* Conflits */}
+              {conflicts.length > 0 && (
+                <div className="pcm-conflicts">
+                  <AlertTriangle size={14} />
+                  <span>
+                    {conflicts.length} période{conflicts.length > 1 ? 's' : ''} existante
+                    {conflicts.length > 1 ? 's' : ''} sur cette plage
+                  </span>
+                </div>
+              )}
 
-        {/* Message de succès */}
-        {successCount > 0 && !startDate && (
-          <div className="pcm-success-banner" style={{ borderColor: periodInfo.color }}>
-            <Check size={16} style={{ color: periodInfo.color }} />
-            <span>
-              {successCount} période{successCount > 1 ? 's' : ''} enregistrée
-              {successCount > 1 ? 's' : ''}
-              {googleSynced && ' — synchronisé avec Google Agenda ✓'}
-              {' — sélectionnez de nouvelles dates ou fermez'}
-            </span>
-          </div>
-        )}
-      </ModalBody>
+              {/* Avertissement approbation */}
+              {periodInfo.requiresApproval && !isAdmin && (
+                <InlineAlert variant="info">
+                  Cette demande sera soumise à validation par les administrateurs
+                </InlineAlert>
+              )}
 
-      <ModalFooter className="pcm-footer">
-        <Button variant="ghost" onClick={onClose}>
-          {successCount > 0 ? 'Fermer' : 'Annuler'}
-        </Button>
-        <Button
-          variant="primary"
-          style={{ background: periodInfo.color }}
-          disabled={!startDate || submitting}
-          onClick={handleSubmit}
-        >
-          <Check size={16} />
-          {submitting
-            ? 'Enregistrement…'
-            : periodInfo.requiresApproval && !isAdmin
-              ? 'Soumettre la demande'
-              : successCount > 0
-                ? 'Ajouter cette période'
-                : 'Enregistrer'}
-        </Button>
-      </ModalFooter>
-    </Modal>
+              {error && <InlineAlert>{error}</InlineAlert>}
+            </div>
+          )}
+
+          {/* Message de succès */}
+          {successCount > 0 && !startDate && (
+            <div className="pcm-success-banner" style={{ borderColor: periodInfo.color }}>
+              <Check size={16} style={{ color: periodInfo.color }} />
+              <span>
+                {successCount} période{successCount > 1 ? 's' : ''} enregistrée
+                {successCount > 1 ? 's' : ''}
+                {googleSynced && ' — synchronisé avec Google Agenda ✓'}
+                {' — sélectionnez de nouvelles dates ou fermez'}
+              </span>
+            </div>
+          )}
+        </ModalBody>
+
+        <ModalFooter className="pcm-footer">
+          <Button variant="ghost" onClick={onClose}>
+            {successCount > 0 ? 'Fermer' : 'Annuler'}
+          </Button>
+          <Button
+            variant="primary"
+            style={{ background: periodInfo.color }}
+            disabled={!startDate || submitting}
+            onClick={handleSubmit}
+          >
+            <Check size={16} />
+            {submitting
+              ? 'Enregistrement…'
+              : periodInfo.requiresApproval && !isAdmin
+                ? 'Soumettre la demande'
+                : successCount > 0
+                  ? 'Ajouter cette période'
+                  : 'Enregistrer'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+      <PersonalActionDialog
+        personnel={person ? [person] : []}
+        title="Déclarer une période"
+        {...guard.dialogProps}
+      />
+    </>
   );
 };
 

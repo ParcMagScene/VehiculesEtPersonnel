@@ -32,6 +32,7 @@ function PersonalActionDialog({
   defaultPersonId = null,
   actionLabel = 'Valider en mon nom',
   description = 'Confirmez votre identité personnelle pour valider cette action depuis le compte Equipe.',
+  title = 'Authentification personnelle',
   onConfirm,
 }) {
   const [selectedPersonId, setSelectedPersonId] = useState('');
@@ -103,7 +104,7 @@ function PersonalActionDialog({
       isOpen={isOpen}
       onClose={loading ? () => {} : onClose}
       size="sm"
-      title="Authentification personnelle"
+      title={title}
       description={description}
       showClose={!loading}
     >

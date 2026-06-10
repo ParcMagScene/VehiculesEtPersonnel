@@ -110,6 +110,7 @@ import {
   setupSkillsRoutes,
 } from './personnelRoutes.js';
 import { setupPersonalActionsRoutes } from './personalActionsRoutes.js';
+import { registerDefaultPersonalActionHandlers } from './services/personalActionHandlers.js';
 import { setupPhotoThumbRoutes } from './photoThumbRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { stopPlanningRolloverCron } from './planningRoutes.js';
@@ -481,6 +482,7 @@ setupAnnuaireMatchingRoutes(app, authenticateToken, requireAdmin);
 // Routes extraites de server.js — Phase 2 Refactoring
 setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev });
 setupPersonalActionsRoutes(app, authenticateToken);
+registerDefaultPersonalActionHandlers();
 setupVehicleRoutes(
   app,
   authenticateToken,

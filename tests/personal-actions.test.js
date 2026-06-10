@@ -267,3 +267,352 @@ describe('Personal action handlers registry', () => {
     assert.equal(_hasPersonalActionHandler('foo'), false);
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// Handlers métier (create_assignment, request_leave, declare_unavailability)
+// ════════════════════════════════════════════════════════════════
+const {
+  handleCreateAssignment,
+  handleRequestLeave,
+  handleDeclareUnavailability,
+  HandlerError,
+} = await import('../apps/api/services/personalActionHandlers.js');
+
+describe('handleCreateAssignment', () => {
+  const FX = `pa-handler-asg-${Date.now()}@example.test`;
+  let userId, personId, missionId, otherPersonId;
+  const cleanup = [];
+
+  before(async () => {
+    const u = db
+      .prepare(
+        'INSERT INTO users (email, name, password_hash, is_admin) VALUES (?, ?, ?, 0)',
+      )
+      .run(FX, 'Asg Tester', await bcrypt.hash('pw', 4));
+    userId = u.lastInsertRowid;
+    const p = db
+      .prepare(
+        "INSERT INTO persons (first_name, last_name, email, user_id, status) VALUES (?, ?, ?, ?, 'active')",
+      )
+      .run('Asg', 'Tester', FX, userId);
+    personId = p.lastInsertRowid;
+    const op = db
+      .prepare(
+        "INSERT INTO persons (first_name, last_name, status) VALUES (?, ?, 'active')",
+      )
+      .run('Other', 'Person');
+    otherPersonId = op.lastInsertRowid;
+    const m = db
+      .prepare(
+        `INSERT INTO missions (title, start_date, end_date, status, created_by)
+         VALUES ('PA Test Mission', date('now'), date('now', '+1 day'), 'open', ?)`,
+      )
+      .run(userId);
+    missionId = m.lastInsertRowid;
+  });
+
+  after(() => {
+    for (const id of cleanup) {
+      try {
+        db.prepare('DELETE FROM mission_assignments WHERE id = ?').run(id);
+      } catch {
+        /* noop */
+      }
+    }
+    db.prepare('DELETE FROM mission_assignments WHERE mission_id = ?').run(missionId);
+    db.prepare('DELETE FROM missions WHERE id = ?').run(missionId);
+    db.prepare('DELETE FROM persons WHERE id IN (?, ?)').run(personId, otherPersonId);
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  });
+
+  it('crée une affectation avec person_id forcé', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+
+    const out = handleCreateAssignment({
+      db,
+      person,
+      personalUser,
+      payload: {
+        mission_id: missionId,
+        // tentative de privilege escalation
+        person_id: otherPersonId,
+        position: 'plateau',
+      },
+    });
+    cleanup.push(out.targetId);
+
+    assert.equal(out.targetType, 'mission_assignment');
+    assert.ok(out.targetId > 0);
+    // SÉCURITÉ : person_id doit être celui du personne authentifiée
+    assert.equal(out.result.person_id, personId);
+    assert.notEqual(out.result.person_id, otherPersonId);
+    assert.equal(out.result.mission_id, missionId);
+    assert.equal(out.result.created_by, userId);
+    assert.equal(out.result.position, 'plateau');
+  });
+
+  it('refuse mission_id manquant', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    assert.throws(
+      () => handleCreateAssignment({ db, person, personalUser, payload: {} }),
+      (err) => err instanceof HandlerError && err.code === 'INVALID_PAYLOAD',
+    );
+  });
+
+  it('refuse une mission inexistante', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    assert.throws(
+      () =>
+        handleCreateAssignment({
+          db,
+          person,
+          personalUser,
+          payload: { mission_id: 999999999 },
+        }),
+      (err) => err instanceof HandlerError && err.code === 'MISSION_NOT_FOUND',
+    );
+  });
+
+  it('refuse un doublon (déjà affecté)', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    assert.throws(
+      () =>
+        handleCreateAssignment({
+          db,
+          person,
+          personalUser,
+          payload: { mission_id: missionId },
+        }),
+      (err) => err instanceof HandlerError && err.code === 'ASSIGNMENT_EXISTS',
+    );
+  });
+});
+
+describe('handleRequestLeave', () => {
+  const FX = `pa-handler-leave-${Date.now()}@example.test`;
+  let userId, personId;
+  const cleanup = [];
+
+  before(async () => {
+    const u = db
+      .prepare(
+        'INSERT INTO users (email, name, password_hash, is_admin) VALUES (?, ?, ?, 0)',
+      )
+      .run(FX, 'Leave Tester', await bcrypt.hash('pw', 4));
+    userId = u.lastInsertRowid;
+    const p = db
+      .prepare(
+        "INSERT INTO persons (first_name, last_name, email, user_id, status) VALUES (?, ?, ?, ?, 'active')",
+      )
+      .run('Leave', 'Tester', FX, userId);
+    personId = p.lastInsertRowid;
+  });
+
+  after(() => {
+    for (const id of cleanup) {
+      try {
+        db.prepare('DELETE FROM leave_requests WHERE id = ?').run(id);
+      } catch {
+        /* noop */
+      }
+    }
+    db.prepare('DELETE FROM leave_requests WHERE person_id = ?').run(personId);
+    db.prepare('DELETE FROM availabilities WHERE person_id = ?').run(personId);
+    db.prepare('DELETE FROM persons WHERE id = ?').run(personId);
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  });
+
+  it('crée une demande avec person_id et user_id forcés', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+
+    // Dates : 60 jours dans le futur pour éviter conflits potentiels
+    const base = new Date();
+    base.setDate(base.getDate() + 60);
+    const startDate = base.toISOString().split('T')[0];
+    base.setDate(base.getDate() + 2);
+    const endDate = base.toISOString().split('T')[0];
+
+    const out = handleRequestLeave({
+      db,
+      person,
+      personalUser,
+      payload: {
+        leaveType: 'conge_paye',
+        startDate,
+        endDate,
+        startPeriod: 'AM',
+        endPeriod: 'PM',
+        employeeComment: 'vacances',
+        // tentative privilege escalation
+        personId: 999999999,
+      },
+    });
+    cleanup.push(out.targetId);
+
+    assert.equal(out.targetType, 'leave_request');
+    assert.equal(out.result.person_id, personId);
+    assert.equal(out.result.user_id, userId);
+    assert.equal(out.result.leave_type, 'conge_paye');
+    assert.ok(out.result.working_days > 0);
+
+    // Vérifier la création parallèle dans availabilities
+    const avail = db
+      .prepare(
+        `SELECT * FROM availabilities
+         WHERE person_id = ? AND start_date = ? AND source = 'leave_request'`,
+      )
+      .get(personId, startDate);
+    assert.ok(avail, 'availability parallèle manquante');
+  });
+
+  it('refuse un type de congé invalide', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    assert.throws(
+      () =>
+        handleRequestLeave({
+          db,
+          person,
+          personalUser,
+          payload: {
+            leaveType: 'unknown_type',
+            startDate: '2099-01-01',
+            endDate: '2099-01-02',
+          },
+        }),
+      (err) => err instanceof HandlerError && err.code === 'INVALID_LEAVE_TYPE',
+    );
+  });
+
+  it('refuse dates invalides (fin < début)', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    assert.throws(
+      () =>
+        handleRequestLeave({
+          db,
+          person,
+          personalUser,
+          payload: {
+            leaveType: 'conge_paye',
+            startDate: '2099-01-05',
+            endDate: '2099-01-02',
+          },
+        }),
+      (err) => err instanceof HandlerError && err.code === 'INVALID_DATES',
+    );
+  });
+});
+
+describe('handleDeclareUnavailability', () => {
+  const FX = `pa-handler-avail-${Date.now()}@example.test`;
+  let userId, personId, otherPersonId;
+  const cleanup = [];
+
+  before(async () => {
+    const u = db
+      .prepare(
+        'INSERT INTO users (email, name, password_hash, is_admin) VALUES (?, ?, ?, 0)',
+      )
+      .run(FX, 'Avail Tester', await bcrypt.hash('pw', 4));
+    userId = u.lastInsertRowid;
+    const p = db
+      .prepare(
+        "INSERT INTO persons (first_name, last_name, email, user_id, status) VALUES (?, ?, ?, ?, 'active')",
+      )
+      .run('Avail', 'Tester', FX, userId);
+    personId = p.lastInsertRowid;
+    const op = db
+      .prepare(
+        "INSERT INTO persons (first_name, last_name, status) VALUES (?, ?, 'active')",
+      )
+      .run('Other2', 'Person');
+    otherPersonId = op.lastInsertRowid;
+  });
+
+  after(() => {
+    for (const id of cleanup) {
+      try {
+        db.prepare('DELETE FROM availabilities WHERE id = ?').run(id);
+      } catch {
+        /* noop */
+      }
+    }
+    db.prepare('DELETE FROM availabilities WHERE person_id IN (?, ?)').run(
+      personId,
+      otherPersonId,
+    );
+    db.prepare('DELETE FROM persons WHERE id IN (?, ?)').run(personId, otherPersonId);
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+  });
+
+  it('crée une indispo avec person_id forcé (privilege escalation impossible)', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+
+    const out = handleDeclareUnavailability({
+      db,
+      person,
+      personalUser,
+      payload: {
+        // tentative
+        person_id: otherPersonId,
+        type: 'absence',
+        startDate: '2099-06-01',
+        endDate: '2099-06-02',
+        reason: 'test',
+      },
+    });
+    cleanup.push(out.targetId);
+
+    assert.equal(out.targetType, 'availability');
+    assert.equal(out.result.person_id, personId);
+    assert.notEqual(out.result.person_id, otherPersonId);
+    assert.equal(out.result.type, 'absence');
+    // 'absence' → auto-approved
+    assert.equal(out.result.status, 'approved');
+    assert.equal(out.result.source, 'personal');
+    assert.equal(out.result.created_by, userId);
+  });
+
+  it('met en pending les types nécessitant approbation', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    const out = handleDeclareUnavailability({
+      db,
+      person,
+      personalUser,
+      payload: {
+        type: 'conge_paye',
+        startDate: '2099-07-01',
+        endDate: '2099-07-02',
+      },
+    });
+    cleanup.push(out.targetId);
+    assert.equal(out.result.status, 'pending');
+  });
+
+  it('refuse type invalide', () => {
+    const person = db.prepare('SELECT * FROM persons WHERE id = ?').get(personId);
+    const personalUser = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    assert.throws(
+      () =>
+        handleDeclareUnavailability({
+          db,
+          person,
+          personalUser,
+          payload: {
+            type: 'inexistant',
+            startDate: '2099-01-01',
+            endDate: '2099-01-02',
+          },
+        }),
+      (err) => err instanceof HandlerError && err.code === 'INVALID_TYPE',
+    );
+  });
+});

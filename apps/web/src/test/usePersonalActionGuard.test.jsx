@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import usePersonalActionGuard from '../hooks/usePersonalActionGuard.js';
 
@@ -19,8 +19,8 @@ vi.mock('../contexts/AuthContext.jsx', () => ({
   useAuth: vi.fn(),
 }));
 
-import api from '../utils/api/index.js';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import api from '../utils/api/index.js';
 
 describe('usePersonalActionGuard', () => {
   beforeEach(() => {
@@ -175,6 +175,23 @@ describe('usePersonalActionGuard', () => {
     });
     expect(result.current.dialogProps.isOpen).toBe(true);
     act(() => result.current.dialogProps.onClose());
+    expect(result.current.dialogProps.isOpen).toBe(false);
+  });
+
+  it('compte Equipe : onCancel est appelé quand l’utilisateur ferme la modal', async () => {
+    useAuth.mockReturnValue({ isTeamAccount: true });
+    const onCancel = vi.fn();
+    const { result } = renderHook(() => usePersonalActionGuard());
+    await act(async () => {
+      await result.current.run({
+        actionType: 'create_assignment',
+        payload: {},
+        onCancel,
+      });
+    });
+    expect(result.current.dialogProps.isOpen).toBe(true);
+    act(() => result.current.dialogProps.onClose());
+    expect(onCancel).toHaveBeenCalledTimes(1);
     expect(result.current.dialogProps.isOpen).toBe(false);
   });
 });

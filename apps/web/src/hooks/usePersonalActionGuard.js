@@ -26,8 +26,8 @@
 
 import { useCallback, useState } from 'react';
 
-import api from '../utils/api';
 import { useAuth } from '../contexts/AuthContext.jsx';
+import api from '../utils/api';
 
 const initialDialogState = {
   isOpen: false,
@@ -39,6 +39,7 @@ const initialDialogState = {
   // Callbacks transmis par le composant appelant
   onSuccess: null,
   onError: null,
+  onCancel: null,
 };
 
 export default function usePersonalActionGuard() {
@@ -48,6 +49,15 @@ export default function usePersonalActionGuard() {
   const closeDialog = useCallback(() => {
     setState(initialDialogState);
   }, []);
+
+  /**
+   * Annule explicitement (l'utilisateur ferme la modal sans valider).
+   * Appelle onCancel s'il a été fourni puis ferme.
+   */
+  const handleCancel = useCallback(() => {
+    state.onCancel?.();
+    setState(initialDialogState);
+  }, [state]);
 
   /**
    * Déclenche une action personnelle.
@@ -64,6 +74,7 @@ export default function usePersonalActionGuard() {
       direct,
       onSuccess,
       onError,
+      onCancel,
     }) => {
       if (!isTeamAccount) {
         // Compte perso normal → exécution directe
@@ -92,6 +103,7 @@ export default function usePersonalActionGuard() {
         description,
         onSuccess: onSuccess || null,
         onError: onError || null,
+        onCancel: onCancel || null,
       });
     },
     [isTeamAccount],
@@ -131,7 +143,7 @@ export default function usePersonalActionGuard() {
      */
     dialogProps: {
       isOpen: state.isOpen,
-      onClose: closeDialog,
+      onClose: handleCancel,
       defaultPersonId: state.defaultPersonId,
       actionLabel: state.actionLabel,
       description: state.description,

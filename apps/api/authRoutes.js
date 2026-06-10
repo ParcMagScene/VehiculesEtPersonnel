@@ -20,6 +20,7 @@ import {
   suiviPersonalAuthSchema,
 } from './schemas/auth.js';
 import { validate } from './schemas/imports.js';
+import { verifyPersonalCredentials } from './services/personalAuth.js';
 
 // [AUTH] Nom du cookie JWT — paramétrable via COOKIE_NAME (défaut: auth_token).
 // Permet d'éviter les collisions cross-port sur localhost (les cookies sont partagés
@@ -905,50 +906,18 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
     async (req, res) => {
       try {
         const { personId, pin, password } = req.body;
-
-        if (!pin && !password) {
-          return res.status(400).json({ success: false, error: 'Code PIN ou mot de passe requis' });
+        const result = await verifyPersonalCredentials({ db, personId, pin, password });
+        if (!result.ok) {
+          return res.status(result.status).json({ success: false, error: result.error });
         }
-
-        // Récupérer la personne et son user_id lié
-        const person = db
-          .prepare(
-            'SELECT id, first_name, last_name, user_id FROM persons WHERE id = ? AND status = ?',
-          )
-          .get(personId, 'active');
-        if (!person) {
-          return res.status(404).json({ success: false, error: 'Personnel introuvable' });
-        }
-        if (!person.user_id) {
-          return res.status(403).json({ success: false, error: 'Aucun compte lié à ce personnel' });
-        }
-
-        const linkedUser = db
-          .prepare('SELECT id, password_hash, pin_hash, is_blocked FROM users WHERE id = ?')
-          .get(person.user_id);
-        if (!linkedUser || linkedUser.is_blocked) {
-          return res
-            .status(403)
-            .json({ success: false, error: 'Compte lié introuvable ou bloqué' });
-        }
-
-        let verified = false;
-        if (pin && linkedUser.pin_hash) {
-          verified = await bcrypt.compare(pin, linkedUser.pin_hash);
-        } else if (password) {
-          verified = await bcrypt.compare(password, linkedUser.password_hash);
-        }
-
-        if (!verified) {
-          return res
-            .status(401)
-            .json({ success: false, error: 'Code PIN ou mot de passe incorrect' });
-        }
-
-        logger.info(`🔐 Auth suivi réussie: personne ${personId} (user ${linkedUser.id})`);
+        logger.info(`🔐 Auth suivi réussie: personne ${personId} (user ${result.user.id})`);
         res.json({
           success: true,
-          person: { id: person.id, first_name: person.first_name, last_name: person.last_name },
+          person: {
+            id: result.person.id,
+            first_name: result.person.first_name,
+            last_name: result.person.last_name,
+          },
         });
       } catch (error) {
         logger.error('Erreur personal-auth:', error);

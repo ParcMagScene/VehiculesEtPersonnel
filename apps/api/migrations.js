@@ -17,6 +17,7 @@ import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serial
 import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
+import { runPersonalActionsLogV1Migration } from './migrations/personal-actions-log-v1.js';
 import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
@@ -890,6 +891,9 @@ export function runPostInitMigrations(db) {
 
   // ═══ Suivi/Incidents v2 (multi-tickets + date) ═══
   runIncidentTicketsV2Migration(db);
+
+  // ═══ Audit log auth éphémère pour actions personnelles ═══
+  runPersonalActionsLogV1Migration(db);
 
   // ═══ Uniformisation Taxonomie ═══
   runTaxonomyMigrations(db);

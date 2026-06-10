@@ -54,6 +54,7 @@ import {
   authLimiter,
   generalLimiter,
   googleCalendarLimiter,
+  personalActionsLimiter,
   sensitiveEndpointLimiter,
 } from './config/rateLimiter.js';
 import { setupConfigRoutes } from './configRoutes.js';
@@ -108,6 +109,7 @@ import {
   setupPersonsRoutes,
   setupSkillsRoutes,
 } from './personnelRoutes.js';
+import { setupPersonalActionsRoutes } from './personalActionsRoutes.js';
 import { setupPhotoThumbRoutes } from './photoThumbRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { stopPlanningRolloverCron } from './planningRoutes.js';
@@ -278,6 +280,8 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login-pin', authLimiter);
 // [SEC PHASE 2] Auth personnelle (PIN/password vérifié côté serveur) sur /suivi/personal-auth
 app.use('/api/suivi/personal-auth', authLimiter);
+// Auth éphémère (compte Equipe → actions personnelles)
+app.use('/api/personal-actions', personalActionsLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
 // [CWE-640 MITIGATION] Le reset-password accepte un flow direct (email+newPassword
 // sans OTP) — acceptation de risque utilisateur. On compense par un rate-limit
@@ -476,6 +480,7 @@ setupAnnuaireMatchingRoutes(app, authenticateToken, requireAdmin);
 
 // Routes extraites de server.js — Phase 2 Refactoring
 setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev });
+setupPersonalActionsRoutes(app, authenticateToken);
 setupVehicleRoutes(
   app,
   authenticateToken,

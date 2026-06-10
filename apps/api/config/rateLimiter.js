@@ -13,6 +13,21 @@ export const authLimiter = rateLimit({
 });
 
 /**
+ * Rate limiter pour l'auth éphémère « actions personnelles » déclenchée
+ * depuis le compte Equipe partagé. Plus strict que `authLimiter` :
+ * ne décompte PAS les succès (tout coup compte), pour limiter le
+ * brute-force PIN sur l'API /api/personal-actions/perform.
+ */
+export const personalActionsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'development' ? 50 : 10,
+  skipSuccessfulRequests: false,
+  message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
  * [AUDIT FIX MED-B4/B6] Rate limiter pour endpoints sensibles non-auth
  * (access-requests, reset-password, forgot-password)
  */

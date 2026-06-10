@@ -790,20 +790,40 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
           {showLegend && (
             <div className="bp-legend">
               <div className="bp-legend-title">Familles</div>
-              {sections
-                .filter((s) => s.color && s.items.length > 0)
-                .map((sec) => (
-                  <div key={sec.name} className="bp-legend-item">
+              {(() => {
+                // Dédupliquer la légende : plusieurs sections internes peuvent
+                // partager la même famille métier (ex. deux passes "Éclairage"
+                // distinctes côté annotation). On regroupe par libellé affiché
+                // et on additionne les compteurs d'items.
+                const grouped = new Map();
+                for (const sec of sections) {
+                  if (!sec.color || !sec.items?.length) continue;
+                  const key = sec.color.label || sec.name;
+                  const existing = grouped.get(key);
+                  if (existing) {
+                    existing.count += sec.items.length;
+                  } else {
+                    grouped.set(key, {
+                      key,
+                      color: sec.color,
+                      name: sec.name,
+                      count: sec.items.length,
+                    });
+                  }
+                }
+                return Array.from(grouped.values()).map((g) => (
+                  <div key={g.key} className="bp-legend-item">
                     <span
                       className="bp-legend-swatch"
-                      style={{ background: sec.color.bg, borderColor: sec.color.border }}
+                      style={{ background: g.color.bg, borderColor: g.color.border }}
                     />
                     <span>
-                      {sec.color.emoji} {sec.color.label || sec.name}
+                      {g.color.emoji} {g.color.label || g.name}
                     </span>
-                    <span className="bp-legend-count">{sec.items.length}</span>
+                    <span className="bp-legend-count">{g.count}</span>
                   </div>
-                ))}
+                ));
+              })()}
               {stats.kitsCount > 0 && (
                 <div className="bp-legend-item">
                   <span className="bp-legend-swatch bp-legend-kit" />

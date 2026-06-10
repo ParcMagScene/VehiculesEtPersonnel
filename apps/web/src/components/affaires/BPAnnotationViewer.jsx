@@ -458,7 +458,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(null); // null = auto-fit
-  const [autoScale, setAutoScale] = useState(1.5);
+  const [autoScale, setAutoScale] = useState(1.25);
   const [showLegend, setShowLegend] = useState(true);
   const [showInfo, setShowInfo] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -493,20 +493,22 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
     };
   }, [pdfUrl]);
 
-  // ─── Echelle auto-fit (basée sur la première page, sans contrainte de hauteur) ───
+  // ─── Echelle auto-fit : la page doit tenir dans la HAUTEUR du modal ───
   const computeAutoScale = useCallback(async () => {
-    if (!pdfDoc || !containerRef.current) return 1.5;
+    if (!pdfDoc || !containerRef.current) return 1.25;
     try {
       const page = await pdfDoc.getPage(1);
       const vp = page.getViewport({ scale: 1, rotation: page.rotate || 0 });
       const container = containerRef.current;
       const legendW = showLegend ? 200 : 0;
       const cw = container.clientWidth - legendW - 40;
-      // Pas de limite par hauteur en mode scroll vertical : on accepte que
-      // la page dépasse la hauteur de la fenêtre, l'utilisateur scroll.
-      return Math.max(0.8, Math.min(cw / vp.width, SCALE_MAX));
+      const ch = container.clientHeight - 40;
+      // On contraint à la fois par largeur et hauteur ; la hauteur est
+      // la contrainte principale demandée par l'utilisateur (la page tient
+      // dans le modal), la largeur sert de garde-fou si la légende est large.
+      return Math.max(0.8, Math.min(cw / vp.width, ch / vp.height, SCALE_MAX));
     } catch {
-      return 1.5;
+      return 1.25;
     }
   }, [pdfDoc, showLegend]);
 

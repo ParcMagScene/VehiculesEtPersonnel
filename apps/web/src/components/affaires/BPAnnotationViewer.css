@@ -119,14 +119,21 @@
   flex-shrink: 0;
 }
 
+/* ─── Boutons toolbar ───────────────────────────────────────────
+   Le header du modal a un fond gradient clair (violet/indigo) sur
+   lequel les icônes claires des boutons ghost étaient illisibles.
+   On force ici un fond clair opaque + des icônes/texte NOIRS pour
+   un contraste lisible quel que soit le thème.
+   Sélecteurs avec spécificité suffisante pour battre `.ui-btn--ghost`. */
+.bp-annotation-toolbar .ui-btn,
 .bp-annotation-toolbar button {
-  background: var(--theme-bg-hover, rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.12));
-  color: var(--theme-text, #e5e7eb);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: #111827;
   cursor: pointer;
   padding: 0.4rem 0.5rem;
   border-radius: var(--radius-sm);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 32px;
@@ -134,26 +141,32 @@
   transition: all 0.15s;
 }
 
+.bp-annotation-toolbar .ui-btn:hover:not(:disabled),
 .bp-annotation-toolbar button:hover:not(:disabled) {
-  background: var(--theme-accent, #4f46e5);
-  color: var(--theme-text-inverse, #ffffff);
-  border-color: var(--theme-accent, #4f46e5);
+  background: #ffffff;
+  color: #000000;
+  border-color: rgba(0, 0, 0, 0.35);
 }
 
+.bp-annotation-toolbar .ui-btn.active,
 .bp-annotation-toolbar button.active {
-  background: var(--theme-accent, #4f46e5);
-  color: var(--theme-text-inverse, #ffffff);
-  border-color: var(--theme-accent, #4f46e5);
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
 }
 
+.bp-annotation-toolbar .ui-btn:disabled,
 .bp-annotation-toolbar button:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
+.bp-annotation-toolbar .ui-btn svg,
 .bp-annotation-toolbar button svg {
   width: 16px;
   height: 16px;
+  color: inherit;
+  stroke: currentColor;
 }
 
 .bp-toolbar-sep {
@@ -166,12 +179,15 @@
 .bp-zoom-label,
 .bp-page-label {
   font-size: var(--font-sm);
-  color: var(--theme-text, #e5e7eb);
+  color: #111827;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm);
   font-weight: 600;
   min-width: 3.5rem;
   text-align: center;
   user-select: none;
-  padding: 0 0.25rem;
+  padding: 0.25rem 0.5rem;
 }
 
 .bp-annotation-close {

@@ -395,7 +395,7 @@ const AssignmentDialog = ({
     }
     return raw ? [raw] : [];
   });
-  const [status, setStatus] = useState(existingAssignment?.status || 'option');
+  const [status, setStatus] = useState(existingAssignment?.status || 'confirmed');
   const [notes, setNotes] = useState(existingMission?.notes || existingAssignment?.comment || '');
 
   // Personnel — pour réaffectation en mode édition ou multi-affectation en mode création
@@ -858,16 +858,6 @@ const AssignmentDialog = ({
         onClose={handleSafeClose}
       >
         {isEdit ? 'Modifier l\u2019affectation' : 'Nouvelle affectation'}
-        {isEdit && onDelete && (
-          <Button
-            variant="ghost"
-            className="asd-btn-header-delete"
-            onClick={() => onDelete(existingMission)}
-            title="Supprimer cette mission"
-          >
-            <Trash2 size={16} />
-          </Button>
-        )}
       </ModalHeader>
 
       <ModalBody className="assignment-dialog-body">
@@ -1385,6 +1375,19 @@ const AssignmentDialog = ({
       </ModalBody>
 
       <ModalFooter className="assignment-dialog-footer">
+        {isEdit && onDelete && (
+          <Button
+            variant="danger"
+            className="asd-btn asd-btn-delete"
+            onClick={() => onDelete(existingMission)}
+            disabled={saving}
+            title="Supprimer cette mission"
+          >
+            <Trash2 size={16} />
+            Supprimer
+          </Button>
+        )}
+        <div className="asd-footer-spacer" />
         <Button
           variant="ghost"
           className="asd-btn asd-btn-cancel"

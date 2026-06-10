@@ -13,6 +13,7 @@ import { registerLocmatImportMethods } from './locmatImport.js';
 import { registerMailingMethods } from './mailing.js';
 import { registerMessagingMethods } from './messaging.js';
 import { registerOrdersMethods } from './orders.js';
+import { registerPersonalActionsMethods } from './personalActions.js';
 import { registerPersonnelMethods } from './personnel.js';
 import { registerPlanningMethods } from './planning.js';
 import { registerPvImportsMethods } from './pvImports.js';
@@ -44,6 +45,7 @@ registerVideoMethods(ApiClient);
 registerSuiviMethods(ApiClient);
 registerControlesMethods(ApiClient);
 registerPvImportsMethods(ApiClient);
+registerPersonalActionsMethods(ApiClient);
 
 // Singleton
 export const api = new ApiClient();

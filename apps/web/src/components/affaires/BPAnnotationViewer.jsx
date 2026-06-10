@@ -123,6 +123,13 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
 
   const margin = 10;
 
+  // Décalage horizontal du surlignage : demandé côté métier pour
+  // aligner les rectangles colorés avec les colonnes "Nom" du BP.
+  // 6 mm en points PDF (1 pt = 1/72 inch, 1 inch = 25.4 mm), mis à
+  // l'échelle du viewport courant.
+  const HIGHLIGHT_OFFSET_MM = 6;
+  const highlightOffsetPx = (HIGHLIGHT_OFFSET_MM / 25.4) * 72 * (viewport.scale || 1);
+
   // Fonction : la ligne est-elle un header de kit ?
   function isKitHeader(text) {
     return /\bCOMPRENANT\s*:/i.test(text) || /\bliaison\s+UHF\b/i.test(text);
@@ -235,7 +242,7 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
 
     const rectH = isSection ? line.height + 8 : line.height + 4;
     const rectY = line.y - rectH + 2 + 6;
-    const rectX = margin;
+    const rectX = margin - highlightOffsetPx;
     const rectW = viewport.width - 2 * margin - 20;
 
     ctx.fillRect(rectX, rectY, rectW, rectH);
@@ -256,7 +263,7 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
     const lastLine = lines[kb.endIdx];
     const color = kb.color;
 
-    const rectX = margin;
+    const rectX = margin - highlightOffsetPx;
     const rectW = viewport.width - 2 * margin - 20;
     const topY = firstLine.y - firstLine.height - 2 + 6;
     const bottomY = lastLine.y + 6 + 6;

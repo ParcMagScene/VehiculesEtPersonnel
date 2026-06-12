@@ -102,6 +102,7 @@ import {
   setupSupplierDocumentsRoutes,
   setupSuppliersRoutes,
 } from './ordersRoutes.js';
+import { setupPersonalActionsRoutes } from './personalActionsRoutes.js';
 import {
   setupAssignmentsRoutes,
   setupAvailabilitiesRoutes,
@@ -109,8 +110,6 @@ import {
   setupPersonsRoutes,
   setupSkillsRoutes,
 } from './personnelRoutes.js';
-import { setupPersonalActionsRoutes } from './personalActionsRoutes.js';
-import { registerDefaultPersonalActionHandlers } from './services/personalActionHandlers.js';
 import { setupPhotoThumbRoutes } from './photoThumbRoutes.js';
 import { setupPlanningRoutes } from './planningRoutes.js';
 import { stopPlanningRolloverCron } from './planningRoutes.js';
@@ -119,6 +118,7 @@ import { setupPvImportRoutes } from './pvImportRoutes.js';
 import { setupSavRoutes } from './savRoutes.js';
 import { logSecurityEvent } from './securityLog.js';
 import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';
+import { registerDefaultPersonalActionHandlers } from './services/personalActionHandlers.js';
 import { setupSonosRoutes } from './sonosRoutes.js';
 import {
   setupStockCategoriesRoutes,

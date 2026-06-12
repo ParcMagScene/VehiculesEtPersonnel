@@ -13,12 +13,11 @@
 //   des actions au nom d'un autre membre du personnel.
 // ───────────────────────────────────────────────────────────────
 
+import { EXCEPTIONAL_LEAVE_DURATIONS, LEAVE_TYPES } from '../leaveRoutes.js';
 import logger from '../logger.js';
-
-import { LEAVE_TYPES, EXCEPTIONAL_LEAVE_DURATIONS } from '../leaveRoutes.js';
 import {
-  registerPersonalActionHandler,
   _clearPersonalActionHandlers,
+  registerPersonalActionHandler,
 } from '../personalActionsRoutes.js';
 
 // ───────────────────────────────────────────────────────────────

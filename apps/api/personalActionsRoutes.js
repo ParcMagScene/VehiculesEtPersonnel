@@ -22,8 +22,8 @@
 
 import db from './database.js';
 import logger from './logger.js';
-import { validate } from './schemas/imports.js';
 import { personalActionPerformSchema } from './schemas/auth.js';
+import { validate } from './schemas/imports.js';
 import { verifyPersonalCredentials } from './services/personalAuth.js';
 
 const TEAM_ACCOUNT_EMAIL = (process.env.TEAM_ACCOUNT_EMAIL || 'commun@magsav.com')

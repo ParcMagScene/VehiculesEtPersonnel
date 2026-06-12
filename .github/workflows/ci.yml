@@ -141,6 +141,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-node-deps
       - name: Stylelint (warn-only)
+        # Réellement non bloquant : la dette UI est mesuree, pas verrouillee.
+        # `continue-on-error: true` au niveau etape pour que l'UI affiche vert.
+        continue-on-error: true
         run: npm run lint:css --workspace=apps/web
       - name: Mesurer la dette UI
+        continue-on-error: true
         run: node scripts/measure-ui-debt.mjs --format=summary

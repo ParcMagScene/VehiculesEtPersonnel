@@ -29,6 +29,7 @@ import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
 import { capitalizeText } from '../../utils/dateUtils';
 import { computeGridColumnsCss } from '../../utils/planningGridColumns';
+import AffaireBadge from '../AffaireBadge';
 import EventDetailsModal from '../planning/EventDetailsModal';
 
 // Code splitting - Lazy loading
@@ -83,7 +84,11 @@ function GoogleCalendarBanner({
   onNewReservation,
   onNewAssignment,
   onNewAffaire,
-  onNavigateToAffaire,
+  // [NavigationContext] Le badge AffaireBadge utilise useNavigation() pour ouvrir
+  // directement la fiche via setGlobalAffaireDialog. La prop onNavigateToAffaire
+  // (qui basculait sur le module Affaires) est conservée pour compat parent mais
+  // n'est plus utilisée ici.
+  onNavigateToAffaire: _onNavigateToAffaire,
 }) {
   const toast = useToast();
   const cachedState = useMemo(() => loadGoogleStateFromStorage(), []);
@@ -1024,21 +1029,7 @@ function GoogleCalendarBanner({
                             </span>
                           )}
                         {eventBlock.affaire && (
-                          <span
-                            className="event-affaire"
-                            style={{
-                              cursor: onNavigateToAffaire ? 'pointer' : 'default',
-                              textDecoration: 'underline',
-                            }}
-                            onClick={(e) => {
-                              if (onNavigateToAffaire) {
-                                e.stopPropagation();
-                                onNavigateToAffaire(eventBlock.affaire);
-                              }
-                            }}
-                          >
-                            {eventBlock.affaire}
-                          </span>
+                          <AffaireBadge numero={eventBlock.affaire} size="sm" />
                         )}
                         {eventBlock.time && <span className="event-time">{eventBlock.time}</span>}
                       </div>

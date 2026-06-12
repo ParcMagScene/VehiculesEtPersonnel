@@ -1,11 +1,11 @@
+import './AffairesDateGrid.css';
+
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarClock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Tooltip } from '@/design-system';
-
-import './AffairesDateGrid.css';
 
 /* ─────────── Helpers de date (local, pas UTC) ─────────── */
 
@@ -348,6 +348,7 @@ const AffairesDateGrid = ({
             }}
             onMouseDown={(e) => handleSelectionMouseDown(e, 'move')}
             role="slider"
+            tabIndex={0}
             aria-label="Plage sélectionnée — déplacer ou redimensionner via les poignées"
             aria-valuemin={0}
             aria-valuemax={cells.length - 1}

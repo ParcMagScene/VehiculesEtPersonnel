@@ -575,8 +575,8 @@ const EquipmentDetailDialog = ({
   onDelete,
   onCreateTicket,
   onOpenTicketDialog,
-  onPrintLabel,
-  onPrintSheet,
+  _onPrintLabel,
+  _onPrintSheet,
   onSerialize,
   onOpenDepotMap,
 }) => {

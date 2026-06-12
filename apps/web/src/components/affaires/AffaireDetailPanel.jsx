@@ -1962,8 +1962,8 @@ const AffaireDetailContent = ({
                     key={step.key}
                     className="task-step-chip"
                     style={{
-                      borderLeftColor: step.color,
-                      background: `${step.color}10`,
+                      '--tsc-color': step.color,
+                      '--tsc-bg': `${step.color}10`,
                     }}
                     title={s.notes || `${step.label} — ${statusInfo.label}`}
                   >
@@ -1979,7 +1979,10 @@ const AffaireDetailContent = ({
                     )}
                     <span
                       className="tsc-status"
-                      style={{ background: statusInfo.bg, color: statusInfo.color }}
+                      style={{
+                        '--tsc-status-bg': statusInfo.bg,
+                        '--tsc-status-color': statusInfo.color,
+                      }}
                     >
                       {statusInfo.label}
                     </span>

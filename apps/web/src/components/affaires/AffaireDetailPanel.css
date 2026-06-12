@@ -1059,10 +1059,10 @@
   gap: 6px;
   padding: 3px 8px 3px 6px;
   border: 1px solid var(--theme-border-light);
-  border-left: 3px solid var(--theme-border);
+  border-left: 3px solid var(--tsc-color, var(--theme-border));
   border-radius: var(--radius-sm);
   font-size: var(--font-sm);
-  background: var(--theme-bg-card);
+  background: var(--tsc-bg, var(--theme-bg-card));
   white-space: nowrap;
   transition: filter 0.12s;
 }
@@ -1093,6 +1093,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  background: var(--tsc-status-bg, transparent);
+  color: var(--tsc-status-color, inherit);
 }
 
 /* @keyframes spin is in theme.css */

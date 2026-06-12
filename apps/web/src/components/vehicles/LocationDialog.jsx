@@ -10,6 +10,7 @@ import {
   Input,
   Modal,
   ModalBody,
+  ModalFooter,
   ModalHeader,
   Select,
   Tooltip,
@@ -472,7 +473,7 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
       </ModalHeader>
 
       <ModalBody>
-        <form onSubmit={handleSubmit}>
+        <form id="location-dialog-form" onSubmit={handleSubmit}>
           {error && <InlineAlert>{error}</InlineAlert>}
 
           {successMessage && <InlineAlert variant="success">{successMessage}</InlineAlert>}
@@ -606,17 +607,17 @@ const LocationDialog = ({ location, onSave, onClose, companyAddress }) => {
               </div>
             </div>
           </div>
-
-          <div className="location-dialog-footer">
-            <Button variant="ghost" onClick={handleSafeClose}>
-              Fermer
-            </Button>
-            <Button variant="primary" type="submit" disabled={isSaving}>
-              {isSaving ? 'Enregistrement...' : location ? 'Mettre à jour' : 'Ajouter'}
-            </Button>
-          </div>
         </form>
       </ModalBody>
+
+      <ModalFooter>
+        <Button variant="ghost" onClick={handleSafeClose}>
+          Fermer
+        </Button>
+        <Button variant="success" type="submit" form="location-dialog-form" disabled={isSaving}>
+          {isSaving ? 'Enregistrement...' : location ? 'Mettre à jour' : 'Ajouter'}
+        </Button>
+      </ModalFooter>
 
       {ConfirmDialogRenderer}
     </Modal>

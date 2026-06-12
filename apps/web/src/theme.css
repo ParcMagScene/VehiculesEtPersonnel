@@ -126,12 +126,15 @@
   --modal-header-color: white;
   --modal-header-border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 
-  /* ─── Close button (semi-transparent sur header gradient) ─── */
-  --close-btn-bg: rgba(255, 255, 255, 0.15);
-  --close-btn-border: rgba(255, 255, 255, 0.25);
+  /* ─── Close button (style transparent générique) ───
+     Le X du Design System (.ui-modal-close) redéfinit à rouge dans Modal.css.
+     Ces variables restent translucides pour les autres composants (bannières,
+     panneaux header) qui les réutilisent comme fond « glass ». */
+  --close-btn-bg: var(--glass-light);
+  --close-btn-border: var(--glass-medium);
   --close-btn-color: white;
-  --close-btn-hover-bg: rgba(255, 255, 255, 0.3);
-  --close-btn-hover-border: rgba(255, 255, 255, 0.4);
+  --close-btn-hover-bg: var(--glass-medium);
+  --close-btn-hover-border: var(--glass);
   --close-btn-radius: 8px;
   --close-btn-size: 36px;
 

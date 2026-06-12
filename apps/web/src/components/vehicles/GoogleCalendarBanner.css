@@ -170,9 +170,9 @@
   gap: 0.35rem;
   width: 100%;
   padding: 0.35rem 0.65rem;
-  background: var(--close-btn-bg);
-  border: 1px solid var(--glass-medium);
-  color: var(--theme-text-inverse);
+  background: var(--theme-primary, #4f46e5);
+  border: 1px solid var(--theme-primary-dark, #4338ca);
+  color: #ffffff;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--font-xs);
@@ -183,8 +183,8 @@
 }
 
 .banner-new-action-btn:hover {
-  background: var(--close-btn-hover-bg);
-  border-color: rgba(255, 255, 255, 0.55);
+  background: var(--theme-primary-dark, #4338ca);
+  border-color: var(--theme-primary-dark, #4338ca);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px var(--shadow-xl);
 }

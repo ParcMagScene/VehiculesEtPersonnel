@@ -49,6 +49,7 @@ import {
   Input,
   Modal,
   ModalBody,
+  ModalFooter,
   ModalHeader,
   SectionHeader,
   Select,
@@ -967,6 +968,11 @@ const AffaireDetailContent = ({
     () => visibleSteps.filter((s) => taskSteps[s.key]?.enabled).length,
     [taskSteps, visibleSteps],
   );
+
+  // Auto-ouvrir la section Planification : DÉSACTIVÉ.
+  // Un résumé condensé des étapes activées s'affiche directement sous le titre
+  // (voir <div class="task-steps-summary">), donc la section reste fermée par
+  // défaut et l'utilisateur la déplie uniquement pour éditer.
   // Vérifier si des changements non sauvegardés existent
   const hasTaskChanges = useMemo(() => {
     for (const step of visibleSteps) {
@@ -1937,6 +1943,51 @@ const AffaireDetailContent = ({
           </span>
           <ChevronDown size={16} className={`section-toggle-icon${planningOpen ? ' open' : ''}`} />
         </h3>
+
+        {/* Résumé condensé des étapes activées (visible même section repliée) */}
+        {!isLoadingTasks && enabledStepCount > 0 && !planningOpen && (
+          <div
+            className="task-steps-summary"
+            onClick={() => setPlanningOpen(true)}
+            role="button"
+            tabIndex={0}
+          >
+            {visibleSteps
+              .filter((step) => taskSteps[step.key]?.enabled)
+              .map((step) => {
+                const s = taskSteps[step.key];
+                const statusInfo = TASK_STATUS_MAP[s.status] || TASK_STATUS_MAP.pending;
+                return (
+                  <span
+                    key={step.key}
+                    className="task-step-chip"
+                    style={{
+                      borderLeftColor: step.color,
+                      background: `${step.color}10`,
+                    }}
+                    title={s.notes || `${step.label} — ${statusInfo.label}`}
+                  >
+                    <span className="tsc-emoji">{step.emoji}</span>
+                    <span className="tsc-label">{step.label}</span>
+                    {s.date && (
+                      <span className="tsc-date">
+                        {fmtDate(s.date)}
+                        {s.period
+                          ? ` · ${s.period === 'AM' ? 'Matin' : s.period === 'PM' ? 'A-M' : 'Jour'}`
+                          : ''}
+                      </span>
+                    )}
+                    <span
+                      className="tsc-status"
+                      style={{ background: statusInfo.bg, color: statusInfo.color }}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </span>
+                );
+              })}
+          </div>
+        )}
 
         {planningOpen &&
           (isLoadingTasks ? (
@@ -3226,55 +3277,7 @@ const AffaireDetailModal = ({
   return (
     <>
       <Modal open={!!affaire} onClose={handleClose} size="xl" className="affaire-dialog">
-        <ModalHeader
-          onClose={handleClose}
-          className="dialog-header"
-          rightContent={
-            isEditing ? (
-              <>
-                <Tooltip content="Annuler les modifications" position="bottom">
-                  <Button variant="ghost" className="dialog-cancel-btn" onClick={cancelEditing}>
-                    <X size={15} /> Annuler
-                  </Button>
-                </Tooltip>
-                <Tooltip content="Enregistrer les modifications" position="bottom">
-                  <Button
-                    variant="ghost"
-                    className="dialog-save-btn"
-                    onClick={saveEditing}
-                    disabled={isSaving}
-                  >
-                    <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                  </Button>
-                </Tooltip>
-              </>
-            ) : (
-              <>
-                <Tooltip content="Modifier les informations de l'affaire" position="bottom">
-                  <Button variant="ghost" className="dialog-edit-btn" onClick={startEditing}>
-                    <Edit3 size={15} /> Modifier
-                  </Button>
-                </Tooltip>
-                <Button
-                  variant="ghost"
-                  className="dialog-bl-btn"
-                  onClick={() => setShowBLImport(true)}
-                  title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
-                >
-                  {hasBLImports ? (
-                    <>
-                      <RefreshCw size={15} /> MAJ BL
-                    </>
-                  ) : (
-                    <>
-                      <FileText size={15} /> Import BL
-                    </>
-                  )}
-                </Button>
-              </>
-            )
-          }
-        >
+        <ModalHeader onClose={handleClose} className="dialog-header">
           <span className="dialog-title-row">
             <span className="dialog-numero">
               {isEditing && editForm ? editForm.numeroAffaire : affaire.numeroAffaire}
@@ -3307,6 +3310,45 @@ const AffaireDetailModal = ({
             currentUser={currentUser}
           />
         </ModalBody>
+        <ModalFooter align="end" className="dialog-footer">
+          {isEditing ? (
+            <>
+              <Tooltip content="Annuler les modifications" position="top">
+                <Button variant="ghost" onClick={cancelEditing}>
+                  <X size={15} /> Annuler
+                </Button>
+              </Tooltip>
+              <Tooltip content="Enregistrer les modifications" position="top">
+                <Button variant="success" onClick={saveEditing} disabled={isSaving}>
+                  <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                </Button>
+              </Tooltip>
+            </>
+          ) : (
+            <>
+              <Tooltip content="Modifier les informations de l'affaire" position="top">
+                <Button variant="primary" onClick={startEditing}>
+                  <Edit3 size={15} /> Modifier
+                </Button>
+              </Tooltip>
+              <Button
+                variant="secondary"
+                onClick={() => setShowBLImport(true)}
+                title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
+              >
+                {hasBLImports ? (
+                  <>
+                    <RefreshCw size={15} /> MAJ BL
+                  </>
+                ) : (
+                  <>
+                    <FileText size={15} /> Import BL
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+        </ModalFooter>
 
         {showBLImport && (
           <Suspense fallback={null}>

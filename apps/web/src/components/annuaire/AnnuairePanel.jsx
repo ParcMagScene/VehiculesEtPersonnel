@@ -37,6 +37,8 @@ import {
   Table,
   Textarea,
   Tooltip,
+  useResizableColumns,
+  useSortableData,
 } from '@/design-system';
 
 import { ANNUAIRE_TAB_COLORS } from '../../constants/colors';
@@ -944,7 +946,7 @@ function AnnuairePanel({ currentUser }) {
                       Fusionner
                     </Button>
                   </div>
-                  <Table className="annuaire-duplicates-table">
+                  <Table className="annuaire-duplicates-table app-data-table is-compact">
                     <thead>
                       <tr>
                         <th>Maître</th>
@@ -991,6 +993,39 @@ function AnnuairePanel({ currentUser }) {
 // ═══════════════════════════════════════════════════════════════
 // ENTITY TABLE
 // ═══════════════════════════════════════════════════════════════
+const ANNUAIRE_COLS = {
+  contacts: { name: 200, job: 160, entity: 200, phone: 140, email: 220, actions: 150 },
+  clients: {
+    code: 100,
+    name: 220,
+    city: 160,
+    phone: 140,
+    email: 220,
+    type: 110,
+    contacts: 90,
+    actions: 150,
+  },
+  suppliers: {
+    code: 100,
+    name: 220,
+    city: 160,
+    phone: 140,
+    email: 220,
+    type: 110,
+    contacts: 90,
+    actions: 150,
+  },
+  prestataires: {
+    code: 100,
+    name: 220,
+    city: 160,
+    phone: 140,
+    email: 220,
+    contacts: 90,
+    actions: 150,
+  },
+};
+
 function EntityTable({
   data,
   entityType,
@@ -1000,6 +1035,19 @@ function EntityTable({
   onEdit,
   onDelete,
 }) {
+  const cols = ANNUAIRE_COLS[entityType] || ANNUAIRE_COLS.contacts;
+  const { getColProps, getResizerProps } = useResizableColumns(`annuaire-${entityType}`, cols);
+  const { sorted, getThProps, getSortIndicator } = useSortableData(data, {
+    initialCol: entityType === 'contacts' ? 'last_name' : 'name',
+    getValue: (row, col) => {
+      if (col === 'fullName') return `${row.last_name || ''} ${row.first_name || ''}`.trim();
+      if (col === 'entity')
+        return row.client_name || row.supplier_name || row.prestataire_name || '';
+      if (col === 'city') return [row.postal_code, row.city].filter(Boolean).join(' ');
+      if (col === 'contact_count') return Number(row.contact_count) || 0;
+      return row[col];
+    },
+  });
   if (!data.length) {
     return (
       <div className="annuaire-empty">
@@ -1011,19 +1059,39 @@ function EntityTable({
   if (entityType === 'contacts') {
     return (
       <div className="annuaire-table-wrapper">
-        <Table className="annuaire-table">
+        <Table className="annuaire-table app-data-table">
+          <colgroup>
+            {Object.keys(cols).map((k) => (
+              <col key={k} {...getColProps(k)} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
-              <th>Nom</th>
-              <th>Fonction</th>
-              <th>Entité</th>
-              <th>Téléphone</th>
-              <th>Email</th>
+              <th {...getThProps('fullName')}>
+                Nom<span className="app-sort-indicator">{getSortIndicator('fullName')}</span>
+                <span {...getResizerProps('name')} />
+              </th>
+              <th {...getThProps('job_title')}>
+                Fonction<span className="app-sort-indicator">{getSortIndicator('job_title')}</span>
+                <span {...getResizerProps('job')} />
+              </th>
+              <th {...getThProps('entity')}>
+                Entité<span className="app-sort-indicator">{getSortIndicator('entity')}</span>
+                <span {...getResizerProps('entity')} />
+              </th>
+              <th {...getThProps('phone')}>
+                Téléphone<span className="app-sort-indicator">{getSortIndicator('phone')}</span>
+                <span {...getResizerProps('phone')} />
+              </th>
+              <th {...getThProps('email')}>
+                Email<span className="app-sort-indicator">{getSortIndicator('email')}</span>
+                <span {...getResizerProps('email')} />
+              </th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {data.map((c) => (
+            {sorted.map((c) => (
               <tr key={c.id} onDoubleClick={() => onSelect(c)}>
                 <td className="name-cell">
                   {c.is_primary ? <Star size={12} className="primary-star" /> : null}
@@ -1080,21 +1148,50 @@ function EntityTable({
   // Clients / Suppliers / Prestataires
   return (
     <div className="annuaire-table-wrapper">
-      <Table className="annuaire-table">
+      <Table className="annuaire-table app-data-table">
+        <colgroup>
+          {Object.keys(cols).map((k) => (
+            <col key={k} {...getColProps(k)} />
+          ))}
+        </colgroup>
         <thead>
           <tr>
-            <th>Code</th>
-            <th>Nom</th>
-            <th>Ville</th>
-            <th>Téléphone</th>
-            <th>Email</th>
-            {entityType !== 'prestataires' && <th>Type</th>}
-            <th>Contacts</th>
+            <th {...getThProps('code_libre')}>
+              Code<span className="app-sort-indicator">{getSortIndicator('code_libre')}</span>
+              <span {...getResizerProps('code')} />
+            </th>
+            <th {...getThProps('name')}>
+              Nom<span className="app-sort-indicator">{getSortIndicator('name')}</span>
+              <span {...getResizerProps('name')} />
+            </th>
+            <th {...getThProps('city')}>
+              Ville<span className="app-sort-indicator">{getSortIndicator('city')}</span>
+              <span {...getResizerProps('city')} />
+            </th>
+            <th {...getThProps('phone')}>
+              Téléphone<span className="app-sort-indicator">{getSortIndicator('phone')}</span>
+              <span {...getResizerProps('phone')} />
+            </th>
+            <th {...getThProps('email')}>
+              Email<span className="app-sort-indicator">{getSortIndicator('email')}</span>
+              <span {...getResizerProps('email')} />
+            </th>
+            {entityType !== 'prestataires' && (
+              <th {...getThProps('type')}>
+                Type<span className="app-sort-indicator">{getSortIndicator('type')}</span>
+                <span {...getResizerProps('type')} />
+              </th>
+            )}
+            <th {...getThProps('contact_count')} className="app-sortable is-center">
+              Contacts
+              <span className="app-sort-indicator">{getSortIndicator('contact_count')}</span>
+              <span {...getResizerProps('contacts')} />
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {data.map((item) => (
+          {sorted.map((item) => (
             <tr key={item.id} className={item.is_active === 0 ? 'inactive-row' : ''}>
               <td className="code-cell">{item.code_libre || '—'}</td>
               <td
@@ -1525,7 +1622,7 @@ function DetailView({
         {entityType === 'suppliers' && detail.orders?.length > 0 && (
           <div className="detail-section full-width">
             <h4>Dernières commandes</h4>
-            <Table className="mini-table">
+            <Table className="mini-table app-data-table is-compact">
               <thead>
                 <tr>
                   <th>Réf.</th>
@@ -2142,6 +2239,8 @@ function EntityFormModal({
 // ═══════════════════════════════════════════════════════════════
 // REFERENTIELS VIEW
 // ═══════════════════════════════════════════════════════════════
+const REF_COLS = { code: 120, name: 280, order: 80, active: 80, actions: 130 };
+
 function ReferentielsView({
   refTab,
   setRefTab,
@@ -2152,6 +2251,15 @@ function ReferentielsView({
   onEdit,
   onDelete,
 }) {
+  const { getColProps, getResizerProps } = useResizableColumns(`annuaire-ref-${refTab}`, REF_COLS);
+  const { sorted, getThProps, getSortIndicator } = useSortableData(refData, {
+    initialCol: 'sort_order',
+    getValue: (row, col) => {
+      if (col === 'sort_order') return Number(row.sort_order) || 0;
+      if (col === 'is_active') return row.is_active ? 1 : 0;
+      return row[col];
+    },
+  });
   return (
     <div className="referentiels-view">
       <div className="ref-toolbar">
@@ -2175,18 +2283,37 @@ function ReferentielsView({
       </div>
 
       <div className="annuaire-table-wrapper">
-        <Table className="annuaire-table">
+        <Table className="annuaire-table app-data-table">
+          <colgroup>
+            <col {...getColProps('code')} />
+            <col {...getColProps('name')} />
+            <col {...getColProps('order')} />
+            <col {...getColProps('active')} />
+            {currentUser?.isAdmin && <col {...getColProps('actions')} />}
+          </colgroup>
           <thead>
             <tr>
-              <th>Code</th>
-              <th>Libellé</th>
-              <th>Ordre</th>
-              <th>Actif</th>
+              <th {...getThProps('code')}>
+                Code<span className="app-sort-indicator">{getSortIndicator('code')}</span>
+                <span {...getResizerProps('code')} />
+              </th>
+              <th {...getThProps('name')}>
+                Libellé<span className="app-sort-indicator">{getSortIndicator('name')}</span>
+                <span {...getResizerProps('name')} />
+              </th>
+              <th {...getThProps('sort_order')} className="app-sortable is-center">
+                Ordre<span className="app-sort-indicator">{getSortIndicator('sort_order')}</span>
+                <span {...getResizerProps('order')} />
+              </th>
+              <th {...getThProps('is_active')} className="app-sortable is-center">
+                Actif<span className="app-sort-indicator">{getSortIndicator('is_active')}</span>
+                <span {...getResizerProps('active')} />
+              </th>
               {currentUser?.isAdmin && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
-            {refData.map((item) => (
+            {sorted.map((item) => (
               <tr key={item.id} className={!item.is_active ? 'inactive-row' : ''}>
                 <td className="code-cell">{item.code}</td>
                 <td>{item.name}</td>

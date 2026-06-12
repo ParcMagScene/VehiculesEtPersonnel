@@ -22,6 +22,7 @@ import {
   Input,
   Modal,
   ModalBody,
+  ModalFooter,
   ModalHeader,
   ProgressBar,
   Tooltip,
@@ -629,52 +630,51 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
               )}
             </>
           )}
-
-          {/* Footer */}
-          <div className="modal-footer">
-            <div className="footer-left">
-              {parsedData && !isBLVenteIncompat && (
-                <span className="status-badge success">
-                  <CheckCircle size={12} /> Prêt à importer
-                </span>
-              )}
-              {isBLVenteIncompat && (
-                <span className="status-badge bl-blocked-badge">
-                  <ShieldAlert size={12} /> Import bloqué
-                </span>
-              )}
-            </div>
-            <div className="footer-right">
-              <Button variant="ghost" onClick={onClose}>
-                Annuler
-              </Button>
-              {parsedData && (
-                <Button
-                  variant="ghost"
-                  className="btn-generate"
-                  onClick={handleGenerateEvents}
-                  disabled={generating || saving || isBLVenteIncompat}
-                  title={
-                    isBLVenteIncompat
-                      ? "Type d'affaire incompatible avec un BL Vente"
-                      : "Importer le BL et créer les événements d'affichage dynamique"
-                  }
-                >
-                  <Monitor size={15} />
-                  {generating ? 'Génération...' : 'Importer + Créer événements'}
-                </Button>
-              )}
-              <Button
-                variant="primary"
-                onClick={handleSave}
-                disabled={!file || saving || generating || isBLVenteIncompat}
-              >
-                <Save size={15} />
-                {saving ? 'Import...' : 'Enregistrer BL'}
-              </Button>
-            </div>
-          </div>
         </ModalBody>
+
+        <ModalFooter align="between" className="bl-import-footer">
+          <div className="footer-left">
+            {parsedData && !isBLVenteIncompat && (
+              <span className="status-badge success">
+                <CheckCircle size={12} /> Prêt à importer
+              </span>
+            )}
+            {isBLVenteIncompat && (
+              <span className="status-badge bl-blocked-badge">
+                <ShieldAlert size={12} /> Import bloqué
+              </span>
+            )}
+          </div>
+          <div className="footer-right">
+            <Button variant="ghost" onClick={onClose}>
+              Annuler
+            </Button>
+            {parsedData && (
+              <Button
+                variant="ghost"
+                className="btn-generate"
+                onClick={handleGenerateEvents}
+                disabled={generating || saving || isBLVenteIncompat}
+                title={
+                  isBLVenteIncompat
+                    ? "Type d'affaire incompatible avec un BL Vente"
+                    : "Importer le BL et créer les événements d'affichage dynamique"
+                }
+              >
+                <Monitor size={15} />
+                {generating ? 'Génération...' : 'Importer + Créer événements'}
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={!file || saving || generating || isBLVenteIncompat}
+            >
+              <Save size={15} />
+              {saving ? 'Import...' : 'Enregistrer BL'}
+            </Button>
+          </div>
+        </ModalFooter>
       </Modal>
       {ConfirmDialogRenderer}
     </>

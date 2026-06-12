@@ -100,4 +100,6 @@ export {
   Textarea,
   Toggle,
   Tooltip,
+  useResizableColumns,
+  useSortableData,
 } from '../components/ui';

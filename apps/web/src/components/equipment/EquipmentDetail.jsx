@@ -622,8 +622,6 @@ const EquipmentDetailDialog = ({
             <Button variant="primary" onClick={() => onEdit(eq)}>
               <Edit2 size={14} /> Modifier
             </Button>
-          </div>
-          <div className="eq-actions-group">
             {onCreateTicket && (
               <Button variant="secondary" onClick={() => onCreateTicket(eq)}>
                 <Wrench size={14} /> Ticket SAV
@@ -635,16 +633,6 @@ const EquipmentDetailDialog = ({
                 onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}
               >
                 <MapPin size={14} /> Localisation
-              </Button>
-            )}
-            {onPrintLabel && (
-              <Button variant="secondary" onClick={() => onPrintLabel(eq)}>
-                <Printer size={14} /> Étiquette
-              </Button>
-            )}
-            {onPrintSheet && (
-              <Button variant="secondary" onClick={() => onPrintSheet(eq)}>
-                <FileText size={14} /> Fiche
               </Button>
             )}
             {isAdmin &&

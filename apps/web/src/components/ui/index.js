@@ -53,6 +53,7 @@ import './Accordion.css';
 import './SearchBar.css';
 import './FilterBar.css';
 import './ListItem.css';
+import './data-table.css';
 
 export { default as Accordion } from './Accordion';
 export { default as Divider } from './Divider';
@@ -86,3 +87,7 @@ export {
   SplitLayout,
 } from './ModuleLayout';
 export { default as PageHeader } from './PageHeader';
+
+/* ─── [DS] Hooks ─── */
+export { default as useResizableColumns } from './useResizableColumns';
+export { default as useSortableData } from './useSortableData';

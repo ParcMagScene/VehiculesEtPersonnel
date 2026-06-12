@@ -31,6 +31,7 @@ function Drawer({
   footer,
   overlay = true,
   inline = false,
+  closeOnBackdrop = false,
   className = '',
   children,
 }) {
@@ -81,9 +82,10 @@ function Drawer({
 
   const handleOverlayClick = useCallback(
     (e) => {
+      if (!closeOnBackdrop) return;
       if (e.target === e.currentTarget) onClose?.();
     },
-    [onClose],
+    [onClose, closeOnBackdrop],
   );
 
   if (!visible) return null;

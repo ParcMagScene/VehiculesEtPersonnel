@@ -81,24 +81,28 @@
   border-color: var(--btn-secondary-hover-border-color);
 }
 
-/* ─── Variant: danger ─── */
+/* ─── Variant: danger (action destructive : Supprimer…) ───
+   Fond plein + texte blanc → contraste WCAG AAA en light & dark. */
 .ui-btn--danger {
-  background: var(--btn-danger-bg);
-  color: var(--btn-danger-color);
-  border: var(--btn-danger-border);
+  background: var(--theme-danger);
+  color: #ffffff;
+  border: 1px solid var(--theme-danger-dark);
 }
 .ui-btn--danger:hover:not(:disabled) {
-  background: var(--btn-danger-hover-bg);
+  background: var(--theme-danger-dark);
+  border-color: var(--theme-danger-dark);
 }
 
-/* ─── Variant: success ─── */
+/* ─── Variant: success (validation : Enregistrer / Créer…) ───
+   Fond plein + texte blanc → contraste WCAG AAA en light & dark. */
 .ui-btn--success {
-  background: var(--btn-success-bg);
-  color: var(--btn-success-color);
-  border: var(--btn-success-border);
+  background: var(--theme-success);
+  color: #ffffff;
+  border: 1px solid var(--theme-success-dark);
 }
 .ui-btn--success:hover:not(:disabled) {
-  background: var(--btn-success-hover-bg);
+  background: var(--theme-success-dark);
+  border-color: var(--theme-success-dark);
 }
 
 /* ─── Variant: ghost ─── */

@@ -30,13 +30,13 @@
 }
 
 .ui-modal--sm {
-  width: min(380px, 92vw);
+  width: min(440px, 92vw);
 }
 .ui-modal--md {
-  width: min(500px, 92vw);
+  width: min(580px, 92vw);
 }
 .ui-modal--lg {
-  width: min(700px, 94vw);
+  width: min(760px, 94vw);
 }
 .ui-modal--xl {
   width: min(920px, 96vw);
@@ -95,9 +95,10 @@
   width: var(--close-btn-size, 32px);
   height: var(--close-btn-size, 32px);
   border-radius: var(--close-btn-radius, 8px);
-  border: 1px solid var(--close-btn-border, var(--close-btn-border));
-  background: var(--close-btn-bg);
-  color: var(--close-btn-color, var(--theme-bg-card));
+  /* Rouge unifié pour le bouton Fermer du Design System (light + dark) */
+  background: var(--theme-danger, #ef4444);
+  border: 1px solid var(--theme-danger-dark, #dc2626);
+  color: #ffffff;
   cursor: pointer;
   transition:
     background var(--duration-fast),
@@ -107,8 +108,8 @@
 }
 
 .ui-modal-close:hover {
-  background: var(--close-btn-hover-bg);
-  border-color: var(--close-btn-hover-border, var(--glass));
+  background: var(--theme-danger-dark, #dc2626);
+  border-color: var(--theme-danger-dark, #dc2626);
 }
 
 /* ── Body ── */
@@ -124,10 +125,29 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-4) var(--space-6);
   border-top: 1px solid var(--theme-border);
-  background: var(--theme-bg-secondary);
+  background: var(--modal-footer-bg, var(--theme-bg-tertiary));
   flex-shrink: 0;
+  border-radius: 0 0 var(--radius-xl, 16px) var(--radius-xl, 16px);
+  /* Boutons d'action toujours sur une seule ligne */
+  flex-wrap: nowrap;
+}
+
+/* ── Footer — uniformisation des boutons ──
+   Tous les boutons d'un footer partagent : même hauteur (md = 40px),
+   largeur minimale, padding horizontal généreux, alignement vertical. */
+.ui-modal-footer .ui-btn {
+  min-width: 110px;
+  height: var(--btn-height-md, 40px);
+  /* Évite l'overflow si le libellé devient long : le bouton peut
+     rétrécir sous son min-width plutôt que de wrapper sur 2 lignes. */
+  flex-shrink: 1;
+  white-space: nowrap;
+}
+
+.ui-modal-footer .ui-btn--icon-only {
+  min-width: var(--btn-icon-size, 40px);
 }
 
 .ui-modal-footer--end {
@@ -174,11 +194,11 @@
   }
   .ui-modal-footer {
     padding: var(--space-3) var(--space-4);
-    flex-direction: column;
     gap: var(--space-2);
   }
-  .ui-modal-footer button {
-    width: 100%;
+  .ui-modal-footer .ui-btn {
+    min-width: 0;
+    flex: 1 1 auto;
   }
   .ui-modal-title h3 {
     font-size: var(--font-base, 0.95rem);

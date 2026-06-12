@@ -1447,7 +1447,6 @@ const AssignmentDialog = ({
           {isEdit && onDelete && (
             <Button
               variant="danger"
-              className="asd-btn asd-btn-delete"
               onClick={() => onDelete(existingMission)}
               disabled={saving}
               title="Supprimer cette mission"
@@ -1457,20 +1456,10 @@ const AssignmentDialog = ({
             </Button>
           )}
           <div className="asd-footer-spacer" />
-          <Button
-            variant="ghost"
-            className="asd-btn asd-btn-cancel"
-            onClick={handleSafeClose}
-            disabled={saving}
-          >
+          <Button variant="ghost" onClick={handleSafeClose} disabled={saving}>
             Annuler
           </Button>
-          <Button
-            variant="ghost"
-            className="asd-btn asd-btn-save"
-            onClick={handleSave}
-            disabled={saving || success}
-          >
+          <Button variant="success" onClick={handleSave} disabled={saving || success}>
             {saving ? (
               <>
                 <Spinner size="sm" />

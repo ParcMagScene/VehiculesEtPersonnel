@@ -29,7 +29,7 @@ function Modal({
   className = '',
   overlayClassName = '',
   disableBackdropBlur = false,
-  closeOnBackdrop = true,
+  closeOnBackdrop = false,
   ariaLabel,
   ariaLabelledBy,
   children,

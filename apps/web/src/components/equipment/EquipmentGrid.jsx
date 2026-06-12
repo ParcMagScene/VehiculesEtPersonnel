@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, Eye, MapPin, Package, Star } from 'lucide-react
 import { forwardRef, useMemo, useState } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 
-import { EmptyState, Tooltip } from '@/design-system';
+import { EmptyState, Tooltip, useResizableColumns } from '@/design-system';
 
 import { ACCENT_COLORS } from '../../constants/colors';
 import { resolveGenericImage } from '../../utils/genericImages';
@@ -23,12 +23,13 @@ const SortIcon = ({ col, sortCol, sortDir }) => {
   );
 };
 
-const Th = ({ col, children, className, onSort, sortCol, sortDir }) => (
+const Th = ({ col, children, className, onSort, sortCol, sortDir, resizerProps }) => (
   <th className={`eq-sort-th${className ? ' ' + className : ''}`} onClick={() => onSort(col)}>
     <span className="sort-th-inner">
       {children}
       <SortIcon col={col} sortCol={sortCol} sortDir={sortDir} />
     </span>
+    {resizerProps && <span className="app-col-resize-handle" {...resizerProps} />}
   </th>
 );
 
@@ -195,6 +196,45 @@ const EquipmentGrid = ({
   const [sortCol, setSortCol] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
 
+  // Largeurs de colonnes redimensionnables (persistées en localStorage)
+  const EQ_COLS = useMemo(
+    () => ({
+      check: 60,
+      name: 240,
+      uid: 110,
+      reference: 130,
+      categoryName: 160,
+      brand: 130,
+      serialNumber: 130,
+      numeroMag: 110,
+      stockQuantity: 70,
+      depot: 140,
+      zone: 150,
+      status: 130,
+    }),
+    [],
+  );
+  const { widths: eqColWidths, getResizerProps } = useResizableColumns('equipment-list', EQ_COLS);
+
+  // Composants TableVirtuoso : on injecte un <colgroup> reflétant les widths
+  // pour que TableVirtuoso applique les largeurs sur toute la table.
+  const tableComponents = useMemo(
+    () => ({
+      ...EQUIPMENT_TABLE_COMPONENTS,
+      Table: ({ children, ...props }) => (
+        <table {...props} className="eq-table">
+          <colgroup>
+            {Object.keys(EQ_COLS).map((k) => (
+              <col key={k} style={{ width: `${eqColWidths[k]}px` }} />
+            ))}
+          </colgroup>
+          {children}
+        </table>
+      ),
+    }),
+    [EQ_COLS, eqColWidths],
+  );
+
   const handleSort = (col) => {
     if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else {
@@ -276,38 +316,106 @@ const EquipmentGrid = ({
 
   const renderHeader = () => (
     <tr>
-      <th className="eq-table-th-check"></th>
-      <Th col="name" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <th className="eq-table-th-check">
+        <span className="app-col-resize-handle" {...getResizerProps('check')} />
+      </th>
+      <Th
+        col="name"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('name')}
+      >
         Nom
       </Th>
-      <Th col="uid" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="uid"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('uid')}
+      >
         UID
       </Th>
-      <Th col="reference" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="reference"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('reference')}
+      >
         Référence
       </Th>
-      <Th col="categoryName" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="categoryName"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('categoryName')}
+      >
         Catégorie
       </Th>
-      <Th col="brand" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="brand"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('brand')}
+      >
         Marque
       </Th>
-      <Th col="serialNumber" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="serialNumber"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('serialNumber')}
+      >
         N° Série
       </Th>
-      <Th col="numeroMag" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="numeroMag"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('numeroMag')}
+      >
         N° MAG
       </Th>
-      <Th col="stockQuantity" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="stockQuantity"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('stockQuantity')}
+      >
         Qté
       </Th>
-      <Th col="depot" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="depot"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('depot')}
+      >
         Dépôt
       </Th>
-      <Th col="zone" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="zone"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('zone')}
+      >
         Zone
       </Th>
-      <Th col="status" onSort={handleSort} sortCol={sortCol} sortDir={sortDir}>
+      <Th
+        col="status"
+        onSort={handleSort}
+        sortCol={sortCol}
+        sortDir={sortDir}
+        resizerProps={getResizerProps('status')}
+      >
         Statut
       </Th>
     </tr>
@@ -452,7 +560,7 @@ const EquipmentGrid = ({
         data={sorted}
         overscan={200}
         increaseViewportBy={200}
-        components={EQUIPMENT_TABLE_COMPONENTS}
+        components={tableComponents}
         fixedHeaderContent={renderHeader}
         itemContent={renderRowCells}
         computeItemKey={(_index, eq) => eq.id}

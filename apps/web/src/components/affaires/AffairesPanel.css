@@ -767,6 +767,11 @@
   white-space: nowrap;
 }
 
+/* Resize : chaque colonne d'en-tête est position:relative pour ancrer le handle */
+.affaire-table-header > span {
+  position: relative;
+}
+
 /* En-têtes cliquables */
 .affaire-table-header .sortable {
   cursor: pointer;

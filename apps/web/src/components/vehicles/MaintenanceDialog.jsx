@@ -1289,7 +1289,7 @@ function MaintenanceDialog({
         <ModalFooter className="form-actions">
           {isViewMode ? (
             <div className="form-actions-right u-ml-auto">
-              <Button variant="ghost" type="button" className="submit-button" onClick={onClose}>
+              <Button variant="ghost" type="button" onClick={onClose}>
                 Fermer
               </Button>
             </div>
@@ -1298,9 +1298,8 @@ function MaintenanceDialog({
               <div className="form-actions-left">
                 {canManageMaintenance && (
                   <Button
-                    variant="ghost"
+                    variant="danger"
                     type="button"
-                    className="delete-button"
                     onClick={() => deleteMaintenance(editingId)}
                   >
                     🗑️ Supprimer
@@ -1309,20 +1308,14 @@ function MaintenanceDialog({
                 {canManageMaintenance &&
                   formData.status !== STATUS.CANCELLED &&
                   !showCancelForm && (
-                    <Button
-                      variant="ghost"
-                      type="button"
-                      className="cancel-intervention-button"
-                      onClick={() => setShowCancelForm(true)}
-                    >
+                    <Button variant="danger" type="button" onClick={() => setShowCancelForm(true)}>
                       ❌ Annuler l'intervention
                     </Button>
                   )}
                 {canManageMaintenance && formData.status === STATUS.CANCELLED && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     type="button"
-                    className="reschedule-button"
                     onClick={() => {
                       handleChange('status', 'scheduled');
                       setStatusReason('');
@@ -1335,9 +1328,8 @@ function MaintenanceDialog({
               <div className="form-actions-right">
                 {canManageMaintenance && formData.status !== STATUS.CANCELLED && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     type="button"
-                    className="reschedule-button"
                     onClick={() => {
                       handleChange('status', 'rescheduled');
                     }}
@@ -1347,12 +1339,7 @@ function MaintenanceDialog({
                   </Button>
                 )}
                 {hasChanges && (
-                  <Button
-                    variant="ghost"
-                    type="submit"
-                    form="maintenance-form"
-                    className="submit-button"
-                  >
+                  <Button variant="success" type="submit" form="maintenance-form">
                     ✓ Valider les modifications
                   </Button>
                 )}
@@ -1360,12 +1347,7 @@ function MaintenanceDialog({
             </>
           ) : (
             <>
-              <Button
-                variant="ghost"
-                type="submit"
-                form="maintenance-form"
-                className="submit-button"
-              >
+              <Button variant="success" type="submit" form="maintenance-form">
                 {isQuickReport
                   ? '⚠️ Signaler'
                   : formData.status === STATUS.PENDING

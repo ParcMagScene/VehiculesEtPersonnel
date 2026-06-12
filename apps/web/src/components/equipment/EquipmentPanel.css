@@ -817,6 +817,7 @@
   letter-spacing: 0.5px;
   color: var(--theme-text-inverse);
   white-space: nowrap;
+  position: relative;
 }
 
 .eq-table thead tr {

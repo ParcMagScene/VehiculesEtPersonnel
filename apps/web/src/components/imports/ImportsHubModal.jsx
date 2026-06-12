@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Truck,
   Users,
+  Wrench,
 } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
 
@@ -34,6 +35,7 @@ const PersonnelImportModal = lazy(() => import('../personnel/PersonnelImportModa
 const LocmatImportModal = lazy(() => import('../equipment/import/LocmatImportModal'));
 const PvImportPanel = lazy(() => import('../pv-import/PvImportPanel'));
 const ContactsCSVImportDialog = lazy(() => import('../annuaire/ContactsCSVImportDialog'));
+const SAVManagerModal = lazy(() => import('../sav/SAVManagerModal'));
 
 /**
  * Definition declarative des categories. Chaque entree :
@@ -71,6 +73,13 @@ function buildSections() {
       icon: Package,
       description: 'Equipements (UID, QR codes), locations / serialise.',
       items: [{ id: 'locmat', label: 'Locations + Serialise (CSV)', target: 'locmat' }],
+    },
+    {
+      id: 'sav',
+      label: 'SAV',
+      icon: Wrench,
+      description: 'Interventions et tickets SAV (synchronisation LocMat).',
+      items: [{ id: 'sav-csv', label: 'Interventions SAV (CSV)', target: 'sav' }],
     },
     {
       id: 'controles',
@@ -194,6 +203,15 @@ function ImportsHubModal({ onClose, onImported }) {
       {activeImport === 'contacts' && (
         <Suspense fallback={null}>
           <ContactsCSVImportDialog onClose={closeChild} onSuccess={handleChildImported} />
+        </Suspense>
+      )}
+      {activeImport === 'sav' && (
+        <Suspense fallback={null}>
+          <SAVManagerModal
+            onClose={closeChild}
+            onImportDone={handleChildImported}
+            defaultTab="import"
+          />
         </Suspense>
       )}
     </>

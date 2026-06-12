@@ -1,0 +1,231 @@
+/* ═══════════════════════════════════════════════════════════════
+   .app-data-table — style unifié pour tableaux HTML <table>
+   Mimique visuellement le rendu Affaires (gradient header sticky,
+   hover, sélection indigo, lignes 7px) tout en restant compatible
+   avec un <table> standard.
+   ═══════════════════════════════════════════════════════════════ */
+
+.app-data-table-wrap {
+  position: relative;
+  width: 100%;
+  overflow: auto;
+  background: var(--theme-bg-card, #fff);
+  border: 1px solid var(--theme-border-light);
+  border-radius: var(--radius-md, 8px);
+}
+
+table.app-data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  font-size: var(--font-base);
+  color: var(--theme-text-dark);
+}
+
+/* ─── thead ─── */
+table.app-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-base, 1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--theme-gradient);
+  color: var(--theme-text-inverse, #fff);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+  border-bottom: 2px solid var(--theme-border);
+  white-space: nowrap;
+  user-select: none;
+  /* place pour le handle de resize */
+  position: sticky;
+}
+
+table.app-data-table thead th.is-numeric,
+table.app-data-table tbody td.is-numeric {
+  text-align: right;
+}
+
+table.app-data-table thead th.is-center,
+table.app-data-table tbody td.is-center {
+  text-align: center;
+}
+
+/* En-têtes triables */
+table.app-data-table thead th.sortable,
+table.app-data-table thead th.app-sortable {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+table.app-data-table thead th.sortable:hover,
+table.app-data-table thead th.app-sortable:hover {
+  color: var(--theme-bg-indigo-light);
+}
+table.app-data-table thead th .sort-arrow,
+table.app-data-table thead th .app-sort-indicator {
+  font-size: 9px;
+  color: var(--theme-bg-indigo-lighter);
+  margin-left: 3px;
+  line-height: 1;
+}
+table.app-data-table thead th[aria-sort='ascending'] .app-sort-indicator,
+table.app-data-table thead th[aria-sort='descending'] .app-sort-indicator {
+  color: #fff;
+}
+
+/* ─── tbody ─── */
+table.app-data-table tbody td {
+  padding: 7px var(--space-3);
+  border-bottom: 1px solid var(--theme-border-light);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+table.app-data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+table.app-data-table tbody tr {
+  transition: background 0.15s;
+}
+
+table.app-data-table tbody tr:hover td {
+  background: var(--theme-bg-page);
+}
+
+table.app-data-table tbody tr.is-clickable,
+table.app-data-table tbody tr.clickable-row {
+  cursor: pointer;
+}
+
+table.app-data-table tbody tr.is-selected td,
+table.app-data-table tbody tr.selected td {
+  background: var(--theme-bg-indigo-light);
+  box-shadow: inset 3px 0 0 var(--theme-primary);
+}
+
+table.app-data-table tbody tr.is-disabled,
+table.app-data-table tbody tr.archived,
+table.app-data-table tbody tr.status-past {
+  opacity: 0.55;
+}
+
+/* Variante compacte (rapprochée comme eq-table) */
+table.app-data-table.is-compact tbody td {
+  padding: 5px var(--space-2);
+}
+table.app-data-table.is-compact thead th {
+  padding: 6px var(--space-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Resizable columns — handle à droite de chaque <th>
+   ═══════════════════════════════════════════════════════════════ */
+
+table.app-data-table thead th.app-col-resizable {
+  position: sticky;
+  /* keep sticky+top from above */
+}
+
+.app-col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 2;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.app-col-resize-handle::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  top: 25%;
+  bottom: 25%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.app-col-resize-handle:hover,
+.app-col-resize-handle.is-resizing {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.app-col-resize-handle:hover::after,
+.app-col-resize-handle.is-resizing::after {
+  background: var(--theme-bg-indigo-lighter);
+  width: 2px;
+}
+
+/* Pendant le drag global, désactiver la sélection texte */
+body.app-col-resizing,
+body.app-col-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Harmonisation des badges/pills à l'intérieur de .app-data-table
+   On normalise UNIQUEMENT la forme/taille/typo — les couleurs
+   sémantiques (background, border, color) restent celles définies
+   ailleurs (ce sont des indicateurs métier).
+   ═══════════════════════════════════════════════════════════════ */
+
+table.app-data-table tbody td .entity-tag,
+table.app-data-table tbody td .type-badge,
+table.app-data-table tbody td .inactive-badge,
+table.app-data-table tbody td .company-badge,
+table.app-data-table tbody td .location-type-badge,
+table.app-data-table tbody td .stock-cat-badge,
+table.app-data-table tbody td .catalog-badge,
+table.app-data-table tbody td .priority-badge,
+table.app-data-table tbody td .mini-status,
+table.app-data-table tbody td .status-badge,
+table.app-data-table tbody td .ui-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px; /* pill */
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  vertical-align: middle;
+}
+
+/* Badges secondaires/inline (annotations) — plus discrets */
+table.app-data-table tbody td .ref-small,
+table.app-data-table tbody td .affaire-small,
+table.app-data-table tbody td .order-link-small {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--theme-text-muted);
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--theme-bg-page);
+  vertical-align: middle;
+}
+
+table.app-data-table tbody td .order-link-small {
+  color: var(--theme-info);
+  background: var(--theme-info-bg);
+}
+
+/* StatusBadge du DS : conserver ses couleurs mais aligner la pill */
+table.app-data-table tbody td .ui-status-badge {
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}

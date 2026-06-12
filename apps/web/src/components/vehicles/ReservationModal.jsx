@@ -2057,7 +2057,7 @@ const ReservationModal = ({
 
       <ModalFooter className="modal-actions">
         {isEdit && currentUser?.isAdmin && (
-          <Button variant="ghost" type="button" className="delete-button" onClick={onDelete}>
+          <Button variant="danger" type="button" onClick={onDelete}>
             <Trash2 size={18} />
             Supprimer
           </Button>
@@ -2066,12 +2066,12 @@ const ReservationModal = ({
           {isReadOnly ? 'Fermer' : 'Annuler'}
         </Button>
         {!isEdit && (
-          <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
+          <Button variant="success" type="submit" form="reservation-form">
             {currentUser?.isAdmin ? 'Créer' : 'Demander'}
           </Button>
         )}
         {isEdit && !isReadOnly && (isDirty || formData.isTournee) && (
-          <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
+          <Button variant="success" type="submit" form="reservation-form">
             Valider les modifications
           </Button>
         )}

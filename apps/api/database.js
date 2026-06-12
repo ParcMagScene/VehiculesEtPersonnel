@@ -2300,6 +2300,14 @@ function initializeDatabase() {
       db.exec('ALTER TABLE task_assignments ADD COLUMN location_lng REAL');
       logger.info('  + task_assignments.location_lng');
     }
+    if (!taColNames.includes('all_day')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN all_day INTEGER DEFAULT 0');
+      logger.info('  + task_assignments.all_day');
+    }
+    if (!taColNames.includes('client_name')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN client_name TEXT');
+      logger.info('  + task_assignments.client_name');
+    }
 
     // Migration : corriger le CHECK constraint section pour inclure rdv et prep_installations
     try {
@@ -2637,6 +2645,22 @@ function initializeDatabase() {
         /* ignored */
       }
       logger.warn('Migration section intervention:', migErr5.message);
+    }
+
+    // Migration : (re)ajout des colonnes all_day / client_name après éventuelles recréations
+    // (si une migration recreate-table ci-dessus a été déclenchée, les colonnes peuvent avoir été perdues)
+    try {
+      const taColsFinal = db.pragma('table_info(task_assignments)').map((c) => c.name);
+      if (!taColsFinal.includes('all_day')) {
+        db.exec('ALTER TABLE task_assignments ADD COLUMN all_day INTEGER DEFAULT 0');
+        logger.info('  + task_assignments.all_day (post-recreate)');
+      }
+      if (!taColsFinal.includes('client_name')) {
+        db.exec('ALTER TABLE task_assignments ADD COLUMN client_name TEXT');
+        logger.info('  + task_assignments.client_name (post-recreate)');
+      }
+    } catch (e) {
+      logger.warn('Migration colonnes all_day/client_name:', e.message);
     }
 
     // Migration : colonnes enrichies pour bl_imports (Phase 5)

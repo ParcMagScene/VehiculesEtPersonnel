@@ -10,6 +10,7 @@ import {
   Input,
   Modal,
   ModalBody,
+  ModalFooter,
   ModalHeader,
 } from '@/design-system';
 
@@ -390,7 +391,7 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
       <ModalBody>
         {error && <InlineAlert>{error}</InlineAlert>}
 
-        <form onSubmit={handleSubmit} className="location-form">
+        <form id="client-dialog-form" onSubmit={handleSubmit} className="location-form">
           {error && <InlineAlert>{error}</InlineAlert>}
 
           <div className="location-dialog-content">
@@ -516,17 +517,17 @@ const ClientDialog = ({ client, onSave, onClose, companyAddress }) => {
               </div>
             </div>
           </div>
-
-          <div className="form-actions">
-            <Button variant="ghost" onClick={handleSafeClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" type="submit">
-              Enregistrer
-            </Button>
-          </div>
         </form>
       </ModalBody>
+
+      <ModalFooter>
+        <Button variant="ghost" onClick={handleSafeClose}>
+          Annuler
+        </Button>
+        <Button variant="success" type="submit" form="client-dialog-form">
+          Enregistrer
+        </Button>
+      </ModalFooter>
 
       {ConfirmDialogRenderer}
     </Modal>

@@ -3,7 +3,15 @@ import './TripDetailsModal.css';
 import { ArrowDown, Clock, MapPin, Plus, Trash2, User } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
-import { Button, FormField, Input, Modal, ModalBody, ModalHeader } from '@/design-system';
+import {
+  Button,
+  FormField,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
@@ -1031,7 +1039,7 @@ const TripDetailsModal = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="trip-details-form">
+        <form id="trip-details-form" onSubmit={handleSubmit} className="trip-details-form">
           {/* Conducteur */}
           <div className="trip-row">
             <FormField
@@ -1523,15 +1531,6 @@ const TripDetailsModal = ({
             </div>
           </div>
 
-          <div className="modal-actions">
-            <Button variant="ghost" onClick={handleSafeClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" type="submit">
-              Enregistrer
-            </Button>
-          </div>
-
           {/* Datalist pour suggestions de lieux */}
           <datalist id="locations-list">
             {allLocations.map((loc) => (
@@ -1542,6 +1541,15 @@ const TripDetailsModal = ({
           </datalist>
         </form>
       </ModalBody>
+
+      <ModalFooter>
+        <Button variant="ghost" onClick={handleSafeClose}>
+          Annuler
+        </Button>
+        <Button variant="success" type="submit" form="trip-details-form">
+          Enregistrer
+        </Button>
+      </ModalFooter>
 
       {/* Modal LocationDialog */}
       {isLocationDialogOpen && (

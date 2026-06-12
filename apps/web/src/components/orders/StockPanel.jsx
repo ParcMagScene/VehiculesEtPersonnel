@@ -41,6 +41,8 @@ import {
   Tag,
   Textarea,
   Tooltip,
+  useResizableColumns,
+  useSortableData,
 } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
@@ -723,6 +725,17 @@ function _DashboardView({ stats, _items, onSelectItem }) {
 // ═══════════════════════════════════════════════════════════════
 // Liste des Articles
 // ═══════════════════════════════════════════════════════════════
+const STOCK_COLS = {
+  ref: 110,
+  article: 240,
+  category: 160,
+  qty: 80,
+  unit: 80,
+  pu_buy: 110,
+  pu_sell: 110,
+  value: 120,
+  location: 160,
+};
 function ItemsListView({
   items,
   categories,
@@ -741,6 +754,17 @@ function ItemsListView({
   stats,
   onOpenManagement,
 }) {
+  const { getColProps, getResizerProps } = useResizableColumns('stock-items-list', STOCK_COLS);
+  const { sorted, getThProps, getSortIndicator } = useSortableData(items, {
+    initialCol: 'reference',
+    getValue: (row, col) => {
+      if (col === 'quantity') return Number(row.quantity) || 0;
+      if (col === 'unit_price_buy') return Number(row.unit_price_buy) || 0;
+      if (col === 'unit_price_sell') return Number(row.unit_price_sell) || 0;
+      if (col === 'value') return (Number(row.unit_price_buy) || 0) * (Number(row.quantity) || 0);
+      return row[col];
+    },
+  });
   return (
     <div className="stock-items-view">
       {/* Toolbar */}
@@ -816,22 +840,54 @@ function ItemsListView({
         />
       ) : (
         <div className="stock-table-container">
-          <Table className="stock-table">
+          <Table className="stock-table app-data-table">
+            <colgroup>
+              {Object.keys(STOCK_COLS).map((k) => (
+                <col key={k} {...getColProps(k)} />
+              ))}
+            </colgroup>
             <thead>
               <tr>
-                <th>Réf.</th>
-                <th>Article</th>
-                <th>Catégorie</th>
-                <th>Stock</th>
-                <th>Unité</th>
-                <th>P.U. Achat</th>
-                <th>P.U. Vente</th>
-                <th>Valeur</th>
+                <th {...getThProps('reference')}>
+                  Réf.<span className="app-sort-indicator">{getSortIndicator('reference')}</span>
+                  <span {...getResizerProps('ref')} />
+                </th>
+                <th {...getThProps('name')}>
+                  Article<span className="app-sort-indicator">{getSortIndicator('name')}</span>
+                  <span {...getResizerProps('article')} />
+                </th>
+                <th {...getThProps('category_name')}>
+                  Catégorie
+                  <span className="app-sort-indicator">{getSortIndicator('category_name')}</span>
+                  <span {...getResizerProps('category')} />
+                </th>
+                <th {...getThProps('quantity')} className="app-sortable is-center">
+                  Stock<span className="app-sort-indicator">{getSortIndicator('quantity')}</span>
+                  <span {...getResizerProps('qty')} />
+                </th>
+                <th {...getThProps('unit')}>
+                  Unité<span className="app-sort-indicator">{getSortIndicator('unit')}</span>
+                  <span {...getResizerProps('unit')} />
+                </th>
+                <th {...getThProps('unit_price_buy')} className="app-sortable is-numeric">
+                  P.U. Achat
+                  <span className="app-sort-indicator">{getSortIndicator('unit_price_buy')}</span>
+                  <span {...getResizerProps('pu_buy')} />
+                </th>
+                <th {...getThProps('unit_price_sell')} className="app-sortable is-numeric">
+                  P.U. Vente
+                  <span className="app-sort-indicator">{getSortIndicator('unit_price_sell')}</span>
+                  <span {...getResizerProps('pu_sell')} />
+                </th>
+                <th {...getThProps('value')} className="app-sortable is-numeric">
+                  Valeur<span className="app-sort-indicator">{getSortIndicator('value')}</span>
+                  <span {...getResizerProps('value')} />
+                </th>
                 <th>Emplacement</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => {
+              {sorted.map((item) => {
                 const isLow = item.min_quantity > 0 && item.quantity <= item.min_quantity;
                 const isOut = item.quantity === 0;
                 const isSelected = selectedItemId === item.id;
@@ -2207,7 +2263,7 @@ function ImportStockModal({ onDone, onClose }) {
 
               {/* Aperçu */}
               <div className="stock-import-preview">
-                <Table className="stock-table">
+                <Table className="stock-table app-data-table is-compact">
                   <thead>
                     <tr>
                       <th>Réf.</th>

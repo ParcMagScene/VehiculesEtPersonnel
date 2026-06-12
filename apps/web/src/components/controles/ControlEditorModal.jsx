@@ -113,8 +113,7 @@ export default function ControlEditorModal({
 
   return (
     <Modal open onClose={handleSafeClose} size="md">
-      <ModalHeader>
-        <Pencil size={18} style={{ marginRight: 8 }} />
+      <ModalHeader icon={<Pencil size={18} />} onClose={handleSafeClose}>
         {isEdit ? 'Modifier le contrôle' : 'Nouveau contrôle planifié'}
       </ModalHeader>
       <ModalBody>
@@ -181,7 +180,7 @@ export default function ControlEditorModal({
         <Button variant="ghost" onClick={handleSafeClose} disabled={busy}>
           Annuler
         </Button>
-        <Button variant="primary" onClick={submit} disabled={busy || !typeId || !nextDue}>
+        <Button variant="success" onClick={submit} disabled={busy || !typeId || !nextDue}>
           {busy ? 'Enregistrement…' : 'Enregistrer'}
         </Button>
       </ModalFooter>

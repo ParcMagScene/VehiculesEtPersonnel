@@ -1044,6 +1044,57 @@
   border-top: 1px solid var(--theme-border-light);
 }
 
+/* Résumé compact des étapes activées (section Planification repliée) */
+.task-steps-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.task-step-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 6px;
+  border: 1px solid var(--theme-border-light);
+  border-left: 3px solid var(--theme-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
+  background: var(--theme-bg-card);
+  white-space: nowrap;
+  transition: filter 0.12s;
+}
+
+.task-step-chip:hover {
+  filter: brightness(0.97);
+}
+
+.task-step-chip .tsc-emoji {
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+.task-step-chip .tsc-label {
+  font-weight: 600;
+  color: var(--theme-text-primary);
+}
+
+.task-step-chip .tsc-date {
+  font-size: var(--font-xs);
+  color: var(--theme-text-secondary);
+}
+
+.task-step-chip .tsc-status {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-md-lg);
+  font-size: var(--font-2xs, 0.65rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
 /* @keyframes spin is in theme.css */
 .spin {
   animation: spin 1s linear infinite;

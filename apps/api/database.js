@@ -1139,6 +1139,12 @@ function initializeDatabase() {
       db.prepare('ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0').run();
       logger.info('✅ Colonne is_blocked ajoutée à users');
     }
+    // Migration: ajouter pin_hash dans users (auth personnel par PIN)
+    const hasPinHash = userColumns.some((col) => col.name === 'pin_hash');
+    if (!hasPinHash) {
+      db.prepare('ALTER TABLE users ADD COLUMN pin_hash TEXT').run();
+      logger.info('✅ Colonne pin_hash ajoutée à users');
+    }
   } catch (_error) {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }

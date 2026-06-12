@@ -72,6 +72,7 @@ describe('Modal (intégration ModalManager)', () => {
     render(
       <Modal
         open
+        closeOnBackdrop
         onClose={() => {
           closed = true;
         }}

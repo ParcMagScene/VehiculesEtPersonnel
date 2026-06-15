@@ -29,8 +29,7 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 
 import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
-const BLMultiImportModal = lazy(() => import('../affaires/BLMultiImportModal'));
-const BLImportLocPrestaModal = lazy(() => import('../affaires/BLImportLocPrestaModal'));
+const BLImportModal = lazy(() => import('../affaires/BLImportModal'));
 const PersonnelImportModal = lazy(() => import('../personnel/PersonnelImportModal'));
 const LocmatImportModal = lazy(() => import('../equipment/import/LocmatImportModal'));
 const PvImportPanel = lazy(() => import('../pv-import/PvImportPanel'));
@@ -51,8 +50,11 @@ function buildSections() {
       icon: Briefcase,
       description: 'Bons de livraison, bons de preparation, locations, prestations.',
       items: [
-        { id: 'bl-bp', label: 'Import BL / BP (PDF)', target: 'bl-multi' },
-        { id: 'bl-loc-presta', label: 'BL Location / Prestation (PDF)', target: 'bl-loc-presta' },
+        {
+          id: 'bl-bp',
+          label: 'BL / BP — Location, Prestation, Vente (PDF)',
+          target: 'bl-import',
+        },
         { id: 'cmd-fourn', label: 'Commandes fournisseurs (PDF)', comingSoon: true },
         { id: 'demandes', label: 'Demandes clients (CSV)', comingSoon: true },
       ],
@@ -175,14 +177,9 @@ function ImportsHubModal({ onClose, onImported }) {
         </ModalBody>
       </Modal>
 
-      {activeImport === 'bl-multi' && (
+      {activeImport === 'bl-import' && (
         <Suspense fallback={null}>
-          <BLMultiImportModal onClose={closeChild} onImported={handleChildImported} />
-        </Suspense>
-      )}
-      {activeImport === 'bl-loc-presta' && (
-        <Suspense fallback={null}>
-          <BLImportLocPrestaModal onClose={closeChild} onImported={handleChildImported} />
+          <BLImportModal onClose={closeChild} onImported={handleChildImported} />
         </Suspense>
       )}
       {activeImport === 'personnel' && (

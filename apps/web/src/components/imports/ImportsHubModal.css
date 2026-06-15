@@ -1,5 +1,5 @@
 /* ImportsHubModal — styles du hub centralise des imports.
-   Cherche a rester coherent avec les autres modals (BLMultiImportModal,
+   Cherche a rester coherent avec les autres modals (BLImportModal,
    PersonnelImportModal) : variables CSS du theme, espacements, typographie. */
 
 .imports-hub-modal .imports-hub-title {

@@ -39,7 +39,7 @@ import { AffaireDetailModal, AffaireSlidePanel } from './AffaireDetailPanel';
 import AffairesDateGrid from './AffairesDateGrid';
 
 const BLBatchAnalysis = lazy(() => import('./BLBatchAnalysis'));
-const BLMultiImportModal = lazy(() => import('./BLMultiImportModal'));
+const BLImportModal = lazy(() => import('./BLImportModal'));
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
@@ -1275,7 +1275,7 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
       {/* Multi Import Modal */}
       {showMultiImport && (
         <Suspense fallback={null}>
-          <BLMultiImportModal
+          <BLImportModal
             onClose={() => setShowMultiImport(false)}
             onImported={() => {
               setShowMultiImport(false);

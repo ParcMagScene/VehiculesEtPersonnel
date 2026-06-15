@@ -79,7 +79,6 @@ import { formatPhoneDisplay } from '../PhoneInput';
 const ReservationModal = lazy(() => import('../vehicles/ReservationModal'));
 const EventDetailsModal = lazy(() => import('../planning/EventDetailsModal'));
 const BLImportModal = lazy(() => import('./BLImportModal'));
-const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const DynamicDisplayDialog = lazy(() => import('../DynamicDisplayDialog'));
 const GenerateOrdersModal = lazy(() => import('./GenerateOrdersModal'));
 const BPAnnotationViewer = lazy(() => import('./BPAnnotationViewer'));
@@ -3060,29 +3059,16 @@ const AffaireSlidePanel = ({
       />
       {showBLImport && (
         <Suspense fallback={null}>
-          {['Location', 'Prestation'].includes(currentAffaire.type) ? (
-            <BLImportLocPrestaModal
-              onClose={() => setShowBLImport(false)}
-              onImported={() => {
-                setShowBLImport(false);
-                setHasBLImports(true);
-                if (onRefresh) onRefresh();
-              }}
-              defaultAffaireId={currentAffaire.numeroAffaire}
-              defaultAffaireType={currentAffaire.type}
-            />
-          ) : (
-            <BLImportModal
-              onClose={() => setShowBLImport(false)}
-              onImported={() => {
-                setShowBLImport(false);
-                setHasBLImports(true);
-                if (onRefresh) onRefresh();
-              }}
-              defaultAffaireId={currentAffaire.numeroAffaire}
-              defaultAffaireType={currentAffaire.type}
-            />
-          )}
+          <BLImportModal
+            onClose={() => setShowBLImport(false)}
+            onImported={() => {
+              setShowBLImport(false);
+              setHasBLImports(true);
+              if (onRefresh) onRefresh();
+            }}
+            defaultAffaireId={currentAffaire.numeroAffaire}
+            defaultAffaireType={currentAffaire.type}
+          />
         </Suspense>
       )}
       {showDisplayDialog && (
@@ -3355,29 +3341,16 @@ const AffaireDetailModal = ({
 
         {showBLImport && (
           <Suspense fallback={null}>
-            {['Location', 'Prestation'].includes(affaire.type) ? (
-              <BLImportLocPrestaModal
-                onClose={() => setShowBLImport(false)}
-                onImported={() => {
-                  setShowBLImport(false);
-                  setHasBLImports(true);
-                  handleDataChanged();
-                }}
-                defaultAffaireId={affaire.numeroAffaire}
-                defaultAffaireType={affaire.type}
-              />
-            ) : (
-              <BLImportModal
-                onClose={() => setShowBLImport(false)}
-                onImported={() => {
-                  setShowBLImport(false);
-                  setHasBLImports(true);
-                  handleDataChanged();
-                }}
-                defaultAffaireId={affaire.numeroAffaire}
-                defaultAffaireType={affaire.type}
-              />
-            )}
+            <BLImportModal
+              onClose={() => setShowBLImport(false)}
+              onImported={() => {
+                setShowBLImport(false);
+                setHasBLImports(true);
+                handleDataChanged();
+              }}
+              defaultAffaireId={affaire.numeroAffaire}
+              defaultAffaireType={affaire.type}
+            />
           </Suspense>
         )}
         {showDisplayDialog && (

@@ -1703,7 +1703,6 @@ const PlanningTab = ({
   // ═══ Toolbar : recherche, filtre, favoris ═══
   const [planningSearch, setPlanningSearch] = useState('');
   const [planningFilter, setPlanningFilter] = useState(''); // '', 'permanent', 'salarié', 'contractuel', 'stagiaire'
-  const [sortByFavorites, setSortByFavorites] = useState(true);
   const { isFavorite, toggleFavorite, sortPersonsByFavorites } = usePersonnelFavorites();
 
   // Navigation croisée depuis un autre module
@@ -2127,11 +2126,11 @@ const PlanningTab = ({
     [nonPermanentsRaw, isFavorite],
   );
 
-  // Tri : favoris en haut des non-permanents
-  const nonPermanents = useMemo(() => {
-    if (!sortByFavorites) return nonPermanentsSource;
-    return sortPersonsByFavorites(nonPermanentsSource);
-  }, [nonPermanentsSource, sortByFavorites, sortPersonsByFavorites]);
+  // Tri : favoris en haut des non-permanents (toujours actif).
+  const nonPermanents = useMemo(
+    () => sortPersonsByFavorites(nonPermanentsSource),
+    [nonPermanentsSource, sortPersonsByFavorites],
+  );
 
   // ═══ DRAG-TO-CREATE : cliquer-glisser sur cellules vides ═══
   const handleSlotMouseDown = (person, slotIndex, e) => {
@@ -2795,26 +2794,6 @@ const PlanningTab = ({
             ))}
           </Select>
         </div>
-        <Button
-          variant="ghost"
-          className={`pp-planning-fav-btn${sortByFavorites ? ' active' : ''}`}
-          onClick={() => setSortByFavorites((v) => !v)}
-          title={sortByFavorites ? 'Tri par favoris actif' : 'Activer le tri par favoris'}
-        >
-          <Star size={14} fill={sortByFavorites ? 'currentColor' : 'none'} />
-          Favoris
-        </Button>
-        {onPersonCreate && (
-          <Button
-            variant="primary"
-            className="pp-planning-add-btn"
-            onClick={onPersonCreate}
-            title="Ajouter une personne (modification/suppression : clic droit sur la ligne)"
-          >
-            <Plus size={14} />
-            Nouveau
-          </Button>
-        )}
       </div>
 
       {googleBanner}
@@ -2843,6 +2822,21 @@ const PlanningTab = ({
                   placeholder="Rechercher…"
                   size="sm"
                 />
+                {onPersonCreate && (
+                  <Tooltip
+                    content="Ajouter une personne (modification/suppression : clic droit sur la ligne)"
+                    position="bottom"
+                  >
+                    <Button
+                      variant="primary"
+                      className="pp-planning-search-add-btn"
+                      onClick={onPersonCreate}
+                      aria-label="Ajouter une personne"
+                    >
+                      <Plus size={14} />
+                    </Button>
+                  </Tooltip>
+                )}
               </div>
             </div>
             {/* Ligne d'en-têtes */}

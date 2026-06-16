@@ -21,6 +21,7 @@ import { Input } from '@/design-system';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import Button from '../ui/Button';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 
 // Constante module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
 const PERMANENT_TYPES = ['permanent', 'apprenti', 'stagiaire'];
@@ -50,6 +51,7 @@ function fmtHM(minutes) {
 }
 
 function SynthesesPanel({ currentUser: _currentUser }) {
+  const printPreview = usePrintPreview();
   const [mode, setMode] = useState('semaine');
   const [semaine, setSemaine] = useState(getISOWeek(new Date()));
   const [mois, setMois] = useState(formatMonthISO(new Date()));
@@ -110,13 +112,14 @@ function SynthesesPanel({ currentUser: _currentUser }) {
       if (mode === 'semaine') blob = await api.exportSuiviSyntheseSemainePdf(semaine);
       else if (mode === 'mois') blob = await api.exportSuiviSyntheseMoisPdf(mois);
       else blob = await api.exportSuiviSyntheseAnneePdf(annee);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
       const period = mode === 'semaine' ? semaine : mode === 'mois' ? mois : annee;
-      a.download = `synthese-${mode}-${period}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      printPreview.showPdf(
+        { blob },
+        {
+          title: `Synthèse ${mode} — ${period}`,
+          filename: `synthese-${mode}-${period}.pdf`,
+        },
+      );
     } catch {
       setError('Erreur export PDF');
     }

@@ -4,8 +4,10 @@
 // ═══════════════════════════════════════════════════════════════
 
 import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
 
 import { decToHM, formatDateFR, hasOccupationContext, isPastPeriod } from './_helpers.js';
+import { attachPdfSanitizer } from './_pdf-sanitize.js';
 
 export const PDF_MARGIN = 40;
 export const PDF_TABLE_LEFT = 40;
@@ -17,6 +19,68 @@ export const PDF_TEXT_PADDING_X = 4;
 export const PDF_TEXT_PADDING_Y = 5;
 export const PDF_TABLE_BOTTOM = 760;
 export const PDF_WATERMARK_COLOR = '#b0b8c4';
+export const PDF_QR_SIZE = 70;
+
+// ─── Helpers métadonnées personnel & URL ───
+
+const PERSON_TYPE_LABELS = {
+  permanent: 'Permanent',
+  contractuel: 'Contractuel',
+  stagiaire: 'Stagiaire',
+  apprenti: 'Apprenti',
+};
+
+/**
+ * Convertit `persons.type` (+ contract_type éventuel) en libellé lisible.
+ * Fallback : Title Case de la valeur brute.
+ */
+export function getPersonTypeLabel(person) {
+  if (!person) return '';
+  const raw = String(person.type || '').toLowerCase();
+  if (PERSON_TYPE_LABELS[raw]) return PERSON_TYPE_LABELS[raw];
+  if (!raw) return '';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+/**
+ * Construit l'URL absolue de remplissage de fiche pour un personnel donné.
+ * Utilise API_BASE_URL (env) avec fallback dev. Le hash router mobile gère
+ * la query string : `#/mobile/suivi?date=...&person=...`.
+ */
+export function buildSuiviSheetUrl(sheet) {
+  const root = (process.env.API_BASE_URL || 'http://localhost:4173').replace(/\/+$/, '');
+  const params = new URLSearchParams();
+  if (sheet?.date) params.set('date', sheet.date);
+  if (sheet?.person?.id) params.set('person', String(sheet.person.id));
+  const qs = params.toString();
+  return `${root}/#/mobile/suivi${qs ? `?${qs}` : ''}`;
+}
+
+/**
+ * Pré-génère un buffer PNG pour le QR de chaque fiche et l'attache à
+ * `sheet._qrBuffer`. À appeler avant le rendu PDF (drawPdfHeader est sync).
+ */
+export async function ensureSheetQrBuffers(sheets) {
+  const list = Array.isArray(sheets) ? sheets : [sheets];
+  await Promise.all(
+    list.map(async (sheet) => {
+      if (!sheet || sheet._qrBuffer) return;
+      try {
+        const url = buildSuiviSheetUrl(sheet);
+        sheet._qrBuffer = await QRCode.toBuffer(url, {
+          errorCorrectionLevel: 'M',
+          type: 'png',
+          margin: 1,
+          width: 256,
+          color: { dark: '#000000', light: '#ffffff' },
+        });
+      } catch (e) {
+        console.warn('[suivi-pdf] QR generation failed:', e?.message || e);
+        sheet._qrBuffer = null;
+      }
+    }),
+  );
+}
 
 // ─── Helpers PDF communs ───
 
@@ -25,23 +89,59 @@ export function drawPdfHeader(doc, sheet, subtitle) {
   const personName = sheet.person
     ? `${sheet.person.first_name} ${sheet.person.last_name}`
     : 'Personnel';
+  const personTypeLabel = getPersonTypeLabel(sheet.person);
+
+  // Réserver l'espace en haut à droite pour le QR (largeur PDF_QR_SIZE)
+  const qrX = PDF_TABLE_LEFT + PDF_TABLE_WIDTH - PDF_QR_SIZE;
+  const qrY = PDF_MARGIN;
+  if (sheet._qrBuffer) {
+    try {
+      doc.image(sheet._qrBuffer, qrX, qrY, { width: PDF_QR_SIZE, height: PDF_QR_SIZE });
+      // Légende sous le QR
+      doc.fontSize(6).font('Helvetica').fillColor('#64748b');
+      doc.text('Scanner pour remplir en ligne', qrX - 4, qrY + PDF_QR_SIZE + 2, {
+        width: PDF_QR_SIZE + 8,
+        align: 'center',
+        lineBreak: false,
+      });
+    } catch (e) {
+      console.warn('[suivi-pdf] QR image embed failed:', e?.message || e);
+    }
+  }
 
   // Date en haut à gauche
   doc.fontSize(12).font('Helvetica-Bold').fillColor('#334155');
   doc.text(dateStr, PDF_TABLE_LEFT, PDF_MARGIN, { lineBreak: false });
 
-  // Nom du personnel en titre principal centré
+  // Nom du personnel en titre principal — centré sur toute la largeur du tableau
+  // (le QR reste superposé en haut à droite, le centrage page reste visuel)
   doc.fontSize(18).font('Helvetica-Bold').fillColor('#1e3a5f');
   doc.text(personName.toUpperCase(), PDF_TABLE_LEFT, PDF_MARGIN + 18, {
     width: PDF_TABLE_WIDTH,
     align: 'center',
   });
 
+  // Type de personnel sous le nom — centré sur toute la largeur
+  if (personTypeLabel) {
+    doc.fontSize(10).font('Helvetica').fillColor('#475569');
+    doc.text(personTypeLabel, PDF_TABLE_LEFT, PDF_MARGIN + 40, {
+      width: PDF_TABLE_WIDTH,
+      align: 'center',
+      lineBreak: false,
+    });
+  }
+
+  // Calage Y minimum pour ne pas chevaucher le QR
+  const headerBottom = Math.max(
+    PDF_MARGIN + 40 + (personTypeLabel ? 14 : 0),
+    qrY + PDF_QR_SIZE + 12, // sous le QR + sa légende
+  );
+  doc.y = headerBottom;
+
   // Sous-titre Matin/Après-midi si présent
   if (subtitle) {
-    doc.moveDown(0.2);
     doc.fontSize(13).font('Helvetica-Bold').fillColor('#334155');
-    doc.text(subtitle, { align: 'center' });
+    doc.text(subtitle, PDF_TABLE_LEFT, doc.y, { width: PDF_TABLE_WIDTH, align: 'center' });
   }
 
   // Affaires planning du jour
@@ -237,19 +337,6 @@ export function drawPdfFooter(doc, entries, _label) {
     },
   );
 
-  doc.fontSize(8).font('Helvetica').fillColor('#475569');
-  doc.text('Signature / Visa :', PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.55, 760, {
-    width: PDF_TABLE_WIDTH * 0.45,
-    align: 'right',
-    lineBreak: false,
-  });
-  doc
-    .lineWidth(0.5)
-    .strokeColor('#94a3b8')
-    .moveTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.7, 777)
-    .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, 777)
-    .stroke();
-
   doc.fontSize(6).font('Helvetica').fillColor('#999999');
   doc.text(`Genere par eM@g -- ${new Date().toLocaleString('fr-FR')}`, PDF_TABLE_LEFT, 790, {
     align: 'center',
@@ -426,20 +513,7 @@ export function renderPrintFullDayPage(doc, sheet) {
     bottomSectionBottom,
   );
 
-  // Pied de page partage (signature + horodatage)
-  doc.fontSize(8).font('Helvetica').fillColor('#475569');
-  doc.text('Signature / Visa :', PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.55, 765, {
-    width: PDF_TABLE_WIDTH * 0.45,
-    align: 'right',
-    lineBreak: false,
-  });
-  doc
-    .lineWidth(0.5)
-    .strokeColor('#94a3b8')
-    .moveTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.7, 780)
-    .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, 780)
-    .stroke();
-
+  // Pied de page partage (horodatage uniquement)
   doc.fontSize(6).font('Helvetica').fillColor('#999999');
   doc.text(`Genere par eM@g -- ${new Date().toLocaleString('fr-FR')}`, PDF_TABLE_LEFT, 792, {
     align: 'center',
@@ -464,10 +538,13 @@ export function safePdfFilename(value) {
 }
 
 /**
- * PDF normal individuel (AM+PM ensemble, pas de filigrane)
+ * PDF normal individuel (AM+PM ensemble, pas de filigrane).
+ * Async : pré-génère le QR avant rendu.
  */
-export function generateSheetPdf(sheet, res) {
+export async function generateSheetPdf(sheet, res) {
+  await ensureSheetQrBuffers(sheet);
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
+  attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
   const safeName = safePdfFilename(sheet.person?.last_name || 'personnel');
   const safeDate = safePdfFilename(sheet.date);
@@ -482,10 +559,13 @@ export function generateSheetPdf(sheet, res) {
 }
 
 /**
- * PDF normal multi-fiches (export batch)
+ * PDF normal multi-fiches (export batch).
+ * Async : pré-génère les QR avant rendu.
  */
-export function generateBatchPdf(sheets, res) {
+export async function generateBatchPdf(sheets, res) {
+  await ensureSheetQrBuffers(sheets);
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
+  attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename="fiches-suivi-batch.pdf"');
   doc.pipe(res);
@@ -501,9 +581,12 @@ export function generateBatchPdf(sheets, res) {
 /**
  * PDF impression multi-fiches : une seule page (recto) par fiche,
  * coupee en deux dans la hauteur (Matin haut / Apres-midi bas), lignes filigrane.
+ * Async : pré-génère les QR avant rendu.
  */
-export function generateBatchPrintPdf(sheets, res) {
+export async function generateBatchPrintPdf(sheets, res) {
+  await ensureSheetQrBuffers(sheets);
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
+  attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'inline; filename="fiches-suivi-impression.pdf"');
   doc.pipe(res);
@@ -529,6 +612,7 @@ export function generateBatchPrintPdf(sheets, res) {
 
 export function generateSynthesePdf(synthese, title, res) {
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
+  attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
   const fname = `synthese-${safePdfFilename(title)}.pdf`;
   res.setHeader(

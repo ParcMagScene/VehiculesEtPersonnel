@@ -20,6 +20,8 @@ import {
 import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
+import { computeLabelPlacements } from './map-label-placement';
 import {
   BOUNDS_PADDING,
   DEFAULT_ZOOM,
@@ -32,7 +34,6 @@ import {
 } from './map-utils';
 import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapOffScreenIndicators from './MapOffScreenIndicators';
-import { computeLabelPlacements } from './map-label-placement';
 
 // Constantes module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
 const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
@@ -288,6 +289,7 @@ export default function MapDualPrintModal({
   const initialGeneralViewRef = useRef(initialGeneralView);
   const initialLocalViewRef = useRef(initialLocalView);
   const [printing, setPrinting] = useState(false);
+  const printPreview = usePrintPreview();
   const localRadius = Math.max(MIN_RADIUS, Math.min(MAX_RADIUS, Number(zoneRadius) || 5000));
   const bootGeneralView = initialGeneralViewRef.current;
   const bootLocalView = initialLocalViewRef.current;
@@ -384,10 +386,7 @@ export default function MapDualPrintModal({
         minute: '2-digit',
       });
 
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) return;
-
-      printWindow.document.write(`<!DOCTYPE html>
+      const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
@@ -437,17 +436,16 @@ export default function MapDualPrintModal({
   </div>
   <div class="footer">eM@g — Cartographie des lieux &bull; &copy; OpenStreetMap contributors</div>
 </body>
-</html>`);
+</html>`;
 
-      printWindow.document.close();
-      printWindow.onload = () => {
-        printWindow.focus();
-        printWindow.print();
-      };
+      printPreview.showHtml(html, {
+        title: 'eM@g — Double carte',
+        filename: 'carte-double.html',
+      });
     } finally {
       setPrinting(false);
     }
-  }, [localRadius]);
+  }, [localRadius, printPreview]);
 
   // ── Export PNG ──
   const handleExportPNG = useCallback(async () => {

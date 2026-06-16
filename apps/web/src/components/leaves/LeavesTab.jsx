@@ -44,7 +44,8 @@ import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
-import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
+import { sanitizePrintHtml } from '../../utils/safePrintWindow';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 import LeaveRequestForm from './LeaveRequestForm';
 import LeaveRequestsPanel from './LeaveRequestsPanel';
@@ -80,6 +81,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
   const isAdmin = !!currentUser?.isAdmin;
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const printPreview = usePrintPreview();
 
   // Data state
   const [myRequests, setMyRequests] = useState([]);
@@ -230,12 +232,10 @@ const LeavesTab = ({ persons = [], currentUser }) => {
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = openSanitizedPrintWindow(data.html);
-        if (!win) {
-          setError('Popup bloquée');
-          return;
-        }
-        setTimeout(() => win.print(), 500);
+        printPreview.showHtml(sanitizePrintHtml(data.html), {
+          title: 'Demande de congés',
+          filename: `conge-${id}.html`,
+        });
       }
     } catch {
       setError('Erreur génération PDF');

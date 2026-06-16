@@ -30,6 +30,7 @@ import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import { refreshBus } from '../../utils/refresh-bus';
 import Button from '../ui/Button';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import FicheSuivi from './FicheSuivi';
 import IncidentsSuiviPanel from './IncidentsSuiviPanel';
 import SynthesesPanel from './SynthesesPanel';
@@ -64,6 +65,7 @@ function SuiviPanel({
   isPersonalMode = false,
   onPersonalDataSaved = null,
 }) {
+  const printPreview = usePrintPreview();
   const [activeTab, setActiveTab] = useState('fiches');
   const [personnel, setPersonnel] = useState([]);
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -403,18 +405,19 @@ function SuiviPanel({
         return;
       }
       const blob = await api.exportSuiviBatchPdf(sheetIds);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `fiches-suivi-${selectedDate}-${sheetIds.length}fiches.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      printPreview.showPdf(
+        { blob },
+        {
+          title: `Fiches de suivi — ${selectedDate} (${sheetIds.length})`,
+          filename: `fiches-suivi-${selectedDate}-${sheetIds.length}fiches.pdf`,
+        },
+      );
     } catch {
       setError('Erreur export PDF batch');
     } finally {
       setBatchExporting(false);
     }
-  }, [selectedSheetIds, selectedDate, resolveSheetIds]);
+  }, [selectedSheetIds, selectedDate, resolveSheetIds, printPreview]);
 
   const handleBatchPrint = useCallback(async () => {
     if (selectedSheetIds.size === 0) return;
@@ -427,14 +430,19 @@ function SuiviPanel({
         return;
       }
       const blob = await api.printSuiviBatch(sheetIds);
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      printPreview.showPdf(
+        { blob },
+        {
+          title: `Impression fiches de suivi — ${selectedDate}`,
+          filename: `fiches-suivi-impression-${selectedDate}.pdf`,
+        },
+      );
     } catch {
       setError('Erreur impression batch');
     } finally {
       setBatchPrinting(false);
     }
-  }, [selectedSheetIds, resolveSheetIds]);
+  }, [selectedSheetIds, selectedDate, resolveSheetIds, printPreview]);
 
   const handleStartGroupResize = useCallback(
     (e) => {

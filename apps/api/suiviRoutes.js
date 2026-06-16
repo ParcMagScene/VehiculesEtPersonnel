@@ -882,7 +882,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ─── POST /api/suivi/batch/pdf ─── Export PDF multi-fiches (normal, sans recto-verso)
-  app.post('/api/suivi/batch/pdf', authenticateToken, (req, res) => {
+  app.post('/api/suivi/batch/pdf', authenticateToken, async (req, res) => {
     try {
       const { sheetIds } = req.body;
       if (!Array.isArray(sheetIds) || sheetIds.length === 0) {
@@ -901,7 +901,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       if (sheets.length === 0) {
         return res.status(404).json({ success: false, error: 'Aucune fiche trouvée' });
       }
-      generateBatchPdf(sheets, res);
+      await generateBatchPdf(sheets, res);
     } catch (error) {
       logger.error('POST /api/suivi/batch/pdf error:', error);
       if (!res.headersSent) {
@@ -911,7 +911,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ─── POST /api/suivi/batch/print ─── PDF impression recto-verso (Matin/Après-midi + filigrane)
-  app.post('/api/suivi/batch/print', authenticateToken, (req, res) => {
+  app.post('/api/suivi/batch/print', authenticateToken, async (req, res) => {
     try {
       const { sheetIds } = req.body;
       if (!Array.isArray(sheetIds) || sheetIds.length === 0) {
@@ -930,7 +930,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       if (sheets.length === 0) {
         return res.status(404).json({ success: false, error: 'Aucune fiche trouvée' });
       }
-      generateBatchPrintPdf(sheets, res);
+      await generateBatchPrintPdf(sheets, res);
     } catch (error) {
       logger.error('POST /api/suivi/batch/print error:', error);
       if (!res.headersSent) {
@@ -1144,13 +1144,13 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   );
 
   // ─── GET /api/suivi/:ficheId/pdf ─── Export PDF individuel
-  app.get('/api/suivi/:ficheId/pdf', authenticateToken, (req, res) => {
+  app.get('/api/suivi/:ficheId/pdf', authenticateToken, async (req, res) => {
     try {
       const full = getSheetWithEntries(req.params.ficheId);
       if (!full) {
         return res.status(404).json({ success: false, error: 'Fiche non trouvée' });
       }
-      generateSheetPdf(enrichSheetWithDayContext(full), res);
+      await generateSheetPdf(enrichSheetWithDayContext(full), res);
     } catch (error) {
       logger.error('GET /api/suivi/:ficheId/pdf error:', error);
       if (!res.headersSent) {

@@ -39,6 +39,7 @@ import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import DepotMap from '../vehicles/DepotMap';
 import MaintenanceReportModal from '../vehicles/MaintenanceReportModal';
 import CategoryCascadeFilter from './CategoryCascadeFilter';
@@ -58,7 +59,7 @@ import {
   SavTicketFormModal,
   SavTicketsList,
 } from './EquipmentSAV';
-import { printEquipmentSheet } from './EquipmentSheetPrint';
+import { buildEquipmentSheetHtml } from './EquipmentSheetPrint';
 import LocmatImportModal from './import/LocmatImportModal';
 import { useEquipment } from './useEquipment';
 
@@ -72,6 +73,7 @@ const EquipmentPanel = ({
   isMobile,
 }) => {
   const toast = useToast();
+  const printPreview = usePrintPreview();
   const [exportFamilyId, setExportFamilyId] = React.useState('');
   const {
     // Data
@@ -173,6 +175,23 @@ const EquipmentPanel = ({
     confirm,
     ConfirmDialogRenderer,
   } = useEquipment({ currentUser, initialTab });
+
+  const handlePrintSheet = React.useCallback(
+    async (eq) => {
+      try {
+        const result = await buildEquipmentSheetHtml(eq, photosList, logosList);
+        if (result) {
+          printPreview.showHtml(result.html, {
+            title: result.title,
+            filename: result.filename,
+          });
+        }
+      } catch (err) {
+        toast.error('Erreur impression fiche : ' + err.message);
+      }
+    },
+    [printPreview, toast, photosList, logosList],
+  );
 
   // ═══ RENDU ═══
   if (loading && equipment.length === 0) {
@@ -605,7 +624,7 @@ const EquipmentPanel = ({
               setShowEquipmentModal(true);
             }}
             onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
-            onPrintSheet={(eq) => printEquipmentSheet(eq, photosList, logosList)}
+            onPrintSheet={handlePrintSheet}
             isAdmin={isAdmin}
             onOpenDepotMap={(zoneId, eqName) =>
               setDepotMapModalZone({ zoneId, equipmentName: eqName })
@@ -681,7 +700,7 @@ const EquipmentPanel = ({
           setDialogTicket(t);
         }}
         onPrintLabel={isMobile ? undefined : (eq) => setLabelPrintEquipment(eq)}
-        onPrintSheet={isMobile ? undefined : (eq) => printEquipmentSheet(eq, photosList, logosList)}
+        onPrintSheet={isMobile ? undefined : handlePrintSheet}
         onSerialize={handleSerializeEquipment}
         onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
       />

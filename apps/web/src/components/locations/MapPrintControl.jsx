@@ -5,11 +5,13 @@
 import { Printer } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { exportMapPNG, printMap } from './map-print-utils';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
+import { buildMapPrintHtml, exportMapPNG } from './map-print-utils';
 
 export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g', onDualPrint }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  const printPreview = usePrintPreview();
 
   // Fermer le menu au clic extérieur
   useEffect(() => {
@@ -21,12 +23,17 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const handlePrint = (format, orientation) => {
+  const handlePrint = async (format, orientation) => {
     const container = mapContainerRef?.current?.querySelector('.emag-leaflet-map');
-    if (container) {
-      printMap(container, { format, orientation, title });
-    }
     setOpen(false);
+    if (!container) return;
+    const result = await buildMapPrintHtml(container, { format, orientation, title });
+    if (result) {
+      printPreview.showHtml(result.html, {
+        title: result.title,
+        filename: result.filename,
+      });
+    }
   };
 
   const handleExport = () => {

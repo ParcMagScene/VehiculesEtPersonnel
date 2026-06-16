@@ -3,19 +3,21 @@
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Capture le contenu d'un élément DOM en canvas via html2canvas-like technique
- * et déclenche l'impression du navigateur avec un style A4/A3.
+ * Génère le HTML A4/A3 d'impression d'une carte capturée.
+ * À ouvrir via PrintPreviewProvider (modal unifié) plutôt qu'une popup.
  *
  * @param {HTMLElement} mapContainer - Le conteneur de la carte à capturer
- * @param {'A4'|'A3'} format - Format papier
- * @param {'portrait'|'landscape'} orientation - Orientation
- * @param {string} title - Titre affiché sur l'impression
+ * @param {object} options
+ * @param {'A4'|'A3'} [options.format] - Format papier
+ * @param {'portrait'|'landscape'} [options.orientation] - Orientation
+ * @param {string} [options.title] - Titre affiché sur l'impression
+ * @returns {Promise<{ html: string, title: string, filename: string } | null>}
  */
-export async function printMap(
+export async function buildMapPrintHtml(
   mapContainer,
   { format = 'A4', orientation = 'landscape', title = 'Carte eM@g' } = {},
 ) {
-  if (!mapContainer) return;
+  if (!mapContainer) return null;
 
   // Dimensions en mm selon format
   const sizes = {
@@ -38,10 +40,6 @@ export async function printMap(
     imageUrl = await captureLeafletTiles(mapContainer);
   }
 
-  // Ouvrir une fenêtre d'impression
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
-
   const now = new Date().toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: '2-digit',
@@ -50,7 +48,7 @@ export async function printMap(
     minute: '2-digit',
   });
 
-  printWindow.document.write(`<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
@@ -105,8 +103,25 @@ export async function printMap(
     eM@g — Cartographie des lieux &bull; &copy; OpenStreetMap contributors
   </div>
 </body>
-</html>`);
+</html>`;
 
+  return {
+    html,
+    title,
+    filename: `carte-${title.replace(/[^a-z0-9-_]/gi, '_')}.html`,
+  };
+}
+
+/**
+ * @deprecated — Utiliser `buildMapPrintHtml` + `usePrintPreview().showHtml(...)`.
+ *   Conservé pour compat ; ouvre une popup browser.
+ */
+export async function printMap(mapContainer, options = {}) {
+  const result = await buildMapPrintHtml(mapContainer, options);
+  if (!result) return;
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+  printWindow.document.write(result.html);
   printWindow.document.close();
   printWindow.onload = () => {
     printWindow.focus();

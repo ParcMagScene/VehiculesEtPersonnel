@@ -35,7 +35,8 @@ import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
-import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
+import { sanitizePrintHtml } from '../../utils/safePrintWindow';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 
 const LeaveRequestsPanel = ({
@@ -45,6 +46,7 @@ const LeaveRequestsPanel = ({
   onNewRequest,
   onRefresh,
 }) => {
+  const printPreview = usePrintPreview();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -120,12 +122,10 @@ const LeaveRequestsPanel = ({
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = openSanitizedPrintWindow(data.html);
-        if (!win) {
-          setError('Popup bloquée');
-          return;
-        }
-        setTimeout(() => win.print(), 500);
+        printPreview.showHtml(sanitizePrintHtml(data.html), {
+          title: 'Demande de congés',
+          filename: `conge-${id}.html`,
+        });
       }
     } catch (err) {
       setError('Erreur génération PDF');

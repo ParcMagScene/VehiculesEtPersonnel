@@ -50,7 +50,8 @@ import { STATUS } from '../../constants';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
-import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
+import { sanitizePrintHtml } from '../../utils/safePrintWindow';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 
 // ═══════════════════════════════════════
@@ -139,6 +140,7 @@ const AdminSignaturePad = ({ onSign, _value }) => {
 // ═══════════════════════════════════════
 
 const LeaveValidationPanel = ({ onClose, onRefresh }) => {
+  const printPreview = usePrintPreview();
   const [tab, setTab] = useState('pending');
   const [requests, setRequests] = useState([]);
   const [conflicts, setConflicts] = useState([]);
@@ -246,12 +248,10 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = openSanitizedPrintWindow(data.html);
-        if (!win) {
-          setError('Popup bloquée');
-          return;
-        }
-        setTimeout(() => win.print(), 500);
+        printPreview.showHtml(sanitizePrintHtml(data.html), {
+          title: 'Demande de congés',
+          filename: `conge-${id}.html`,
+        });
       }
     } catch (err) {
       setError('Erreur génération PDF');

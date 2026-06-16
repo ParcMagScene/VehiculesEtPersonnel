@@ -50,6 +50,7 @@ function MobileApp({ onSwitchToDesktop }) {
     currentScreen,
     qrUid: routerQrUid,
     qrRef: routerQrRef,
+    params: routerParams,
     navigate,
     goBack,
   } = useMobileRouter();
@@ -611,7 +612,12 @@ function MobileApp({ onSwitchToDesktop }) {
 
         {currentScreen === 'suivi' && (
           <Suspense fallback={<MobileScreenFallback />}>
-            <MobileSuivi currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+            <MobileSuivi
+              currentUser={currentUser}
+              onBack={() => setCurrentScreen('home')}
+              initialDate={routerParams?.date || null}
+              initialPersonId={routerParams?.person || null}
+            />
           </Suspense>
         )}
 

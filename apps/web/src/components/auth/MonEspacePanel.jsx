@@ -39,11 +39,13 @@ import {
 import { STATUS } from '../../constants';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
-import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
+import { sanitizePrintHtml } from '../../utils/safePrintWindow';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from '../leaves/leaveConstants';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 
 const MonEspacePanel = ({ currentUser, onClose }) => {
+  const printPreview = usePrintPreview();
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -165,17 +167,16 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
 
   const fmtPeriod = (p) => (p === 'AM' ? 'matin' : 'après-midi');
 
-  // ─── Export PDF (ouvre dans un nouvel onglet prêt pour impression/enregistrement)
+  // ─── Export PDF (aperçu dans le modal unifié)
   const handleExportPdf = async (id) => {
     setPdfLoading(id);
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = openSanitizedPrintWindow(data.html);
-        if (!win) {
-          setError('Popup bloquée — autorisez les popups pour ce site');
-          return;
-        }
+        printPreview.showHtml(sanitizePrintHtml(data.html), {
+          title: 'Demande de congés',
+          filename: `conge-${id}.html`,
+        });
       }
     } catch (err) {
       setError('Erreur lors de la génération du PDF');
@@ -184,25 +185,16 @@ const MonEspacePanel = ({ currentUser, onClose }) => {
     }
   };
 
-  // ─── Impression directe
+  // ─── Impression directe (passe aussi par le modal d'aperçu)
   const handlePrint = async (id) => {
     setPdfLoading(id);
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = openSanitizedPrintWindow(data.html);
-        if (!win) {
-          setError('Popup bloquée — autorisez les popups pour ce site');
-          return;
-        }
-        // Attendre le chargement complet puis déclencher l'impression
-        win.onload = () => win.print();
-        // Fallback si onload ne se déclenche pas
-        setTimeout(() => {
-          try {
-            win.print();
-          } catch {}
-        }, 600);
+        printPreview.showHtml(sanitizePrintHtml(data.html), {
+          title: 'Demande de congés — Impression',
+          filename: `conge-${id}.html`,
+        });
       }
     } catch (err) {
       setError("Erreur lors de la préparation de l'impression");

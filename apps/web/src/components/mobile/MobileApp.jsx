@@ -527,7 +527,11 @@ function MobileApp({ onSwitchToDesktop }) {
 
         {currentScreen === 'tasks' && (
           <Suspense fallback={<MobileScreenFallback />}>
-            <MobileTasks currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+            <MobileTasks
+              currentUser={currentUser}
+              onBack={() => setCurrentScreen('home')}
+              initialDate={routerParams?.date || null}
+            />
           </Suspense>
         )}
 

@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
 
 import db from '../database.js';
 import logger from '../logger.js';
@@ -19,6 +20,35 @@ function isValidDate(str) {
 }
 function isValidTime(str) {
   return typeof str === 'string' && TIME_RE.test(str);
+}
+
+/**
+ * Construit l'URL absolue de la vue mobile "Tâches du jour" pour une date.
+ * Le hash router mobile gère la query string : `#/mobile/tasks?date=YYYY-MM-DD`.
+ * La vue MobileTasks ne permet que de cocher/décocher le statut (effectué).
+ */
+function buildTasksDayUrl(date) {
+  const root = (process.env.API_BASE_URL || 'http://localhost:4173').replace(/\/+$/, '');
+  return `${root}/#/mobile/tasks?date=${encodeURIComponent(date)}`;
+}
+
+/**
+ * Pré-génère le buffer PNG du QR code pour une date donnée.
+ * Retourne null en cas d'échec (le PDF est rendu sans QR).
+ */
+async function generateTasksDayQrBuffer(date) {
+  try {
+    return await QRCode.toBuffer(buildTasksDayUrl(date), {
+      errorCorrectionLevel: 'M',
+      type: 'png',
+      margin: 1,
+      width: 256,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+  } catch (e) {
+    logger.warn(`[tasks-pdf] QR generation failed: ${e?.message || e}`);
+    return null;
+  }
 }
 
 export function setupTaskRoutes(app, authenticateToken) {
@@ -97,7 +127,7 @@ export function setupTaskRoutes(app, authenticateToken) {
   // EXPORT PDF — Fiche journalière complète
   // ═══════════════════════════════════════════════
 
-  const handleExportPdf = (req, res) => {
+  const handleExportPdf = async (req, res) => {
     try {
       const { date, taskIds, eventIds } = req.query;
       const gcalEvents = req.body?.gcalEvents || [];
@@ -524,6 +554,10 @@ export function setupTaskRoutes(app, authenticateToken) {
       });
 
       // ── Générer le PDF (tout sur 1 page) ──
+      // QR code pré-généré (async) avant d'ouvrir le pipe : permet d'embarquer
+      // le PNG directement dans le header sans attente côté stream.
+      const qrBuffer = await generateTasksDayQrBuffer(date);
+
       const doc = new PDFDocument({
         size: 'A4',
         margins: { top: 25, bottom: 20, left: 25, right: 25 },
@@ -549,7 +583,8 @@ export function setupTaskRoutes(app, authenticateToken) {
       );
       const totalSections = nonEmptySections.length;
       const FREE_LINES = Math.max(2, Math.min(5, 6 - Math.floor(totalItems / 12)));
-      const HEADER_H = 38;
+      // HEADER_H inclut titre + date + total + QR code (60x60) + caption + marges.
+      const HEADER_H = 78;
       const FOOTER_H = 12;
       const BANNER_H = 15;
       const SECTION_GAP = 2;
@@ -595,6 +630,29 @@ export function setupTaskRoutes(app, authenticateToken) {
       };
 
       // ── EN-TÊTE (compact) ──
+      const headerStartY = doc.y;
+
+      // QR code en haut à droite (renvoie vers /#/mobile/tasks?date=...)
+      const QR_SIZE = 60;
+      const qrX = leftX + pageW - QR_SIZE;
+      const qrY = headerStartY;
+      if (qrBuffer) {
+        try {
+          doc.image(qrBuffer, qrX, qrY, { width: QR_SIZE, height: QR_SIZE });
+          doc
+            .fontSize(5.5)
+            .fillColor('#666666')
+            .text('Scanner pour cocher', qrX, qrY + QR_SIZE + 1, {
+              width: QR_SIZE,
+              align: 'center',
+              lineBreak: false,
+            });
+          doc.fillColor('#000000');
+        } catch (e) {
+          logger.warn(`[tasks-pdf] QR draw failed: ${e?.message || e}`);
+        }
+      }
+
       doc.fontSize(16).font('Helvetica-Bold').text('Fiche du jour', { align: 'center' });
       doc.moveDown(0.15);
       doc
@@ -607,6 +665,9 @@ export function setupTaskRoutes(app, authenticateToken) {
         .fillColor('#999999')
         .text(`${totalItems} élément${totalItems > 1 ? 's' : ''}`, { align: 'center' });
       doc.fillColor('#000000');
+      // S'assurer que la barre de séparation passe sous le QR code.
+      const qrBottom = qrY + QR_SIZE + 8;
+      if (doc.y < qrBottom) doc.y = qrBottom;
       doc.moveDown(0.3);
       doc
         .moveTo(leftX, doc.y)

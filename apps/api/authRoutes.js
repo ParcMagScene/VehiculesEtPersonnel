@@ -847,14 +847,10 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
             error: 'Vérification échouée — code PIN ou mot de passe incorrect',
           });
         }
-      } else {
-        // Pas encore de PIN — doit fournir le mot de passe
-        if (!currentPassword) {
-          return res.status(400).json({
-            success: false,
-            error: 'Le mot de passe actuel est requis pour définir un code PIN',
-          });
-        }
+      }
+      // Premier setup : pas de PIN existant → la session authentifiée (JWT)
+      // suffit. Si un currentPassword est fourni, on le vérifie quand même.
+      else if (currentPassword) {
         const pwOk = await bcrypt.compare(currentPassword, user.password_hash);
         if (!pwOk) {
           return res.status(401).json({ success: false, error: 'Mot de passe incorrect' });

@@ -179,9 +179,7 @@ function MobileLogin({ onLogin }) {
         <AccessRequestModal
           onClose={() => setShowAccessRequest(false)}
           onSuccess={() => {
-            toast.success(
-              "Demande envoyée avec succès ! Vous recevrez un email dès qu'un administrateur aura validé votre demande.",
-            );
+            toast.success('Demande envoyée. Un administrateur la validera prochainement.');
           }}
         />
       )}

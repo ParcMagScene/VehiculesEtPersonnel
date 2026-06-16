@@ -2006,21 +2006,9 @@
   .eq-detail-meta-row {
     justify-content: center;
   }
-  .eq-dialog-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
   .eq-actions-group {
     justify-content: center;
-  }
-  .eq-actions-group + .eq-actions-group {
-    padding-left: 0;
-    border-left: none;
-    padding-top: var(--space-2);
-    border-top: 1px solid var(--theme-border);
-  }
-  .eq-dialog-actions > .eq-btn-danger {
-    margin-left: 0;
+    flex-direction: column;
   }
 
   /* Menus cascadés empilés sur mobile */
@@ -2931,30 +2919,10 @@
   white-space: nowrap;
 }
 
-.eq-dialog-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: nowrap;
-  border: 1px solid var(--theme-border);
-  border-radius: var(--radius-md-lg);
-  padding: 14px var(--space-4);
-  background: var(--theme-bg-card);
-}
-
 .eq-actions-group {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
-}
-
-.eq-actions-group + .eq-actions-group {
-  padding-left: 10px;
-  border-left: 1px solid var(--theme-border);
-}
-
-.eq-dialog-actions > .eq-btn-danger {
-  margin-left: auto;
 }
 
 /* ═══ DARK MODE – Slide panel ═══ */
@@ -2989,10 +2957,6 @@
 
 [data-theme='dark'] .eq-dialog-name {
   color: var(--theme-text-inverse);
-}
-
-[data-theme='dark'] .eq-dialog-actions {
-  border-color: var(--theme-border);
 }
 
 [data-theme='dark'] .eq-detail-title-row h2,

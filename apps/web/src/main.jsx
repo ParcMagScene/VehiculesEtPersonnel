@@ -6,6 +6,7 @@ import './theme-vscode.css';
 import './theme-density.css';
 import './theme-tv.css';
 import './index.css';
+import './styles/person-sidebar.css';
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';

@@ -616,50 +616,48 @@ const EquipmentDetailDialog = ({
           categories={categories}
         />
       </ModalBody>
-      <ModalFooter className="eq-dialog-footer">
-        <div className="eq-dialog-actions">
-          <div className="eq-actions-group">
-            <Button variant="primary" onClick={() => onEdit(eq)}>
-              <Edit2 size={14} /> Modifier
-            </Button>
-            {onCreateTicket && (
-              <Button variant="secondary" onClick={() => onCreateTicket(eq)}>
-                <Wrench size={14} /> Ticket SAV
-              </Button>
-            )}
-            {onOpenDepotMap && (
-              <Button
-                variant="secondary"
-                onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}
-              >
-                <MapPin size={14} /> Localisation
-              </Button>
-            )}
-            {isAdmin &&
-              onSerialize &&
-              ((eq.stockQuantity || eq.stock_quantity || 1) > 1 || !eq.uid) && (
-                <Button
-                  variant="secondary"
-                  onClick={() => onSerialize(eq)}
-                  title={
-                    (eq.stockQuantity || eq.stock_quantity || 1) > 1
-                      ? `Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`
-                      : 'Attribuer un UID unique à cet équipement'
-                  }
-                >
-                  <Package size={14} /> Sérialiser
-                  {(eq.stockQuantity || eq.stock_quantity || 1) > 1
-                    ? ` (${eq.stockQuantity || eq.stock_quantity})`
-                    : ''}
-                </Button>
-              )}
-          </div>
-          {isAdmin && onDelete && (
-            <Button variant="danger" onClick={() => onDelete(eq.id)}>
-              <Trash2 size={14} /> Supprimer
+      <ModalFooter className="eq-dialog-footer" align="between">
+        <div className="eq-actions-group">
+          <Button variant="primary" onClick={() => onEdit(eq)}>
+            <Edit2 size={14} /> Modifier
+          </Button>
+          {onCreateTicket && (
+            <Button variant="secondary" onClick={() => onCreateTicket(eq)}>
+              <Wrench size={14} /> Ticket SAV
             </Button>
           )}
+          {onOpenDepotMap && (
+            <Button
+              variant="secondary"
+              onClick={() => onOpenDepotMap(eq.location_zone || eq.locationZone || '', eq.name)}
+            >
+              <MapPin size={14} /> Localisation
+            </Button>
+          )}
+          {isAdmin &&
+            onSerialize &&
+            ((eq.stockQuantity || eq.stock_quantity || 1) > 1 || !eq.uid) && (
+              <Button
+                variant="secondary"
+                onClick={() => onSerialize(eq)}
+                title={
+                  (eq.stockQuantity || eq.stock_quantity || 1) > 1
+                    ? `Scinder en ${eq.stockQuantity || eq.stock_quantity} entités individuelles avec UID`
+                    : 'Attribuer un UID unique à cet équipement'
+                }
+              >
+                <Package size={14} /> Sérialiser
+                {(eq.stockQuantity || eq.stock_quantity || 1) > 1
+                  ? ` (${eq.stockQuantity || eq.stock_quantity})`
+                  : ''}
+              </Button>
+            )}
         </div>
+        {isAdmin && onDelete && (
+          <Button variant="danger" onClick={() => onDelete(eq.id)}>
+            <Trash2 size={14} /> Supprimer
+          </Button>
+        )}
       </ModalFooter>
     </Modal>
   );

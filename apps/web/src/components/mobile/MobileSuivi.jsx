@@ -108,7 +108,7 @@ function MobileSuivi({ currentUser, initialDate = null, initialPersonId = null }
           period: addPeriod,
           time_spent: addTime ? parseInt(addTime, 10) : 0,
           comment: addComment.trim(),
-          completed: 0,
+          completed: 1,
         },
       ];
       await api.updateSuiviSheet(personId, targetDate, {

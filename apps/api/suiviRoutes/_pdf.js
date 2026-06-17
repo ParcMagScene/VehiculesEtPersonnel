@@ -6,7 +6,7 @@
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 
-import { decToHM, formatDateFR, hasOccupationContext, isPastPeriod } from './_helpers.js';
+import { decToHM, formatDateFR, isUnreportedPeriodEntries } from './_helpers.js';
 import { attachPdfSanitizer } from './_pdf-sanitize.js';
 
 export const PDF_MARGIN = 40;
@@ -144,16 +144,41 @@ export function drawPdfHeader(doc, sheet, subtitle) {
     doc.text(subtitle, PDF_TABLE_LEFT, doc.y, { width: PDF_TABLE_WIDTH, align: 'center' });
   }
 
-  // Affaires planning du jour
-  const affaires = sheet.day_context?.planning_affaires || [];
+  // Contexte du jour (toujours affiché)
+  const ctx = sheet.day_context || {};
+  const contextParts = [];
+  if (Array.isArray(ctx.availabilities) && ctx.availabilities.length > 0) {
+    const labels = [
+      ...new Set(ctx.availabilities.map((a) => a?.type_label || a?.type).filter(Boolean)),
+    ];
+    if (labels.length > 0) contextParts.push(`Disponibilites: ${labels.join(', ')}`);
+  }
+  if (Array.isArray(ctx.missions) && ctx.missions.length > 0) {
+    contextParts.push(`Missions: ${ctx.missions.length}`);
+  }
+  const affaires = Array.isArray(ctx.planning_affaires) ? ctx.planning_affaires : [];
   if (affaires.length > 0) {
+    const labels = affaires
+      .map((a) => {
+        const num = String(a?.affaire_num || '').trim();
+        const label = String(a?.affaire_label || '').trim();
+        if (!num && !label) return '';
+        if (!label || label.toLowerCase() === num.toLowerCase()) return num || label;
+        return `${num} (${label})`;
+      })
+      .filter(Boolean);
+    if (labels.length > 0) contextParts.push(`Affaires: ${labels.join(', ')}`);
+  }
+  if (contextParts.length === 0) contextParts.push('Aucun contexte declare');
+
+  {
     doc.moveDown(0.4);
     const blockX = PDF_TABLE_LEFT;
     const blockW = PDF_TABLE_WIDTH;
     const blockY = doc.y;
     const labelH = 16;
-    const rowH = 15;
-    const totalH = labelH + affaires.length * rowH + 4;
+    const rowH = 13;
+    const totalH = labelH + contextParts.length * rowH + 4;
 
     // Fond bleu pâle
     doc.rect(blockX, blockY, blockW, totalH).fillColor('#eef4fb').fill();
@@ -161,16 +186,13 @@ export function drawPdfHeader(doc, sheet, subtitle) {
 
     // Étiquette
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e40af');
-    doc.text('Affaire(s) du planning :', blockX + 6, blockY + 4, { lineBreak: false });
+    doc.text('Contexte du jour :', blockX + 6, blockY + 4, { lineBreak: false });
 
-    // Ligne par affaire
+    // Lignes contexte
     doc.font('Helvetica').fillColor('#1e3a5f');
-    affaires.forEach((a, idx) => {
+    contextParts.forEach((text, idx) => {
       const rowY = blockY + labelH + idx * rowH;
-      const label = a.affaire_label || a.affaire_num;
-      const client = a.affaire_client ? ` — ${a.affaire_client}` : '';
-      const type = a.affaire_type ? ` [${a.affaire_type}]` : '';
-      doc.fontSize(8).text(`• ${label}${client}${type}`, blockX + 12, rowY, {
+      doc.fontSize(8).text(`• ${text}`, blockX + 12, rowY, {
         width: blockW - 18,
         lineBreak: false,
         ellipsis: true,
@@ -200,14 +222,14 @@ export function drawPdfTableHeader(doc, y) {
 
 export function drawPdfNonRenseigneeNotice(doc, y) {
   const noticeH = 26;
-  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, noticeH).fillColor('#fef9c3').fill();
+  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, noticeH).fillColor('#fee2e2').fill();
   doc
     .rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, noticeH)
     .lineWidth(0.5)
-    .strokeColor('#fbbf24')
+    .strokeColor('#ef4444')
     .stroke();
-  doc.fontSize(9).font('Helvetica-Oblique').fillColor('#92400e');
-  doc.text('Activite non-renseignee a ce jour pour cette periode', PDF_TABLE_LEFT + 8, y + 8, {
+  doc.fontSize(9).font('Helvetica-Bold').fillColor('#991b1b');
+  doc.text('Non renseignee pour cette periode', PDF_TABLE_LEFT + 8, y + 8, {
     width: PDF_TABLE_WIDTH - 16,
     lineBreak: false,
   });
@@ -366,6 +388,8 @@ export function generateNormalSheetPdf(sheet, doc) {
   const allEntries = sheet.entries || [];
   const amEntries = allEntries.filter((e) => e.period === 'AM');
   const pmEntries = allEntries.filter((e) => e.period === 'PM');
+  const unreportedAm = isUnreportedPeriodEntries(amEntries);
+  const unreportedPm = isUnreportedPeriodEntries(pmEntries);
 
   drawPdfHeader(doc, sheet, null);
 
@@ -375,7 +399,7 @@ export function generateNormalSheetPdf(sheet, doc) {
   doc.moveDown(0.3);
   let y = drawPdfTableHeader(doc, doc.y);
   y = renderNormalEntries(doc, amEntries, y);
-  if (amEntries.length === 0 && isPastPeriod(sheet.date, 'AM') && !hasOccupationContext(sheet)) {
+  if (unreportedAm) {
     y = drawPdfNonRenseigneeNotice(doc, y);
   }
 
@@ -391,7 +415,7 @@ export function generateNormalSheetPdf(sheet, doc) {
   doc.moveDown(0.3);
   y = drawPdfTableHeader(doc, doc.y);
   y = renderNormalEntries(doc, pmEntries, y);
-  if (pmEntries.length === 0 && isPastPeriod(sheet.date, 'PM') && !hasOccupationContext(sheet)) {
+  if (unreportedPm) {
     y = drawPdfNonRenseigneeNotice(doc, y);
   }
 
@@ -439,12 +463,7 @@ export function renderPrintHalfSection(doc, sheet, entries, label, period, top, 
     y += rowHeight;
   }
 
-  if (
-    entries.length === 0 &&
-    period &&
-    isPastPeriod(sheet.date, period) &&
-    !hasOccupationContext(sheet)
-  ) {
+  if (period && isUnreportedPeriodEntries(entries)) {
     y = drawPdfNonRenseigneeNotice(doc, y);
   }
 
@@ -697,9 +716,7 @@ export function generateSynthesePdf(synthese, title, res) {
       const c = sh.day_context || {};
       const hasCtx =
         c.has_unavailability || c.has_leave || c.has_mission || c.has_enterprise_presence;
-      return (
-        sh.stats?.not_done > 0 || (!hasCtx && (sh.stats?.unreported_am || sh.stats?.unreported_pm))
-      );
+      return sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm || hasCtx;
     });
 
     ensureSpace(46 + pg.sheets.length * 14);
@@ -726,15 +743,8 @@ export function generateSynthesePdf(synthese, title, res) {
     let odd = false;
     const sortedSheets = [...pg.sheets].sort((a, b) => a.date.localeCompare(b.date));
     for (const sh of sortedSheets) {
-      const shCtx = sh.day_context || {};
-      const shHasContext =
-        shCtx.has_unavailability ||
-        shCtx.has_leave ||
-        shCtx.has_mission ||
-        shCtx.has_enterprise_presence;
       const rowBg =
-        sh.stats?.not_done > 0 ||
-        (!shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm))
+        sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm
           ? '#fef2f2'
           : odd
             ? '#f8fafc'
@@ -747,22 +757,18 @@ export function generateSynthesePdf(synthese, title, res) {
       const pmTime = pmEntries.reduce((acc, e) => acc + (e.time_spent || 0), 0);
 
       const ctx = sh.day_context || {};
-      const hasContext =
-        ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
 
-      const amCell =
-        sh.stats?.unreported_am && !hasContext
-          ? '⚠ Non renseignée'
-          : `${amEntries.length} tâche(s) — ${decToHM(amTime)}`;
-      const pmCell =
-        sh.stats?.unreported_pm && !hasContext
-          ? '⚠ Non renseignée'
-          : `${pmEntries.length} tâche(s) — ${decToHM(pmTime)}`;
+      const amCell = sh.stats?.unreported_am
+        ? '⚠ Non renseignée'
+        : `${amEntries.length} tâche(s) — ${decToHM(amTime)}`;
+      const pmCell = sh.stats?.unreported_pm
+        ? '⚠ Non renseignée'
+        : `${pmEntries.length} tâche(s) — ${decToHM(pmTime)}`;
 
       const alertParts = [];
       if (sh.stats?.not_done > 0) alertParts.push(`${sh.stats.not_done} non faite(s)`);
-      if (sh.stats?.unreported_am && !hasContext) alertParts.push('AM non-renseignée');
-      if (sh.stats?.unreported_pm && !hasContext) alertParts.push('PM non-renseignée');
+      if (sh.stats?.unreported_am) alertParts.push('AM non-renseignée');
+      if (sh.stats?.unreported_pm) alertParts.push('PM non-renseignée');
       // Contexte : indisponibilités + missions
       for (const av of ctx.availabilities || []) {
         alertParts.push(av.type_label || av.type);
@@ -792,10 +798,7 @@ export function generateSynthesePdf(synthese, title, res) {
       ];
 
       doc.rect(LEFT, y, USABLE_W, 14).fillColor(rowBg).fill();
-      const textColor =
-        !shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm)
-          ? '#991b1b'
-          : '#111111';
+      const textColor = sh.stats?.unreported_am || sh.stats?.unreported_pm ? '#991b1b' : '#111111';
       doc.fillColor(textColor);
       let x = LEFT;
       for (let i = 0; i < rowVals.length; i++) {

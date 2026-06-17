@@ -28,7 +28,7 @@ function newEntry(period = 'AM', sortOrder = 0) {
     task: '',
     time_spent: 0,
     comment: '',
-    completed: null,
+    completed: 1,
     task_assignment_id: null,
     recurring_task_id: null,
     sort_order: sortOrder,

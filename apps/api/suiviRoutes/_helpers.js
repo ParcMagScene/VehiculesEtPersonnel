@@ -195,6 +195,28 @@ export function isPastPeriod(dateStr, period) {
   return false;
 }
 
+function normalizeNonRenseigneLabel(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function isNonRenseigneePlaceholderEntry(entry) {
+  const minutes = Number(entry?.time_spent) || 0;
+  if (minutes !== 0) return false;
+  const label = normalizeNonRenseigneLabel(entry?.task);
+  return label === 'non renseigne' || label === 'non renseignee';
+}
+
+export function isUnreportedPeriodEntries(entries) {
+  const list = Array.isArray(entries) ? entries : [];
+  if (list.length === 0) return true;
+  return list.every((entry) => isNonRenseigneePlaceholderEntry(entry));
+}
+
 // Retourne true si la fiche a un contexte d'occupation (congé, mission, présence entreprise)
 export function hasOccupationContext(sheet) {
   const ctx = sheet.day_context || {};
@@ -535,6 +557,28 @@ export function getAffaireIncidentBase(affaireNum) {
 }
 
 export function computeIncidentSynthese(periodStart, periodEnd) {
+  const toIsoWeekKey = (dateStr) => {
+    const d = new Date(`${dateStr}T12:00:00`);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  };
+
+  const enumerateDates = (start, end) => {
+    const dates = [];
+    const cur = new Date(`${start}T12:00:00`);
+    const limit = new Date(`${end}T12:00:00`);
+    if (Number.isNaN(cur.getTime()) || Number.isNaN(limit.getTime())) return dates;
+    while (cur <= limit) {
+      dates.push(cur.toISOString().slice(0, 10));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+  };
+
   const tickets = db
     .prepare(
       `SELECT *
@@ -627,13 +671,49 @@ export function computeIncidentSynthese(periodStart, periodEnd) {
     w.incidents += tEntries.length;
   }
 
+  // Incidents automatiques: périodes AM/PM non renseignées dans les fiches suivi.
+  const rangeDates = enumerateDates(periodStart, periodEnd);
+  let autoUnreportedIncidents = 0;
+  const autoWeeksCount = new Map();
+  if (rangeDates.length > 0) {
+    const suiviSynthese = buildSynthese(rangeDates);
+    for (const anomaly of suiviSynthese.summary?.anomalies || []) {
+      const parts = Array.isArray(anomaly.unreported_periods) ? anomaly.unreported_periods : [];
+      if (parts.length === 0) continue;
+      autoUnreportedIncidents += parts.length;
+      const wk = toIsoWeekKey(anomaly.date);
+      if (wk) autoWeeksCount.set(wk, (autoWeeksCount.get(wk) || 0) + parts.length);
+    }
+  }
+
+  for (const [wk, count] of autoWeeksCount.entries()) {
+    if (!byWeek.has(wk)) {
+      byWeek.set(wk, { week_key: wk, tickets: 0, incidents: 0 });
+    }
+    byWeek.get(wk).incidents += count;
+  }
+
+  if (autoUnreportedIncidents > 0) {
+    byAffaire.set('__SUIVI_NON_RENSEIGNE__', {
+      affaire_num: 'SUIVI-NON-RENSEIGNE',
+      affaire_name: 'Suivi - Non renseigne',
+      tickets: 0,
+      incidents: autoUnreportedIncidents,
+      weeks: new Set(autoWeeksCount.keys()),
+      is_tournee: false,
+    });
+    incidentTypeCounts.unreported_period =
+      (incidentTypeCounts.unreported_period || 0) + autoUnreportedIncidents;
+  }
+
   return {
     period: { start: periodStart, end: periodEnd },
     summary: {
       total_tickets: tickets.length,
-      total_incidents: entries.length,
+      total_incidents: entries.length + autoUnreportedIncidents,
       affaires_count: byAffaire.size,
       incident_type_counts: incidentTypeCounts,
+      auto_unreported_incidents: autoUnreportedIncidents,
     },
     by_affaire: Array.from(byAffaire.values())
       .map((a) => ({ ...a, weeks: Array.from(a.weeks).sort() }))
@@ -700,8 +780,8 @@ export function buildSynthese(dates, personId) {
 
     const amEntries = sheetEntries.filter((e) => e.period === 'AM');
     const pmEntries = sheetEntries.filter((e) => e.period === 'PM');
-    const unreportedAm = amEntries.length === 0 && isPastPeriod(s.date, 'AM');
-    const unreportedPm = pmEntries.length === 0 && isPastPeriod(s.date, 'PM');
+    const unreportedAm = isUnreportedPeriodEntries(amEntries);
+    const unreportedPm = isUnreportedPeriodEntries(pmEntries);
     const unreportedParts = [];
     if (unreportedAm) unreportedParts.push('AM');
     if (unreportedPm) unreportedParts.push('PM');
@@ -712,16 +792,15 @@ export function buildSynthese(dates, personId) {
     const hasContext =
       ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
 
-    // Les périodes non renseignées ne sont pas des anomalies si la personne est en indispo ou en mission
-    const anomalyUnreportedParts = hasContext ? [] : unreportedParts;
-
-    if ((notDone > 0 && s.status !== 'draft') || anomalyUnreportedParts.length > 0) {
+    // Les périodes non renseignées (vide ou "Non renseigné" à 0 min) sont
+    // toujours remontées comme incident/anomalie de suivi.
+    if ((notDone > 0 && s.status !== 'draft') || unreportedParts.length > 0) {
       anomalies.push({
         date: s.date,
         person: `${s.first_name} ${s.last_name}`,
         person_id: s.person_id,
         not_done: notDone,
-        unreported_periods: anomalyUnreportedParts,
+        unreported_periods: unreportedParts,
       });
     }
 

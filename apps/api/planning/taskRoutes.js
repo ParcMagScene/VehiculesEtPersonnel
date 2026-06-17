@@ -653,17 +653,31 @@ export function setupTaskRoutes(app, authenticateToken) {
         }
       }
 
-      doc.fontSize(16).font('Helvetica-Bold').text('Fiche du jour', { align: 'center' });
+      // Réinitialiser le curseur après le QR (doc.image le déplace).
+      // Centrer titre/date/éléments dans la zone gauche (hors QR).
+      const titleAreaW = pageW - QR_SIZE - 8;
+      doc.x = leftX;
+      doc.y = headerStartY;
+      doc
+        .fontSize(16)
+        .font('Helvetica-Bold')
+        .text('Fiche du jour', leftX, headerStartY, { width: titleAreaW, align: 'center' });
       doc.moveDown(0.15);
       doc
         .fontSize(10)
         .font('Helvetica')
-        .text(dateFr.charAt(0).toUpperCase() + dateFr.slice(1), { align: 'center' });
+        .text(dateFr.charAt(0).toUpperCase() + dateFr.slice(1), leftX, doc.y, {
+          width: titleAreaW,
+          align: 'center',
+        });
       doc.moveDown(0.1);
       doc
         .fontSize(7)
         .fillColor('#999999')
-        .text(`${totalItems} élément${totalItems > 1 ? 's' : ''}`, { align: 'center' });
+        .text(`${totalItems} élément${totalItems > 1 ? 's' : ''}`, leftX, doc.y, {
+          width: titleAreaW,
+          align: 'center',
+        });
       doc.fillColor('#000000');
       // S'assurer que la barre de séparation passe sous le QR code.
       const qrBottom = qrY + QR_SIZE + 8;

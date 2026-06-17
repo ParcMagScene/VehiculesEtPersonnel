@@ -381,7 +381,7 @@ export function drawPdfSavEntriesSection(doc, topY) {
   const COL_H = 18;
   const ROW_H = 14;
   const ROWS = 6;
-  const COLS = [32, 220, 230, 33]; // N. | Équipement | Panne | N° Série/eMag
+  const COLS = [32, 165, 230, 88]; // N. | Équipement | Panne | N° Série/eMag
   const HEADERS = ['N.', 'Équipement', 'Panne', 'N° Série/eMag'];
 
   const y = topY;

@@ -540,22 +540,16 @@ export function renderPrintHalfSection(doc, sheet, entries, label, period, top, 
   // Reserver une bande basse pour le mini-total de la section
   const FOOTER_RESERVE = 14;
   const entriesBottom = bottom - FOOTER_RESERVE;
-  const hasExcusingContext = hasExcusingContextForUnreported(sheet);
-  const isUnreportedSection = period && !hasExcusingContext && isUnreportedPeriodEntries(entries);
-  const visibleEntries = isUnreportedSection ? [] : entries;
-
+  // En mode impression, on affiche toujours les lignes disponibles,
+  // sans bandeau "Non renseignée" (fiches vides = lignes filigrane vides).
   const maxRowsPerPeriod = 7;
-  const entriesForPrint = visibleEntries.slice(0, maxRowsPerPeriod);
+  const entriesForPrint = entries.slice(0, maxRowsPerPeriod);
 
   for (let i = 0; i < entriesForPrint.length; i++) {
     const rowHeight = getPdfEntryRowHeight(doc, entriesForPrint[i]);
     if (y + rowHeight > entriesBottom) break;
     drawPdfEntryRow(doc, entriesForPrint[i], i + 1, y, rowHeight);
     y += rowHeight;
-  }
-
-  if (isUnreportedSection) {
-    y = drawPdfNonRenseigneeNotice(doc, y);
   }
 
   drawPdfWatermarkRows(doc, y, entriesBottom);

@@ -6,7 +6,12 @@
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 
-import { decToHM, formatDateFR, isUnreportedPeriodEntries } from './_helpers.js';
+import {
+  decToHM,
+  formatDateFR,
+  hasExcusingContextForUnreported,
+  isUnreportedPeriodEntries,
+} from './_helpers.js';
 import { attachPdfSanitizer } from './_pdf-sanitize.js';
 
 export const PDF_MARGIN = 40;
@@ -388,8 +393,9 @@ export function generateNormalSheetPdf(sheet, doc) {
   const allEntries = sheet.entries || [];
   const amEntries = allEntries.filter((e) => e.period === 'AM');
   const pmEntries = allEntries.filter((e) => e.period === 'PM');
-  const unreportedAm = isUnreportedPeriodEntries(amEntries);
-  const unreportedPm = isUnreportedPeriodEntries(pmEntries);
+  const hasExcusingContext = hasExcusingContextForUnreported(sheet);
+  const unreportedAm = !hasExcusingContext && isUnreportedPeriodEntries(amEntries);
+  const unreportedPm = !hasExcusingContext && isUnreportedPeriodEntries(pmEntries);
 
   drawPdfHeader(doc, sheet, null);
 
@@ -398,9 +404,10 @@ export function generateNormalSheetPdf(sheet, doc) {
   doc.text('MATIN (AM)', PDF_TABLE_LEFT, doc.y);
   doc.moveDown(0.3);
   let y = drawPdfTableHeader(doc, doc.y);
-  y = renderNormalEntries(doc, amEntries, y);
   if (unreportedAm) {
     y = drawPdfNonRenseigneeNotice(doc, y);
+  } else {
+    y = renderNormalEntries(doc, amEntries, y);
   }
 
   // Section Apres-midi
@@ -414,9 +421,10 @@ export function generateNormalSheetPdf(sheet, doc) {
   doc.text('APRES-MIDI (PM)', PDF_TABLE_LEFT, y);
   doc.moveDown(0.3);
   y = drawPdfTableHeader(doc, doc.y);
-  y = renderNormalEntries(doc, pmEntries, y);
   if (unreportedPm) {
     y = drawPdfNonRenseigneeNotice(doc, y);
+  } else {
+    y = renderNormalEntries(doc, pmEntries, y);
   }
 
   // Notes
@@ -455,26 +463,29 @@ export function renderPrintHalfSection(doc, sheet, entries, label, period, top, 
   // Reserver une bande basse pour le mini-total de la section
   const FOOTER_RESERVE = 14;
   const entriesBottom = bottom - FOOTER_RESERVE;
+  const hasExcusingContext = hasExcusingContextForUnreported(sheet);
+  const isUnreportedSection = period && !hasExcusingContext && isUnreportedPeriodEntries(entries);
+  const visibleEntries = isUnreportedSection ? [] : entries;
 
-  for (let i = 0; i < entries.length; i++) {
-    const rowHeight = getPdfEntryRowHeight(doc, entries[i]);
+  for (let i = 0; i < visibleEntries.length; i++) {
+    const rowHeight = getPdfEntryRowHeight(doc, visibleEntries[i]);
     if (y + rowHeight > entriesBottom) break;
-    drawPdfEntryRow(doc, entries[i], i + 1, y, rowHeight);
+    drawPdfEntryRow(doc, visibleEntries[i], i + 1, y, rowHeight);
     y += rowHeight;
   }
 
-  if (period && isUnreportedPeriodEntries(entries)) {
+  if (isUnreportedSection) {
     y = drawPdfNonRenseigneeNotice(doc, y);
   }
 
   drawPdfWatermarkRows(doc, y, entriesBottom);
 
   // Mini-total de section
-  const totalTime = entries.reduce((s, e) => s + (e.time_spent || 0), 0);
-  const totalDone = entries.filter((e) => e.completed === 1).length;
+  const totalTime = visibleEntries.reduce((s, e) => s + (e.time_spent || 0), 0);
+  const totalDone = visibleEntries.filter((e) => e.completed === 1).length;
   doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e3a5f');
   doc.text(
-    `${label} — ${totalDone}/${entries.length} effectuee(s) — ${decToHM(totalTime)}`,
+    `${label} — ${totalDone}/${visibleEntries.length} effectuee(s) — ${decToHM(totalTime)}`,
     PDF_TABLE_LEFT,
     bottom - 11,
     {
@@ -713,10 +724,7 @@ export function generateSynthesePdf(synthese, title, res) {
     const totDone = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.done || 0), 0);
     const totTasks = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.total || 0), 0);
     const hasWarning = pg.sheets.some((sh) => {
-      const c = sh.day_context || {};
-      const hasCtx =
-        c.has_unavailability || c.has_leave || c.has_mission || c.has_enterprise_presence;
-      return sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm || hasCtx;
+      return sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm;
     });
 
     ensureSpace(46 + pg.sheets.length * 14);

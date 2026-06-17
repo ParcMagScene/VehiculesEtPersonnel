@@ -228,6 +228,14 @@ export function hasOccupationContext(sheet) {
   );
 }
 
+// Contexte exonérant le "Non renseigné" : indisponibilités métier
+// (congé, formation, maladie, etc.), mission ou affaire assignée.
+// Le seul contexte "Entreprise" ne doit PAS exonérer.
+export function hasExcusingContextForUnreported(sheet) {
+  const ctx = sheet?.day_context || {};
+  return !!(ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_planning_affaire);
+}
+
 export const AVAILABILITY_TYPE_LABELS = {
   unavailable: 'Indisponible',
   conge_paye: 'Congé payé',
@@ -780,17 +788,17 @@ export function buildSynthese(dates, personId) {
 
     const amEntries = sheetEntries.filter((e) => e.period === 'AM');
     const pmEntries = sheetEntries.filter((e) => e.period === 'PM');
-    const unreportedAm = isUnreportedPeriodEntries(amEntries);
-    const unreportedPm = isUnreportedPeriodEntries(pmEntries);
-    const unreportedParts = [];
-    if (unreportedAm) unreportedParts.push('AM');
-    if (unreportedPm) unreportedParts.push('PM');
-
+    const rawUnreportedAm = isUnreportedPeriodEntries(amEntries);
+    const rawUnreportedPm = isUnreportedPeriodEntries(pmEntries);
     // Enrichir avec le contexte avant de qualifier les anomalies
     const enriched = enrichSheetWithDayContext({ ...s, person_id: s.person_id, date: s.date });
     const ctx = enriched.day_context || {};
-    const hasContext =
-      ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
+    const hasExcusingContext = hasExcusingContextForUnreported({ day_context: ctx });
+    const unreportedAm = hasExcusingContext ? false : rawUnreportedAm;
+    const unreportedPm = hasExcusingContext ? false : rawUnreportedPm;
+    const unreportedParts = [];
+    if (unreportedAm) unreportedParts.push('AM');
+    if (unreportedPm) unreportedParts.push('PM');
 
     // Les périodes non renseignées (vide ou "Non renseigné" à 0 min) sont
     // toujours remontées comme incident/anomalie de suivi.

@@ -160,6 +160,12 @@ function SuiviPanel({
     return count;
   }, [visibleKeys, selectedSheetIds]);
 
+  // Ne retenir que la sélection correspondant au jour affiché.
+  const selectedKeysForDate = useMemo(
+    () => [...selectedSheetIds].filter((key) => key.endsWith(`__${selectedDate}`)),
+    [selectedSheetIds, selectedDate],
+  );
+
   // Charger la liste du personnel
   useEffect(() => {
     if (!onlyFavorites) return;
@@ -386,16 +392,16 @@ function SuiviPanel({
   // Résoudre les IDs de fiches à partir de la sélection
   const resolveSheetIds = useCallback(async () => {
     const sheetIds = [];
-    for (const key of selectedSheetIds) {
+    for (const key of selectedKeysForDate) {
       const [personId, date] = key.split('__');
       const data = await api.getSuiviSheet(personId, date);
       if (data?.id) sheetIds.push(data.id);
     }
     return sheetIds;
-  }, [selectedSheetIds]);
+  }, [selectedKeysForDate]);
 
   const handleBatchExportPdf = useCallback(async () => {
-    if (selectedSheetIds.size === 0) return;
+    if (selectedKeysForDate.length === 0) return;
     setBatchExporting(true);
     setError(null);
     try {
@@ -417,10 +423,10 @@ function SuiviPanel({
     } finally {
       setBatchExporting(false);
     }
-  }, [selectedSheetIds, selectedDate, resolveSheetIds, printPreview]);
+  }, [selectedKeysForDate, selectedDate, resolveSheetIds, printPreview]);
 
   const handleBatchPrint = useCallback(async () => {
-    if (selectedSheetIds.size === 0) return;
+    if (selectedKeysForDate.length === 0) return;
     setBatchPrinting(true);
     setError(null);
     try {
@@ -442,7 +448,7 @@ function SuiviPanel({
     } finally {
       setBatchPrinting(false);
     }
-  }, [selectedSheetIds, selectedDate, resolveSheetIds, printPreview]);
+  }, [selectedKeysForDate, selectedDate, resolveSheetIds, printPreview]);
 
   const handleStartGroupResize = useCallback(
     (e) => {
@@ -712,7 +718,7 @@ function SuiviPanel({
                         <span>Favoris seulement</span>
                       </label>
                     </div>
-                    {selectedSheetIds.size > 0 && (
+                    {selectedKeysForDate.length > 0 && (
                       <div className="suivi-batch-actions">
                         <Button
                           variant="secondary"
@@ -720,7 +726,7 @@ function SuiviPanel({
                           className="suivi-btn suivi-btn-batch-pdf"
                           onClick={handleBatchExportPdf}
                           disabled={batchExporting}
-                          title={`Exporter ${selectedSheetIds.size} fiche(s) en PDF`}
+                          title={`Exporter ${selectedKeysForDate.length} fiche(s) en PDF`}
                         >
                           {batchExporting ? (
                             <Loader2 size={13} className="animate-spin" />
@@ -735,7 +741,7 @@ function SuiviPanel({
                           className="suivi-btn suivi-btn-batch-print"
                           onClick={handleBatchPrint}
                           disabled={batchPrinting}
-                          title={`Imprimer ${selectedSheetIds.size} fiche(s) recto-verso`}
+                          title={`Imprimer ${selectedKeysForDate.length} fiche(s) recto-verso`}
                         >
                           {batchPrinting ? (
                             <Loader2 size={13} className="animate-spin" />

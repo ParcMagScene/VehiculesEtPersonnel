@@ -372,6 +372,77 @@ export function drawPdfFooter(doc, entries, _label) {
   });
 }
 
+/**
+ * Rend une grille "Entrées SAV" en bas de page (6 lignes vides).
+ */
+export function drawPdfSavEntriesSection(doc, topY) {
+  const SECTION_H = 126;
+  const HEADER_H = 20;
+  const COL_H = 18;
+  const ROW_H = 14;
+  const ROWS = 6;
+  const COLS = [32, 220, 230, 33]; // N. | Équipement | Panne | N° Série/eMag
+  const HEADERS = ['N.', 'Équipement', 'Panne', 'N° Série/eMag'];
+
+  const y = topY;
+
+  // Bande titre
+  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, HEADER_H).fillColor('#1e3a5f').fill();
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff');
+  doc.text('Entrées SAV', PDF_TABLE_LEFT + 8, y + 6, {
+    width: PDF_TABLE_WIDTH - 16,
+    lineBreak: false,
+  });
+
+  // En-tete colonnes
+  const colY = y + HEADER_H;
+  doc.rect(PDF_TABLE_LEFT, colY, PDF_TABLE_WIDTH, COL_H).fillColor('#e2e8f0').fill();
+  doc.lineWidth(0.6).strokeColor('#94a3b8');
+  doc.rect(PDF_TABLE_LEFT, colY, PDF_TABLE_WIDTH, COL_H + ROWS * ROW_H).stroke();
+
+  doc.fontSize(8).font('Helvetica-Bold').fillColor('#0f172a');
+  let x = PDF_TABLE_LEFT;
+  for (let i = 0; i < HEADERS.length; i++) {
+    const cw = COLS[i];
+    doc.text(HEADERS[i], x + 4, colY + 5, {
+      width: cw - 8,
+      align: i === 0 ? 'center' : 'left',
+      lineBreak: false,
+      ellipsis: true,
+    });
+    x += cw;
+    if (i < HEADERS.length - 1) {
+      doc
+        .moveTo(x, colY)
+        .lineTo(x, colY + COL_H + ROWS * ROW_H)
+        .stroke();
+    }
+  }
+
+  // Lignes vides + numerotation
+  doc.font('Helvetica').fontSize(8).fillColor('#334155');
+  for (let r = 0; r < ROWS; r++) {
+    const ry = colY + COL_H + r * ROW_H;
+    doc
+      .moveTo(PDF_TABLE_LEFT, ry)
+      .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, ry)
+      .stroke();
+    doc.text(String(r + 1), PDF_TABLE_LEFT + 2, ry + 3, {
+      width: COLS[0] - 4,
+      align: 'center',
+      lineBreak: false,
+    });
+  }
+
+  // Bas du tableau
+  doc
+    .moveTo(PDF_TABLE_LEFT, colY + COL_H + ROWS * ROW_H)
+    .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, colY + COL_H + ROWS * ROW_H)
+    .stroke();
+
+  return y + SECTION_H;
+}
+
 // ─── MODE NORMAL : AM + PM sur les memes pages, pas de filigrane ───
 
 export function renderNormalEntries(doc, entries, startY) {
@@ -393,6 +464,9 @@ export function generateNormalSheetPdf(sheet, doc) {
   const allEntries = sheet.entries || [];
   const amEntries = allEntries.filter((e) => e.period === 'AM');
   const pmEntries = allEntries.filter((e) => e.period === 'PM');
+  const maxRowsPerPeriod = 7;
+  const amEntriesForLayout = amEntries.slice(0, maxRowsPerPeriod);
+  const pmEntriesForLayout = pmEntries.slice(0, maxRowsPerPeriod);
   const hasExcusingContext = hasExcusingContextForUnreported(sheet);
   const unreportedAm = !hasExcusingContext && isUnreportedPeriodEntries(amEntries);
   const unreportedPm = !hasExcusingContext && isUnreportedPeriodEntries(pmEntries);
@@ -407,7 +481,7 @@ export function generateNormalSheetPdf(sheet, doc) {
   if (unreportedAm) {
     y = drawPdfNonRenseigneeNotice(doc, y);
   } else {
-    y = renderNormalEntries(doc, amEntries, y);
+    y = renderNormalEntries(doc, amEntriesForLayout, y);
   }
 
   // Section Apres-midi
@@ -424,8 +498,11 @@ export function generateNormalSheetPdf(sheet, doc) {
   if (unreportedPm) {
     y = drawPdfNonRenseigneeNotice(doc, y);
   } else {
-    y = renderNormalEntries(doc, pmEntries, y);
+    y = renderNormalEntries(doc, pmEntriesForLayout, y);
   }
+
+  // Bloc fixe en bas pour la saisie papier SAV
+  drawPdfSavEntriesSection(doc, 628);
 
   // Notes
   if (sheet.notes) {
@@ -439,7 +516,7 @@ export function generateNormalSheetPdf(sheet, doc) {
     doc.text(`Notes : ${sheet.notes}`, PDF_TABLE_LEFT, y, { width: PDF_TABLE_WIDTH });
   }
 
-  drawPdfFooter(doc, allEntries, 'Total');
+  drawPdfFooter(doc, [...amEntriesForLayout, ...pmEntriesForLayout], 'Total');
 }
 
 // ─── MODE IMPRESSION : recto unique, Matin (haut) + Apres-midi (bas), lignes filigrane ───
@@ -467,10 +544,13 @@ export function renderPrintHalfSection(doc, sheet, entries, label, period, top, 
   const isUnreportedSection = period && !hasExcusingContext && isUnreportedPeriodEntries(entries);
   const visibleEntries = isUnreportedSection ? [] : entries;
 
-  for (let i = 0; i < visibleEntries.length; i++) {
-    const rowHeight = getPdfEntryRowHeight(doc, visibleEntries[i]);
+  const maxRowsPerPeriod = 7;
+  const entriesForPrint = visibleEntries.slice(0, maxRowsPerPeriod);
+
+  for (let i = 0; i < entriesForPrint.length; i++) {
+    const rowHeight = getPdfEntryRowHeight(doc, entriesForPrint[i]);
     if (y + rowHeight > entriesBottom) break;
-    drawPdfEntryRow(doc, visibleEntries[i], i + 1, y, rowHeight);
+    drawPdfEntryRow(doc, entriesForPrint[i], i + 1, y, rowHeight);
     y += rowHeight;
   }
 
@@ -481,11 +561,11 @@ export function renderPrintHalfSection(doc, sheet, entries, label, period, top, 
   drawPdfWatermarkRows(doc, y, entriesBottom);
 
   // Mini-total de section
-  const totalTime = visibleEntries.reduce((s, e) => s + (e.time_spent || 0), 0);
-  const totalDone = visibleEntries.filter((e) => e.completed === 1).length;
+  const totalTime = entriesForPrint.reduce((s, e) => s + (e.time_spent || 0), 0);
+  const totalDone = entriesForPrint.filter((e) => e.completed === 1).length;
   doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e3a5f');
   doc.text(
-    `${label} — ${totalDone}/${visibleEntries.length} effectuee(s) — ${decToHM(totalTime)}`,
+    `${label} — ${totalDone}/${entriesForPrint.length} effectuee(s) — ${decToHM(totalTime)}`,
     PDF_TABLE_LEFT,
     bottom - 11,
     {
@@ -505,7 +585,9 @@ export function renderPrintFullDayPage(doc, sheet) {
   drawPdfHeader(doc, sheet, null);
 
   const startY = doc.y;
-  const FOOTER_TOP = 758; // au-dessus de la zone signature/genere
+  const SAV_SECTION_TOP = 628;
+  const SAV_SECTION_BOTTOM = drawPdfSavEntriesSection(doc, SAV_SECTION_TOP);
+  const FOOTER_TOP = SAV_SECTION_TOP - 10;
   const SECTION_GAP = 10;
   const totalArea = FOOTER_TOP - startY;
   const halfHeight = (totalArea - SECTION_GAP) / 2;
@@ -545,11 +627,16 @@ export function renderPrintFullDayPage(doc, sheet) {
 
   // Pied de page partage (horodatage uniquement)
   doc.fontSize(6).font('Helvetica').fillColor('#999999');
-  doc.text(`Genere par eM@g -- ${new Date().toLocaleString('fr-FR')}`, PDF_TABLE_LEFT, 792, {
-    align: 'center',
-    width: PDF_TABLE_WIDTH,
-    lineBreak: false,
-  });
+  doc.text(
+    `Genere par eM@g -- ${new Date().toLocaleString('fr-FR')}`,
+    PDF_TABLE_LEFT,
+    SAV_SECTION_BOTTOM + 2,
+    {
+      align: 'center',
+      width: PDF_TABLE_WIDTH,
+      lineBreak: false,
+    },
+  );
 }
 
 // ─── Fonctions de generation finales ───
@@ -597,7 +684,13 @@ export async function generateBatchPdf(sheets, res) {
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
   attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', 'attachment; filename="fiches-suivi-batch.pdf"');
+  const firstDate = safePdfFilename(sheets?.[0]?.date || new Date().toISOString().slice(0, 10));
+  const count = Array.isArray(sheets) ? sheets.length : 0;
+  const fname = `fiches-suivi-${firstDate}-${count}fiches.pdf`;
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${fname}"; filename*=UTF-8''${encodeURIComponent(fname)}`,
+  );
   doc.pipe(res);
 
   for (let s = 0; s < sheets.length; s++) {

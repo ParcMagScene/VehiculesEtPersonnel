@@ -270,6 +270,77 @@ export const locmatConfirmSchema = z.object({
   collisions: z.array(z.any()).optional().default([]),
 });
 
+// ── Location (Lieu/Venue) ──
+export const locationSchema = z
+  .object({
+    name: optStr(255),
+    address: optStr(500),
+    type: optStr(50),
+    place_id: optStr(255),
+    lat: z.number().nullable().optional(),
+    lng: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+// ── Client (Annuaire) ──
+export const clientSchema = z
+  .object({
+    name: str(255),
+    code_libre: optStr(50),
+    email: optStr(255),
+    phone: optStr(30),
+    phone2: optStr(30),
+    address: optStr(500),
+    postal_code: optStr(10),
+    city: optStr(100),
+    country: optStr(100),
+    type: optStr(50),
+    legal_structure: optStr(100),
+    siret: optStr(20),
+    tva_intra: optStr(20),
+    website: optStr(255),
+    activity_sector: optStr(255),
+    service_types: optStr(500),
+    notes: optStr(5000),
+    is_active: z.boolean().optional(),
+  })
+  .passthrough();
+
+// ── Supplier (Annuaire) ──
+export const supplierSchema = z
+  .object({
+    name: str(255),
+    code_libre: optStr(50),
+    email: optStr(255),
+    phone: optStr(30),
+    phone2: optStr(30),
+    address: optStr(500),
+    postal_code: optStr(10),
+    city: optStr(100),
+    country: optStr(100),
+    type: optStr(50),
+    website: optStr(255),
+    product_categories: optStr(500),
+    notes: optStr(5000),
+    is_active: z.boolean().optional(),
+  })
+  .passthrough();
+
+// ── Contact (Annuaire - person within client/supplier) ──
+export const contactSchema = z
+  .object({
+    name: str(255),
+    code_libre: optStr(50),
+    email: optStr(255),
+    phone: optStr(30),
+    phone2: optStr(30),
+    position: optStr(100),
+    type: optStr(50),
+    notes: optStr(5000),
+    is_active: z.boolean().optional(),
+  })
+  .passthrough();
+
 // ── Middleware factory de validation Zod ──
 export function validate(schema) {
   return (req, res, next) => {

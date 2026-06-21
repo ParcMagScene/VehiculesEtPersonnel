@@ -84,16 +84,20 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ success: false, error: 'Format date invalide' });
       }
 
-      // Tâches du jour (on conserve aussi les tâches terminées)
+      // Tâches du jour utilisées par le modal "Depuis planning".
+      // On conserve aussi les tâches terminées effacées (clear-completed)
+      // pour qu'elles restent re-sélectionnables dans une fiche de suivi.
       const tasks = db
         .prepare(
           `SELECT ta.id, ta.title, ta.section, ta.period, ta.time, ta.end_time,
                   ta.affaire_num, ta.notes, ta.status, ta.google_event_title,
+                  ta.deleted_at,
                   a.nom AS affaire_nom, a.titre AS affaire_titre,
                   a.type AS affaire_type, a.client AS affaire_client
            FROM task_assignments ta
            LEFT JOIN affaires a ON ta.affaire_num = a.numero_affaire
-           WHERE ta.date = ? AND ta.deleted_at IS NULL
+           WHERE ta.date = ?
+             AND (ta.deleted_at IS NULL OR ta.status = 'done')
            ORDER BY ta.period ASC, ta.time ASC, ta.section ASC`,
         )
         .all(date);

@@ -1306,82 +1306,43 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
 
   // ── Middleware de dépréciation pour routes compat ──
   function deprecatedSonosRoute(preferred) {
-    return (_req, res, next) => {
+    return (req, res) => {
+      logger.warn(
+        `⛔ ${req.method} ${req.originalUrl} (legacy) → 410 Gone — utiliser ${preferred}`,
+      );
       res.set('X-Deprecated', `Use ${preferred} instead`);
       res.set('Sunset', '2026-07-01');
-      next();
+      res.status(410).json({
+        success: false,
+        error: 'Endpoint supprimé',
+        code: 'DEPRECATED_ENDPOINT',
+        replacement: preferred,
+      });
     };
   }
 
   app.get(
     '/api/display/sonos-config',
-    deprecatedSonosRoute('/api/sonos/config'),
     authenticateToken,
-    sonosReadLimiter,
-    (_req, res) => {
-      try {
-        res.json({ sonosIP: getSonosIP() });
-      } catch (error) {
-        logger.error('Compat sonos-config get:', error);
-        res.status(500).json({ success: false, error: 'Erreur serveur' });
-      }
-    },
+    deprecatedSonosRoute('/api/sonos/config'),
   );
 
   app.post(
     '/api/display/sonos-config',
-    deprecatedSonosRoute('/api/sonos/config'),
     authenticateToken,
-    requireAdmin,
-    sonosCommandLimiter,
-    validate(sonosConfigSchema),
-    (req, res) => {
-      try {
-        const { sonosIP } = req.body;
-        db.prepare(
-          `
-        INSERT INTO display_config (key, value, updated_at) VALUES ('sonosIP', ?, datetime('now'))
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
-      `,
-        ).run(JSON.stringify(sonosIP || ''));
-        res.json({ success: true });
-      } catch (error) {
-        logger.error('Compat sonos-config save:', error);
-        res.status(500).json({ success: false, error: 'Erreur serveur' });
-      }
-    },
+    deprecatedSonosRoute('/api/sonos/config'),
   );
 
   app.get(
     '/api/display/sonos-now-playing',
-    deprecatedSonosRoute('/api/sonos/now-playing'),
     optionalTvToken,
-    sonosReadLimiter,
-    async (_req, res) => {
-      try {
-        const result = await getSonosNowPlaying();
-        res.json(result);
-      } catch (error) {
-        logger.error('Compat sonos-now-playing:', error);
-        res.json({ playing: false, error: error.message });
-      }
-    },
+    deprecatedSonosRoute('/api/sonos/now-playing'),
   );
 
   // Legacy sans auth → sécurisé avec optionalTvToken + déprécié
   app.get(
     '/api/sonos-now-playing',
-    deprecatedSonosRoute('/api/sonos/now-playing'),
     optionalTvToken,
-    sonosReadLimiter,
-    async (_req, res) => {
-      try {
-        const result = await getSonosNowPlaying();
-        res.json(result);
-      } catch (error) {
-        logger.error('Compat legacy sonos-now-playing:', error);
-        res.json({ playing: false, error: error.message });
-      }
-    },
+    deprecatedSonosRoute('/api/sonos/now-playing'),
   );
 }

@@ -5,7 +5,14 @@ import { fileURLToPath } from 'url';
 import { annuaireRefCache, cacheMiddleware, invalidateOnSuccess } from './cache.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
-import { contactsImportSchema, validate } from './schemas/imports.js';
+import {
+  contactsImportSchema,
+  validate,
+  clientSchema,
+  supplierSchema,
+  contactSchema,
+} from './schemas/imports.js';
+import { numericIdSchema } from './schemas/paramsSchema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -249,7 +256,7 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
   });
 
   // POST /api/annuaire/clients — Créer
-  app.post('/api/annuaire/clients', authenticateToken, (req, res) => {
+  app.post('/api/annuaire/clients', authenticateToken, validate(clientSchema), (req, res) => {
     try {
       const {
         name,
@@ -325,36 +332,41 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
   });
 
   // PUT /api/annuaire/clients/:id — Modifier
-  app.put('/api/annuaire/clients/:id', authenticateToken, (req, res) => {
-    try {
-      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
-      const existing = db.prepare('SELECT id FROM clients WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Client non trouvé' });
+  app.put(
+    '/api/annuaire/clients/:id',
+    authenticateToken,
+    validate(numericIdSchema),
+    validate(clientSchema),
+    (req, res) => {
+      try {
+        // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+        const existing = db.prepare('SELECT id FROM clients WHERE id = ?').get(req.params.id);
+        if (!existing) return res.status(404).json({ success: false, error: 'Client non trouvé' });
 
-      const {
-        name,
-        code_libre,
-        email,
-        address,
-        postal_code,
-        city,
-        country,
-        type,
-        legal_structure,
-        website,
-        activity_sector,
-        service_types,
-        notes,
-        is_active,
-      } = req.body;
+        const {
+          name,
+          code_libre,
+          email,
+          address,
+          postal_code,
+          city,
+          country,
+          type,
+          legal_structure,
+          website,
+          activity_sector,
+          service_types,
+          notes,
+          is_active,
+        } = req.body;
 
-      // Validation et normalisation
-      const validationErrors = sanitizeEntityBody(req.body);
-      if (validationErrors.length > 0)
-        return res.status(400).json({ success: false, error: validationErrors.join('. ') });
+        // Validation et normalisation
+        const validationErrors = sanitizeEntityBody(req.body);
+        if (validationErrors.length > 0)
+          return res.status(400).json({ success: false, error: validationErrors.join('. ') });
 
-      db.prepare(
-        `
+        db.prepare(
+          `
         UPDATE clients SET name = ?, code_libre = ?, email = ?, phone = ?, phone2 = ?,
           address = ?, postal_code = ?, city = ?, country = ?,
           type = ?, legal_structure = ?, siret = ?, tva_intra = ?, website = ?,
@@ -362,68 +374,75 @@ export function setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin)
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
-      ).run(
-        name,
-        code_libre || null,
-        email || null,
-        req.body.phone || null,
-        req.body.phone2 || null,
-        address || null,
-        postal_code || null,
-        city || null,
-        country || 'France',
-        type || 'client',
-        legal_structure || null,
-        req.body.siret || null,
-        req.body.tva_intra || null,
-        website || null,
-        activity_sector || null,
-        service_types ? JSON.stringify(service_types) : null,
-        notes || null,
-        req.body.location_id || null,
-        is_active !== undefined ? is_active : 1,
-        req.user.id,
-        req.params.id,
-      );
+        ).run(
+          name,
+          code_libre || null,
+          email || null,
+          req.body.phone || null,
+          req.body.phone2 || null,
+          address || null,
+          postal_code || null,
+          city || null,
+          country || 'France',
+          type || 'client',
+          legal_structure || null,
+          req.body.siret || null,
+          req.body.tva_intra || null,
+          website || null,
+          activity_sector || null,
+          service_types ? JSON.stringify(service_types) : null,
+          notes || null,
+          req.body.location_id || null,
+          is_active !== undefined ? is_active : 1,
+          req.user.id,
+          req.params.id,
+        );
 
-      addToHistory('client', req.params.id, 'updated', req.body, req.user.id, req.user.name);
-      const updated = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
-      res.json(updated);
-    } catch (error) {
-      if (error.message?.includes('UNIQUE constraint failed: clients.code_libre')) {
-        return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
+        addToHistory('client', req.params.id, 'updated', req.body, req.user.id, req.user.name);
+        const updated = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.params.id);
+        res.json(updated);
+      } catch (error) {
+        if (error.message?.includes('UNIQUE constraint failed: clients.code_libre')) {
+          return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
+        }
+        logger.error('Annuaire client update:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
-      logger.error('Annuaire client update:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+    },
+  );
 
   // DELETE /api/annuaire/clients/:id
-  app.delete('/api/annuaire/clients/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
-      const existing = db.prepare('SELECT id FROM clients WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Client non trouvé' });
+  app.delete(
+    '/api/annuaire/clients/:id',
+    authenticateToken,
+    requireAdmin,
+    validate(numericIdSchema),
+    (req, res) => {
+      try {
+        // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+        const existing = db.prepare('SELECT id FROM clients WHERE id = ?').get(req.params.id);
+        if (!existing) return res.status(404).json({ success: false, error: 'Client non trouvé' });
 
-      // Check for linked contacts
-      const contactCount = db
-        .prepare('SELECT COUNT(*) as c FROM annuaire_contacts WHERE client_id = ?')
-        .get(req.params.id);
-      if (contactCount.c > 0) {
-        // Soft delete
-        db.prepare(
-          'UPDATE clients SET is_active = 0, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
-        ).run(req.user.id, req.params.id);
-      } else {
-        db.prepare('DELETE FROM clients WHERE id = ?').run(req.params.id);
+        // Check for linked contacts
+        const contactCount = db
+          .prepare('SELECT COUNT(*) as c FROM annuaire_contacts WHERE client_id = ?')
+          .get(req.params.id);
+        if (contactCount.c > 0) {
+          // Soft delete
+          db.prepare(
+            'UPDATE clients SET is_active = 0, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
+          ).run(req.user.id, req.params.id);
+        } else {
+          db.prepare('DELETE FROM clients WHERE id = ?').run(req.params.id);
+        }
+        addToHistory('client', req.params.id, 'deleted', null, req.user.id, req.user.name);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error('Annuaire client delete:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
-      addToHistory('client', req.params.id, 'deleted', null, req.user.id, req.user.name);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error('Annuaire client delete:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+    },
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -486,7 +505,7 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
     }
   });
 
-  app.post('/api/annuaire/suppliers', authenticateToken, (req, res) => {
+  app.post('/api/annuaire/suppliers', authenticateToken, validate(supplierSchema), (req, res) => {
     try {
       const {
         name,
@@ -565,38 +584,43 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
     }
   });
 
-  app.put('/api/annuaire/suppliers/:id', authenticateToken, (req, res) => {
-    try {
-      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
-      const existing = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(req.params.id);
-      if (!existing)
-        return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
+  app.put(
+    '/api/annuaire/suppliers/:id',
+    authenticateToken,
+    validate(numericIdSchema),
+    validate(supplierSchema),
+    (req, res) => {
+      try {
+        // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+        const existing = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
 
-      const {
-        name,
-        code_libre,
-        contact_name,
-        email,
-        address,
-        postal_code,
-        city,
-        country,
-        type,
-        legal_structure,
-        website,
-        activity_sector,
-        service_types,
-        notes,
-        is_active,
-      } = req.body;
+        const {
+          name,
+          code_libre,
+          contact_name,
+          email,
+          address,
+          postal_code,
+          city,
+          country,
+          type,
+          legal_structure,
+          website,
+          activity_sector,
+          service_types,
+          notes,
+          is_active,
+        } = req.body;
 
-      // Validation et normalisation
-      const validationErrors = sanitizeEntityBody(req.body);
-      if (validationErrors.length > 0)
-        return res.status(400).json({ success: false, error: validationErrors.join('. ') });
+        // Validation et normalisation
+        const validationErrors = sanitizeEntityBody(req.body);
+        if (validationErrors.length > 0)
+          return res.status(400).json({ success: false, error: validationErrors.join('. ') });
 
-      db.prepare(
-        `
+        db.prepare(
+          `
         UPDATE suppliers SET name = ?, code_libre = ?, contact_name = ?, email = ?, phone = ?, phone2 = ?,
           address = ?, postal_code = ?, city = ?, country = ?,
           type = ?, legal_structure = ?, siret = ?, tva_intra = ?, website = ?,
@@ -604,70 +628,77 @@ export function setupAnnuaireSuppliersRoutes(app, authenticateToken, requireAdmi
           modified_by = ?, modified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
-      ).run(
-        name,
-        code_libre || null,
-        contact_name || null,
-        email || null,
-        req.body.phone || null,
-        req.body.phone2 || null,
-        address || null,
-        postal_code || null,
-        city || null,
-        country || 'France',
-        type || 'fournisseur',
-        legal_structure || null,
-        req.body.siret || null,
-        req.body.tva_intra || null,
-        website || null,
-        activity_sector || null,
-        service_types ? JSON.stringify(service_types) : null,
-        notes || null,
-        req.body.location_id || null,
-        is_active !== undefined ? is_active : 1,
-        req.user.id,
-        req.params.id,
-      );
+        ).run(
+          name,
+          code_libre || null,
+          contact_name || null,
+          email || null,
+          req.body.phone || null,
+          req.body.phone2 || null,
+          address || null,
+          postal_code || null,
+          city || null,
+          country || 'France',
+          type || 'fournisseur',
+          legal_structure || null,
+          req.body.siret || null,
+          req.body.tva_intra || null,
+          website || null,
+          activity_sector || null,
+          service_types ? JSON.stringify(service_types) : null,
+          notes || null,
+          req.body.location_id || null,
+          is_active !== undefined ? is_active : 1,
+          req.user.id,
+          req.params.id,
+        );
 
-      addToHistory('supplier', req.params.id, 'updated', req.body, req.user.id, req.user.name);
-      const updated = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(req.params.id);
-      res.json(updated);
-    } catch (error) {
-      if (error.message?.includes('UNIQUE constraint failed: suppliers.code_libre')) {
-        return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
+        addToHistory('supplier', req.params.id, 'updated', req.body, req.user.id, req.user.name);
+        const updated = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(req.params.id);
+        res.json(updated);
+      } catch (error) {
+        if (error.message?.includes('UNIQUE constraint failed: suppliers.code_libre')) {
+          return res.status(409).json({ success: false, error: 'Ce code libre existe déjà' });
+        }
+        logger.error('Annuaire supplier update:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
-      logger.error('Annuaire supplier update:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+    },
+  );
 
-  app.delete('/api/annuaire/suppliers/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
-      const existing = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(req.params.id);
-      if (!existing)
-        return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
+  app.delete(
+    '/api/annuaire/suppliers/:id',
+    authenticateToken,
+    requireAdmin,
+    validate(numericIdSchema),
+    (req, res) => {
+      try {
+        // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+        const existing = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Fournisseur non trouvé' });
 
-      const orderCount = db
-        .prepare('SELECT COUNT(*) as c FROM orders WHERE supplier_id = ?')
-        .get(req.params.id);
-      const contactCount = db
-        .prepare('SELECT COUNT(*) as c FROM annuaire_contacts WHERE supplier_id = ?')
-        .get(req.params.id);
-      if (orderCount.c > 0 || contactCount.c > 0) {
-        db.prepare(
-          'UPDATE suppliers SET is_active = 0, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
-        ).run(req.user.id, req.params.id);
-      } else {
-        db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
+        const orderCount = db
+          .prepare('SELECT COUNT(*) as c FROM orders WHERE supplier_id = ?')
+          .get(req.params.id);
+        const contactCount = db
+          .prepare('SELECT COUNT(*) as c FROM annuaire_contacts WHERE supplier_id = ?')
+          .get(req.params.id);
+        if (orderCount.c > 0 || contactCount.c > 0) {
+          db.prepare(
+            'UPDATE suppliers SET is_active = 0, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
+          ).run(req.user.id, req.params.id);
+        } else {
+          db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
+        }
+        addToHistory('supplier', req.params.id, 'deleted', null, req.user.id, req.user.name);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error('Annuaire supplier delete:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
       }
-      addToHistory('supplier', req.params.id, 'deleted', null, req.user.id, req.user.name);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error('Annuaire supplier delete:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+    },
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -963,7 +994,7 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
     }
   });
 
-  app.post('/api/annuaire/contacts', authenticateToken, (req, res) => {
+  app.post('/api/annuaire/contacts', authenticateToken, validate(contactSchema), (req, res) => {
     try {
       const {
         client_id,
@@ -1095,18 +1126,24 @@ export function setupAnnuaireContactsRoutes(app, authenticateToken, requireAdmin
     }
   });
 
-  app.delete('/api/annuaire/contacts/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
-      const result = db.prepare('DELETE FROM annuaire_contacts WHERE id = ?').run(req.params.id);
-      if (result.changes === 0)
-        return res.status(404).json({ success: false, error: 'Contact non trouvé' });
-      res.json({ success: true });
-    } catch (error) {
-      logger.error('Annuaire contact delete:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+  app.delete(
+    '/api/annuaire/contacts/:id',
+    authenticateToken,
+    requireAdmin,
+    validate(numericIdSchema),
+    (req, res) => {
+      try {
+        // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+        const result = db.prepare('DELETE FROM annuaire_contacts WHERE id = ?').run(req.params.id);
+        if (result.changes === 0)
+          return res.status(404).json({ success: false, error: 'Contact non trouvé' });
+        res.json({ success: true });
+      } catch (error) {
+        logger.error('Annuaire contact delete:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════

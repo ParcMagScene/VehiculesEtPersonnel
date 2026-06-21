@@ -432,8 +432,6 @@ setupSavRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
 // Vignettes WebP à la volée pour /Photos/ (cache disque)
 setupPhotoThumbRoutes(app);
-// Vignettes WebP à la volée pour /Photos/ (cache disque)
-setupPhotoThumbRoutes(app);
 
 // Routes Commandes & Ventes
 setupSuppliersRoutes(app, authenticateToken, requireAdmin);

@@ -9,6 +9,7 @@ import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import db from './database.js';
 import logger from './logger.js';
 import { affaireSchema, validate } from './schemas/imports.js';
+import { numericIdSchema } from './schemas/paramsSchema.js';
 
 // Mapping affaire.type → section des tâches de préparation associées.
 // Quand le type d'une affaire change, les tâches en `prep_*` liées
@@ -537,17 +538,22 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/affaires/:id — Mettre à jour une affaire par ID
-  app.put('/api/affaires/:id', authenticateToken, (req, res) => {
-    try {
-      const { id } = req.params;
-      const a = req.body;
+  app.put(
+    '/api/affaires/:id',
+    authenticateToken,
+    validate(numericIdSchema),
+    validate(affaireSchema),
+    (req, res) => {
+      try {
+        const { id } = req.params;
+        const a = req.body;
 
-      // Lire l'état actuel pour détecter un changement de type et
-      // resynchroniser les tâches de préparation après l'update.
-      const before = db.prepare('SELECT numero_affaire, type FROM affaires WHERE id = ?').get(id);
+        // Lire l'état actuel pour détecter un changement de type et
+        // resynchroniser les tâches de préparation après l'update.
+        const before = db.prepare('SELECT numero_affaire, type FROM affaires WHERE id = ?').get(id);
 
-      db.prepare(
-        `
+        db.prepare(
+          `
       UPDATE affaires SET
         numero_affaire = ?, nom = ?, type = ?, client = ?, interlocuteur = ?, tel = ?, fax = ?,
         date_debut = ?, date_fin = ?, devis = ?, adresse_livraison = ?,
@@ -555,67 +561,75 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
         modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `,
-      ).run(
-        a.numero_affaire || '',
-        a.nom || '',
-        a.type || 'Prestation',
-        a.client || '',
-        a.interlocuteur || '',
-        a.tel || '',
-        a.fax || '',
-        a.date_debut || '',
-        a.date_fin || '',
-        a.devis || '',
-        a.adresse_livraison || '',
-        a.titre || '',
-        a.description || '',
-        a.google_event_id || '',
-        a.event_name || '',
-        req.user.id,
-        id,
-      );
-      const updated = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
-      if (!updated) return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
-      // Si le type a changé, resynchroniser la section des tâches de préparation.
-      // On utilise l'ancien numero_affaire pour cibler les tâches existantes
-      // (cas marginal où numero_affaire changerait aussi : les tâches restent
-      // indexées sur l'ancien numéro à ce moment-là).
-      if (before && before.type && updated.type && before.type !== updated.type) {
-        const changed = syncPrepTasksToAffaireType(
-          before.numero_affaire,
-          updated.type,
+        ).run(
+          a.numero_affaire || '',
+          a.nom || '',
+          a.type || 'Prestation',
+          a.client || '',
+          a.interlocuteur || '',
+          a.tel || '',
+          a.fax || '',
+          a.date_debut || '',
+          a.date_fin || '',
+          a.devis || '',
+          a.adresse_livraison || '',
+          a.titre || '',
+          a.description || '',
+          a.google_event_id || '',
+          a.event_name || '',
           req.user.id,
+          id,
         );
-        if (changed > 0) {
-          logger.info(
-            `Affaire ${updated.numero_affaire}: type ${before.type} -> ${updated.type}, ${changed} tâches de préparation resynchronisées`,
+        const updated = db.prepare('SELECT * FROM affaires WHERE id = ?').get(id);
+        if (!updated) return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
+        // Si le type a changé, resynchroniser la section des tâches de préparation.
+        // On utilise l'ancien numero_affaire pour cibler les tâches existantes
+        // (cas marginal où numero_affaire changerait aussi : les tâches restent
+        // indexées sur l'ancien numéro à ce moment-là).
+        if (before && before.type && updated.type && before.type !== updated.type) {
+          const changed = syncPrepTasksToAffaireType(
+            before.numero_affaire,
+            updated.type,
+            req.user.id,
           );
+          if (changed > 0) {
+            logger.info(
+              `Affaire ${updated.numero_affaire}: type ${before.type} -> ${updated.type}, ${changed} tâches de préparation resynchronisées`,
+            );
+          }
         }
+        invalidateEntity('affaires');
+        listCache.invalidatePattern(/^planning-affaires/);
+        res.json(updated);
+      } catch (error) {
+        logger.error('Erreur PUT /api/affaires:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-      invalidateEntity('affaires');
-      listCache.invalidatePattern(/^planning-affaires/);
-      res.json(updated);
-    } catch (error) {
-      logger.error('Erreur PUT /api/affaires:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // DELETE /api/affaires/:id
-  app.delete('/api/affaires/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const { id } = req.params;
-      const existing = db.prepare('SELECT id FROM affaires WHERE id = ?').get(id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
-      db.prepare('DELETE FROM affaires WHERE id = ?').run(id);
-      invalidateEntity('affaires');
-      listCache.invalidatePattern(/^planning-affaires/);
-      res.json({ success: true });
-    } catch (error) {
-      logger.error('Erreur DELETE /api/affaires:', error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+  app.delete(
+    '/api/affaires/:id',
+    authenticateToken,
+    requireAdmin,
+    validate(numericIdSchema),
+    (req, res) => {
+      try {
+        const { id } = req.params;
+        const existing = db.prepare('SELECT id FROM affaires WHERE id = ?').get(id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Affaire non trouvée' });
+        db.prepare('DELETE FROM affaires WHERE id = ?').run(id);
+        invalidateEntity('affaires');
+        listCache.invalidatePattern(/^planning-affaires/);
+        res.json({ success: true });
+      } catch (error) {
+        logger.error('Erreur DELETE /api/affaires:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // ═══ Liaisons entre affaires (Tournée ↔ affaires individuelles) ═══
 

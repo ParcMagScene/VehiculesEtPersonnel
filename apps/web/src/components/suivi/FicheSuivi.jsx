@@ -10,12 +10,21 @@ import {
   GripVertical,
   Loader2,
   Plus,
+  Save,
   Square,
   Trash2,
 } from 'lucide-react';
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Input, Select, Textarea } from '@/design-system';
+import {
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  Textarea,
+} from '@/design-system';
 
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
@@ -40,12 +49,13 @@ function FicheSuivi({ sheet, onSave, saving }) {
   const [notes, setNotes] = useState('');
   const [dirty, setDirty] = useState(false);
   const autoSaveTimer = useRef(null);
-  // Planning task picker
+  // Planning task picker (modal)
   const [planningTasks, setPlanningTasks] = useState([]);
-  const [showPicker, setShowPicker] = useState(null); // 'AM' | 'PM' | null
+  const [planningModalPeriod, setPlanningModalPeriod] = useState(null); // 'AM' | 'PM' | null
+  const [planningSearch, setPlanningSearch] = useState('');
   const [loadingTasks, setLoadingTasks] = useState(false);
   const [recurringTasks, setRecurringTasks] = useState([]);
-  const [showRecurringForm, setShowRecurringForm] = useState(null); // 'AM' | 'PM' | null
+  const [showRecurringModal, setShowRecurringModal] = useState(false);
   const [editingRecurringId, setEditingRecurringId] = useState(null); // id ou null
   const [recurringSaving, setRecurringSaving] = useState(false);
   const [recurringError, setRecurringError] = useState('');
@@ -64,6 +74,19 @@ function FicheSuivi({ sheet, onSave, saving }) {
   const [postponePeriod, setPostponePeriod] = useState('AM');
   const [postponeSaving, setPostponeSaving] = useState(false);
   const [postponeError, setPostponeError] = useState('');
+
+  const loadRecurringTasks = useCallback(async () => {
+    if (!sheet?.person_id) {
+      setRecurringTasks([]);
+      return;
+    }
+    try {
+      const rows = await api.getSuiviRecurringTasks(sheet.person_id);
+      setRecurringTasks(Array.isArray(rows) ? rows : []);
+    } catch {
+      setRecurringTasks([]);
+    }
+  }, [sheet?.person_id]);
 
   // Lorsqu'on déclenche nous-mêmes un save, la réponse du serveur (sheet.modified_at
   // mis à jour) ne doit PAS écraser le state local : l'utilisateur peut avoir
@@ -116,29 +139,9 @@ function FicheSuivi({ sheet, onSave, saving }) {
       .finally(() => setLoadingTasks(false));
   }, [sheet?.date]);
 
-  // Close dropdowns on outside click
   useEffect(() => {
-    if (!showPicker && !showRecurringForm) return;
-    const handleClick = (e) => {
-      if (
-        !e.target.closest('.fiche-picker-wrapper') &&
-        !e.target.closest('.fiche-recurring-wrapper')
-      ) {
-        setShowPicker(null);
-        setShowRecurringForm(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [showPicker, showRecurringForm]);
-
-  useEffect(() => {
-    if (!sheet?.person_id) return;
-    api
-      .getSuiviRecurringTasks(sheet.person_id)
-      .then((rows) => setRecurringTasks(Array.isArray(rows) ? rows : []))
-      .catch(() => setRecurringTasks([]));
-  }, [sheet?.person_id]);
+    loadRecurringTasks();
+  }, [loadRecurringTasks]);
 
   // Lookup rapide des méta-données d'une tâche planning (affaire_type,
   // affaire_num, affaire_nom, title) à partir de son id. Sert à afficher
@@ -157,6 +160,71 @@ function FicheSuivi({ sheet, onSave, saving }) {
     }
     return map;
   }, [planningTasks]);
+
+  const existingIncompleteTaskIds = useMemo(
+    () =>
+      new Set(
+        entries
+          .filter((e) => e.completed !== 1)
+          .map((e) => e.task_assignment_id)
+          .filter(Boolean),
+      ),
+    [entries],
+  );
+
+  const alreadyDoneTaskIds = useMemo(
+    () =>
+      new Set(
+        entries
+          .filter((e) => e.completed === 1)
+          .map((e) => e.task_assignment_id)
+          .filter(Boolean),
+      ),
+    [entries],
+  );
+
+  const planningTaskGroups = useMemo(() => {
+    const search = planningSearch.trim().toLowerCase();
+
+    const filtered = planningTasks.filter((t) => {
+      if (!search) return true;
+
+      const haystack = [
+        t.title,
+        t.google_event_title,
+        t.affaire_num,
+        t.affaire_nom,
+        t.affaire_titre,
+        t.affaire_type,
+        t.affaire_client,
+        t.section,
+        t.time,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(search);
+    });
+
+    const grouped = new Map();
+    for (const task of filtered) {
+      const groupKey = String(task.affaire_type || task.section || 'Autres').trim();
+      if (!grouped.has(groupKey)) grouped.set(groupKey, []);
+      grouped.get(groupKey).push(task);
+    }
+
+    return [...grouped.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], 'fr', { sensitivity: 'base' }))
+      .map(([group, tasks]) => ({
+        group,
+        tasks: tasks.sort((a, b) => {
+          const pa = String(a.period || '').localeCompare(String(b.period || ''));
+          if (pa !== 0) return pa;
+          return String(a.time || '').localeCompare(String(b.time || ''));
+        }),
+      }));
+  }, [planningSearch, planningTasks]);
 
   const handlePickPlanningTask = useCallback(
     (task, period) => {
@@ -178,7 +246,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
       // l'affichage de la ligne. Le filtrage des tâches déjà pickées se fait
       // via `existingIncompleteTaskIds` dans renderSection.
       setDirty(true);
-      setShowPicker(null);
+      setPlanningModalPeriod(null);
 
       // Affecter automatiquement la tâche au personnel de cette fiche
       if (sheet?.person_id) {
@@ -357,7 +425,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
     return false;
   };
 
-  const handleCreateRecurring = async (period) => {
+  const handleCreateRecurring = async () => {
     if (!sheet?.person_id) return;
     if (!recurringForm.title.trim()) {
       setRecurringError('Le titre est requis');
@@ -387,7 +455,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
         const entry = {
           _key:
             crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
-          period,
+          period: payload.period || 'AM',
           task: payload.title,
           time_spent: payload.default_time_spent,
           comment: payload.default_comment,
@@ -400,7 +468,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
         setDirty(true);
       }
 
-      setShowRecurringForm(null);
+      await loadRecurringTasks();
       resetRecurringForm();
     } catch (e) {
       setRecurringError(e?.message || 'Erreur lors de la création');
@@ -412,14 +480,14 @@ function FicheSuivi({ sheet, onSave, saving }) {
   const handleDeleteRecurring = async (id) => {
     try {
       await api.deleteSuiviRecurringTask(id);
-      setRecurringTasks((prev) => prev.filter((r) => r.id !== id));
+      await loadRecurringTasks();
       refreshBus.publish('suivi');
     } catch (e) {
       setRecurringError('Suppression impossible');
     }
   };
 
-  const handleStartEditRecurring = (r, period) => {
+  const handleStartEditRecurring = (r) => {
     setRecurringForm({
       title: r.title,
       recurrence: r.recurrence,
@@ -429,11 +497,11 @@ function FicheSuivi({ sheet, onSave, saving }) {
         r.day_of_month !== null && r.day_of_month !== undefined ? String(r.day_of_month) : '1',
       default_time_spent: r.default_time_spent ?? 0,
       default_comment: r.default_comment || '',
-      period: r.period || period || 'AM',
+      period: r.period || 'AM',
     });
     setEditingRecurringId(r.id);
     setRecurringError('');
-    setShowRecurringForm(period);
+    setShowRecurringModal(true);
   };
 
   const handleUpdateRecurring = async () => {
@@ -459,7 +527,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
       const updated = await api.updateSuiviRecurringTask(editingRecurringId, payload);
       setRecurringTasks((prev) => prev.map((r) => (r.id === editingRecurringId ? updated : r)));
       refreshBus.publish('suivi');
-      setShowRecurringForm(null);
+      await loadRecurringTasks();
       resetRecurringForm();
     } catch (e) {
       setRecurringError(e?.message || 'Erreur lors de la mise à jour');
@@ -540,7 +608,11 @@ function FicheSuivi({ sheet, onSave, saving }) {
                     </span>
                   )}
                   {planningMeta.affaire_num && (
-                    <span className="fiche-task-planning-num">#{planningMeta.affaire_num}</span>
+                    <span
+                      className={`fiche-task-planning-num fiche-affaire-pill fiche-affaire-pill--${(planningMeta.affaire_type || 'autre').toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      #{planningMeta.affaire_num}
+                    </span>
                   )}
                   {planningMeta.affaire_nom && (
                     <span className="fiche-task-planning-name">{planningMeta.affaire_nom}</span>
@@ -705,28 +777,6 @@ function FicheSuivi({ sheet, onSave, saving }) {
   };
 
   const renderSection = (label, sectionEntries, period) => {
-    // On n'exclut que les tâches non-complétées déjà dans la fiche
-    // Les tâches déjà effectuées (completed=1) restent proposables
-    const existingIncompleteTaskIds = new Set(
-      entries
-        .filter((e) => e.completed !== 1)
-        .map((e) => e.task_assignment_id)
-        .filter(Boolean),
-    );
-    const alreadyDoneTaskIds = new Set(
-      entries
-        .filter((e) => e.completed === 1)
-        .map((e) => e.task_assignment_id)
-        .filter(Boolean),
-    );
-    // #2 Suivi AM/PM : on n'applique plus de filtre par période sur les tâches
-    // planning / événements Google. L'utilisateur choisit la section (AM ou PM)
-    // dans laquelle il veut importer la tâche en cliquant sur le bouton de la
-    // section correspondante. La période est forcée par le clic, pas par la
-    // période d'origine de la tâche.
-    const availableTasks = planningTasks.filter((t) => !existingIncompleteTaskIds.has(t.id));
-    const recurringForPeriod = recurringTasks.filter((r) => r.period === period && r.active === 1);
-
     return (
       <div className="fiche-section">
         <div className="fiche-section-header">
@@ -741,265 +791,27 @@ function FicheSuivi({ sheet, onSave, saving }) {
               >
                 <Plus size={14} /> Ajouter
               </Button>
-              {availableTasks.length > 0 && (
-                <div className="fiche-picker-wrapper">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="fiche-add-btn fiche-add-btn-planning"
-                    onClick={() => setShowPicker(showPicker === period ? null : period)}
-                  >
-                    <Calendar size={14} /> Depuis planning
-                    <ChevronDown size={12} />
-                  </Button>
-                  {showPicker === period && (
-                    <div className="fiche-picker-dropdown">
-                      {availableTasks.map((t) => (
-                        <button
-                          type="button"
-                          key={t.id}
-                          className="fiche-picker-item"
-                          onClick={() => handlePickPlanningTask(t, period)}
-                        >
-                          <div className="fiche-picker-main">
-                            <span className="fiche-picker-title">
-                              {t.title || t.google_event_title || 'Tâche sans nom'}
-                              {alreadyDoneTaskIds.has(t.id) && (
-                                <span className="fiche-picker-done-badge">✓ Déjà effectuée</span>
-                              )}
-                            </span>
-                            <div className="fiche-picker-meta">
-                              {t.affaire_num && (
-                                <span
-                                  className={`fiche-picker-badge fiche-picker-badge--${(t.affaire_type || 'autre').toLowerCase().replace(/\s+/g, '-')}`}
-                                >
-                                  {t.affaire_type || 'Affaire'}
-                                </span>
-                              )}
-                              {t.affaire_num && (
-                                <span className="fiche-picker-affaire-num">#{t.affaire_num}</span>
-                              )}
-                              {(t.affaire_nom || t.affaire_titre) && (
-                                <span className="fiche-picker-affaire-name">
-                                  {t.affaire_nom || t.affaire_titre}
-                                </span>
-                              )}
-                              {t.affaire_client && (
-                                <span className="fiche-picker-client">{t.affaire_client}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="fiche-picker-right">
-                            {t.section && <span className="fiche-picker-section">{t.section}</span>}
-                            {t.time && <span className="fiche-picker-time">{t.time}</span>}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="fiche-recurring-wrapper">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="fiche-add-btn fiche-add-btn-recurring"
-                  onClick={() => {
-                    if (showRecurringForm === period) {
-                      setShowRecurringForm(null);
-                      return;
-                    }
-                    resetRecurringForm(period);
-                    setShowRecurringForm(period);
-                  }}
-                >
-                  ⟳ Récurrente
-                  <ChevronDown size={12} />
-                </Button>
-                {showRecurringForm === period && (
-                  <div className="fiche-recurring-dropdown">
-                    <div className="fiche-recurring-row">
-                      <Input
-                        type="text"
-                        className="fiche-recurring-input"
-                        placeholder="Titre de la tâche"
-                        value={recurringForm.title}
-                        onChange={(e) =>
-                          setRecurringForm((prev) => ({ ...prev, title: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="fiche-recurring-row fiche-recurring-row-grid">
-                      <Select
-                        className="fiche-recurring-input"
-                        value={recurringForm.recurrence}
-                        onChange={(e) =>
-                          setRecurringForm((prev) => ({ ...prev, recurrence: e.target.value }))
-                        }
-                      >
-                        <option value="daily">Journalière</option>
-                        <option value="weekly">Hebdomadaire</option>
-                        <option value="monthly">Mensuelle</option>
-                      </Select>
-                      <div className="fiche-time-picker">
-                        <Select
-                          className="fiche-recurring-input fiche-input-time-h"
-                          value={Math.floor((Number(recurringForm.default_time_spent) || 0) / 60)}
-                          onChange={(e) => {
-                            const m = (Number(recurringForm.default_time_spent) || 0) % 60;
-                            const h = Math.max(0, Math.min(8, parseInt(e.target.value, 10) || 0));
-                            setRecurringForm((prev) => ({
-                              ...prev,
-                              default_time_spent: h * 60 + m,
-                            }));
-                          }}
-                          aria-label="Heures"
-                          title="Heures"
-                        >
-                          {HOUR_OPTIONS.map((h) => (
-                            <option key={`rth-${h}`} value={h}>
-                              {h}h
-                            </option>
-                          ))}
-                        </Select>
-                        <Select
-                          className="fiche-recurring-input fiche-input-time-m"
-                          value={(Number(recurringForm.default_time_spent) || 0) % 60}
-                          onChange={(e) => {
-                            const h = Math.floor(
-                              (Number(recurringForm.default_time_spent) || 0) / 60,
-                            );
-                            const m = Math.max(0, Math.min(50, parseInt(e.target.value, 10) || 0));
-                            setRecurringForm((prev) => ({
-                              ...prev,
-                              default_time_spent: h * 60 + m,
-                            }));
-                          }}
-                          aria-label="Minutes"
-                          title="Minutes (tranches de 10)"
-                        >
-                          {MINUTE_OPTIONS.map((m) => (
-                            <option key={`rtm-${m}`} value={m}>
-                              {m.toString().padStart(2, '0')}
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                      <Select
-                        className="fiche-recurring-input"
-                        value={recurringForm.period}
-                        onChange={(e) =>
-                          setRecurringForm((prev) => ({ ...prev, period: e.target.value }))
-                        }
-                        title="Période de la tâche"
-                      >
-                        <option value="AM">Matin (AM)</option>
-                        <option value="PM">Après-midi (PM)</option>
-                      </Select>
-                    </div>
-                    {recurringForm.recurrence === 'weekly' && (
-                      <div className="fiche-recurring-row">
-                        <Select
-                          className="fiche-recurring-input"
-                          value={recurringForm.day_of_week}
-                          onChange={(e) =>
-                            setRecurringForm((prev) => ({ ...prev, day_of_week: e.target.value }))
-                          }
-                        >
-                          <option value="1">Lundi</option>
-                          <option value="2">Mardi</option>
-                          <option value="3">Mercredi</option>
-                          <option value="4">Jeudi</option>
-                          <option value="5">Vendredi</option>
-                          <option value="6">Samedi</option>
-                          <option value="0">Dimanche</option>
-                        </Select>
-                      </div>
-                    )}
-                    {recurringForm.recurrence === 'monthly' && (
-                      <div className="fiche-recurring-row">
-                        <Input
-                          type="number"
-                          min={1}
-                          max={31}
-                          className="fiche-recurring-input"
-                          value={recurringForm.day_of_month}
-                          onChange={(e) =>
-                            setRecurringForm((prev) => ({ ...prev, day_of_month: e.target.value }))
-                          }
-                        />
-                      </div>
-                    )}
-                    <div className="fiche-recurring-row">
-                      <Input
-                        type="text"
-                        className="fiche-recurring-input"
-                        placeholder="Commentaire par défaut (optionnel)"
-                        value={recurringForm.default_comment}
-                        onChange={(e) =>
-                          setRecurringForm((prev) => ({ ...prev, default_comment: e.target.value }))
-                        }
-                      />
-                    </div>
-                    {recurringError ? (
-                      <div className="fiche-recurring-error">{recurringError}</div>
-                    ) : null}
-                    <div className="fiche-recurring-actions">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() =>
-                          editingRecurringId
-                            ? handleUpdateRecurring()
-                            : handleCreateRecurring(period)
-                        }
-                        disabled={recurringSaving}
-                      >
-                        {recurringSaving ? <Loader2 size={12} className="animate-spin" /> : null}
-                        {editingRecurringId ? 'Enregistrer' : 'Créer'}
-                      </Button>
-                      {editingRecurringId && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setShowRecurringForm(null);
-                            resetRecurringForm();
-                          }}
-                        >
-                          Annuler
-                        </Button>
-                      )}
-                    </div>
-                    {recurringForPeriod.length > 0 && (
-                      <ul className="fiche-recurring-list">
-                        {recurringForPeriod.map((r) => (
-                          <li key={r.id}>
-                            <span>{r.title}</span>
-                            <span className="fiche-recurring-chip">{formatRecurringLabel(r)}</span>
-                            <button
-                              type="button"
-                              className="fiche-recurring-edit"
-                              onClick={() => handleStartEditRecurring(r, period)}
-                              title="Modifier"
-                            >
-                              ✎
-                            </button>
-                            <button
-                              type="button"
-                              className="fiche-recurring-delete"
-                              onClick={() => handleDeleteRecurring(r.id)}
-                              title="Supprimer"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="fiche-add-btn fiche-add-btn-planning"
+                onClick={() => setPlanningModalPeriod(period)}
+              >
+                <Calendar size={14} /> Depuis planning
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="fiche-add-btn fiche-add-btn-recurring"
+                onClick={() => {
+                  resetRecurringForm(period);
+                  loadRecurringTasks();
+                  setShowRecurringModal(true);
+                }}
+              >
+                ⟳ Récurrente
+                <ChevronDown size={12} />
+              </Button>
               {loadingTasks && <Loader2 size={14} className="animate-spin" />}
             </div>
           )}
@@ -1132,6 +944,324 @@ function FicheSuivi({ sheet, onSave, saving }) {
 
       {renderSection('🌅 Matin (AM)', amEntries, 'AM')}
       {renderSection('🌇 Après-midi (PM)', pmEntries, 'PM')}
+
+      <Modal
+        open={!!planningModalPeriod}
+        onClose={() => setPlanningModalPeriod(null)}
+        className="suivi-planning-modal"
+      >
+        <ModalHeader
+          title={`Depuis planning - ${planningModalPeriod === 'PM' ? 'Après-midi' : 'Matin'}`}
+          subtitle={`${planningTasks.length} tâche(s) du jour disponibles, y compris terminées effacées`}
+          onClose={() => setPlanningModalPeriod(null)}
+        />
+        <ModalBody>
+          <div className="suivi-planning-modal-tools">
+            <Input
+              value={planningSearch}
+              onChange={(e) => setPlanningSearch(e.target.value)}
+              placeholder="Rechercher: titre, affaire, client..."
+            />
+          </div>
+
+          <div className="suivi-planning-modal-list">
+            {planningTaskGroups.length === 0 ? (
+              <p className="fiche-empty">Aucune tâche ne correspond aux filtres.</p>
+            ) : (
+              planningTaskGroups.map(({ group, tasks }) => (
+                <div key={group} className="suivi-planning-group">
+                  <div className="suivi-planning-group-title">{group}</div>
+                  <div className="suivi-planning-group-items">
+                    {tasks.map((t) => {
+                      const inCurrentSheet = existingIncompleteTaskIds.has(t.id);
+                      const alreadyDoneInSheet = alreadyDoneTaskIds.has(t.id);
+                      const clearedDone = t.status === 'done' && !!t.deleted_at;
+
+                      return (
+                        <button
+                          type="button"
+                          key={t.id}
+                          className="suivi-planning-item"
+                          onClick={() => handlePickPlanningTask(t, planningModalPeriod || 'AM')}
+                          disabled={inCurrentSheet || !planningModalPeriod}
+                          title={
+                            inCurrentSheet
+                              ? 'Déjà présente dans cette fiche'
+                              : 'Ajouter cette tâche à la fiche'
+                          }
+                        >
+                          <div className="suivi-planning-item-main">
+                            <div className="suivi-planning-item-title">
+                              {t.title || t.google_event_title || 'Tâche sans nom'}
+                            </div>
+                            <div className="suivi-planning-item-meta">
+                              {t.affaire_num ? (
+                                <span
+                                  className={`fiche-affaire-pill fiche-affaire-pill--${(t.affaire_type || 'autre').toLowerCase().replace(/\s+/g, '-')}`}
+                                >
+                                  #{t.affaire_num}
+                                </span>
+                              ) : null}
+                              {t.affaire_nom || t.affaire_titre ? (
+                                <span>{t.affaire_nom || t.affaire_titre}</span>
+                              ) : null}
+                              {t.affaire_client ? <span>{t.affaire_client}</span> : null}
+                            </div>
+                          </div>
+                          <div className="suivi-planning-item-badges">
+                            {t.section ? (
+                              <span className="suivi-planning-badge">{t.section}</span>
+                            ) : null}
+                            {t.time ? <span className="suivi-planning-badge">{t.time}</span> : null}
+                            {alreadyDoneInSheet ? (
+                              <span className="suivi-planning-badge is-done">Déjà faite ici</span>
+                            ) : null}
+                            {t.status === 'done' ? (
+                              <span className="suivi-planning-badge is-done">Terminée</span>
+                            ) : (
+                              <span className="suivi-planning-badge is-pending">À faire</span>
+                            )}
+                            {clearedDone ? (
+                              <span className="suivi-planning-badge is-cleared">Effacée</span>
+                            ) : null}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setPlanningModalPeriod(null)}>
+            Fermer
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal
+        open={showRecurringModal}
+        onClose={() => {
+          setShowRecurringModal(false);
+          resetRecurringForm(recurringForm.period || 'AM');
+        }}
+        className="suivi-recurring-modal"
+      >
+        <ModalHeader
+          title="Gestion des tâches récurrentes"
+          subtitle="Créer, modifier et supprimer les tâches AM/PM"
+          onClose={() => {
+            setShowRecurringModal(false);
+            resetRecurringForm(recurringForm.period || 'AM');
+          }}
+        />
+        <ModalBody>
+          <div className="suivi-recurring-grid">
+            <div className="suivi-recurring-form">
+              <div className="fiche-recurring-row">
+                <Input
+                  type="text"
+                  className="fiche-recurring-input"
+                  placeholder="Titre de la tâche"
+                  value={recurringForm.title}
+                  onChange={(e) => setRecurringForm((prev) => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div className="fiche-recurring-row fiche-recurring-row-grid">
+                <Select
+                  className="fiche-recurring-input"
+                  value={recurringForm.recurrence}
+                  onChange={(e) =>
+                    setRecurringForm((prev) => ({ ...prev, recurrence: e.target.value }))
+                  }
+                >
+                  <option value="daily">Journalière</option>
+                  <option value="weekly">Hebdomadaire</option>
+                  <option value="monthly">Mensuelle</option>
+                </Select>
+                <div className="fiche-time-picker">
+                  <Select
+                    className="fiche-recurring-input fiche-input-time-h"
+                    value={Math.floor((Number(recurringForm.default_time_spent) || 0) / 60)}
+                    onChange={(e) => {
+                      const m = (Number(recurringForm.default_time_spent) || 0) % 60;
+                      const h = Math.max(0, Math.min(8, parseInt(e.target.value, 10) || 0));
+                      setRecurringForm((prev) => ({ ...prev, default_time_spent: h * 60 + m }));
+                    }}
+                    aria-label="Heures"
+                    title="Heures"
+                  >
+                    {HOUR_OPTIONS.map((h) => (
+                      <option key={`rthm-${h}`} value={h}>
+                        {h}h
+                      </option>
+                    ))}
+                  </Select>
+                  <Select
+                    className="fiche-recurring-input fiche-input-time-m"
+                    value={(Number(recurringForm.default_time_spent) || 0) % 60}
+                    onChange={(e) => {
+                      const h = Math.floor((Number(recurringForm.default_time_spent) || 0) / 60);
+                      const m = Math.max(0, Math.min(50, parseInt(e.target.value, 10) || 0));
+                      setRecurringForm((prev) => ({ ...prev, default_time_spent: h * 60 + m }));
+                    }}
+                    aria-label="Minutes"
+                    title="Minutes (tranches de 10)"
+                  >
+                    {MINUTE_OPTIONS.map((m) => (
+                      <option key={`rtmm-${m}`} value={m}>
+                        {m.toString().padStart(2, '0')}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <Select
+                  className="fiche-recurring-input"
+                  value={recurringForm.period}
+                  onChange={(e) =>
+                    setRecurringForm((prev) => ({ ...prev, period: e.target.value }))
+                  }
+                  title="Période de la tâche"
+                >
+                  <option value="AM">Matin (AM)</option>
+                  <option value="PM">Après-midi (PM)</option>
+                </Select>
+              </div>
+
+              {recurringForm.recurrence === 'weekly' && (
+                <div className="fiche-recurring-row">
+                  <Select
+                    className="fiche-recurring-input"
+                    value={recurringForm.day_of_week}
+                    onChange={(e) =>
+                      setRecurringForm((prev) => ({ ...prev, day_of_week: e.target.value }))
+                    }
+                  >
+                    <option value="1">Lundi</option>
+                    <option value="2">Mardi</option>
+                    <option value="3">Mercredi</option>
+                    <option value="4">Jeudi</option>
+                    <option value="5">Vendredi</option>
+                    <option value="6">Samedi</option>
+                    <option value="0">Dimanche</option>
+                  </Select>
+                </div>
+              )}
+
+              {recurringForm.recurrence === 'monthly' && (
+                <div className="fiche-recurring-row">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={31}
+                    className="fiche-recurring-input"
+                    value={recurringForm.day_of_month}
+                    onChange={(e) =>
+                      setRecurringForm((prev) => ({ ...prev, day_of_month: e.target.value }))
+                    }
+                  />
+                </div>
+              )}
+
+              <div className="fiche-recurring-row">
+                <Input
+                  type="text"
+                  className="fiche-recurring-input"
+                  placeholder="Commentaire par défaut (optionnel)"
+                  value={recurringForm.default_comment}
+                  onChange={(e) =>
+                    setRecurringForm((prev) => ({ ...prev, default_comment: e.target.value }))
+                  }
+                />
+              </div>
+
+              {recurringError ? (
+                <div className="fiche-recurring-error">{recurringError}</div>
+              ) : null}
+
+              <div className="fiche-recurring-actions">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    editingRecurringId ? handleUpdateRecurring() : handleCreateRecurring()
+                  }
+                  disabled={recurringSaving}
+                >
+                  {recurringSaving ? <Loader2 size={12} className="animate-spin" /> : null}
+                  {editingRecurringId ? 'Enregistrer' : 'Créer'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => resetRecurringForm(recurringForm.period || 'AM')}
+                >
+                  Réinitialiser
+                </Button>
+              </div>
+            </div>
+
+            <div className="suivi-recurring-list-panel">
+              {recurringTasks.length > 0 ? (
+                <ul className="fiche-recurring-list">
+                  {recurringTasks
+                    .sort((a, b) => {
+                      const pa = String(a.period || '').localeCompare(String(b.period || ''));
+                      if (pa !== 0) return pa;
+                      return String(a.title || '').localeCompare(String(b.title || ''), 'fr', {
+                        sensitivity: 'base',
+                      });
+                    })
+                    .map((r) => (
+                      <li key={r.id}>
+                        <span>
+                          <strong>{r.period || 'AM'}</strong> - {r.title}
+                        </span>
+                        <span className="fiche-recurring-chip">{formatRecurringLabel(r)}</span>
+                        <span
+                          className={`fiche-recurring-chip ${r.active === 1 ? '' : 'is-inactive'}`}
+                        >
+                          {r.active === 1 ? 'Active' : 'Inactive'}
+                        </span>
+                        <button
+                          type="button"
+                          className="fiche-recurring-edit"
+                          onClick={() => handleStartEditRecurring(r)}
+                          title="Modifier"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          type="button"
+                          className="fiche-recurring-delete"
+                          onClick={() => handleDeleteRecurring(r.id)}
+                          title="Supprimer"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="fiche-empty">Aucune tâche récurrente créée.</p>
+              )}
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowRecurringModal(false);
+              resetRecurringForm(recurringForm.period || 'AM');
+            }}
+          >
+            Fermer
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Notes */}
       <div className="fiche-notes">

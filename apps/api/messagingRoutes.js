@@ -6,6 +6,7 @@ import db from './database.js';
 import logger from './logger.js';
 import { messageSchema } from './schemas/crud.js';
 import { validate } from './schemas/imports.js';
+import { numericIdSchema } from './schemas/paramsSchema.js';
 
 // ═══════════════════════════════════════
 // SSE — Server-Sent Events pour la messagerie temps réel
@@ -691,56 +692,67 @@ export function setupMessagingRoutes(app, authenticateToken) {
   });
 
   // PUT /api/messaging/messages/:id — Modifier un message (auteur uniquement)
-  app.put('/api/messaging/messages/:id', authenticateToken, (req, res) => {
-    try {
-      const { content } = req.body;
-      if (!content || !content.trim()) {
-        return res.status(400).json({ success: false, error: 'Contenu requis' });
+  app.put(
+    '/api/messaging/messages/:id',
+    authenticateToken,
+    validate(numericIdSchema),
+    validate(messageSchema),
+    (req, res) => {
+      try {
+        const { content } = req.body;
+        if (!content || !content.trim()) {
+          return res.status(400).json({ success: false, error: 'Contenu requis' });
+        }
+
+        const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
+        if (!message) return res.status(404).json({ success: false, error: 'Message non trouvé' });
+        if (message.sender_id !== req.user.id) {
+          return res
+            .status(403)
+            .json({ success: false, error: 'Vous ne pouvez modifier que vos propres messages' });
+        }
+
+        const trimmed = content.trim();
+        const now = new Date().toISOString();
+        db.prepare('UPDATE messages SET content = ?, edited_at = ? WHERE id = ?').run(
+          trimmed,
+          now,
+          req.params.id,
+        );
+
+        // Retourner directement sans second SELECT
+        res.json({ ...message, content: trimmed, edited_at: now });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-
-      const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
-      if (!message) return res.status(404).json({ success: false, error: 'Message non trouvé' });
-      if (message.sender_id !== req.user.id) {
-        return res
-          .status(403)
-          .json({ success: false, error: 'Vous ne pouvez modifier que vos propres messages' });
-      }
-
-      const trimmed = content.trim();
-      const now = new Date().toISOString();
-      db.prepare('UPDATE messages SET content = ?, edited_at = ? WHERE id = ?').run(
-        trimmed,
-        now,
-        req.params.id,
-      );
-
-      // Retourner directement sans second SELECT
-      res.json({ ...message, content: trimmed, edited_at: now });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // DELETE /api/messaging/messages/:id — Supprimer un message (auteur ou admin)
-  app.delete('/api/messaging/messages/:id', authenticateToken, (req, res) => {
-    try {
-      const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
-      if (!message) return res.status(404).json({ success: false, error: 'Message non trouvé' });
-      if (message.sender_id !== req.user.id && !req.user.isAdmin) {
-        return res.status(403).json({ success: false, error: 'Non autorisé' });
+  app.delete(
+    '/api/messaging/messages/:id',
+    authenticateToken,
+    validate(numericIdSchema),
+    (req, res) => {
+      try {
+        const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(req.params.id);
+        if (!message) return res.status(404).json({ success: false, error: 'Message non trouvé' });
+        if (message.sender_id !== req.user.id && !req.user.isAdmin) {
+          return res.status(403).json({ success: false, error: 'Non autorisé' });
+        }
+
+        // Supprimer les pièces jointes associées
+        db.prepare('DELETE FROM message_attachments WHERE message_id = ?').run(req.params.id);
+        db.prepare('DELETE FROM messages WHERE id = ?').run(req.params.id);
+
+        res.json({ success: true, message: 'Message supprimé' });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-
-      // Supprimer les pièces jointes associées
-      db.prepare('DELETE FROM message_attachments WHERE message_id = ?').run(req.params.id);
-      db.prepare('DELETE FROM messages WHERE id = ?').run(req.params.id);
-
-      res.json({ success: true, message: 'Message supprimé' });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // GET /api/messaging/unread-count — Nombre total de messages non lus
   app.get('/api/messaging/unread-count', authenticateToken, (req, res) => {

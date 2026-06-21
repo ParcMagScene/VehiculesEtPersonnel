@@ -864,6 +864,20 @@
   z-index: var(--z-dropdown);
 }
 
+.reservation.reservation-overflow-start {
+  border-left-style: dashed !important;
+  border-left-width: 3px !important;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.reservation.reservation-overflow-end {
+  border-right-style: dashed !important;
+  border-right-width: 3px !important;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 .reservation.maintenance-block {
   cursor: pointer;
   font-style: italic;

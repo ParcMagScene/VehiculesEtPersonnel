@@ -92,6 +92,32 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
           `SELECT ta.id, ta.title, ta.section, ta.period, ta.time, ta.end_time,
                   ta.affaire_num, ta.notes, ta.status, ta.google_event_title,
                   ta.deleted_at,
+                  EXISTS (
+                    SELECT 1
+                    FROM task_assignments prev
+                    WHERE prev.deleted_at IS NOT NULL
+                      AND prev.notes LIKE '%[reportée]%'
+                      AND prev.date < ta.date
+                      AND prev.section = ta.section
+                      AND prev.title = ta.title
+                      AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                      AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                      AND COALESCE(prev.source_id, '') = COALESCE(ta.source_id, '')
+                      AND COALESCE(prev.time, '') = COALESCE(ta.time, '')
+                  ) AS is_rolled,
+                  (
+                    SELECT MAX(prev.date)
+                    FROM task_assignments prev
+                    WHERE prev.deleted_at IS NOT NULL
+                      AND prev.notes LIKE '%[reportée]%'
+                      AND prev.date < ta.date
+                      AND prev.section = ta.section
+                      AND prev.title = ta.title
+                      AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                      AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                      AND COALESCE(prev.source_id, '') = COALESCE(ta.source_id, '')
+                      AND COALESCE(prev.time, '') = COALESCE(ta.time, '')
+                  ) AS rolled_from_date,
                   a.nom AS affaire_nom, a.titre AS affaire_titre,
                   a.type AS affaire_type, a.client AS affaire_client
            FROM task_assignments ta

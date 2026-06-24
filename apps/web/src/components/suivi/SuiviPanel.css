@@ -823,6 +823,7 @@
   gap: var(--space-1);
 }
 .suivi-planning-item {
+  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
@@ -838,6 +839,34 @@
   transition:
     border-color 0.15s ease,
     transform 0.15s ease;
+}
+.suivi-planning-item.is-rolled {
+  border-color: rgba(250, 204, 21, 0.45);
+}
+.suivi-planning-item.is-rolled::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 8px;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(250, 204, 21, 0.08) 0,
+    rgba(250, 204, 21, 0.08) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}
+.suivi-planning-item.is-rolled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+  background: rgba(250, 204, 21, 0.9);
+  pointer-events: none;
 }
 .suivi-planning-item:hover:not(:disabled) {
   border-color: var(--accent-color);
@@ -895,6 +924,10 @@
 .suivi-planning-badge.is-cleared {
   background: rgba(249, 115, 22, 0.2);
   color: #fdba74;
+}
+.suivi-planning-badge.is-rolled {
+  background: rgba(250, 204, 21, 0.22);
+  color: #fde68a;
 }
 @media (max-width: 760px) {
   .suivi-planning-modal-tools {

@@ -8,7 +8,7 @@ import {
 import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import db from './database.js';
 import logger from './logger.js';
-import { affaireSchema, validate } from './schemas/imports.js';
+import { affaireSchema, validate, validateParams } from './schemas/imports.js';
 import { numericIdSchema } from './schemas/paramsSchema.js';
 
 // Mapping affaire.type → section des tâches de préparation associées.
@@ -541,7 +541,7 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
   app.put(
     '/api/affaires/:id',
     authenticateToken,
-    validate(numericIdSchema),
+    validateParams(numericIdSchema),
     validate(affaireSchema),
     (req, res) => {
       try {
@@ -612,8 +612,8 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
   app.delete(
     '/api/affaires/:id',
     authenticateToken,
+    validateParams(numericIdSchema),
     requireAdmin,
-    validate(numericIdSchema),
     (req, res) => {
       try {
         const { id } = req.params;

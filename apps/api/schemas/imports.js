@@ -360,3 +360,25 @@ export function validate(schema) {
     next();
   };
 }
+
+// ── Middleware factory de validation Zod pour req.params ──
+export function validateParams(schema) {
+  return (req, res, next) => {
+    const result = schema.safeParse(req.params);
+    if (!result.success) {
+      const zodIssues = Array.isArray(result.error?.issues)
+        ? result.error.issues
+        : Array.isArray(result.error?.errors)
+          ? result.error.errors
+          : [];
+      const errors = zodIssues.map(
+        (e) => `${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
+      );
+      return res
+        .status(400)
+        .json({ success: false, error: 'Paramètres invalides', details: errors });
+    }
+    req.params = result.data;
+    next();
+  };
+}

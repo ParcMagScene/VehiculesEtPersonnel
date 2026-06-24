@@ -275,6 +275,16 @@ export function setupBLImportRoutes(app, authenticateToken) {
                 logger.error('Erreur création auto affaire:', affaireErr.message);
               }
             }
+          } else if (affaireTypeResolved) {
+            // L'affaire existe deja : appliquer le type choisi dans la modale BL
+            // pour eviter de conserver un ancien type (ex: Prestation) par erreur.
+            db.prepare(
+              `UPDATE affaires
+               SET type = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
+               WHERE numero_affaire = ?`,
+            ).run(affaireTypeResolved, req.user.id, linkedAffaireId);
+            invalidateEntity('affaires');
+            listCache.invalidatePattern(/^planning-affaires/);
           }
         }
 

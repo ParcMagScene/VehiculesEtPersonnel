@@ -976,12 +976,13 @@ function FicheSuivi({ sheet, onSave, saving }) {
                       const inCurrentSheet = existingIncompleteTaskIds.has(t.id);
                       const alreadyDoneInSheet = alreadyDoneTaskIds.has(t.id);
                       const clearedDone = t.status === 'done' && !!t.deleted_at;
+                      const rolledTask = t.is_rolled === 1 || !!t.rolled_from_date;
 
                       return (
                         <button
                           type="button"
                           key={t.id}
-                          className="suivi-planning-item"
+                          className={`suivi-planning-item ${rolledTask ? 'is-rolled' : ''}`}
                           onClick={() => handlePickPlanningTask(t, planningModalPeriod || 'AM')}
                           disabled={inCurrentSheet || !planningModalPeriod}
                           title={
@@ -1023,6 +1024,11 @@ function FicheSuivi({ sheet, onSave, saving }) {
                             )}
                             {clearedDone ? (
                               <span className="suivi-planning-badge is-cleared">Effacée</span>
+                            ) : null}
+                            {rolledTask ? (
+                              <span className="suivi-planning-badge is-rolled">
+                                Reportée{t.rolled_from_date ? ` (${t.rolled_from_date})` : ''}
+                              </span>
                             ) : null}
                           </div>
                         </button>

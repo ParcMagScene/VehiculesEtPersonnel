@@ -21,6 +21,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Select,
   Tooltip,
 } from '@/design-system';
 
@@ -42,10 +43,10 @@ export const PlanningTaskRow = React.memo(
     onToggleVisible,
     onEdit,
     onLinkTask,
-    onLinkTaskToDisplayEvent,
+    onLinkTaskToGoogleEvent,
     onAssignTaskPerson,
     onPostponeTask,
-    displayEvents,
+    googleEvents = [],
     persons,
     affaires,
     selectedDate,
@@ -59,6 +60,14 @@ export const PlanningTaskRow = React.memo(
     const isGoogle =
       sourceType === 'google_event' || (!!googleEventTitle && (task.sourceId || task.source_id));
     const isHidden = task.visible === 0;
+    const rolledTask =
+      task.isRolled === 1 ||
+      task.isRolled === true ||
+      task.is_rolled === 1 ||
+      task.is_rolled === true ||
+      !!task.rolledFromDate ||
+      !!task.rolled_from_date;
+    const rolledFrom = task.rolledFromDate || task.rolled_from_date || '';
     const affaireNum =
       task.affaireNum || extractAffaireNum(task.title) || extractAffaireNum(googleEventTitle);
     const taskSection = normalizeSection(task.section || 'manual');
@@ -206,8 +215,12 @@ export const PlanningTaskRow = React.memo(
     const [postponeDate, setPostponeDate] = React.useState(task.date || selectedDate || '');
     const [postponePeriod, setPostponePeriod] = React.useState(task.period || 'AM');
     const [linkTaskSearchQuery, setLinkTaskSearchQuery] = React.useState('');
-    const [selectedDisplayEventId, setSelectedDisplayEventId] = React.useState(
-      String(task.display_event_id || task.displayEventId || ''),
+    const [selectedGoogleEventId, setSelectedGoogleEventId] = React.useState(
+      String(
+        (task.sourceType || task.source_type) === 'google_event'
+          ? task.sourceId || task.source_id || ''
+          : '',
+      ),
     );
     const [selectedPersonId, setSelectedPersonId] = React.useState(String(task.person_id || ''));
 
@@ -215,7 +228,13 @@ export const PlanningTaskRow = React.memo(
       if (!showActionsModal) return;
       setPostponeDate(task.date || selectedDate || '');
       setPostponePeriod(task.period || 'AM');
-      setSelectedDisplayEventId(String(task.display_event_id || task.displayEventId || ''));
+      setSelectedGoogleEventId(
+        String(
+          (task.sourceType || task.source_type) === 'google_event'
+            ? task.sourceId || task.source_id || ''
+            : '',
+        ),
+      );
       setSelectedPersonId(String(task.person_id || ''));
       setLinkTaskSearchQuery('');
     }, [showActionsModal, task, selectedDate]);
@@ -248,22 +267,38 @@ export const PlanningTaskRow = React.memo(
         .slice(0, 8);
     }, [linkTaskSearchQuery, sortedAffaires]);
 
-    const visibleDisplayEvents = React.useMemo(() => {
-      const forDay = (displayEvents || []).filter(
-        (ev) => !selectedDate || ev.date === selectedDate,
-      );
+    const googleEventsForLink = React.useMemo(() => {
+      const linkDate = task.date || selectedDate;
+      const forDay = (googleEvents || []).filter((ev) => {
+        if (!linkDate) return true;
+
+        const dayStart = new Date(`${linkDate}T00:00:00`);
+        const dayEnd = new Date(`${linkDate}T23:59:59.999`);
+
+        const startRaw = ev.start?.dateTime || ev.start?.date;
+        const endRaw = ev.end?.dateTime || ev.end?.date;
+        if (!startRaw) return false;
+
+        const startAt = new Date(ev.start?.dateTime ? startRaw : `${startRaw}T00:00:00`);
+        const endAt = endRaw
+          ? new Date(ev.end?.dateTime ? endRaw : `${endRaw}T23:59:59.999`)
+          : startAt;
+
+        // Inclut tout événement qui chevauche la journée ciblée, y compris multi-jours.
+        return startAt <= dayEnd && endAt >= dayStart;
+      });
       return forDay.sort((a, b) => {
-        const ad = `${a.date || ''} ${a.time || ''}`;
-        const bd = `${b.date || ''} ${b.time || ''}`;
+        const ad = a.start?.dateTime || a.start?.date || '';
+        const bd = b.start?.dateTime || b.start?.date || '';
         return ad.localeCompare(bd);
       });
-    }, [displayEvents, selectedDate]);
+    }, [googleEvents, selectedDate, task.date]);
 
     return (
       <>
         <div
           key={task.id}
-          className={`task-row event-row-cols task-row-clickable ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}
+          className={`task-row event-row-cols task-row-clickable ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''} ${rolledTask ? 'is-rolled' : ''}`}
           role="button"
           tabIndex={0}
           onClick={() => setShowActionsModal(true)}
@@ -342,6 +377,14 @@ export const PlanningTaskRow = React.memo(
             )}
             {displayNom}
             {task.notes && <span className="task-notes-inline">({task.notes})</span>}
+            {rolledTask && (
+              <span
+                className="task-rolled-badge"
+                title={`Tâche reportée${rolledFrom ? ` depuis le ${rolledFrom}` : ''}`}
+              >
+                Reportée{rolledFrom ? ` (${rolledFrom})` : ''}
+              </span>
+            )}
             {isGoogle && (
               <Tooltip content="Google Calendar" position="bottom">
                 <span className="google-mini-badge google-mini-badge-end">G</span>
@@ -388,32 +431,41 @@ export const PlanningTaskRow = React.memo(
           <span className="ev-col ev-col-personnel">{renderMultiAssign('task', task.id)}</span>
         </div>
 
-        <Modal open={showActionsModal} onClose={() => setShowActionsModal(false)} size="xl">
+        <Modal
+          open={showActionsModal}
+          onClose={() => setShowActionsModal(false)}
+          size="xl"
+          className="task-actions-modal"
+        >
           <ModalHeader onClose={() => setShowActionsModal(false)}>Actions sur la tâche</ModalHeader>
-          <ModalBody>
+          <ModalBody className="task-actions-modal-body">
             <div className="task-actions-modal-grid">
-              <Button
-                variant="secondary"
-                className="task-actions-modal-btn"
-                onClick={() => {
-                  setShowActionsModal(false);
-                  onEdit(task);
-                }}
-              >
-                <Edit2 size={14} /> Modifier
-              </Button>
+              <div className="task-actions-modal-quick-actions">
+                <Button
+                  variant="secondary"
+                  className="task-actions-modal-btn"
+                  size="md"
+                  onClick={() => {
+                    setShowActionsModal(false);
+                    onEdit(task);
+                  }}
+                >
+                  <Edit2 size={14} /> Modifier
+                </Button>
 
-              <Button
-                variant="secondary"
-                className="task-actions-modal-btn"
-                onClick={() => {
-                  setShowActionsModal(false);
-                  onToggleVisible(task);
-                }}
-              >
-                {isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
-                {isHidden ? 'Afficher' : 'Masquer'}
-              </Button>
+                <Button
+                  variant="secondary"
+                  className="task-actions-modal-btn"
+                  size="md"
+                  onClick={() => {
+                    setShowActionsModal(false);
+                    onToggleVisible(task);
+                  }}
+                >
+                  {isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                  {isHidden ? 'Afficher' : 'Masquer'}
+                </Button>
+              </div>
 
               <div className="task-actions-modal-block">
                 <div className="task-actions-modal-label">
@@ -422,22 +474,27 @@ export const PlanningTaskRow = React.memo(
                 <div className="task-actions-modal-row">
                   <Input
                     type="date"
+                    size="md"
                     className="task-actions-modal-input"
                     value={postponeDate}
                     onChange={(e) => setPostponeDate(e.target.value)}
                   />
-                  <select
+                  <Select
+                    size="md"
+                    fullWidth
                     className="task-actions-modal-select"
                     value={postponePeriod}
                     onChange={(e) => setPostponePeriod(e.target.value)}
-                  >
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                    <option value="JOURNEE">Journée</option>
-                  </select>
+                    options={[
+                      { value: 'AM', label: 'AM' },
+                      { value: 'PM', label: 'PM' },
+                      { value: 'JOURNEE', label: 'Journée' },
+                    ]}
+                  />
                   <Button
                     variant="secondary"
                     className="task-actions-modal-btn"
+                    size="md"
                     disabled={!postponeDate}
                     onClick={() => {
                       onPostponeTask(task.id, postponeDate, postponePeriod);
@@ -451,26 +508,32 @@ export const PlanningTaskRow = React.memo(
 
               <div className="task-actions-modal-block">
                 <div className="task-actions-modal-label">
-                  <Link size={14} /> Lier à un évènement
+                  <Link size={14} /> Lier à un évènement Google
                 </div>
                 <div className="task-actions-modal-row">
-                  <select
+                  <Select
+                    size="md"
+                    fullWidth
                     className="task-actions-modal-select task-actions-modal-select-wide"
-                    value={selectedDisplayEventId}
-                    onChange={(e) => setSelectedDisplayEventId(e.target.value)}
-                  >
-                    <option value="">Aucun évènement</option>
-                    {visibleDisplayEvents.map((ev) => (
-                      <option key={ev.id} value={ev.id}>
-                        {`${ev.date || ''} ${ev.time || ''} • ${ev.type || 'event'} • ${ev.client || ev.comment || 'Sans libellé'}`}
-                      </option>
-                    ))}
-                  </select>
+                    value={selectedGoogleEventId}
+                    onChange={(e) => setSelectedGoogleEventId(e.target.value)}
+                    options={[
+                      { value: '', label: 'Aucun évènement Google' },
+                      ...googleEventsForLink.map((ev) => ({
+                        value: String(ev.id),
+                        label: `${(ev.start?.dateTime || '').slice(11, 16) || 'Journée'} • ${ev.summary || 'Évènement Google'}${ev.location ? ` • ${ev.location}` : ''}`,
+                      })),
+                    ]}
+                  />
                   <Button
                     variant="secondary"
                     className="task-actions-modal-btn"
+                    size="md"
                     onClick={() => {
-                      onLinkTaskToDisplayEvent(task.id, selectedDisplayEventId || null);
+                      const selectedGoogleEvent = googleEventsForLink.find(
+                        (ev) => String(ev.id) === String(selectedGoogleEventId),
+                      );
+                      onLinkTaskToGoogleEvent(task.id, selectedGoogleEvent || null);
                       setShowActionsModal(false);
                     }}
                   >
@@ -485,6 +548,7 @@ export const PlanningTaskRow = React.memo(
                 </div>
                 <Input
                   type="text"
+                  size="md"
                   className="task-actions-modal-input"
                   placeholder="Rechercher AF, client..."
                   value={linkTaskSearchQuery}
@@ -523,21 +587,25 @@ export const PlanningTaskRow = React.memo(
                   <User size={14} /> Affecter personnel
                 </div>
                 <div className="task-actions-modal-row">
-                  <select
+                  <Select
+                    size="md"
+                    fullWidth
                     className="task-actions-modal-select task-actions-modal-select-wide"
                     value={selectedPersonId}
                     onChange={(e) => setSelectedPersonId(e.target.value)}
-                  >
-                    <option value="">Aucun personnel</option>
-                    {(persons || []).map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {(p.firstName || p.prenom || '') + ' ' + (p.lastName || p.nom || '')}
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: '', label: 'Aucun personnel' },
+                      ...(persons || []).map((p) => ({
+                        value: String(p.id),
+                        label:
+                          `${p.firstName || p.prenom || ''} ${p.lastName || p.nom || ''}`.trim(),
+                      })),
+                    ]}
+                  />
                   <Button
                     variant="secondary"
                     className="task-actions-modal-btn"
+                    size="md"
                     onClick={() => {
                       onAssignTaskPerson(
                         task.id,
@@ -556,6 +624,7 @@ export const PlanningTaskRow = React.memo(
             <Button
               variant="danger"
               className="task-actions-modal-btn task-actions-modal-btn-danger"
+              size="md"
               onClick={() => {
                 setShowActionsModal(false);
                 onDelete(task.id);
@@ -566,6 +635,7 @@ export const PlanningTaskRow = React.memo(
             <Button
               variant="secondary"
               className="task-actions-modal-btn"
+              size="md"
               onClick={() => setShowActionsModal(false)}
             >
               Fermer

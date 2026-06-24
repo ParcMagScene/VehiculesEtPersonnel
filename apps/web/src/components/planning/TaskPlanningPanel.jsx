@@ -817,15 +817,22 @@ function TaskPlanningPanel({
     [loadTasks, toast],
   );
 
-  const handleLinkTaskToDisplayEvent = useCallback(
-    async (taskId, displayEventId) => {
+  const handleLinkTaskToGoogleEvent = useCallback(
+    async (taskId, googleEvent) => {
       try {
-        await api.updateTask(taskId, { display_event_id: displayEventId || null });
+        await api.updateTask(taskId, {
+          display_event_id: null,
+          source_type: googleEvent ? 'google_event' : 'manual',
+          source_id: googleEvent?.id || null,
+          google_event_title: googleEvent?.summary || null,
+        });
         refreshBus.publish('planning');
         await loadTasks(true);
-        toast.success(displayEventId ? 'Tâche liée à un événement' : 'Liaison événement retirée');
+        toast.success(
+          googleEvent ? 'Tâche liée à un évènement Google' : 'Liaison évènement Google retirée',
+        );
       } catch {
-        toast.error('Erreur lors de la liaison événement');
+        toast.error('Erreur lors de la liaison évènement Google');
       }
     },
     [loadTasks, toast],
@@ -941,10 +948,10 @@ function TaskPlanningPanel({
         onToggleVisible={handleToggleTaskVisible}
         onEdit={openTaskEditModal}
         onLinkTask={handleLinkTaskToAffaire}
-        onLinkTaskToDisplayEvent={handleLinkTaskToDisplayEvent}
+        onLinkTaskToGoogleEvent={handleLinkTaskToGoogleEvent}
         onAssignTaskPerson={handleAssignTaskPerson}
         onPostponeTask={handlePostponeTask}
-        displayEvents={displayEvents}
+        googleEvents={googleEvents}
         persons={persons}
         affaires={affaires}
         selectedDate={selectedDate}
@@ -959,10 +966,10 @@ function TaskPlanningPanel({
       handleToggleTaskVisible,
       openTaskEditModal,
       handleLinkTaskToAffaire,
-      handleLinkTaskToDisplayEvent,
+      handleLinkTaskToGoogleEvent,
       handleAssignTaskPerson,
       handlePostponeTask,
-      displayEvents,
+      googleEvents,
       persons,
       affaires,
       selectedDate,

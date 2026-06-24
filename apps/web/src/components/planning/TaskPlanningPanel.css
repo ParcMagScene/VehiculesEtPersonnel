@@ -1056,6 +1056,38 @@
   text-decoration: line-through;
   color: var(--text-muted, var(--text-muted));
 }
+
+.task-planning-panel .task-row.is-rolled {
+  border-left: 3px solid var(--theme-warning, #f59e0b);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-warning, #f59e0b) 14%, transparent) 0%,
+    transparent 18%
+  );
+}
+
+.task-planning-panel .task-row.is-rolled:hover {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-warning, #f59e0b) 20%, transparent) 0%,
+    var(--surface-secondary) 22%
+  );
+}
+
+.task-planning-panel .task-rolled-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theme-warning, #f59e0b) 60%, transparent);
+  background: color-mix(in srgb, var(--theme-warning, #f59e0b) 16%, transparent);
+  color: color-mix(in srgb, var(--theme-warning, #f59e0b) 60%, black 20%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
 /* Status btn dans layout colonnes */
 .task-planning-panel .event-row-cols .task-status-btn {
   width: 22px;
@@ -2613,6 +2645,27 @@
   gap: var(--space-3);
 }
 
+.ui-modal.task-actions-modal {
+  max-width: 980px;
+}
+
+.ui-modal.task-actions-modal .task-actions-modal-body {
+  padding-top: var(--space-3);
+}
+
+.ui-modal.task-actions-modal .task-actions-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.ui-modal.task-actions-modal .task-actions-modal-quick-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 .task-planning-panel .task-actions-modal-block {
   display: flex;
   flex-direction: column;
@@ -2628,12 +2681,20 @@
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 70%, transparent);
 }
 
+.ui-modal.task-actions-modal .task-actions-modal-block {
+  min-height: 116px;
+}
+
 .task-planning-panel .task-actions-modal-label {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
   font-size: var(--font-sm);
   font-weight: 700;
+}
+
+.ui-modal.task-actions-modal .task-actions-modal-label {
+  margin-bottom: 2px;
 }
 
 .task-planning-panel .task-actions-modal-row {
@@ -2643,17 +2704,38 @@
   flex-wrap: wrap;
 }
 
+.ui-modal.task-actions-modal .task-actions-modal-row {
+  align-items: stretch;
+}
+
 .task-planning-panel .task-actions-modal-input,
 .task-planning-panel .task-actions-modal-select {
   min-height: 38px;
-  border: 1px solid color-mix(in srgb, var(--border-default) 85%, black 15%);
-  border-radius: var(--radius-md);
-  background: var(--surface-primary);
-  color: var(--text-body);
-  box-shadow: 0 1px 1px color-mix(in srgb, black 5%, transparent);
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
+}
+
+.task-planning-panel .task-actions-modal-select.ui-select-wrapper {
+  border: 1px solid color-mix(in srgb, var(--border-default) 85%, black 15%);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  box-shadow: 0 1px 1px color-mix(in srgb, black 5%, transparent);
+}
+
+.task-planning-panel .task-actions-modal-select.ui-select-wrapper:focus-within {
+  border-color: var(--interactive-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 20%, transparent);
+}
+
+.task-planning-panel .task-actions-modal-select.ui-select-wrapper .ui-select {
+  color: var(--text-body);
+  background: transparent;
+}
+
+.ui-modal.task-actions-modal .task-actions-modal-input,
+.ui-modal.task-actions-modal .task-actions-modal-select {
+  width: 100%;
 }
 
 .task-planning-panel .task-actions-modal-input:focus,
@@ -2661,6 +2743,15 @@
   outline: none;
   border-color: var(--interactive-primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 20%, transparent);
+}
+
+.ui-modal.task-actions-modal .task-actions-modal-select {
+  min-width: 140px;
+}
+
+.ui-modal.task-actions-modal .task-actions-modal-select.ui-select-wrapper {
+  min-width: 140px;
+  width: 100%;
 }
 
 .task-planning-panel .task-actions-modal-select {
@@ -2685,6 +2776,10 @@
   padding: 4px;
 }
 
+.ui-modal.task-actions-modal .task-actions-modal-affaires {
+  max-height: 180px;
+}
+
 .task-planning-panel .task-actions-modal-affaire-option {
   justify-content: flex-start;
   gap: var(--space-2);
@@ -2696,6 +2791,10 @@
   border-radius: var(--radius-md);
 }
 
+.ui-modal.task-actions-modal .task-actions-modal-btn {
+  min-height: 40px;
+}
+
 .task-planning-panel .task-actions-modal-btn-danger {
   box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-danger) 18%, transparent);
 }
@@ -2704,6 +2803,21 @@
   font-size: var(--font-sm);
   color: var(--text-muted);
   padding: 6px 2px 2px;
+}
+
+.ui-modal.task-actions-modal .task-actions-modal-hint {
+  font-size: var(--font-base);
+}
+
+@media (max-width: 900px) {
+  .ui-modal.task-actions-modal {
+    width: calc(100vw - 24px);
+    max-width: none;
+  }
+
+  .ui-modal.task-actions-modal .task-actions-modal-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .link-no-results-more {

@@ -74,7 +74,33 @@ export function setupTaskRoutes(app, authenticateToken) {
              v.registration AS reservation_vehicle_reg,
              r.start_date AS reservation_start,
              r.end_date AS reservation_end,
-             r.driver_name AS reservation_driver
+             r.driver_name AS reservation_driver,
+             EXISTS (
+               SELECT 1
+               FROM task_assignments prev
+               WHERE prev.deleted_at IS NOT NULL
+                 AND prev.notes LIKE '%[reportée]%'
+                 AND prev.date < ta.date
+                 AND prev.section = ta.section
+                 AND prev.title = ta.title
+                 AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                 AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                 AND COALESCE(prev.source_id, '') = COALESCE(ta.source_id, '')
+                 AND COALESCE(prev.time, '') = COALESCE(ta.time, '')
+             ) AS is_rolled,
+             (
+               SELECT MAX(prev.date)
+               FROM task_assignments prev
+               WHERE prev.deleted_at IS NOT NULL
+                 AND prev.notes LIKE '%[reportée]%'
+                 AND prev.date < ta.date
+                 AND prev.section = ta.section
+                 AND prev.title = ta.title
+                 AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                 AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                 AND COALESCE(prev.source_id, '') = COALESCE(ta.source_id, '')
+                 AND COALESCE(prev.time, '') = COALESCE(ta.time, '')
+             ) AS rolled_from_date
       FROM task_assignments ta
       LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
       LEFT JOIN persons p ON ta.person_id = p.id

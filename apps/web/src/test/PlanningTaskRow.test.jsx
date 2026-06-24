@@ -10,6 +10,15 @@ vi.mock('@/design-system', () => ({
     </button>
   ),
   Input: ({ onChange, ...props }) => <input onChange={onChange} {...props} />,
+  Select: ({ value, onChange, options = [], className = '', ...props }) => (
+    <select value={value} onChange={onChange} className={className} {...props}>
+      {options.map((opt) => (
+        <option key={String(opt.value)} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  ),
   Modal: ({ open, children }) => (open ? <div data-testid="modal">{children}</div> : null),
   ModalHeader: ({ children }) => <div>{children}</div>,
   ModalBody: ({ children }) => <div>{children}</div>,
@@ -48,10 +57,10 @@ const baseProps = {
   onToggleVisible: vi.fn(),
   onEdit: vi.fn(),
   onLinkTask: vi.fn(),
-  onLinkTaskToDisplayEvent: vi.fn(),
+  onLinkTaskToGoogleEvent: vi.fn(),
   onAssignTaskPerson: vi.fn(),
   onPostponeTask: vi.fn(),
-  displayEvents: [],
+  googleEvents: [],
   persons: [],
   affaires: [],
   selectedDate: '2025-06-01',

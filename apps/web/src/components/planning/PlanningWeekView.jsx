@@ -381,7 +381,6 @@ const PlanningWeekViewInner = ({
           <span className="ev-col-h ev-col-h-spacer"></span>
           <span className="ev-col-h ev-col-h-time">Heure</span>
           <span className="ev-col-h ev-col-h-personnel">Personnels</span>
-          <span className="ev-col-h ev-col-h-actions">Actions</span>
         </div>
         {sectionOrder.map((secKey) => {
           const secInfo = SECTIONS[secKey];

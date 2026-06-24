@@ -1,8 +1,28 @@
 /* eslint-disable no-misleading-character-class */
-import { Check, Clock, Edit2, Eye, EyeOff, Link, MapPin, Trash2, Truck, X } from 'lucide-react';
+import {
+  Calendar,
+  Check,
+  Clock,
+  Edit2,
+  Eye,
+  EyeOff,
+  Link,
+  MapPin,
+  Trash2,
+  Truck,
+  User,
+} from 'lucide-react';
 import React from 'react';
 
-import { Button, Input, Tooltip } from '@/design-system';
+import {
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Tooltip,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import AffaireBadge from '../AffaireBadge';
@@ -22,10 +42,11 @@ export const PlanningTaskRow = React.memo(
     onToggleVisible,
     onEdit,
     onLinkTask,
-    linkingTaskId,
-    setLinkingTaskId,
-    linkTaskSearchQuery,
-    setLinkTaskSearchQuery,
+    onLinkTaskToDisplayEvent,
+    onAssignTaskPerson,
+    onPostponeTask,
+    displayEvents,
+    persons,
     affaires,
     selectedDate,
     renderMultiAssign,
@@ -45,7 +66,6 @@ export const PlanningTaskRow = React.memo(
 
     // --- Nettoyage du titre pour éviter les doublons ---
     let displayTitle = task.title;
-    // 1. Retirer le suffixe " — eventSummary" (tâches Google: "emoji Label — Summary")
     if (googleEventTitle) {
       const dashIdx = displayTitle.indexOf(' — ');
       if (dashIdx >= 0) {
@@ -55,10 +75,9 @@ export const PlanningTaskRow = React.memo(
         }
       }
     }
-    // 2. Retirer le label de section du titre (redondant : "📦 Chargement" dans la section Chargement, etc.)
+
     if (sectionInfo?.affaireOnly) {
       displayTitle = displayTitle
-        // eslint-disable-next-line no-misleading-character-class
         .replace(
           /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
           '',
@@ -73,7 +92,6 @@ export const PlanningTaskRow = React.memo(
       }
     }
 
-    // 2b. Section Courses : extraire le type (Livraison, Récupération, etc.)
     let courseType = null;
     if (taskSection === 'courses') {
       const SECTION_COURSE_TYPE = {
@@ -92,7 +110,6 @@ export const PlanningTaskRow = React.memo(
       } else if (taskEventType && EVENT_COURSE_TYPE[taskEventType]) {
         courseType = EVENT_COURSE_TYPE[taskEventType];
       } else {
-        // eslint-disable-next-line no-misleading-character-class
         const courseMatch = displayTitle.match(
           /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\b/iu,
         );
@@ -112,7 +129,6 @@ export const PlanningTaskRow = React.memo(
       }
       if (courseType) {
         displayTitle = displayTitle
-          // eslint-disable-next-line no-misleading-character-class
           .replace(
             /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
             '',
@@ -128,7 +144,6 @@ export const PlanningTaskRow = React.memo(
       }
     }
 
-    // 3. Retirer le N° d'affaire du titre (déjà affiché en badge)
     const stripAffaireNum = (text) => {
       if (!text || !affaireNum) return text;
       const digits = affaireNum.replace(/^AF/i, '');
@@ -142,7 +157,6 @@ export const PlanningTaskRow = React.memo(
     };
     displayTitle = stripAffaireNum(displayTitle);
 
-    // 4. Enrichir avec le client/titre de l'affaire si le titre est trop générique
     const linkedAffaire = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
     const isGenericTitle =
       !displayTitle ||
@@ -152,7 +166,6 @@ export const PlanningTaskRow = React.memo(
       displayTitle = titre || displayTitle || '-';
     }
 
-    // --- Nettoyage du sous-titre (googleEventTitle) ---
     let cleanEventTitle = stripAffaireNum(googleEventTitle || '');
     if (isGenericTitle && linkedAffaire) {
       const affaireTitre = linkedAffaire.titre || linkedAffaire.eventName || '';
@@ -168,7 +181,6 @@ export const PlanningTaskRow = React.memo(
         cleanEventNorm !== displayTitleNorm &&
         !displayTitleNorm.includes(cleanEventNorm);
 
-    // Masquer l'eventType quand il est redondant avec le nom de la section
     const SECTION_EVENT_TYPES = {
       prep_locations: 'preparation',
       prep_prestations: 'preparation',
@@ -183,7 +195,6 @@ export const PlanningTaskRow = React.memo(
     };
     const showEventType = taskEventType && SECTION_EVENT_TYPES[taskSection] !== taskEventType;
 
-    // Combiner titre + sous-titre
     const fullTitle = showSubtitle ? `${displayTitle} — ${cleanEventTitle}` : displayTitle;
     const affaireNom = stripAffaireNum(linkedAffaire?.nom || '');
     const affaireClient = linkedAffaire?.client || '';
@@ -191,279 +202,377 @@ export const PlanningTaskRow = React.memo(
     const displayNom = rawNom.charAt(0).toUpperCase() + rawNom.slice(1);
     const displayClient = affaireClient;
 
+    const [showActionsModal, setShowActionsModal] = React.useState(false);
+    const [postponeDate, setPostponeDate] = React.useState(task.date || selectedDate || '');
+    const [postponePeriod, setPostponePeriod] = React.useState(task.period || 'AM');
+    const [linkTaskSearchQuery, setLinkTaskSearchQuery] = React.useState('');
+    const [selectedDisplayEventId, setSelectedDisplayEventId] = React.useState(
+      String(task.display_event_id || task.displayEventId || ''),
+    );
+    const [selectedPersonId, setSelectedPersonId] = React.useState(String(task.person_id || ''));
+
+    React.useEffect(() => {
+      if (!showActionsModal) return;
+      setPostponeDate(task.date || selectedDate || '');
+      setPostponePeriod(task.period || 'AM');
+      setSelectedDisplayEventId(String(task.display_event_id || task.displayEventId || ''));
+      setSelectedPersonId(String(task.person_id || ''));
+      setLinkTaskSearchQuery('');
+    }, [showActionsModal, task, selectedDate]);
+
+    const today = selectedDate || new Date().toISOString().slice(0, 10);
+    const sortedAffaires = React.useMemo(() => {
+      return [...affaires].sort((a, b) => {
+        const aDebut = a.dateDebut || a.date_debut || '';
+        const aFin = a.dateFin || a.date_fin || '';
+        const bDebut = b.dateDebut || b.date_debut || '';
+        const bFin = b.dateFin || b.date_fin || '';
+        const aActive = aDebut <= today && (!aFin || aFin >= today) ? 0 : aDebut > today ? 1 : 2;
+        const bActive = bDebut <= today && (!bFin || bFin >= today) ? 0 : bDebut > today ? 1 : 2;
+        if (aActive !== bActive) return aActive - bActive;
+        return (bDebut || '').localeCompare(aDebut || '');
+      });
+    }, [affaires, today]);
+
+    const filteredAffaires = React.useMemo(() => {
+      const q = linkTaskSearchQuery.toUpperCase().trim();
+      if (q.length < 2) return [];
+      return sortedAffaires
+        .filter(
+          (a) =>
+            (a.numeroAffaire || '').toUpperCase().includes(q) ||
+            (a.client || '').toUpperCase().includes(q) ||
+            (a.titre || '').toUpperCase().includes(q) ||
+            (a.eventName || '').toUpperCase().includes(q),
+        )
+        .slice(0, 8);
+    }, [linkTaskSearchQuery, sortedAffaires]);
+
+    const visibleDisplayEvents = React.useMemo(() => {
+      const forDay = (displayEvents || []).filter(
+        (ev) => !selectedDate || ev.date === selectedDate,
+      );
+      return forDay.sort((a, b) => {
+        const ad = `${a.date || ''} ${a.time || ''}`;
+        const bd = `${b.date || ''} ${b.time || ''}`;
+        return ad.localeCompare(bd);
+      });
+    }, [displayEvents, selectedDate]);
+
     return (
-      <div
-        key={task.id}
-        className={`task-row event-row-cols ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}
-      >
-        <Button
-          variant="ghost"
-          className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
-          onClick={() => onCycleStatus(task)}
-          title={`Statut: ${task.status} — cliquer pour changer`}
+      <>
+        <div
+          key={task.id}
+          className={`task-row event-row-cols task-row-clickable ${isGoogle ? 'google-task-row' : ''} ${isDone ? 'task-done-row' : ''} ${isHidden ? 'hidden-display' : ''}`}
+          role="button"
+          tabIndex={0}
+          onClick={() => setShowActionsModal(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setShowActionsModal(true);
+            }
+          }}
         >
-          {isDone && <Check size={14} />}
-          {isProgress && <Clock size={12} />}
-        </Button>
-
-        <span className="ev-col ev-col-affaire">
-          {affaireNum ? (
-            <AffaireBadge
-              numero={affaireNum}
-              type={linkedAffaire?.type}
-              size="sm"
-              onNavigate={
-                onNavigateToEntity
-                  ? (num) => onNavigateToEntity('affaire', { numero: num })
-                  : undefined
-              }
-            />
-          ) : null}
-        </span>
-
-        <span
-          className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`}
-          title={[
-            fullTitle,
-            showEventType && taskEventType,
-            (task.locationAddress || task.eventLocation || linkedAffaire?.location) &&
-              '📍 ' + (task.locationAddress || task.eventLocation || linkedAffaire?.location),
-            task.notes && '📝 ' + task.notes,
-            (task.personFirstName || task.personLastName) &&
-              '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' '),
-          ]
-            .filter(Boolean)
-            .join('\n')}
-        >
-          {isGoogle && (
-            <Tooltip content="Google Calendar" position="bottom">
-              <span className="google-mini-badge">G</span>
-            </Tooltip>
-          )}
-          {courseType &&
-            (() => {
-              const ct = EVENT_TYPES[courseType];
-              return ct ? (
-                <span
-                  className="course-type-badge"
-                  style={{
-                    background: `${ct.color}18`,
-                    color: ct.color,
-                    borderColor: `${ct.color}40`,
-                  }}
-                >
-                  {ct.emoji} {ct.label}
-                </span>
-              ) : null;
-            })()}
-          {task.reservation_vehicle_name && (
-            <span
-              className="vehicle-badge"
-              title={`🚗 ${task.reservation_vehicle_name} ${task.reservation_vehicle_reg || ''}`}
-            >
-              <Truck size={11} /> {task.reservation_vehicle_name}
-            </span>
-          )}
-          {displayNom}
-          {task.notes && <span className="task-notes-inline">({task.notes})</span>}
-        </span>
-
-        <span className="ev-col ev-col-client" title={displayClient}>
-          {displayClient}
-        </span>
-        <span className="ev-col ev-col-spacer" />
-
-        {task.locationAddress && (
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.locationAddress)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ev-col task-location-badge ev-col-location"
-            title={`📍 ${task.locationAddress}`}
-            onClick={(e) => e.stopPropagation()}
+          <Button
+            variant="ghost"
+            className={`ev-col task-status-btn ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCycleStatus(task);
+            }}
+            title={`Statut: ${task.status} — cliquer pour changer`}
           >
-            <MapPin size={11} />{' '}
-            {task.locationAddress.length > 30
-              ? task.locationAddress.slice(0, 30) + '…'
-              : task.locationAddress}
-          </a>
-        )}
+            {isDone && <Check size={14} />}
+            {isProgress && <Clock size={12} />}
+          </Button>
 
-        <span className="ev-col ev-col-time">
-          {task.allDay === 1 || task.all_day === 1 ? (
-            <span className="period-badge period-allday">Journée</span>
-          ) : task.time ? (
-            <>
-              <Clock size={11} /> {task.time}
-              {task.endTime ? ` → ${task.endTime}` : ''}
-            </>
-          ) : task.period ? (
-            <span className="period-badge">{task.period}</span>
-          ) : (
-            ''
-          )}
-        </span>
+          <span className="ev-col ev-col-affaire">
+            {affaireNum ? (
+              <AffaireBadge
+                numero={affaireNum}
+                type={linkedAffaire?.type}
+                size="sm"
+                onNavigate={
+                  onNavigateToEntity
+                    ? (num) => onNavigateToEntity('affaire', { numero: num })
+                    : undefined
+                }
+              />
+            ) : null}
+          </span>
 
-        <span className="ev-col ev-col-personnel">{renderMultiAssign('task', task.id)}</span>
-
-        <div className="task-actions">
-          {!affaireNum && (
-            <Tooltip content="Lier à une affaire" position="bottom">
-              <Button
-                variant="ghost"
-                size="xs"
-                iconOnly
-                className={`btn-link-affaire ${linkingTaskId === task.id ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setLinkingTaskId(linkingTaskId === task.id ? null : task.id);
-                  setLinkTaskSearchQuery('');
-                }}
-              >
-                <Link size={13} />
-              </Button>
-            </Tooltip>
-          )}
-          <Tooltip content={isHidden ? "Afficher sur l'écran" : "Masquer de l'écran"}>
-            <Button
-              variant="ghost"
-              size="xs"
-              iconOnly
-              className={`toggle-visible ${isHidden ? 'off' : ''}`}
-              onClick={() => onToggleVisible(task)}
-            >
-              {isHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-            </Button>
-          </Tooltip>
-          <Tooltip content="Modifier cette tâche">
-            <Button
-              variant="ghost"
-              size="xs"
-              iconOnly
-              className="edit"
-              onClick={() => onEdit(task)}
-            >
-              <Edit2 size={14} />
-            </Button>
-          </Tooltip>
-          <Tooltip content="Supprimer">
-            <Button
-              variant="ghost"
-              size="xs"
-              iconOnly
-              className="delete"
-              onClick={() => onDelete(task.id)}
-            >
-              <Trash2 size={14} />
-            </Button>
-          </Tooltip>
-        </div>
-
-        {/* Popover de liaison manuelle tâche → affaire */}
-        {linkingTaskId === task.id &&
-          (() => {
-            const today = selectedDate || new Date().toISOString().slice(0, 10);
-            const q = linkTaskSearchQuery.toUpperCase().trim();
-            const sorted = [...affaires].sort((a, b) => {
-              const aDebut = a.dateDebut || a.date_debut || '';
-              const aFin = a.dateFin || a.date_fin || '';
-              const bDebut = b.dateDebut || b.date_debut || '';
-              const bFin = b.dateFin || b.date_fin || '';
-              const aActive =
-                aDebut <= today && (!aFin || aFin >= today) ? 0 : aDebut > today ? 1 : 2;
-              const bActive =
-                bDebut <= today && (!bFin || bFin >= today) ? 0 : bDebut > today ? 1 : 2;
-              if (aActive !== bActive) return aActive - bActive;
-              return (bDebut || '').localeCompare(aDebut || '');
-            });
-            const filtered =
-              q.length >= 1
-                ? sorted.filter(
-                    (a) =>
-                      (a.numeroAffaire || '').toUpperCase().includes(q) ||
-                      (a.client || '').toUpperCase().includes(q) ||
-                      (a.titre || '').toUpperCase().includes(q) ||
-                      (a.eventName || '').toUpperCase().includes(q),
-                  )
-                : sorted;
-            const linkableAff = filtered.slice(0, 10);
-            return (
-              <div className="link-affaire-popover" onClick={(e) => e.stopPropagation()}>
-                <div className="link-popover-header">
-                  <span>🔗 Lier à une affaire</span>
-                  <Button
-                    variant="ghost"
-                    className="link-popover-close"
-                    onClick={() => {
-                      setLinkingTaskId(null);
-                      setLinkTaskSearchQuery('');
+          <span
+            className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`}
+            title={[
+              fullTitle,
+              showEventType && taskEventType,
+              (task.locationAddress || task.eventLocation || linkedAffaire?.location) &&
+                '📍 ' + (task.locationAddress || task.eventLocation || linkedAffaire?.location),
+              task.notes && '📝 ' + task.notes,
+              (task.personFirstName || task.personLastName) &&
+                '👤 ' + [task.personFirstName, task.personLastName].filter(Boolean).join(' '),
+            ]
+              .filter(Boolean)
+              .join('\n')}
+          >
+            {courseType &&
+              (() => {
+                const ct = EVENT_TYPES[courseType];
+                return ct ? (
+                  <span
+                    className="course-type-badge"
+                    style={{
+                      background: `${ct.color}18`,
+                      color: ct.color,
+                      borderColor: `${ct.color}40`,
                     }}
                   >
-                    <X size={14} />
+                    {ct.emoji} {ct.label}
+                  </span>
+                ) : null;
+              })()}
+            {task.reservation_vehicle_name && (
+              <span
+                className="vehicle-badge"
+                title={`🚗 ${task.reservation_vehicle_name} ${task.reservation_vehicle_reg || ''}`}
+              >
+                <Truck size={11} /> {task.reservation_vehicle_name}
+              </span>
+            )}
+            {displayNom}
+            {task.notes && <span className="task-notes-inline">({task.notes})</span>}
+            {isGoogle && (
+              <Tooltip content="Google Calendar" position="bottom">
+                <span className="google-mini-badge google-mini-badge-end">G</span>
+              </Tooltip>
+            )}
+          </span>
+
+          <span className="ev-col ev-col-client" title={displayClient}>
+            {displayClient}
+          </span>
+          <span className="ev-col ev-col-spacer" />
+
+          {task.locationAddress && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.locationAddress)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ev-col task-location-badge ev-col-location"
+              title={`📍 ${task.locationAddress}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MapPin size={11} />{' '}
+              {task.locationAddress.length > 30
+                ? task.locationAddress.slice(0, 30) + '…'
+                : task.locationAddress}
+            </a>
+          )}
+
+          <span className="ev-col ev-col-time">
+            {task.allDay === 1 || task.all_day === 1 ? (
+              <span className="period-badge period-allday">Journée</span>
+            ) : task.time ? (
+              <>
+                <Clock size={11} /> {task.time}
+                {task.endTime ? ` → ${task.endTime}` : ''}
+              </>
+            ) : task.period ? (
+              <span className="period-badge">{task.period}</span>
+            ) : (
+              ''
+            )}
+          </span>
+
+          <span className="ev-col ev-col-personnel">{renderMultiAssign('task', task.id)}</span>
+        </div>
+
+        <Modal open={showActionsModal} onClose={() => setShowActionsModal(false)} size="xl">
+          <ModalHeader onClose={() => setShowActionsModal(false)}>Actions sur la tâche</ModalHeader>
+          <ModalBody>
+            <div className="task-actions-modal-grid">
+              <Button
+                variant="secondary"
+                className="task-actions-modal-btn"
+                onClick={() => {
+                  setShowActionsModal(false);
+                  onEdit(task);
+                }}
+              >
+                <Edit2 size={14} /> Modifier
+              </Button>
+
+              <Button
+                variant="secondary"
+                className="task-actions-modal-btn"
+                onClick={() => {
+                  setShowActionsModal(false);
+                  onToggleVisible(task);
+                }}
+              >
+                {isHidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                {isHidden ? 'Afficher' : 'Masquer'}
+              </Button>
+
+              <div className="task-actions-modal-block">
+                <div className="task-actions-modal-label">
+                  <Calendar size={14} /> Reporter
+                </div>
+                <div className="task-actions-modal-row">
+                  <Input
+                    type="date"
+                    className="task-actions-modal-input"
+                    value={postponeDate}
+                    onChange={(e) => setPostponeDate(e.target.value)}
+                  />
+                  <select
+                    className="task-actions-modal-select"
+                    value={postponePeriod}
+                    onChange={(e) => setPostponePeriod(e.target.value)}
+                  >
+                    <option value="AM">AM</option>
+                    <option value="PM">PM</option>
+                    <option value="JOURNEE">Journée</option>
+                  </select>
+                  <Button
+                    variant="secondary"
+                    className="task-actions-modal-btn"
+                    disabled={!postponeDate}
+                    onClick={() => {
+                      onPostponeTask(task.id, postponeDate, postponePeriod);
+                      setShowActionsModal(false);
+                    }}
+                  >
+                    Appliquer
                   </Button>
+                </div>
+              </div>
+
+              <div className="task-actions-modal-block">
+                <div className="task-actions-modal-label">
+                  <Link size={14} /> Lier à un évènement
+                </div>
+                <div className="task-actions-modal-row">
+                  <select
+                    className="task-actions-modal-select task-actions-modal-select-wide"
+                    value={selectedDisplayEventId}
+                    onChange={(e) => setSelectedDisplayEventId(e.target.value)}
+                  >
+                    <option value="">Aucun évènement</option>
+                    {visibleDisplayEvents.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {`${ev.date || ''} ${ev.time || ''} • ${ev.type || 'event'} • ${ev.client || ev.comment || 'Sans libellé'}`}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="secondary"
+                    className="task-actions-modal-btn"
+                    onClick={() => {
+                      onLinkTaskToDisplayEvent(task.id, selectedDisplayEventId || null);
+                      setShowActionsModal(false);
+                    }}
+                  >
+                    Lier
+                  </Button>
+                </div>
+              </div>
+
+              <div className="task-actions-modal-block">
+                <div className="task-actions-modal-label">
+                  <Link size={14} /> Lier à une affaire
                 </div>
                 <Input
                   type="text"
-                  className="link-search-input"
-                  placeholder="Filtrer par AF, client…"
+                  className="task-actions-modal-input"
+                  placeholder="Rechercher AF, client..."
                   value={linkTaskSearchQuery}
                   onChange={(e) => setLinkTaskSearchQuery(e.target.value)}
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
-                      setLinkingTaskId(null);
-                      setLinkTaskSearchQuery('');
-                    }
-                  }}
                 />
-                {linkTaskSearchQuery.match(/^\s*AF\s*\d{4,}\s*$/i) &&
-                  !affaires.some(
-                    (a) =>
-                      (a.numeroAffaire || '').toUpperCase() ===
-                      linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim(),
-                  ) && (
-                    <Button
-                      variant="ghost"
-                      className="link-option link-option-create"
-                      onClick={() => {
-                        const num = linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim();
-                        onLinkTask(task.id, num);
-                      }}
-                    >
-                      ➕ Lier à{' '}
-                      <strong>
-                        {linkTaskSearchQuery.toUpperCase().replace(/\s+/g, '').trim()}
-                      </strong>
-                    </Button>
-                  )}
-                {linkableAff.length > 0 ? (
-                  <div className="link-options-list">
-                    {linkableAff.map((a) => (
-                      <Button
-                        variant="ghost"
-                        key={a.id || a.numeroAffaire}
-                        className="link-option"
-                        onClick={() => onLinkTask(task.id, a.numeroAffaire)}
-                      >
-                        <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
-                        <span className="link-option-client">
-                          {a.client || a.titre || 'Sans client'}
-                        </span>
-                      </Button>
-                    ))}
-                    {filtered.length > 10 && (
-                      <div className="link-no-results link-no-results-more">
-                        +{filtered.length - 10} autres…
-                      </div>
-                    )}
+                {linkTaskSearchQuery.trim().length < 2 ? (
+                  <div className="task-actions-modal-hint">
+                    Tape au moins 2 caractères pour rechercher.
                   </div>
                 ) : (
-                  <div className="link-no-results">Aucune affaire trouvée</div>
+                  <div className="task-actions-modal-affaires">
+                    {filteredAffaires.length > 0 ? (
+                      filteredAffaires.map((a) => (
+                        <Button
+                          variant="ghost"
+                          key={a.id || a.numeroAffaire}
+                          className="task-actions-modal-affaire-option"
+                          onClick={() => {
+                            onLinkTask(task.id, a.numeroAffaire);
+                            setShowActionsModal(false);
+                          }}
+                        >
+                          <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
+                          <span>{a.client || a.titre || 'Sans client'}</span>
+                        </Button>
+                      ))
+                    ) : (
+                      <div className="task-actions-modal-hint">Aucune affaire trouvée.</div>
+                    )}
+                  </div>
                 )}
               </div>
-            );
-          })()}
-      </div>
+
+              <div className="task-actions-modal-block">
+                <div className="task-actions-modal-label">
+                  <User size={14} /> Affecter personnel
+                </div>
+                <div className="task-actions-modal-row">
+                  <select
+                    className="task-actions-modal-select task-actions-modal-select-wide"
+                    value={selectedPersonId}
+                    onChange={(e) => setSelectedPersonId(e.target.value)}
+                  >
+                    <option value="">Aucun personnel</option>
+                    {(persons || []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {(p.firstName || p.prenom || '') + ' ' + (p.lastName || p.nom || '')}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="secondary"
+                    className="task-actions-modal-btn"
+                    onClick={() => {
+                      onAssignTaskPerson(
+                        task.id,
+                        selectedPersonId ? Number(selectedPersonId) : null,
+                      );
+                      setShowActionsModal(false);
+                    }}
+                  >
+                    Affecter
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="danger"
+              className="task-actions-modal-btn task-actions-modal-btn-danger"
+              onClick={() => {
+                setShowActionsModal(false);
+                onDelete(task.id);
+              }}
+            >
+              <Trash2 size={14} /> Supprimer
+            </Button>
+            <Button
+              variant="secondary"
+              className="task-actions-modal-btn"
+              onClick={() => setShowActionsModal(false)}
+            >
+              Fermer
+            </Button>
+          </ModalFooter>
+        </Modal>
+      </>
     );
   },
 );

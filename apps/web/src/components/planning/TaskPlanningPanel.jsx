@@ -119,8 +119,6 @@ function TaskPlanningPanel({
     [icalLoading, setIcalLoading] = useState(false);
   const [linkingEvent, setLinkingEvent] = useState(null),
     [linkSearchQuery, setLinkSearchQuery] = useState('');
-  const [linkingTaskId, setLinkingTaskId] = useState(null),
-    [linkTaskSearchQuery, setLinkTaskSearchQuery] = useState('');
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
 
   // ═══ Data loading ═══
@@ -809,13 +807,55 @@ function TaskPlanningPanel({
     async (taskId, num) => {
       try {
         await api.updateTask(taskId, { affaire_num: num });
-        setLinkingTaskId(null);
-        setLinkTaskSearchQuery('');
         refreshBus.publish('planning');
         await loadTasks(true);
         toast.success(`Tâche liée à ${num}`);
       } catch {
         toast.error('Erreur lors de la liaison');
+      }
+    },
+    [loadTasks, toast],
+  );
+
+  const handleLinkTaskToDisplayEvent = useCallback(
+    async (taskId, displayEventId) => {
+      try {
+        await api.updateTask(taskId, { display_event_id: displayEventId || null });
+        refreshBus.publish('planning');
+        await loadTasks(true);
+        toast.success(displayEventId ? 'Tâche liée à un événement' : 'Liaison événement retirée');
+      } catch {
+        toast.error('Erreur lors de la liaison événement');
+      }
+    },
+    [loadTasks, toast],
+  );
+
+  const handleAssignTaskPerson = useCallback(
+    async (taskId, personId) => {
+      try {
+        await api.updateTask(taskId, { person_id: personId || null });
+        refreshBus.publish('planning');
+        await loadTasks(true);
+        toast.success(personId ? 'Personnel affecté' : 'Affectation retirée');
+      } catch {
+        toast.error("Erreur lors de l'affectation");
+      }
+    },
+    [loadTasks, toast],
+  );
+
+  const handlePostponeTask = useCallback(
+    async (taskId, date, period) => {
+      try {
+        const payload = { date };
+        if (period) payload.period = period;
+        await api.updateTask(taskId, payload);
+        refreshBus.publish('planning');
+        await loadTasks(true);
+        toast.success(`Tâche reportée au ${formatDateFr(date)}`);
+      } catch {
+        toast.error('Erreur lors du report');
       }
     },
     [loadTasks, toast],
@@ -901,10 +941,11 @@ function TaskPlanningPanel({
         onToggleVisible={handleToggleTaskVisible}
         onEdit={openTaskEditModal}
         onLinkTask={handleLinkTaskToAffaire}
-        linkingTaskId={linkingTaskId}
-        setLinkingTaskId={setLinkingTaskId}
-        linkTaskSearchQuery={linkTaskSearchQuery}
-        setLinkTaskSearchQuery={setLinkTaskSearchQuery}
+        onLinkTaskToDisplayEvent={handleLinkTaskToDisplayEvent}
+        onAssignTaskPerson={handleAssignTaskPerson}
+        onPostponeTask={handlePostponeTask}
+        displayEvents={displayEvents}
+        persons={persons}
         affaires={affaires}
         selectedDate={selectedDate}
         renderMultiAssign={renderMultiAssign}
@@ -918,8 +959,11 @@ function TaskPlanningPanel({
       handleToggleTaskVisible,
       openTaskEditModal,
       handleLinkTaskToAffaire,
-      linkingTaskId,
-      linkTaskSearchQuery,
+      handleLinkTaskToDisplayEvent,
+      handleAssignTaskPerson,
+      handlePostponeTask,
+      displayEvents,
+      persons,
       affaires,
       selectedDate,
       renderMultiAssign,

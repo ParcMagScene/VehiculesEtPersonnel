@@ -544,7 +544,6 @@ const PlanningDayView = React.memo(function PlanningDayView({
         <span className="ev-col-h ev-col-h-spacer"></span>
         <span className="ev-col-h ev-col-h-time">Heure</span>
         <span className="ev-col-h ev-col-h-personnel">Personnels</span>
-        <span className="ev-col-h ev-col-h-actions">Actions</span>
       </div>
 
       {/* ── Autres Événements : tout en haut avec gestion iCal ── */}

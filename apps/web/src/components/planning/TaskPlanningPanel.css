@@ -193,14 +193,6 @@
   border-left: 1px solid var(--border-default);
   padding-left: 10px;
 }
-.task-planning-panel .tp-columns-header .ev-col-h-actions {
-  width: 130px;
-  flex: 0 0 130px;
-  padding-left: var(--space-2);
-  border-left: 1px solid var(--border-default);
-  text-align: center;
-}
-
 /* Section block */
 .task-planning-panel .task-section {
   margin-bottom: var(--space-5);
@@ -256,6 +248,10 @@
 
 .task-planning-panel .task-row:hover {
   background: var(--surface-secondary);
+}
+
+.task-planning-panel .task-row-clickable {
+  cursor: pointer;
 }
 
 .task-planning-panel .task-status-btn {
@@ -344,6 +340,7 @@
   padding: 2px var(--space-2);
 }
 
+/* Conservé pour les lignes événement/RDV qui gardent des actions dédiées */
 .task-planning-panel .task-actions {
   display: flex;
   align-items: center;
@@ -1421,25 +1418,14 @@
   flex-shrink: 0;
 }
 
+.google-mini-badge.google-mini-badge-end {
+  margin-left: var(--space-1);
+  margin-right: 0;
+}
+
 /* Google-sourced task row highlight */
 .google-task-row {
   border-left: 2px solid var(--feedback-info);
-}
-
-.task-row .task-actions .edit {
-  color: var(--text-muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: var(--space-1);
-  border-radius: var(--radius-xs);
-  display: flex;
-  align-items: center;
-}
-
-.task-row .task-actions .edit:hover {
-  background: var(--primary-tint-light);
-  color: var(--interactive-primary);
 }
 
 /* ═══════════════════════════════════════════
@@ -1741,10 +1727,6 @@
   font-size: 0.6rem;
   padding: 1px 5px;
 }
-.wk-day-expanded .ev-col-actions button {
-  padding: 2px;
-}
-
 /* ── Groupes de tâches par section dans vue compacte ── */
 .wk-task-group {
   margin-bottom: var(--space-1);
@@ -2623,6 +2605,105 @@
 
 .task-planning-panel .ev-col-nom[role='button'] {
   cursor: pointer;
+}
+
+.task-planning-panel .task-actions-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+.task-planning-panel .task-actions-modal-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-primary) 90%, white 10%),
+    var(--surface-secondary)
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 70%, transparent);
+}
+
+.task-planning-panel .task-actions-modal-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.task-planning-panel .task-actions-modal-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.task-planning-panel .task-actions-modal-input,
+.task-planning-panel .task-actions-modal-select {
+  min-height: 38px;
+  border: 1px solid color-mix(in srgb, var(--border-default) 85%, black 15%);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  color: var(--text-body);
+  box-shadow: 0 1px 1px color-mix(in srgb, black 5%, transparent);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.task-planning-panel .task-actions-modal-input:focus,
+.task-planning-panel .task-actions-modal-select:focus {
+  outline: none;
+  border-color: var(--interactive-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-primary) 20%, transparent);
+}
+
+.task-planning-panel .task-actions-modal-select {
+  min-width: 120px;
+  padding: 8px 10px;
+}
+
+.task-planning-panel .task-actions-modal-select-wide {
+  min-width: 260px;
+  flex: 1;
+}
+
+.task-planning-panel .task-actions-modal-affaires {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+  padding: 4px;
+}
+
+.task-planning-panel .task-actions-modal-affaire-option {
+  justify-content: flex-start;
+  gap: var(--space-2);
+}
+
+.task-planning-panel .task-actions-modal-btn {
+  min-height: 36px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+}
+
+.task-planning-panel .task-actions-modal-btn-danger {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--theme-danger) 18%, transparent);
+}
+
+.task-planning-panel .task-actions-modal-hint {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  padding: 6px 2px 2px;
 }
 
 .link-no-results-more {

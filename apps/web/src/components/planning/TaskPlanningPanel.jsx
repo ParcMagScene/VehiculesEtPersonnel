@@ -855,8 +855,18 @@ function TaskPlanningPanel({
   const handlePostponeTask = useCallback(
     async (taskId, date, period) => {
       try {
+        const currentTask = (tasks || []).find((t) => String(t.id) === String(taskId));
         const payload = { date };
         if (period) payload.period = period;
+
+        const prevDate = currentTask?.date || '';
+        if (prevDate && prevDate !== date) {
+          const cleanNotes = String(currentTask?.notes || '')
+            .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
+            .trim();
+          payload.notes = `${cleanNotes}${cleanNotes ? ' ' : ''}[reportée depuis ${prevDate}]`;
+        }
+
         await api.updateTask(taskId, payload);
         refreshBus.publish('planning');
         await loadTasks(true);
@@ -865,7 +875,7 @@ function TaskPlanningPanel({
         toast.error('Erreur lors du report');
       }
     },
-    [loadTasks, toast],
+    [loadTasks, tasks, toast],
   );
   const handleManualLink = useCallback(
     async (event, num) => {

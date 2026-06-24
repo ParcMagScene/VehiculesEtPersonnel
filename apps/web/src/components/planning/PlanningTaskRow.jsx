@@ -60,14 +60,20 @@ export const PlanningTaskRow = React.memo(
     const isGoogle =
       sourceType === 'google_event' || (!!googleEventTitle && (task.sourceId || task.source_id));
     const isHidden = task.visible === 0;
+    const reportMarker = /\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/i;
+    const hasReportMarker = reportMarker.test(task.notes || '');
     const rolledTask =
       task.isRolled === 1 ||
       task.isRolled === true ||
       task.is_rolled === 1 ||
       task.is_rolled === true ||
       !!task.rolledFromDate ||
-      !!task.rolled_from_date;
-    const rolledFrom = task.rolledFromDate || task.rolled_from_date || '';
+      !!task.rolled_from_date ||
+      hasReportMarker;
+    const rolledFromMatch = String(task.notes || '').match(
+      /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
+    );
+    const rolledFrom = task.rolledFromDate || task.rolled_from_date || rolledFromMatch?.[1] || '';
     const affaireNum =
       task.affaireNum || extractAffaireNum(task.title) || extractAffaireNum(googleEventTitle);
     const taskSection = normalizeSection(task.section || 'manual');
@@ -210,6 +216,9 @@ export const PlanningTaskRow = React.memo(
     const rawNom = fullTitle || affaireNom || '-';
     const displayNom = rawNom.charAt(0).toUpperCase() + rawNom.slice(1);
     const displayClient = affaireClient;
+    const inlineNotes = String(task.notes || '')
+      .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
+      .trim();
 
     const [showActionsModal, setShowActionsModal] = React.useState(false);
     const [postponeDate, setPostponeDate] = React.useState(task.date || selectedDate || '');
@@ -376,7 +385,7 @@ export const PlanningTaskRow = React.memo(
               </span>
             )}
             {displayNom}
-            {task.notes && <span className="task-notes-inline">({task.notes})</span>}
+            {inlineNotes && <span className="task-notes-inline">({inlineNotes})</span>}
             {rolledTask && (
               <span
                 className="task-rolled-badge"

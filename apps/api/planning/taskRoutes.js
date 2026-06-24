@@ -870,6 +870,20 @@ export function setupTaskRoutes(app, authenticateToken) {
               const badgeW = drawBadge(ct.label, titleX, rowY, ct.color);
               titleX += badgeW;
             }
+            const rolledFromMatch = String(t.notes || '').match(
+              /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
+            );
+            const rolledFromRaw = t.rolled_from_date || rolledFromMatch?.[1] || '';
+            if (rolledFromRaw) {
+              const rolledFromLabel = /^\d{4}-\d{2}-\d{2}$/.test(rolledFromRaw)
+                ? (() => {
+                    const [yy, mm, dd] = rolledFromRaw.split('-');
+                    return `${dd}-${mm}-${yy}`;
+                  })()
+                : rolledFromRaw;
+              const badgeW = drawBadge(`Reportée du ${rolledFromLabel}`, titleX, rowY, '#f59e0b');
+              titleX += badgeW;
+            }
             // Titre
             const rightInfoW =
               timeColW + (showClient ? 65 : showLocation ? 55 : 0) + personColW + 8;
@@ -890,7 +904,9 @@ export function setupTaskRoutes(app, authenticateToken) {
                 .stroke();
             }
             // Notes (en italique après le titre) — seulement si différent du titre affiché
-            const notesText = (t.notes || '').trim();
+            const notesText = String(t.notes || '')
+              .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
+              .trim();
             const notesLower = notesText.toLowerCase();
             if (
               notesText &&

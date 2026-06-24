@@ -861,10 +861,15 @@ function TaskPlanningPanel({
 
         const prevDate = currentTask?.date || '';
         if (prevDate && prevDate !== date) {
-          const cleanNotes = String(currentTask?.notes || '')
+          const currentNotes = String(currentTask?.notes || '');
+          const existingRolledMatch = currentNotes.match(
+            /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
+          );
+          const rolledOriginDate = existingRolledMatch?.[1] || prevDate;
+          const cleanNotes = currentNotes
             .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
             .trim();
-          payload.notes = `${cleanNotes}${cleanNotes ? ' ' : ''}[reportée depuis ${prevDate}]`;
+          payload.notes = `${cleanNotes}${cleanNotes ? ' ' : ''}[reportée depuis ${rolledOriginDate}]`;
         }
 
         await api.updateTask(taskId, payload);

@@ -1059,19 +1059,19 @@
 
 .task-planning-panel .task-row.is-rolled {
   border-left: 4px solid var(--theme-warning, #f59e0b);
-  background-color: color-mix(in srgb, var(--theme-warning, #f59e0b) 12%, white);
+  background-color: color-mix(in srgb, var(--theme-warning, #f59e0b) 8%, white);
   background-image: repeating-linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-warning, #f59e0b) 34%, transparent) 0 10px,
+    color-mix(in srgb, var(--theme-warning, #f59e0b) 20%, transparent) 0 10px,
     transparent 10px 20px
   );
 }
 
 .task-planning-panel .task-row.is-rolled:hover {
-  background-color: color-mix(in srgb, var(--theme-warning, #f59e0b) 16%, white);
+  background-color: color-mix(in srgb, var(--theme-warning, #f59e0b) 11%, white);
   background-image: repeating-linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-warning, #f59e0b) 42%, transparent) 0 10px,
+    color-mix(in srgb, var(--theme-warning, #f59e0b) 26%, transparent) 0 10px,
     transparent 10px 20px
   );
 }

@@ -74,6 +74,12 @@ export const PlanningTaskRow = React.memo(
       /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
     );
     const rolledFrom = task.rolledFromDate || task.rolled_from_date || rolledFromMatch?.[1] || '';
+    const rolledFromDisplay = /^\d{4}-\d{2}-\d{2}$/.test(rolledFrom)
+      ? (() => {
+          const [y, m, d] = rolledFrom.split('-');
+          return `${d}-${m}-${y}`;
+        })()
+      : rolledFrom;
     const affaireNum =
       task.affaireNum || extractAffaireNum(task.title) || extractAffaireNum(googleEventTitle);
     const taskSection = normalizeSection(task.section || 'manual');
@@ -389,9 +395,11 @@ export const PlanningTaskRow = React.memo(
             {rolledTask && (
               <span
                 className="task-rolled-badge"
-                title={`Tâche reportée${rolledFrom ? ` depuis le ${rolledFrom}` : ''}`}
+                title={
+                  rolledFromDisplay ? `Tâche reportée du ${rolledFromDisplay}` : 'Tâche reportée'
+                }
               >
-                Reportée{rolledFrom ? ` (${rolledFrom})` : ''}
+                Reportée{rolledFromDisplay ? ` du ${rolledFromDisplay}` : ''}
               </span>
             )}
             {isGoogle && (

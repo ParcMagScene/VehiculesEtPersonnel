@@ -10,6 +10,10 @@ vi.mock('@/design-system', () => ({
     </button>
   ),
   Input: ({ onChange, ...props }) => <input onChange={onChange} {...props} />,
+  Modal: ({ open, children }) => (open ? <div data-testid="modal">{children}</div> : null),
+  ModalHeader: ({ children }) => <div>{children}</div>,
+  ModalBody: ({ children }) => <div>{children}</div>,
+  ModalFooter: ({ children }) => <div>{children}</div>,
   Tooltip: ({ children }) => <>{children}</>,
 }));
 
@@ -20,6 +24,7 @@ vi.mock('../components/AffaireBadge', () => ({
 
 // Mock lucide icons
 vi.mock('lucide-react', () => ({
+  Calendar: () => <span data-testid="icon-calendar" />,
   Check: () => <span data-testid="icon-check" />,
   Clock: () => <span data-testid="icon-clock" />,
   Edit2: () => <span data-testid="icon-edit" />,
@@ -30,6 +35,7 @@ vi.mock('lucide-react', () => ({
   X: () => <span data-testid="icon-x" />,
   Truck: () => <span data-testid="icon-truck" />,
   MapPin: () => <span data-testid="icon-mappin" />,
+  User: () => <span data-testid="icon-user" />,
 }));
 
 import { PlanningTaskRow } from '../components/planning/PlanningTaskRow';
@@ -42,10 +48,11 @@ const baseProps = {
   onToggleVisible: vi.fn(),
   onEdit: vi.fn(),
   onLinkTask: vi.fn(),
-  linkingTaskId: null,
-  setLinkingTaskId: vi.fn(),
-  linkTaskSearchQuery: '',
-  setLinkTaskSearchQuery: vi.fn(),
+  onLinkTaskToDisplayEvent: vi.fn(),
+  onAssignTaskPerson: vi.fn(),
+  onPostponeTask: vi.fn(),
+  displayEvents: [],
+  persons: [],
   affaires: [],
   selectedDate: '2025-06-01',
   renderMultiAssign: vi.fn(() => null),
@@ -107,11 +114,9 @@ describe('PlanningTaskRow', () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();
     const task = makeTask();
-    render(<PlanningTaskRow {...baseProps} onEdit={onEdit} task={task} />);
-    // Le bouton modifier a la classe "edit"
-    const editBtns = document.querySelectorAll('button.edit');
-    expect(editBtns.length).toBeGreaterThan(0);
-    await user.click(editBtns[0]);
+    const { container } = render(<PlanningTaskRow {...baseProps} onEdit={onEdit} task={task} />);
+    await user.click(container.querySelector('.task-row-clickable'));
+    await user.click(screen.getByRole('button', { name: /Modifier/i }));
     expect(onEdit).toHaveBeenCalledWith(task);
   });
 
@@ -119,10 +124,11 @@ describe('PlanningTaskRow', () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
     const task = makeTask({ id: 42 });
-    render(<PlanningTaskRow {...baseProps} onDelete={onDelete} task={task} />);
-    const deleteBtns = document.querySelectorAll('button.delete');
-    expect(deleteBtns.length).toBeGreaterThan(0);
-    await user.click(deleteBtns[0]);
+    const { container } = render(
+      <PlanningTaskRow {...baseProps} onDelete={onDelete} task={task} />,
+    );
+    await user.click(container.querySelector('.task-row-clickable'));
+    await user.click(screen.getByRole('button', { name: /Supprimer/i }));
     expect(onDelete).toHaveBeenCalledWith(42);
   });
 
@@ -130,10 +136,11 @@ describe('PlanningTaskRow', () => {
     const user = userEvent.setup();
     const onToggleVisible = vi.fn();
     const task = makeTask();
-    render(<PlanningTaskRow {...baseProps} onToggleVisible={onToggleVisible} task={task} />);
-    const visibleBtns = document.querySelectorAll('button.toggle-visible');
-    expect(visibleBtns.length).toBeGreaterThan(0);
-    await user.click(visibleBtns[0]);
+    const { container } = render(
+      <PlanningTaskRow {...baseProps} onToggleVisible={onToggleVisible} task={task} />,
+    );
+    await user.click(container.querySelector('.task-row-clickable'));
+    await user.click(screen.getByRole('button', { name: /Masquer/i }));
     expect(onToggleVisible).toHaveBeenCalledWith(task);
   });
 
@@ -189,13 +196,23 @@ describe('PlanningTaskRow', () => {
     expect(screen.getByText(/11:00/)).toBeInTheDocument();
   });
 
-  it('affiche le bouton Lier quand pas d affaireNum', () => {
-    render(<PlanningTaskRow {...baseProps} task={makeTask({ affaireNum: '' })} />);
-    expect(screen.getByTestId('icon-link')).toBeInTheDocument();
+  it('ouvre le modal au clic sur la ligne', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <PlanningTaskRow {...baseProps} task={makeTask({ affaireNum: '' })} />,
+    );
+    await user.click(container.querySelector('.task-row-clickable'));
+    expect(screen.getByTestId('modal')).toBeInTheDocument();
+    expect(screen.getByText(/Lier à une affaire/i)).toBeInTheDocument();
   });
 
-  it('n affiche pas le bouton Lier quand affaireNum present', () => {
-    render(<PlanningTaskRow {...baseProps} task={makeTask({ affaireNum: 'AF12345' })} />);
-    expect(screen.queryByTestId('icon-link')).not.toBeInTheDocument();
+  it('affiche la recherche affaire seulement dans le modal', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <PlanningTaskRow {...baseProps} task={makeTask({ affaireNum: 'AF12345' })} />,
+    );
+    expect(screen.queryByPlaceholderText(/Rechercher AF, client/i)).not.toBeInTheDocument();
+    await user.click(container.querySelector('.task-row-clickable'));
+    expect(screen.getByPlaceholderText(/Rechercher AF, client/i)).toBeInTheDocument();
   });
 });

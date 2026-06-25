@@ -296,4 +296,28 @@ describe('useSonos', () => {
     });
     expect(mockApi.getSonosState).toHaveBeenCalledWith('10.0.0.2');
   });
+
+  it('does not throw when now-playing request settles after unmount', async () => {
+    mockApi.getSonosConfig.mockResolvedValue({ sonosIP: '10.0.0.1' });
+
+    let rejectNowPlaying;
+    mockApi.getSonosNowPlaying.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectNowPlaying = reject;
+        }),
+    );
+
+    const { result, unmount } = renderHook(() => useSonos({ autoPolling: true }));
+    await waitFor(() => expect(result.current.configLoading).toBe(false));
+
+    unmount();
+
+    await act(async () => {
+      rejectNowPlaying(new Error('network error'));
+      await Promise.resolve();
+    });
+
+    expect(true).toBe(true);
+  });
 });

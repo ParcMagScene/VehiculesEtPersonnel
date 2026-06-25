@@ -462,18 +462,31 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         const placeholders = ticketIds.map(() => '?').join(',');
         entries = db
           .prepare(
-            `SELECT ie.*, p.first_name, p.last_name
-             FROM tracking_incident_entries ie
-             LEFT JOIN persons p ON p.id = ie.reporter_person_id
-             WHERE ie.ticket_id IN (${placeholders})
-             ORDER BY ie.created_at ASC`,
+            hasTrackingIncidentVehicleIdText
+              ? `SELECT ie.*, p.first_name, p.last_name,
+                        COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT)) AS resolved_vehicle_id_text,
+                        v.name AS resolved_vehicle_name
+                 FROM tracking_incident_entries ie
+                 LEFT JOIN persons p ON p.id = ie.reporter_person_id
+                 LEFT JOIN vehicles v ON v.id = COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT))
+                 WHERE ie.ticket_id IN (${placeholders})
+                 ORDER BY ie.created_at ASC`
+              : `SELECT ie.*, p.first_name, p.last_name,
+                        CASE WHEN ie.vehicle_id IS NULL THEN NULL ELSE CAST(ie.vehicle_id AS TEXT) END AS resolved_vehicle_id_text,
+                        v.name AS resolved_vehicle_name
+                 FROM tracking_incident_entries ie
+                 LEFT JOIN persons p ON p.id = ie.reporter_person_id
+                 LEFT JOIN vehicles v ON v.id = CAST(ie.vehicle_id AS TEXT)
+                 WHERE ie.ticket_id IN (${placeholders})
+                 ORDER BY ie.created_at ASC`,
           )
           .all(...ticketIds)
           .map((e) => ({
             ...e,
-            vehicle_id_text:
-              String(e.vehicle_id_text || '').trim() ||
-              (e.vehicle_id === null || e.vehicle_id === undefined ? null : String(e.vehicle_id)),
+            vehicle_id_text: String(e.resolved_vehicle_id_text || '').trim() || null,
+            vehicle_name_snapshot:
+              String(e.vehicle_name_snapshot || '').trim() ||
+              String(e.resolved_vehicle_name || '').trim(),
             reporter_name:
               [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
               e.reporter_name_snapshot ||
@@ -738,18 +751,31 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
           .get(ticketId);
         const savedEntries = db
           .prepare(
-            `SELECT ie.*, p.first_name, p.last_name
-             FROM tracking_incident_entries ie
-             LEFT JOIN persons p ON p.id = ie.reporter_person_id
-             WHERE ie.ticket_id = ?
-             ORDER BY ie.created_at ASC`,
+            hasTrackingIncidentVehicleIdText
+              ? `SELECT ie.*, p.first_name, p.last_name,
+                        COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT)) AS resolved_vehicle_id_text,
+                        v.name AS resolved_vehicle_name
+                 FROM tracking_incident_entries ie
+                 LEFT JOIN persons p ON p.id = ie.reporter_person_id
+                 LEFT JOIN vehicles v ON v.id = COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT))
+                 WHERE ie.ticket_id = ?
+                 ORDER BY ie.created_at ASC`
+              : `SELECT ie.*, p.first_name, p.last_name,
+                        CASE WHEN ie.vehicle_id IS NULL THEN NULL ELSE CAST(ie.vehicle_id AS TEXT) END AS resolved_vehicle_id_text,
+                        v.name AS resolved_vehicle_name
+                 FROM tracking_incident_entries ie
+                 LEFT JOIN persons p ON p.id = ie.reporter_person_id
+                 LEFT JOIN vehicles v ON v.id = CAST(ie.vehicle_id AS TEXT)
+                 WHERE ie.ticket_id = ?
+                 ORDER BY ie.created_at ASC`,
           )
           .all(ticketId)
           .map((e) => ({
             ...e,
-            vehicle_id_text:
-              String(e.vehicle_id_text || '').trim() ||
-              (e.vehicle_id === null || e.vehicle_id === undefined ? null : String(e.vehicle_id)),
+            vehicle_id_text: String(e.resolved_vehicle_id_text || '').trim() || null,
+            vehicle_name_snapshot:
+              String(e.vehicle_name_snapshot || '').trim() ||
+              String(e.resolved_vehicle_name || '').trim(),
             reporter_name:
               [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
               e.reporter_name_snapshot ||

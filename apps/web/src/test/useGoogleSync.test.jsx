@@ -18,11 +18,8 @@ class MockBroadcastChannel {
     this.name = name;
     this.closed = false;
     this.onmessage = null;
+    this.postMessage = vi.fn();
     MockBroadcastChannel.instances.push(this);
-  }
-
-  postMessage() {
-    // no-op
   }
 
   close() {
@@ -72,5 +69,27 @@ describe('useGoogleSync', () => {
     expect(clearIntervalSpy).toHaveBeenCalled();
 
     clearIntervalSpy.mockRestore();
+  });
+
+  it('switches to follower when receiving a foreign heartbeat', () => {
+    const { result } = renderHook(() =>
+      useGoogleSync({
+        isSignedIn: false,
+        view: '',
+        currentDate: new Date('2026-06-25T12:00:00.000Z'),
+        calendarId: 'primary',
+      }),
+    );
+
+    expect(MockBroadcastChannel.instances).toHaveLength(1);
+    expect(result.current.isLeader).toBe(true);
+
+    act(() => {
+      MockBroadcastChannel.instances[0].onmessage?.({
+        data: { type: 'leader-heartbeat', tabId: 'other-tab' },
+      });
+    });
+
+    expect(result.current.isLeader).toBe(false);
   });
 });

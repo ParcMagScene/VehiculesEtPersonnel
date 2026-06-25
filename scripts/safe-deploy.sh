@@ -71,12 +71,26 @@ pm2 restart vehicules-backend 2>/dev/null && echo "   ✅ Backend redémarré" |
 echo ""
 echo "🩺 Smoke test santé API..."
 sleep 2
+HEALTH=""
+HEALTH_STATUS=""
+HEALTH_SOURCE=""
+
 # 1) Tente l'URL HTTP historique (peut rediriger vers HTTPS)
-HEALTH=$(curl -fsSL --max-time 8 http://localhost:3002/api/health 2>/dev/null || true)
+HEALTH_RESPONSE=$(curl -sS -L --max-time 8 -w $'\n__HTTP_STATUS__:%{http_code}' http://localhost:3002/api/health 2>/dev/null || true)
+if [ -n "$HEALTH_RESPONSE" ]; then
+  HEALTH="${HEALTH_RESPONSE%$'\n__HTTP_STATUS__:*'}"
+  HEALTH_STATUS="${HEALTH_RESPONSE##*$'\n__HTTP_STATUS__:'}"
+  HEALTH_SOURCE="http://localhost:3002/api/health"
+fi
 
 # 2) Fallback HTTPS local (certificat auto-signé en environnement local)
-if [ -z "$HEALTH" ]; then
-  HEALTH=$(curl -kfsS --max-time 8 https://localhost:3443/api/health 2>/dev/null || true)
+if [ -z "$HEALTH" ] || [ "$HEALTH_STATUS" = "000" ]; then
+  HEALTH_RESPONSE=$(curl -k -sS --max-time 8 -w $'\n__HTTP_STATUS__:%{http_code}' https://localhost:3443/api/health 2>/dev/null || true)
+  if [ -n "$HEALTH_RESPONSE" ]; then
+    HEALTH="${HEALTH_RESPONSE%$'\n__HTTP_STATUS__:*'}"
+    HEALTH_STATUS="${HEALTH_RESPONSE##*$'\n__HTTP_STATUS__:'}"
+    HEALTH_SOURCE="https://localhost:3443/api/health"
+  fi
 fi
 
 # Valeur par défaut si les deux appels échouent
@@ -84,10 +98,14 @@ if [ -z "$HEALTH" ]; then
   HEALTH='{"ok":false}'
 fi
 
+if [ -n "$HEALTH_SOURCE" ]; then
+  echo "   ℹ️  Santé API via $HEALTH_SOURCE (HTTP ${HEALTH_STATUS:-inconnu})"
+fi
+
 if echo "$HEALTH" | grep -q '"ok":true'; then
   echo "   ✅ API opérationnelle"
 else
-  echo "   ⚠️  L'API ne répond pas correctement — vérifiez pm2 logs vehicules-backend"
+  echo "   ⚠️  L'API ne répond pas correctement (HTTP ${HEALTH_STATUS:-inconnu}) — vérifiez pm2 logs vehicules-backend"
 fi
 
 # 7. Nettoyage

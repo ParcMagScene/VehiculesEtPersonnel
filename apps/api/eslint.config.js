@@ -64,6 +64,12 @@ export default [
     },
   },
   {
+    files: ['migrations/versioned/**/*.{js,mjs}'],
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off',
+    },
+  },
+  {
     ignores: [
       'node_modules/**',
       'backups/**',

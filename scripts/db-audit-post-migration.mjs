@@ -28,6 +28,22 @@ const checks = [
     key: 'orphans_bp_items_stock',
     sql: `SELECT COUNT(*) AS issues FROM v_db_audit_bp_items_stock_orphans`,
   },
+  {
+    key: 'tie_legacy_only',
+    sql: `SELECT COUNT(*) AS issues FROM v_db_audit_tie_legacy_only`,
+  },
+  {
+    key: 'tie_text_only',
+    sql: `SELECT COUNT(*) AS issues FROM v_db_audit_tie_text_only`,
+  },
+  {
+    key: 'tie_unknown_vehicle_text',
+    sql: `SELECT COUNT(*) AS issues FROM v_db_audit_tie_unknown_vehicle_text`,
+  },
+  {
+    key: 'tie_legacy_text_mismatch',
+    sql: `SELECT COUNT(*) AS issues FROM v_db_audit_tie_legacy_text_mismatch`,
+  },
 ];
 
 let hasIssue = false;

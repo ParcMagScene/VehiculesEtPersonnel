@@ -8,8 +8,8 @@ import db, { addToHistory } from './database.js';
 import { alertAssignmentCreated } from './emailService.js';
 import logger from './logger.js';
 import { personSchema } from './schemas/crud.js';
-import { numericIdSchema } from './schemas/paramsSchema.js';
 import { personnelImportSchema, validate } from './schemas/imports.js';
+import { numericIdSchema } from './schemas/paramsSchema.js';
 import { parsePagination, sendPaginated } from './utils/pagination.js';
 
 // ============ PERSONS (PERSONNEL) ============

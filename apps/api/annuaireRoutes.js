@@ -6,11 +6,11 @@ import { annuaireRefCache, cacheMiddleware, invalidateOnSuccess } from './cache.
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
 import {
-  contactsImportSchema,
-  validate,
   clientSchema,
-  supplierSchema,
   contactSchema,
+  contactsImportSchema,
+  supplierSchema,
+  validate,
 } from './schemas/imports.js';
 import { numericIdSchema } from './schemas/paramsSchema.js';
 

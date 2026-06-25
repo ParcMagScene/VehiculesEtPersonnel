@@ -500,16 +500,19 @@ function AppContent() {
 
   // ═══ Actions maintenance ═══
   const handleRequestMaintenance = (vehicle) => {
+    setMaintenanceToEdit(null);
     setMaintenanceActionType('request');
     setSelectedVehicleForMaintenance(vehicle);
   };
 
   const handleReportBreakdown = (vehicle) => {
+    setMaintenanceToEdit(null);
     setMaintenanceActionType('breakdown');
     setSelectedVehicleForMaintenance(vehicle);
   };
 
   const handleScheduleMaintenance = (vehicle) => {
+    setMaintenanceToEdit(null);
     setMaintenanceActionType('schedule');
     setSelectedVehicleForMaintenance(vehicle);
   };
@@ -942,6 +945,7 @@ function AppContent() {
                                 setVehicleForDialog(v);
                               }}
                               onMaintenanceClick={(vehicle, maintenanceId) => {
+                                setMaintenanceActionType(null);
                                 setSelectedVehicleForMaintenance(vehicle);
                                 setMaintenanceToEdit(maintenanceId);
                               }}

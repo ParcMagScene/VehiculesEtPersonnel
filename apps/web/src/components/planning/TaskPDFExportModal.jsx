@@ -504,6 +504,12 @@ function TaskPDFExportModal({
         /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
       );
       const rolledFrom = task.rolledFromDate || task.rolled_from_date || rolledFromMatch?.[1] || '';
+      const hasRolledFlag =
+        task.isRolled === 1 ||
+        task.isRolled === true ||
+        task.is_rolled === 1 ||
+        task.is_rolled === true ||
+        /\[report(?:e|ée)/i.test(String(task.notes || ''));
       const rolledFromDisplay = formatRolledBadgeDate(rolledFrom);
       const notesForTooltip = String(task.notes || '')
         .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
@@ -558,9 +564,12 @@ function TaskPDFExportModal({
           >
             {displayTitle}
           </span>
-          {rolledFromDisplay && (
-            <span className="task-cb-rolled-badge" title={`Reportée du ${rolledFromDisplay}`}>
-              Reportée du {rolledFromDisplay}
+          {(rolledFromDisplay || hasRolledFlag) && (
+            <span
+              className="task-cb-rolled-badge"
+              title={rolledFromDisplay ? `Reportée du ${rolledFromDisplay}` : 'Reportée'}
+            >
+              {rolledFromDisplay ? `Reportée du ${rolledFromDisplay}` : 'Reportée'}
             </span>
           )}
           {timeStr && (

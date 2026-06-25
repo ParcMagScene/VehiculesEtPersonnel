@@ -79,7 +79,12 @@ export function setupTaskRoutes(app, authenticateToken) {
                SELECT 1
                FROM task_assignments prev
                WHERE prev.deleted_at IS NOT NULL
-                 AND prev.notes LIKE '%[reportée]%'
+                 AND (
+                   lower(prev.notes) LIKE '%[reportée]%'
+                   OR lower(prev.notes) LIKE '%[reportée %'
+                   OR lower(prev.notes) LIKE '%[reportee]%'
+                   OR lower(prev.notes) LIKE '%[reportee %'
+                 )
                  AND prev.date < ta.date
                  AND prev.section = ta.section
                  AND prev.title = ta.title
@@ -92,7 +97,12 @@ export function setupTaskRoutes(app, authenticateToken) {
                SELECT MAX(prev.date)
                FROM task_assignments prev
                WHERE prev.deleted_at IS NOT NULL
-                 AND prev.notes LIKE '%[reportée]%'
+                 AND (
+                   lower(prev.notes) LIKE '%[reportée]%'
+                   OR lower(prev.notes) LIKE '%[reportée %'
+                   OR lower(prev.notes) LIKE '%[reportee]%'
+                   OR lower(prev.notes) LIKE '%[reportee %'
+                 )
                  AND prev.date < ta.date
                  AND prev.section = ta.section
                  AND prev.title = ta.title
@@ -199,6 +209,38 @@ export function setupTaskRoutes(app, authenticateToken) {
              dde.client AS event_client,
              dde.location AS event_location,
              dde.status AS event_status,
+             EXISTS(
+               SELECT 1
+               FROM task_assignments prev
+               WHERE prev.deleted_at IS NOT NULL
+                 AND prev.date < ta.date
+                 AND COALESCE(prev.section, '') = COALESCE(ta.section, '')
+                 AND COALESCE(prev.title, '') = COALESCE(ta.title, '')
+                 AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                 AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                 AND (
+                   lower(prev.notes) LIKE '%[reportée]%'
+                   OR lower(prev.notes) LIKE '%[reportée %'
+                   OR lower(prev.notes) LIKE '%[reportee]%'
+                   OR lower(prev.notes) LIKE '%[reportee %'
+                 )
+             ) AS is_rolled,
+             (
+               SELECT MAX(prev.date)
+               FROM task_assignments prev
+               WHERE prev.deleted_at IS NOT NULL
+                 AND prev.date < ta.date
+                 AND COALESCE(prev.section, '') = COALESCE(ta.section, '')
+                 AND COALESCE(prev.title, '') = COALESCE(ta.title, '')
+                 AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                 AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                 AND (
+                   lower(prev.notes) LIKE '%[reportée]%'
+                   OR lower(prev.notes) LIKE '%[reportée %'
+                   OR lower(prev.notes) LIKE '%[reportee]%'
+                   OR lower(prev.notes) LIKE '%[reportee %'
+                 )
+             ) AS rolled_from_date,
              p.first_name AS person_first_name,
              p.last_name AS person_last_name
       FROM task_assignments ta
@@ -874,14 +916,21 @@ export function setupTaskRoutes(app, authenticateToken) {
               /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
             );
             const rolledFromRaw = t.rolled_from_date || rolledFromMatch?.[1] || '';
-            if (rolledFromRaw) {
+            const hasRolledFlag =
+              t.is_rolled === 1 ||
+              t.is_rolled === true ||
+              /\[report(?:e|ée)/i.test(String(t.notes || ''));
+            if (rolledFromRaw || hasRolledFlag) {
               const rolledFromLabel = /^\d{4}-\d{2}-\d{2}$/.test(rolledFromRaw)
                 ? (() => {
                     const [yy, mm, dd] = rolledFromRaw.split('-');
                     return `${dd}-${mm}-${yy}`;
                   })()
                 : rolledFromRaw;
-              const badgeW = drawBadge(`Reportée du ${rolledFromLabel}`, titleX, rowY, '#f59e0b');
+              const rolledBadgeText = rolledFromLabel
+                ? `Reportée du ${rolledFromLabel}`
+                : 'Reportée';
+              const badgeW = drawBadge(rolledBadgeText, titleX, rowY, '#f59e0b');
               titleX += badgeW;
             }
             // Titre

@@ -28,8 +28,6 @@ const EXEMPT_PATH_PREFIXES = [
   '/api/auth/check-reset',
   '/api/auth/set-new-password',
   '/api/auth/verify-otp',
-  '/api/auth/refresh',
-  '/api/auth/logout',
   '/api/health',
 ];
 

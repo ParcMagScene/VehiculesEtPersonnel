@@ -180,10 +180,11 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
 
       const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
       if (!user) {
-        // Message générique pour ne pas révéler si le compte existe
-        return res.status(400).json({
-          success: false,
-          error: 'Aucun compte associé à cette adresse email',
+        // Réponse neutre: ne pas révéler si le compte existe ou non.
+        return res.json({
+          success: true,
+          message:
+            'Si cette adresse correspond à un compte, la demande de réinitialisation a été prise en compte.',
         });
       }
 

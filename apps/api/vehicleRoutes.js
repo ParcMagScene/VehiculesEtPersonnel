@@ -974,77 +974,81 @@ export function setupVehicleRoutes(
         maintenance.start_date || maintenance.startDate || maintenance.date || null;
       const resolvedEndDate = maintenance.end_date || maintenance.endDate || resolvedDate;
 
-      stmt.run(
-        maintenance.id,
-        maintenance.vehicle_id,
-        maintenance.vehicle_name || '',
-        maintenance.type || 'other',
-        maintenance.status || 'pending',
-        resolvedDate,
-        resolvedEndDate,
-        maintenance.start_date_period || 'AM',
-        maintenance.end_date_period || 'PM',
-        maintenance.description || '',
-        maintenance.garage_id || null,
-        maintenance.cost || null,
-        maintenance.mileage || null,
-        maintenance.notes || '',
-        maintenance.is_immobilized ? 1 : 0,
-        maintenance.is_quick_report ? 1 : 0,
-        maintenance.technical_control_type || null,
-        req.user.id,
-        req.user.id,
-      );
+      const createMaintenance = db.transaction(() => {
+        stmt.run(
+          maintenance.id,
+          maintenance.vehicle_id,
+          maintenance.vehicle_name || '',
+          maintenance.type || 'other',
+          maintenance.status || 'pending',
+          resolvedDate,
+          resolvedEndDate,
+          maintenance.start_date_period || 'AM',
+          maintenance.end_date_period || 'PM',
+          maintenance.description || '',
+          maintenance.garage_id || null,
+          maintenance.cost || null,
+          maintenance.mileage || null,
+          maintenance.notes || '',
+          maintenance.is_immobilized ? 1 : 0,
+          maintenance.is_quick_report ? 1 : 0,
+          maintenance.technical_control_type || null,
+          req.user.id,
+          req.user.id,
+        );
 
-      addToHistory(
-        'maintenance',
-        maintenance.id,
-        'created',
-        maintenance,
-        req.user.id,
-        req.user.name,
-      );
+        addToHistory(
+          'maintenance',
+          maintenance.id,
+          'created',
+          maintenance,
+          req.user.id,
+          req.user.name,
+        );
 
-      // Alerte email maintenance / contrôle technique
-      try {
         const veh = db
-          .prepare('SELECT name FROM vehicles WHERE id = ?')
+          .prepare('SELECT kilometrage, name FROM vehicles WHERE id = ?')
           .get(maintenance.vehicle_id);
-        alertMaintenanceCreated(db, maintenance, veh?.name || 'Véhicule inconnu', req.user.name);
+
+        // Si un kilométrage est renseigné, mettre à jour le véhicule et ajouter un relevé dans l'historique
+        if (maintenance.mileage && parseInt(maintenance.mileage, 10) > 0) {
+          const vehicleId = maintenance.vehicle_id;
+          const newKm = parseInt(maintenance.mileage, 10);
+          const oldKm = veh ? veh.kilometrage || 0 : 0;
+
+          if (newKm !== oldKm) {
+            db.prepare(
+              'UPDATE vehicles SET kilometrage = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
+            ).run(newKm, req.user.id, vehicleId);
+
+            addToHistory(
+              'vehicle',
+              vehicleId,
+              'mileage_update',
+              JSON.stringify({
+                description: 'Relevé kilométrique (maintenance)',
+                oldKilometrage: oldKm,
+                newKilometrage: newKm,
+                maintenanceId: maintenance.id,
+                vehicleName: veh?.name || '',
+                date: new Date().toISOString(),
+              }),
+              req.user.id,
+              req.user.name,
+            );
+          }
+        }
+
+        return veh?.name || 'Véhicule inconnu';
+      });
+
+      const vehicleName = createMaintenance();
+
+      // Alerte email maintenance / contrôle technique (best-effort hors transaction)
+      try {
+        alertMaintenanceCreated(db, maintenance, vehicleName, req.user.name);
       } catch (emailErr) {
         logger.warn('Alerte email maintenance:', emailErr.message);
-      }
-
-      // Si un kilométrage est renseigné, mettre à jour le véhicule et ajouter un relevé dans l'historique
-      if (maintenance.mileage && parseInt(maintenance.mileage) > 0) {
-        const vehicleId = maintenance.vehicle_id;
-        const newKm = parseInt(maintenance.mileage);
-        const oldVehicle = db
-          .prepare('SELECT kilometrage, name FROM vehicles WHERE id = ?')
-          .get(vehicleId);
-        const oldKm = oldVehicle ? oldVehicle.kilometrage || 0 : 0;
-
-        if (newKm !== oldKm) {
-          db.prepare(
-            'UPDATE vehicles SET kilometrage = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
-          ).run(newKm, req.user.id, vehicleId);
-
-          addToHistory(
-            'vehicle',
-            vehicleId,
-            'mileage_update',
-            JSON.stringify({
-              description: 'Relevé kilométrique (maintenance)',
-              oldKilometrage: oldKm,
-              newKilometrage: newKm,
-              maintenanceId: maintenance.id,
-              vehicleName: oldVehicle?.name || '',
-              date: new Date().toISOString(),
-            }),
-            req.user.id,
-            req.user.name,
-          );
-        }
       }
 
       invalidateEntity('maintenances');
@@ -1112,138 +1116,146 @@ export function setupVehicleRoutes(
         maintenance.startDate || maintenance.start_date || maintenance.date || null;
       const resolvedEndDate = maintenance.endDate || maintenance.end_date || resolvedDate;
 
-      stmt.run(
-        maintenance.vehicleId || maintenance.vehicle_id,
-        maintenance.type,
-        maintenance.status,
-        resolvedDate,
-        resolvedEndDate,
-        maintenance.startDatePeriod || maintenance.start_date_period || 'AM',
-        maintenance.endDatePeriod || maintenance.end_date_period || 'PM',
-        maintenance.description,
-        maintenance.garageId || maintenance.garage_id || null,
-        maintenance.cost || null,
-        maintenance.mileage || null,
-        maintenance.notes || null,
-        maintenance.isImmobilized || maintenance.is_immobilized ? 1 : 0,
-        maintenance.isQuickReport || maintenance.is_quick_report ? 1 : 0,
-        maintenance.technicalControlType || maintenance.technical_control_type || null,
-        req.user.id,
-        req.params.id,
-      );
+      const updateMaintenance = db.transaction(() => {
+        stmt.run(
+          maintenance.vehicleId || maintenance.vehicle_id,
+          maintenance.type,
+          maintenance.status,
+          resolvedDate,
+          resolvedEndDate,
+          maintenance.startDatePeriod || maintenance.start_date_period || 'AM',
+          maintenance.endDatePeriod || maintenance.end_date_period || 'PM',
+          maintenance.description,
+          maintenance.garageId || maintenance.garage_id || null,
+          maintenance.cost || null,
+          maintenance.mileage || null,
+          maintenance.notes || null,
+          maintenance.isImmobilized || maintenance.is_immobilized ? 1 : 0,
+          maintenance.isQuickReport || maintenance.is_quick_report ? 1 : 0,
+          maintenance.technicalControlType || maintenance.technical_control_type || null,
+          req.user.id,
+          req.params.id,
+        );
 
-      // Si l'intervention est de type technical_inspection et passe à "completed",
-      // mettre à jour la deadline du contrôle technique correspondant
-      if (
-        maintenance.type === 'technical_inspection' &&
-        maintenance.status === 'completed' &&
-        (maintenance.technicalControlType || maintenance.technical_control_type)
-      ) {
-        const vehicleId = maintenance.vehicleId || maintenance.vehicle_id;
-        const controlType = maintenance.technicalControlType || maintenance.technical_control_type;
-        const completionDate =
-          maintenance.endDate || maintenance.end_date || maintenance.startDate || maintenance.date;
+        // Si l'intervention est de type technical_inspection et passe à "completed",
+        // mettre à jour la deadline du contrôle technique correspondant
+        if (
+          maintenance.type === 'technical_inspection' &&
+          maintenance.status === 'completed' &&
+          (maintenance.technicalControlType || maintenance.technical_control_type)
+        ) {
+          const vehicleId = maintenance.vehicleId || maintenance.vehicle_id;
+          const controlType =
+            maintenance.technicalControlType || maintenance.technical_control_type;
+          const completionDate =
+            maintenance.endDate ||
+            maintenance.end_date ||
+            maintenance.startDate ||
+            maintenance.date;
 
-        // Récupérer le véhicule pour mettre à jour ses contrôles techniques
-        const vehicle = db
-          .prepare('SELECT controles_techniques FROM vehicles WHERE id = ?')
-          .get(vehicleId);
+          // Récupérer le véhicule pour mettre à jour ses contrôles techniques
+          const vehicle = db
+            .prepare('SELECT controles_techniques FROM vehicles WHERE id = ?')
+            .get(vehicleId);
 
-        if (vehicle) {
-          let controles = [];
-          try {
-            controles = vehicle.controles_techniques
-              ? JSON.parse(vehicle.controles_techniques)
-              : [];
-          } catch (e) {
-            logger.error('Erreur parsing controles_techniques:', e);
-            controles = [];
+          if (vehicle) {
+            let controles = [];
+            try {
+              controles = vehicle.controles_techniques
+                ? JSON.parse(vehicle.controles_techniques)
+                : [];
+            } catch (e) {
+              logger.error('Erreur parsing controles_techniques:', e);
+            }
+
+            // Trouver le contrôle correspondant
+            const controleIndex = controles.findIndex((c) => c.type === controlType);
+
+            if (controleIndex >= 0) {
+              // Calculer la nouvelle deadline selon le type de contrôle
+              const periodicDelays = {
+                VL: 24, // 24 mois
+                PL: 12, // 12 mois
+                SEMI: 12, // 12 mois
+                SCENE: 12, // 12 mois
+                POLLUTION: 12, // 12 mois
+                HAYON: 6, // 6 mois
+                TACHYGRAPHE: 24, // 24 mois
+                LIMITEUR: 12, // 12 mois
+              };
+
+              const delayMonths = periodicDelays[controlType] || 12;
+              const date = new Date(completionDate);
+              date.setMonth(date.getMonth() + delayMonths);
+              const newDeadline = date.toISOString().split('T')[0];
+
+              // Mettre à jour le contrôle
+              controles[controleIndex] = {
+                ...controles[controleIndex],
+                date: completionDate,
+                deadline: newDeadline,
+              };
+
+              // Sauvegarder les contrôles mis à jour
+              const updateStmt = db.prepare(
+                'UPDATE vehicles SET controles_techniques = ? WHERE id = ?',
+              );
+              updateStmt.run(JSON.stringify(controles), vehicleId);
+
+              logger.info(
+                `✅ Deadline CT ${controlType} mise à jour pour véhicule ${vehicleId}: ${newDeadline}`,
+              );
+            }
           }
+        }
 
-          // Trouver le contrôle correspondant
-          const controleIndex = controles.findIndex((c) => c.type === controlType);
+        addToHistory(
+          'maintenance',
+          req.params.id,
+          'updated',
+          maintenance,
+          req.user.id,
+          req.user.name,
+        );
 
-          if (controleIndex >= 0) {
-            // Calculer la nouvelle deadline selon le type de contrôle
-            const periodicDelays = {
-              VL: 24, // 24 mois
-              PL: 12, // 12 mois
-              SEMI: 12, // 12 mois
-              SCENE: 12, // 12 mois
-              POLLUTION: 12, // 12 mois
-              HAYON: 6, // 6 mois
-              TACHYGRAPHE: 24, // 24 mois
-              LIMITEUR: 12, // 12 mois
-            };
+        // Si un kilométrage est renseigné, mettre à jour le véhicule et ajouter un relevé dans l'historique
+        if (maintenance.mileage && parseInt(maintenance.mileage, 10) > 0) {
+          const vehicleId = maintenance.vehicleId || maintenance.vehicle_id;
+          const newKm = parseInt(maintenance.mileage, 10);
+          const oldVehicle = db
+            .prepare('SELECT kilometrage, name FROM vehicles WHERE id = ?')
+            .get(vehicleId);
+          const oldKm = oldVehicle ? oldVehicle.kilometrage || 0 : 0;
 
-            const delayMonths = periodicDelays[controlType] || 12;
-            const date = new Date(completionDate);
-            date.setMonth(date.getMonth() + delayMonths);
-            const newDeadline = date.toISOString().split('T')[0];
+          if (newKm !== oldKm) {
+            db.prepare(
+              'UPDATE vehicles SET kilometrage = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
+            ).run(newKm, req.user.id, vehicleId);
 
-            // Mettre à jour le contrôle
-            controles[controleIndex] = {
-              ...controles[controleIndex],
-              date: completionDate,
-              deadline: newDeadline,
-            };
-
-            // Sauvegarder les contrôles mis à jour
-            const updateStmt = db.prepare(
-              'UPDATE vehicles SET controles_techniques = ? WHERE id = ?',
-            );
-            updateStmt.run(JSON.stringify(controles), vehicleId);
-
-            logger.info(
-              `✅ Deadline CT ${controlType} mise à jour pour véhicule ${vehicleId}: ${newDeadline}`,
+            addToHistory(
+              'vehicle',
+              vehicleId,
+              'mileage_update',
+              JSON.stringify({
+                description: 'Relevé kilométrique (maintenance)',
+                oldKilometrage: oldKm,
+                newKilometrage: newKm,
+                maintenanceId: req.params.id,
+                vehicleName: oldVehicle?.name || '',
+                date: new Date().toISOString(),
+              }),
+              req.user.id,
+              req.user.name,
             );
           }
         }
-      }
 
-      addToHistory(
-        'maintenance',
-        req.params.id,
-        'updated',
-        maintenance,
-        req.user.id,
-        req.user.name,
-      );
+        return db.prepare('SELECT * FROM maintenances WHERE id = ?').get(req.params.id);
+      });
 
-      // Si un kilométrage est renseigné, mettre à jour le véhicule et ajouter un relevé dans l'historique
-      if (maintenance.mileage && parseInt(maintenance.mileage) > 0) {
-        const vehicleId = maintenance.vehicleId || maintenance.vehicle_id;
-        const newKm = parseInt(maintenance.mileage);
-        const oldVehicle = db
-          .prepare('SELECT kilometrage, name FROM vehicles WHERE id = ?')
-          .get(vehicleId);
-        const oldKm = oldVehicle ? oldVehicle.kilometrage || 0 : 0;
-
-        if (newKm !== oldKm) {
-          db.prepare(
-            'UPDATE vehicles SET kilometrage = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
-          ).run(newKm, req.user.id, vehicleId);
-
-          addToHistory(
-            'vehicle',
-            vehicleId,
-            'mileage_update',
-            JSON.stringify({
-              description: 'Relevé kilométrique (maintenance)',
-              oldKilometrage: oldKm,
-              newKilometrage: newKm,
-              maintenanceId: req.params.id,
-              vehicleName: oldVehicle?.name || '',
-              date: new Date().toISOString(),
-            }),
-            req.user.id,
-            req.user.name,
-          );
-        }
-      }
+      const saved = updateMaintenance();
 
       invalidateEntity('maintenances');
-      const saved = db.prepare('SELECT * FROM maintenances WHERE id = ?').get(req.params.id);
       res.json({ success: true, ...(saved || {}) });
     } catch (error) {
       logger.error(error);

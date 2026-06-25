@@ -232,23 +232,6 @@ app.get('/api/health', (req, res) => {
 // Renvoie les IPv4 LAN du serveur (utilisé par l'écran "Accès mobile"
 // pour générer un QR code utilisable depuis un téléphone, même quand
 // l'admin consulte l'app via http://localhost).
-app.get('/api/network-info', (req, res) => {
-  try {
-    const ifaces = os.networkInterfaces();
-    const ips = [];
-    for (const name of Object.keys(ifaces)) {
-      for (const info of ifaces[name] || []) {
-        if (info.family === 'IPv4' && !info.internal) {
-          ips.push({ iface: name, address: info.address });
-        }
-      }
-    }
-    res.json({ success: true, ips });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 // [SEC PHASE 3] Endpoint de réception des rapports CSP (Report-Only).
 // Accepte les deux formats : application/csp-report (legacy) et application/json.
 // Pas de PII collectée ici, juste la directive violée + l'URL bloquée.
@@ -279,6 +262,7 @@ app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 // [SEC PHASE 2] Bruteforce PIN : limite stricte (PIN = 4 chiffres, brute trivial sans rate-limit)
 app.use('/api/auth/login-pin', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
 // [SEC PHASE 2] Auth personnelle (PIN/password vérifié côté serveur) sur /suivi/personal-auth
 app.use('/api/suivi/personal-auth', authLimiter);
 // Auth éphémère (compte Equipe → actions personnelles)
@@ -296,6 +280,26 @@ app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);
 
 // Créer le middleware d'authentification avec le secret JWT
 const authenticateToken = createAuthenticateToken(JWT_SECRET);
+
+// Renvoie les IPv4 LAN du serveur (utilisé par l'écran "Accès mobile"
+// pour générer un QR code utilisable depuis un téléphone, même quand
+// l'admin consulte l'app via http://localhost).
+app.get('/api/network-info', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const ifaces = os.networkInterfaces();
+    const ips = [];
+    for (const name of Object.keys(ifaces)) {
+      for (const info of ifaces[name] || []) {
+        if (info.family === 'IPv4' && !info.internal) {
+          ips.push({ iface: name, address: info.address });
+        }
+      }
+    }
+    res.json({ success: true, ips });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // [SEC] Fichiers statiques sensibles — protégés par authentification
 const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments');

@@ -458,57 +458,75 @@ export function setupStockMovementsRoutes(app, authenticateToken, requireAdmin) 
           .json({ success: false, error: 'Type invalide (in, out, adjustment, return)' });
       }
 
-      const item = db.prepare('SELECT * FROM stock_items WHERE id = ?').get(stock_item_id);
-      if (!item) return res.status(404).json({ success: false, error: 'Article non trouvé' });
-
-      const qty = Math.abs(Number(quantity));
-      let newQuantity;
-
-      if (type === 'in' || type === 'return') {
-        newQuantity = item.quantity + qty;
-      } else if (type === 'out') {
-        if (qty > item.quantity) {
-          return res
-            .status(400)
-            .json({ success: false, error: `Stock insuffisant (disponible: ${item.quantity})` });
+      const createMovement = db.transaction(() => {
+        const item = db.prepare('SELECT * FROM stock_items WHERE id = ?').get(stock_item_id);
+        if (!item) {
+          const err = new Error('STOCK_ITEM_NOT_FOUND');
+          err.code = 'STOCK_ITEM_NOT_FOUND';
+          throw err;
         }
-        newQuantity = item.quantity - qty;
-      } else {
-        // adjustment — quantity est la nouvelle valeur absolue
-        newQuantity = qty;
-      }
 
-      const movResult = db
-        .prepare(
-          `
-        INSERT INTO stock_movements (stock_item_id, type, quantity, previous_quantity, new_quantity, reason, reference, linked_entity_type, linked_entity_id, user_id, user_name)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-        )
-        .run(
-          stock_item_id,
-          type,
-          qty,
-          item.quantity,
-          newQuantity,
-          reason || null,
-          reference || null,
-          linked_entity_type || null,
-          linked_entity_id || null,
-          req.user.id,
-          req.user.name,
-        );
+        const qty = Math.abs(Number(quantity));
+        let newQuantity;
 
-      // Update item quantity
-      db.prepare(
-        'UPDATE stock_items SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      ).run(newQuantity, stock_item_id);
+        if (type === 'in' || type === 'return') {
+          newQuantity = item.quantity + qty;
+        } else if (type === 'out') {
+          if (qty > item.quantity) {
+            const err = new Error('INSUFFICIENT_STOCK');
+            err.code = 'INSUFFICIENT_STOCK';
+            err.available = item.quantity;
+            throw err;
+          }
+          newQuantity = item.quantity - qty;
+        } else {
+          // adjustment — quantity est la nouvelle valeur absolue
+          newQuantity = qty;
+        }
 
-      const movement = db
-        .prepare('SELECT * FROM stock_movements WHERE id = ?')
-        .get(movResult.lastInsertRowid);
+        const movResult = db
+          .prepare(
+            `
+          INSERT INTO stock_movements (stock_item_id, type, quantity, previous_quantity, new_quantity, reason, reference, linked_entity_type, linked_entity_id, user_id, user_name)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+          )
+          .run(
+            stock_item_id,
+            type,
+            qty,
+            item.quantity,
+            newQuantity,
+            reason || null,
+            reference || null,
+            linked_entity_type || null,
+            linked_entity_id || null,
+            req.user.id,
+            req.user.name,
+          );
+
+        db.prepare(
+          'UPDATE stock_items SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        ).run(newQuantity, stock_item_id);
+
+        const movement = db
+          .prepare('SELECT * FROM stock_movements WHERE id = ?')
+          .get(movResult.lastInsertRowid);
+        return { movement, item };
+      });
+
+      const { movement, item } = createMovement();
       res.status(201).json({ ...movement, item_name: item.name, item_reference: item.reference });
     } catch (error) {
+      if (error?.code === 'STOCK_ITEM_NOT_FOUND') {
+        return res.status(404).json({ success: false, error: 'Article non trouvé' });
+      }
+      if (error?.code === 'INSUFFICIENT_STOCK') {
+        return res.status(400).json({
+          success: false,
+          error: `Stock insuffisant (disponible: ${error.available})`,
+        });
+      }
       logger.error('Erreur mouvement stock:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
     }

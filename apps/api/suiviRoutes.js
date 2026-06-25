@@ -707,7 +707,6 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
             }
 
             const vehicleIdText = resolveVehicleIdText(item);
-            const legacyVehicleId = Number(item.vehicle_id);
             const vehicleSnapshot = String(item.vehicle_name_snapshot || '').trim();
             const linkedMaintenanceId = createVehicleBreakdownReportIfNeeded(item);
 
@@ -719,7 +718,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
                 item.description || '',
                 reporterId,
                 reporterSnapshot,
-                Number.isFinite(legacyVehicleId) ? legacyVehicleId : null,
+                null,
                 vehicleIdText,
                 vehicleSnapshot,
                 linkedMaintenanceId,
@@ -727,6 +726,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
                 req.user.id,
               );
             } else {
+              const legacyVehicleId = Number(item.vehicle_id);
               insertIncident.run(
                 crypto.randomUUID().replace(/-/g, ''),
                 ticketId,

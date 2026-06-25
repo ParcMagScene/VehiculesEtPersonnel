@@ -71,7 +71,19 @@ pm2 restart vehicules-backend 2>/dev/null && echo "   ✅ Backend redémarré" |
 echo ""
 echo "🩺 Smoke test santé API..."
 sleep 2
-HEALTH=$(curl -sf http://localhost:3002/api/health 2>/dev/null || echo '{"ok":false}')
+# 1) Tente l'URL HTTP historique (peut rediriger vers HTTPS)
+HEALTH=$(curl -fsSL --max-time 8 http://localhost:3002/api/health 2>/dev/null || true)
+
+# 2) Fallback HTTPS local (certificat auto-signé en environnement local)
+if [ -z "$HEALTH" ]; then
+  HEALTH=$(curl -kfsS --max-time 8 https://localhost:3443/api/health 2>/dev/null || true)
+fi
+
+# Valeur par défaut si les deux appels échouent
+if [ -z "$HEALTH" ]; then
+  HEALTH='{"ok":false}'
+fi
+
 if echo "$HEALTH" | grep -q '"ok":true'; then
   echo "   ✅ API opérationnelle"
 else

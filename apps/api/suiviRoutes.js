@@ -706,7 +706,13 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
               reporterSnapshot = [p?.first_name, p?.last_name].filter(Boolean).join(' ').trim();
             }
 
+            const requestedVehicleInput = normalizeIncidentVehicleInput(item);
             const vehicleIdText = resolveVehicleIdText(item);
+            if (requestedVehicleInput && !vehicleIdText) {
+              const err = new Error(`Véhicule introuvable: ${requestedVehicleInput}`);
+              err.statusCode = 400;
+              throw err;
+            }
             const vehicleSnapshot = String(item.vehicle_name_snapshot || '').trim();
             const linkedMaintenanceId = createVehicleBreakdownReportIfNeeded(item);
 
@@ -791,6 +797,9 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         });
       } catch (error) {
         logger.error('POST /api/suivi/incidents/tickets error:', error);
+        if (error?.statusCode === 400) {
+          return res.status(400).json({ success: false, error: error.message });
+        }
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
     },

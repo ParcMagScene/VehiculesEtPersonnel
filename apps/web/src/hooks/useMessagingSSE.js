@@ -17,6 +17,9 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
   const eventSourceRef = useRef(null);
   const fallbackIntervalRef = useRef(null);
   const retriesRef = useRef(0);
+  const reconnectTimeoutRef = useRef(null);
+  const retryFromPollingTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   const handleUnreadUpdate = useCallback(
     (newCount) => {
@@ -34,7 +37,7 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
         }
       }
       prevUnreadRef.current = newCount;
-      setUnreadMsgCount(newCount);
+      if (isMountedRef.current) setUnreadMsgCount(newCount);
     },
     [isMessagingOpen],
   );
@@ -107,11 +110,11 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
         if (retriesRef.current <= 8) {
           // Reconnexion avec backoff exponentiel plafonné à 30s
           const delay = Math.min(retriesRef.current * 2000, 30000);
-          setTimeout(connectSSE, delay);
+          reconnectTimeoutRef.current = setTimeout(connectSSE, delay);
         } else {
           // SSE en échec → fallback polling, retenter SSE après 2 min
           startPolling();
-          setTimeout(() => {
+          retryFromPollingTimeoutRef.current = setTimeout(() => {
             retriesRef.current = 0;
             stopPolling();
             connectSSE();
@@ -127,9 +130,32 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      if (retryFromPollingTimeoutRef.current) {
+        clearTimeout(retryFromPollingTimeoutRef.current);
+        retryFromPollingTimeoutRef.current = null;
+      }
       stopPolling();
     };
   }, [currentUser, handleUnreadUpdate, onNewMessage, startPolling, stopPolling]);
+
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      if (retryFromPollingTimeoutRef.current) {
+        clearTimeout(retryFromPollingTimeoutRef.current);
+        retryFromPollingTimeoutRef.current = null;
+      }
+    },
+    [],
+  );
 
   return { unreadMsgCount };
 }

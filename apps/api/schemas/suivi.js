@@ -57,7 +57,11 @@ const incidentEntrySchema = z.object({
   ]),
   description: z.string().max(4000).default(''),
   reporter_person_id: z.coerce.number().int().nullable().optional(),
-  vehicle_id: z.coerce.number().int().nullable().optional(),
+  vehicle_id: z
+    .union([z.coerce.number().int(), z.string().trim().min(1)])
+    .nullable()
+    .optional(),
+  vehicle_id_text: z.string().trim().min(1).nullable().optional(),
   vehicle_name_snapshot: z.string().max(255).optional(),
   linked_maintenance_id: z.string().max(64).nullable().optional(),
 });

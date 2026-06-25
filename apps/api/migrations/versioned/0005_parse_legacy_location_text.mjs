@@ -94,6 +94,5 @@ export default function up(db) {
     }
   }
 
-  // eslint-disable-next-line no-console
   console.log(`   📦 ${migrated}/${items.length} équipements legacy migrés`);
 }

@@ -36,6 +36,7 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
   // ── Polling ──
   const [polling, setPolling] = useState(false);
   const intervalRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   // ── Favoris ──
   const [favorites, setFavorites] = useState([]);
@@ -74,11 +75,20 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
   const loadNowPlaying = useCallback(async () => {
     try {
       const data = await api.getSonosNowPlaying();
-      setNowPlaying(data);
+      if (isMountedRef.current) setNowPlaying(data);
     } catch {
-      setNowPlaying({ playing: false, error: 'Erreur de connexion' });
+      if (isMountedRef.current) {
+        setNowPlaying({ playing: false, error: 'Erreur de connexion' });
+      }
     }
   }, []);
+
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
 
   const loadZones = useCallback(async () => {
     try {

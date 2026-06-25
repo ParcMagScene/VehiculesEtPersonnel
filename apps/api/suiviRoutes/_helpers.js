@@ -8,6 +8,12 @@ import crypto from 'crypto';
 
 import db from '../database.js';
 
+const trackingIncidentColumns = db
+  .prepare('PRAGMA table_info(tracking_incident_entries)')
+  .all()
+  .map((c) => c.name);
+const hasTrackingIncidentVehicleIdText = trackingIncidentColumns.includes('vehicle_id_text');
+
 // ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
@@ -603,11 +609,23 @@ export function computeIncidentSynthese(periodStart, periodEnd) {
     const placeholders = ticketIds.map(() => '?').join(',');
     entries = db
       .prepare(
-        `SELECT ie.*, p.first_name, p.last_name
-         FROM tracking_incident_entries ie
-         LEFT JOIN persons p ON p.id = ie.reporter_person_id
-         WHERE ie.ticket_id IN (${placeholders})
-         ORDER BY ie.created_at ASC`,
+        hasTrackingIncidentVehicleIdText
+          ? `SELECT ie.*, p.first_name, p.last_name,
+                    COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT)) AS resolved_vehicle_id_text,
+                    v.name AS resolved_vehicle_name
+             FROM tracking_incident_entries ie
+             LEFT JOIN persons p ON p.id = ie.reporter_person_id
+             LEFT JOIN vehicles v ON v.id = COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT))
+             WHERE ie.ticket_id IN (${placeholders})
+             ORDER BY ie.created_at ASC`
+          : `SELECT ie.*, p.first_name, p.last_name,
+                    CASE WHEN ie.vehicle_id IS NULL THEN NULL ELSE CAST(ie.vehicle_id AS TEXT) END AS resolved_vehicle_id_text,
+                    v.name AS resolved_vehicle_name
+             FROM tracking_incident_entries ie
+             LEFT JOIN persons p ON p.id = ie.reporter_person_id
+             LEFT JOIN vehicles v ON v.id = CAST(ie.vehicle_id AS TEXT)
+             WHERE ie.ticket_id IN (${placeholders})
+             ORDER BY ie.created_at ASC`,
       )
       .all(...ticketIds);
   }
@@ -617,6 +635,10 @@ export function computeIncidentSynthese(periodStart, periodEnd) {
     if (!entriesByTicket.has(e.ticket_id)) entriesByTicket.set(e.ticket_id, []);
     entriesByTicket.get(e.ticket_id).push({
       ...e,
+      vehicle_id_text: String(e.resolved_vehicle_id_text || '').trim() || null,
+      vehicle_name_snapshot:
+        String(e.vehicle_name_snapshot || '').trim() ||
+        String(e.resolved_vehicle_name || '').trim(),
       reporter_name:
         [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
         e.reporter_name_snapshot ||
@@ -641,6 +663,7 @@ export function computeIncidentSynthese(periodStart, periodEnd) {
         incident_type: ie.incident_type || '',
         description: ie.description || '',
         reporter_name: ie.reporter_name || '',
+        vehicle_id_text: ie.vehicle_id_text || null,
         vehicle_name_snapshot: ie.vehicle_name_snapshot || '',
         created_at: ie.created_at || null,
       })),

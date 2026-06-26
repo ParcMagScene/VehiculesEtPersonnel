@@ -52,9 +52,17 @@ const LeaveRequestsPanel = ({
   const [filter, setFilter] = useState('all');
   const [expandedId, setExpandedId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [balance, setBalance] = useState(null);
   const [error, setError] = useState('');
   const toast = useToast();
+
+  const handleSafeClose = () => {
+    if (isCancelling) {
+      return;
+    }
+    onClose();
+  };
 
   // Charger les demandes
   const loadRequests = useCallback(async () => {
@@ -85,7 +93,7 @@ const LeaveRequestsPanel = ({
       setBalance(data);
     } catch (err) {
       console.error('Erreur chargement solde:', err);
-      toast.error('Impossible de charger le solde de congés');
+      toast.error('Impossible de charger le solde de congés.');
     }
   }, [personId, toast]);
 
@@ -105,15 +113,21 @@ const LeaveRequestsPanel = ({
 
   // Annuler une demande
   const handleCancel = async (id) => {
+    setIsCancelling(true);
     try {
       await api.cancelLeave(id);
       refreshBus.publish('leaves');
       setCancellingId(null);
       loadRequests();
       loadBalance();
+      toast.success('Demande annulée avec succès.');
       if (onRefresh) onRefresh();
     } catch (err) {
-      setError(err.error || err.message || "Erreur lors de l'annulation");
+      const message = err.error || err.message || "Impossible d'annuler la demande.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -128,7 +142,8 @@ const LeaveRequestsPanel = ({
         });
       }
     } catch (err) {
-      setError('Erreur génération PDF');
+      setError('Impossible de générer le PDF.');
+      toast.error('Impossible de générer le PDF.');
     }
   };
 
@@ -158,8 +173,8 @@ const LeaveRequestsPanel = ({
   };
 
   return (
-    <Modal open onClose={onClose} size="lg" className="lrp-panel">
-      <ModalHeader icon={<Calendar size={20} />} onClose={onClose}>
+    <Modal open onClose={handleSafeClose} size="lg" className="lrp-panel">
+      <ModalHeader icon={<Calendar size={20} />} onClose={handleSafeClose}>
         <span>Mes demandes de congés</span>
         <div className="lrp-header-actions">
           <Tooltip content="Rafraîchir">

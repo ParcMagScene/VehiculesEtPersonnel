@@ -7,6 +7,7 @@ import api from '../utils/api';
 import { getPeriodTimestamp } from '../utils/dateUtils';
 import { saveToIndexedDB, STORES } from '../utils/indexedDB';
 import logger from '../utils/logger';
+import { userIsReadOnly } from '../utils/permissions';
 import { refreshBus } from '../utils/refresh-bus';
 
 // Maintenance qui impacte le véhicule côté BE :
@@ -240,7 +241,11 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
             return true;
           } catch (error) {
             console.error('❌ Erreur création demande:', error);
-            toast.error(`Erreur création demande: ${error.message}`);
+            toast.error(
+              error?.message
+                ? `Impossible de créer la demande de réservation: ${error.message}`
+                : 'Impossible de créer la demande de réservation.',
+            );
             return false;
           }
         }
@@ -258,7 +263,11 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
           newReservations.push(createdReservation);
         } catch (error) {
           console.error('❌ Erreur création réservation:', error);
-          toast.error(`Erreur création réservation: ${error.message}`);
+          toast.error(
+            error?.message
+              ? `Impossible de créer la réservation: ${error.message}`
+              : 'Impossible de créer la réservation.',
+          );
           return false;
         }
       }
@@ -269,6 +278,11 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         // 'affaires' = compat existante (panels affaires/dashboard/mobile).
         refreshBus.publish('reservations');
         refreshBus.publish('affaires');
+        toast.success(
+          newReservations.length > 1
+            ? `${newReservations.length} réservations créées avec succès.`
+            : 'Réservation créée avec succès.',
+        );
       }
       return true;
     },
@@ -279,7 +293,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
     async (id, updatedReservation) => {
       logger.log('📝 updateReservation appelé - ID:', id, 'Objet:', updatedReservation);
 
-      const canEditReservation = !!(currentUser?.isAdmin || !currentUser?.permissions?.readOnly);
+      const canEditReservation = !!(currentUser?.isAdmin || !userIsReadOnly(currentUser));
       if (!canEditReservation) {
         toast.warning('Votre compte est en lecture seule pour les réservations.');
         return false;
@@ -326,10 +340,15 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         setReservations((prev) => prev.map((r) => (r.id === id ? finalReservation : r)));
         refreshBus.publish('reservations');
         refreshBus.publish('affaires');
+        toast.success('Réservation mise à jour avec succès.');
         return true;
       } catch (error) {
         console.error('❌ Erreur mise à jour réservation:', error);
-        toast.error(`Erreur mise à jour: ${error.message}`);
+        toast.error(
+          error?.message
+            ? `Impossible de mettre à jour la réservation: ${error.message}`
+            : 'Impossible de mettre à jour la réservation.',
+        );
         return false;
       }
     },
@@ -352,9 +371,16 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         refreshBus.publish('reservations');
         refreshBus.publish('affaires');
         logger.log('✅ État local mis à jour');
+        toast.success('Réservation supprimée avec succès.');
+        return true;
       } catch (error) {
         console.error('❌ Erreur suppression réservation:', error);
-        toast.error(`Erreur suppression: ${error.message}`);
+        toast.error(
+          error?.message
+            ? `Impossible de supprimer la réservation: ${error.message}`
+            : 'Impossible de supprimer la réservation.',
+        );
+        return false;
       }
     },
     [currentUser, toast],

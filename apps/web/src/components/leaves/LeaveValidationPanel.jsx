@@ -48,6 +48,7 @@ import {
 
 import { STATUS } from '../../constants';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import { sanitizePrintHtml } from '../../utils/safePrintWindow';
@@ -141,6 +142,7 @@ const AdminSignaturePad = ({ onSign, _value }) => {
 
 const LeaveValidationPanel = ({ onClose, onRefresh }) => {
   const printPreview = usePrintPreview();
+  const toast = useToast();
   const [tab, setTab] = useState('pending');
   const [requests, setRequests] = useState([]);
   const [conflicts, setConflicts] = useState([]);
@@ -156,6 +158,13 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
   const [modifiedEndDate, setModifiedEndDate] = useState('');
   const [adminSignature, setAdminSignature] = useState(null);
   const [processing, setProcessing] = useState(false);
+
+  const handleSafeClose = () => {
+    if (processing) {
+      return;
+    }
+    onClose();
+  };
 
   // Charger les données
   const loadData = useCallback(async () => {
@@ -235,9 +244,18 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
       setModifiedEndDate('');
       setAdminSignature(null);
       loadData();
+      if (action === 'accept') {
+        toast.success('Demande acceptée.');
+      } else if (action === 'refuse') {
+        toast.success('Demande refusée.');
+      } else {
+        toast.success('Demande modifiée.');
+      }
       if (onRefresh) onRefresh();
     } catch (err) {
-      setError(err.error || err.message || 'Erreur lors du traitement');
+      const message = err.error || err.message || 'Impossible de traiter la demande.';
+      setError(message);
+      toast.error(message);
     } finally {
       setProcessing(false);
     }
@@ -254,13 +272,14 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
         });
       }
     } catch (err) {
-      setError('Erreur génération PDF');
+      setError('Impossible de générer le PDF.');
+      toast.error('Impossible de générer le PDF.');
     }
   };
 
   return (
-    <Modal open={true} onClose={onClose} size="lg" className="lvp-panel">
-      <ModalHeader icon={<Shield size={20} />} onClose={onClose}>
+    <Modal open={true} onClose={handleSafeClose} size="lg" className="lvp-panel">
+      <ModalHeader icon={<Shield size={20} />} onClose={handleSafeClose}>
         Validation des congés
         <Button
           variant="ghost"

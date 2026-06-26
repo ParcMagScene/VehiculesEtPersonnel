@@ -585,7 +585,7 @@ const ReservationModal = ({
     try {
       if (!reservation?.id) {
         toast.warning(
-          "Vous devez d'abord enregistrer la réservation avant d'ajouter des détails du trajet",
+          "Vous devez d'abord enregistrer la réservation avant d'ajouter des détails du trajet.",
         );
         return null;
       }
@@ -629,13 +629,17 @@ const ReservationModal = ({
         return updated;
       });
 
-      toast.success('Détails du trajet enregistrés avec succès !');
+      toast.success('Détails du trajet enregistrés avec succès.');
 
       // Retourner les données sauvegardées (déjà en snake_case pour TripDetailsModal)
       return savedData;
     } catch (error) {
       console.error('Erreur sauvegarde trip details:', error);
-      toast.error(`Erreur technique: ${error.message}`);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer les détails du trajet: ${error.message}`
+          : "Impossible d'enregistrer les détails du trajet.",
+      );
       return null;
     }
   };
@@ -666,8 +670,8 @@ const ReservationModal = ({
   // Lier deux événements (leurs trajets partagent le même groupe)
   const handleLinkTrips = async (eventId1, eventId2) => {
     if (!reservation?.id) {
-      toast.warning("Vous devez d'abord enregistrer la réservation");
-      return;
+      toast.warning("Vous devez d'abord enregistrer la réservation.");
+      return false;
     }
 
     try {
@@ -682,8 +686,12 @@ const ReservationModal = ({
         detailsMap[detail.event_id] = transformTripDetail(detail);
       });
       setTripDetails(detailsMap);
+      toast.success('Trajets liés avec succès.');
+      return true;
     } catch (error) {
       console.error('Erreur liaison trajets:', error);
+      toast.error('Impossible de lier les trajets.');
+      return false;
     }
   };
 
@@ -701,8 +709,10 @@ const ReservationModal = ({
         detailsMap[detail.event_id] = transformTripDetail(detail);
       });
       setTripDetails(detailsMap);
+      toast.success('Trajet délié avec succès.');
     } catch (error) {
       console.error('Erreur déliaison trajet:', error);
+      toast.error('Impossible de délier le trajet.');
     }
   };
 
@@ -727,10 +737,14 @@ const ReservationModal = ({
     }
 
     // Puis lier les trajets
+    let linkSuccess = true;
     if (reservation?.id) {
-      await handleLinkTrips(sourceEventId, targetEvent.id);
+      linkSuccess = await handleLinkTrips(sourceEventId, targetEvent.id);
     }
-    setLinkEventComboboxOpen(null);
+
+    if (linkSuccess) {
+      setLinkEventComboboxOpen(null);
+    }
   };
 
   // Obtenir les groupes de trajets liés
@@ -797,7 +811,7 @@ const ReservationModal = ({
     if (isMultiVehicle) {
       // Mode multi-véhicules : créer une réservation par véhicule sélectionné
       if (selectedVehicleIds.length === 0) {
-        toast.warning('Veuillez sélectionner au moins un véhicule');
+        toast.warning('Veuillez sélectionner au moins un véhicule.');
         return;
       }
 
@@ -843,6 +857,7 @@ const ReservationModal = ({
       // Ne PAS fermer le dialog - LocationDialog le gère lui-même
     } catch (error) {
       console.error('Erreur lors de la mise à jour locale:', error);
+      toast.error('Erreur lors de la mise à jour du lieu.');
     }
   };
 

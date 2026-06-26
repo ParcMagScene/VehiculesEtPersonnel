@@ -39,6 +39,35 @@ import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 import ProfileEditModal from '../auth/ProfileEditModal';
 
+const PERMISSION_ALIASES = {
+  readOnly: ['readOnly', 'read_only'],
+  canManageVehicleMaintenance: [
+    'canManageVehicleMaintenance',
+    'can_manage_vehicle_maintenance',
+    'canManageMaintenance',
+    'can_manage_maintenance',
+  ],
+  canManageEquipmentMaintenance: [
+    'canManageEquipmentMaintenance',
+    'can_manage_equipment_maintenance',
+  ],
+  canManageCatalog: ['canManageCatalog', 'can_manage_catalog'],
+  canManageTrucks: ['canManageTrucks', 'can_manage_trucks'],
+};
+
+const hasPermission = (permissions, permissionKey) => {
+  const perms = permissions || {};
+  const keys = PERMISSION_ALIASES[permissionKey] || [permissionKey];
+  return keys.some((key) => perms[key] === true);
+};
+
+const withPermissionValue = (permissions, permissionKey, value) => {
+  const keys = PERMISSION_ALIASES[permissionKey] || [permissionKey];
+  const next = { ...(permissions || {}) };
+  for (const key of keys) next[key] = value;
+  return next;
+};
+
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const toast = useToast();
   const [authorizedEmails, setAuthorizedEmails] = useState([]);
@@ -155,8 +184,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
   const handleTogglePermission = async (userId, permissionKey, currentPermissions) => {
     const perms = currentPermissions || {};
-    const newValue = !perms[permissionKey];
-    const updatedPerms = { ...perms, [permissionKey]: newValue };
+    const newValue = !hasPermission(perms, permissionKey);
+    const updatedPerms = withPermissionValue(perms, permissionKey, newValue);
 
     // Optimistic update — immediately reflect in UI
     setUsers((prev) =>
@@ -498,11 +527,10 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={
-                                  user.permissions?.canManageVehicleMaintenance ||
-                                  user.permissions?.canManageMaintenance ||
-                                  false
-                                }
+                                checked={hasPermission(
+                                  user.permissions,
+                                  'canManageVehicleMaintenance',
+                                )}
                                 onChange={() =>
                                   handleTogglePermission(
                                     user.id,
@@ -520,7 +548,10 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={user.permissions?.canManageEquipmentMaintenance || false}
+                                checked={hasPermission(
+                                  user.permissions,
+                                  'canManageEquipmentMaintenance',
+                                )}
                                 onChange={() =>
                                   handleTogglePermission(
                                     user.id,
@@ -538,7 +569,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={user.permissions?.canManageCatalog || false}
+                                checked={hasPermission(user.permissions, 'canManageCatalog')}
                                 onChange={() =>
                                   handleTogglePermission(
                                     user.id,
@@ -556,7 +587,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={user.permissions?.canManageTrucks || false}
+                                checked={hasPermission(user.permissions, 'canManageTrucks')}
                                 onChange={() =>
                                   handleTogglePermission(
                                     user.id,
@@ -574,7 +605,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={user.permissions?.readOnly || false}
+                                checked={hasPermission(user.permissions, 'readOnly')}
                                 onChange={() =>
                                   handleTogglePermission(user.id, 'readOnly', user.permissions)
                                 }

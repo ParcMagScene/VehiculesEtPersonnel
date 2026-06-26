@@ -120,13 +120,17 @@ export function PersonalAuthProvider({ children }) {
   return <PersonalAuthContext.Provider value={value}>{children}</PersonalAuthContext.Provider>;
 }
 
+export function assertPersonalAuthContext(context) {
+  if (!context) {
+    throw new Error("usePersonalAuth doit être utilisé à l'intérieur de PersonalAuthProvider");
+  }
+  return context;
+}
+
 /**
  * Hook pour utiliser le contexte PersonalAuth
  */
 export function usePersonalAuth() {
   const context = useContext(PersonalAuthContext);
-  if (!context) {
-    throw new Error("usePersonalAuth doit être utilisé à l'intérieur de PersonalAuthProvider");
-  }
-  return context;
+  return assertPersonalAuthContext(context);
 }

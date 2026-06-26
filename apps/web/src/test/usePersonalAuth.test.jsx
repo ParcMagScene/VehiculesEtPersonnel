@@ -1,7 +1,11 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { PersonalAuthProvider, usePersonalAuth } from '../contexts/PersonalAuthContext.jsx';
+import {
+  assertPersonalAuthContext,
+  PersonalAuthProvider,
+  usePersonalAuth,
+} from '../contexts/PersonalAuthContext.jsx';
 
 // Mock global du module api (singleton) — utilisé par PersonalAuthContext
 vi.mock('../utils/api/index.js', () => ({
@@ -19,8 +23,10 @@ describe('usePersonalAuth (PersonalAuthContext)', () => {
     api.request.mockReset();
   });
 
-  it.skip('lève une erreur si utilisé hors du provider', () => {
-    // Ce cas génère des traces React non suppressibles dans jsdom même lorsqu'il est attendu.
+  it('lève une erreur si le contexte est absent', () => {
+    expect(() => assertPersonalAuthContext(undefined)).toThrow(
+      /usePersonalAuth doit être utilisé/i,
+    );
   });
 
   it('expose un état initial non authentifié', () => {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { userHasPermission, userIsAdmin, userIsReadOnly } from '../utils/permissions.js';
+import {
+  hasPermissionFlag,
+  setPermissionFlag,
+  userHasPermission,
+  userIsAdmin,
+  userIsReadOnly,
+} from '../utils/permissions.js';
 
 describe('permissions helpers', () => {
   it('userIsAdmin retourne true uniquement pour isAdmin=true', () => {
@@ -15,6 +21,12 @@ describe('permissions helpers', () => {
 
     expect(userHasPermission(userSnake, 'canManageEquipmentMaintenance')).toBe(true);
     expect(userHasPermission(userCamel, 'canManageEquipmentMaintenance')).toBe(true);
+  });
+
+  it('userHasPermission accepte les clés legacy canManageMaintenance', () => {
+    const legacyUser = { permissions: { canManageMaintenance: true } };
+
+    expect(userHasPermission(legacyUser, 'canManageVehicleMaintenance')).toBe(true);
   });
 
   it('userHasPermission applique le bypass admin par défaut', () => {
@@ -34,5 +46,23 @@ describe('permissions helpers', () => {
     expect(userIsReadOnly(adminReadOnlySnake)).toBe(true);
     expect(userIsReadOnly(adminReadOnlyCamel)).toBe(true);
     expect(userIsReadOnly(adminNotReadOnly)).toBe(false);
+  });
+
+  it('hasPermissionFlag lit les aliases sur un objet permissions brut', () => {
+    const permissions = { can_manage_catalog: true };
+
+    expect(hasPermissionFlag(permissions, 'canManageCatalog')).toBe(true);
+  });
+
+  it('setPermissionFlag met à jour toutes les variantes d’alias', () => {
+    const permissions = {
+      canManageEquipmentMaintenance: false,
+      can_manage_equipment_maintenance: false,
+    };
+
+    const next = setPermissionFlag(permissions, 'canManageEquipmentMaintenance', true);
+
+    expect(next.canManageEquipmentMaintenance).toBe(true);
+    expect(next.can_manage_equipment_maintenance).toBe(true);
   });
 });

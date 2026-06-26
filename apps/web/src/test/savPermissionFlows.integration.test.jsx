@@ -237,8 +237,9 @@ describe('SAV permissions integration flows', () => {
     const savMenuBtn = document.querySelector('.m-eq-qr-menu-btn.sav');
     expect(savMenuBtn).toBeTruthy();
     await user.click(savMenuBtn);
+    await screen.findByRole('heading', { name: /ticket sav/i });
     await user.type(screen.getByPlaceholderText('Ex: Batterie ne charge plus'), 'Batterie HS');
-    await user.click(screen.getByRole('button', { name: /créer le ticket sav/i }));
+    await user.click(screen.getByText(/créer le ticket sav/i));
 
     await waitFor(() => expect(apiMock.createSavTicket).toHaveBeenCalledTimes(1));
     expect(apiMock.createSavRequest).not.toHaveBeenCalled();
@@ -254,8 +255,9 @@ describe('SAV permissions integration flows', () => {
     const savMenuBtn = document.querySelector('.m-eq-qr-menu-btn.sav');
     expect(savMenuBtn).toBeTruthy();
     await user.click(savMenuBtn);
+    await screen.findByRole('heading', { name: /demande de sav/i });
     await user.type(screen.getByPlaceholderText('Ex: Batterie ne charge plus'), 'Test demande');
-    await user.click(screen.getByRole('button', { name: /créer la demande sav/i }));
+    await user.click(screen.getByText(/créer la demande sav/i));
 
     await waitFor(() => expect(apiMock.createSavRequest).toHaveBeenCalledTimes(1));
     expect(apiMock.createSavTicket).not.toHaveBeenCalled();

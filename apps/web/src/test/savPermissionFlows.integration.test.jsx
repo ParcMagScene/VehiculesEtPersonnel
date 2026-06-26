@@ -234,7 +234,7 @@ describe('SAV permissions integration flows', () => {
     );
 
     await screen.findByText('Équipement scanné');
-    await user.click(screen.getByRole('button', { name: /ticket sav/i }));
+    await user.click(screen.getByText(/créer un ticket d'intervention/i));
     await user.type(screen.getByPlaceholderText('Ex: Batterie ne charge plus'), 'Batterie HS');
     await user.click(screen.getByRole('button', { name: /créer le ticket sav/i }));
 
@@ -249,7 +249,7 @@ describe('SAV permissions integration flows', () => {
     render(<MobileEquipmentQR uid="EMAG-123" currentUser={{ permissions: {} }} />);
 
     await screen.findByText('Équipement scanné');
-    await user.click(screen.getByRole('button', { name: /demande de sav/i }));
+    await user.click(screen.getByText(/créer une demande d'intervention/i));
     await user.type(screen.getByPlaceholderText('Ex: Batterie ne charge plus'), 'Test demande');
     await user.click(screen.getByRole('button', { name: /créer la demande sav/i }));
 

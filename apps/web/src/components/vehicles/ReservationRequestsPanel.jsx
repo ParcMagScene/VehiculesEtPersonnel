@@ -32,7 +32,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       setRequests(data);
     } catch (error) {
       console.error('Erreur lors du chargement des demandes:', error);
-      toast.error('Erreur lors du chargement des demandes de réservation');
+      toast.error('Impossible de charger les demandes de réservation.');
     }
   };
 
@@ -46,7 +46,7 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
         setLoading(true);
         try {
           await api.approveReservationRequest(requestId);
-          toast.success('Demande approuv\xE9e ! La r\xE9servation a \xE9t\xE9 cr\xE9\xE9e.');
+          toast.success('Demande approuv\xE9e. La r\xE9servation a \xE9t\xE9 cr\xE9\xE9e.');
           await loadRequests();
           if (onRequestProcessed) {
             onRequestProcessed();
@@ -54,7 +54,9 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
         } catch (error) {
           console.error("Erreur lors de l'approbation:", error);
           toast.error(
-            "Erreur lors de l'approbation de la demande: " + (error.message || 'Erreur inconnue'),
+            error?.message
+              ? `Impossible d'approuver la demande: ${error.message}`
+              : "Impossible d'approuver la demande.",
           );
         } finally {
           setLoading(false);
@@ -71,14 +73,14 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
 
   const handleRejectConfirm = async () => {
     if (!rejectionReason.trim()) {
-      toast.warning('Veuillez indiquer un motif de rejet');
+      toast.warning('Veuillez indiquer un motif de rejet.');
       return;
     }
 
     setLoading(true);
     try {
       await api.rejectReservationRequest(selectedRequest.id, rejectionReason);
-      toast.success('Demande rejetée');
+      toast.success('Demande rejetée.');
       setRejectDialogOpen(false);
       setSelectedRequest(null);
       setRejectionReason('');
@@ -88,7 +90,11 @@ const ReservationRequestsPanel = ({ onRequestProcessed }) => {
       }
     } catch (error) {
       console.error('Erreur lors du rejet:', error);
-      toast.error('Erreur lors du rejet de la demande: ' + (error.message || 'Erreur inconnue'));
+      toast.error(
+        error?.message
+          ? `Impossible de rejeter la demande: ${error.message}`
+          : 'Impossible de rejeter la demande.',
+      );
     } finally {
       setLoading(false);
     }

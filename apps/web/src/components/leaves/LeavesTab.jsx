@@ -153,7 +153,7 @@ const LeavesTab = ({ persons = [], currentUser }) => {
       }
     } catch (err) {
       console.error('[LeavesTab] Erreur chargement:', err);
-      setError('Erreur lors du chargement des données');
+      setError('Impossible de charger les données.');
     } finally {
       setLoading(false);
     }
@@ -220,9 +220,11 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           refreshBus.publish('leaves');
           setCancellingId(null);
           loadData();
-          toast.success('Demande annulée');
+          toast.success('Demande annulée.');
         } catch (err) {
-          setError(err.error || err.message || "Erreur lors de l'annulation");
+          const message = err.error || err.message || "Impossible d'annuler la demande.";
+          setError(message);
+          toast.error(message);
         }
       },
     });
@@ -238,7 +240,8 @@ const LeavesTab = ({ persons = [], currentUser }) => {
         });
       }
     } catch {
-      setError('Erreur génération PDF');
+      setError('Impossible de générer le PDF.');
+      toast.error('Impossible de générer le PDF.');
     }
   };
 

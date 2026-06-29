@@ -66,7 +66,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
       setGifs(gifsData.gifs || []);
       setRules(rulesData.rules || []);
     } catch {
-      toast.error('Erreur chargement');
+      toast.error('Impossible de charger les icônes.');
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
         const data = await api.getDisplayLocationGifs();
         setGifs(data.gifs || []);
       } catch {
-        toast.error('Erreur import');
+        toast.error("Impossible d'importer l'icône.");
       }
     },
     [toast],
@@ -110,7 +110,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
             toast.success('Ic\xF4ne supprim\xE9e');
             setGifs((prev) => prev.filter((g) => g !== filename));
           } catch {
-            toast.error('Erreur suppression');
+            toast.error("Impossible de supprimer l'icône.");
           }
         },
       });
@@ -155,7 +155,7 @@ function LocationIconsTab({ _currentUser, refreshKey, onPreviewChange }) {
       refreshBus.publish('display');
       toast.success("Règles d'icônes enregistrées");
     } catch {
-      toast.error('Erreur enregistrement');
+      toast.error("Impossible d'enregistrer les règles d'icônes.");
     } finally {
       setSaving(false);
     }

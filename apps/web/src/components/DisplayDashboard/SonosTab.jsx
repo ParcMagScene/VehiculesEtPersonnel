@@ -238,7 +238,7 @@ function FavoritesList({ zone, isAdmin }) {
       const data = await api.getSonosFavorites();
       setFavorites(data.favorites || []);
     } catch {
-      toast.error('Erreur chargement favoris');
+      toast.error('Impossible de charger les favoris Sonos.');
     } finally {
       setLoading(false);
     }
@@ -254,7 +254,7 @@ function FavoritesList({ zone, isAdmin }) {
         await api.sonosPlayFavorite(zone, fav.uri, fav.title);
         toast.success(`Lecture : ${fav.title}`);
       } catch {
-        toast.error('Erreur lecture favori');
+        toast.error('Impossible de lancer ce favori Sonos.');
       }
     },
     [zone, toast],
@@ -335,7 +335,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
       const data = await api.getSonosConfig();
       setSonosIP(data.sonosIP || '');
     } catch {
-      toast.error('Erreur chargement config Sonos');
+      toast.error('Impossible de charger la configuration Sonos.');
     } finally {
       setLoading(false);
     }
@@ -402,7 +402,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
       toast.success('Configuration Sonos enregistrée');
       if (sonosIP) loadZones();
     } catch {
-      toast.error('Erreur enregistrement');
+      toast.error("Impossible d'enregistrer la configuration Sonos.");
     }
   }, [sonosIP, toast, loadZones]);
 

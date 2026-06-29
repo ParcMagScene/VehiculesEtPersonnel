@@ -216,7 +216,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         loadTasks();
         refreshBus.publish('planning');
       } catch {
-        toast.error('Erreur toggle visibilité');
+        toast.error('Impossible de modifier la visibilité de la tâche.');
       }
     },
     [loadTasks, toast],

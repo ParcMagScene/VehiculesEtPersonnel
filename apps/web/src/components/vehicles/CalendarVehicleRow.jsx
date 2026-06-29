@@ -205,6 +205,9 @@ const CalendarVehicleRow = ({
                           getMaintenanceConflicts(block).length > 0,
                         ).icon + ' '}
                       {block.clientName || block.prestationName}
+                      {!block.isMaintenance && block.affaire && (
+                        <span className="reservation-affaire-inline-badge">{block.affaire}</span>
+                      )}
                     </div>
                     {block.locationName && (
                       <div className="reservation-location">{block.locationName}</div>
@@ -221,27 +224,29 @@ const CalendarVehicleRow = ({
                   </div>
                 </div>
                 {!block.isMaintenance && onDeleteReservation && (
-                  <Tooltip content="Supprimer cette réservation" position="bottom">
-                    <Button
-                      variant="ghost"
-                      className="reservation-delete-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        confirm({
-                          title: 'Supprimer la réservation',
-                          message: 'Supprimer cette réservation ?',
-                          variant: 'danger',
-                          confirmLabel: 'Supprimer',
-                          onConfirm: () => onDeleteReservation(block.id),
-                        });
-                      }}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onMouseUp={(e) => e.stopPropagation()}
-                    >
-                      <Trash2 size={12} />
-                    </Button>
-                  </Tooltip>
+                  <div className="reservation-delete-btn-anchor">
+                    <Tooltip content="Supprimer cette réservation" position="bottom">
+                      <Button
+                        variant="ghost"
+                        className="reservation-delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          confirm({
+                            title: 'Supprimer la réservation',
+                            message: 'Supprimer cette réservation ?',
+                            variant: 'danger',
+                            confirmLabel: 'Supprimer',
+                            onConfirm: () => onDeleteReservation(block.id),
+                          });
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onMouseUp={(e) => e.stopPropagation()}
+                      >
+                        <Trash2 size={12} />
+                      </Button>
+                    </Tooltip>
+                  </div>
                 )}
                 {view !== 'year' && !isBeingResized && (
                   <>

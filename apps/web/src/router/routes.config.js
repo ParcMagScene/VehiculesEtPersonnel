@@ -13,7 +13,6 @@ import {
   Boxes,
   Briefcase,
   Building2,
-  MapPin,
   Package,
   Radio,
   ShieldCheck,
@@ -37,7 +36,6 @@ export const DESKTOP_MODULES = [
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
   { id: 'stock', label: 'Stocks', icon: Boxes },
   { id: 'annuaire', label: 'Annuaire', icon: Building2 },
-  { id: 'lieux', label: 'Lieux', icon: MapPin },
   { id: 'video', label: 'Vidéo', icon: Video },
   { id: 'controles', label: 'Contrôles', icon: ShieldCheck },
 ];

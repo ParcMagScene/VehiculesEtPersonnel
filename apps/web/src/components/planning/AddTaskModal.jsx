@@ -293,7 +293,7 @@ export default function AddTaskModal({
           finalReservationId = newRez.id;
           if (loadVehiclesAndReservations) loadVehiclesAndReservations();
         } catch {
-          toast.error('Erreur création réservation véhicule');
+          toast.error('Impossible de créer la réservation véhicule.');
           setSubmitting(false);
           return;
         }
@@ -335,7 +335,7 @@ export default function AddTaskModal({
       onTaskCreated();
       onClose();
     } catch {
-      toast.error('Erreur création tâche');
+      toast.error('Impossible de créer la tâche.');
     } finally {
       setSubmitting(false);
     }

@@ -213,6 +213,21 @@ const ReservationModal = ({
     return num ? allAffaires.find((a) => a.numeroAffaire === num) : null;
   }, [allAffaires, formData.affaires]);
 
+  const fillFromAffaireIfMissing = (baseData, affaireNum) => {
+    if (!affaireNum) return baseData;
+    const affaireObj = allAffaires.find((a) => a.numeroAffaire === affaireNum);
+    if (!affaireObj) return baseData;
+
+    const defaultClient = affaireObj.client || affaireObj.nom || '';
+    const defaultPrestation = affaireObj.titre || affaireObj.nom || '';
+
+    return {
+      ...baseData,
+      clientName: baseData.clientName || defaultClient,
+      prestationName: baseData.prestationName || defaultPrestation,
+    };
+  };
+
   // Fermer dropdown affaire au clic extérieur
   useEffect(() => {
     if (!affaireOpen) return;
@@ -808,6 +823,9 @@ const ReservationModal = ({
     if (formData.prestationName) addPrestation(formData.prestationName);
     formData.affaires.forEach((affaire) => addAffaire(affaire));
 
+    const primaryAffaire = formData.affaires?.[0] || '';
+    const enrichedFormData = fillFromAffaireIfMissing(formData, primaryAffaire);
+
     if (isMultiVehicle) {
       // Mode multi-véhicules : créer une réservation par véhicule sélectionné
       if (selectedVehicleIds.length === 0) {
@@ -816,14 +834,14 @@ const ReservationModal = ({
       }
 
       const reservations = selectedVehicleIds.map((vehicleId) => ({
-        ...formData,
+        ...enrichedFormData,
         vehicleId,
       }));
 
       onSave(reservations);
     } else {
       // Mode normal : une seule réservation
-      onSave(formData);
+      onSave(enrichedFormData);
     }
   };
 
@@ -1113,9 +1131,13 @@ const ReservationModal = ({
                                     key={a.numeroAffaire}
                                     onClick={() => {
                                       setFormData((prev) => ({
-                                        ...prev,
-                                        affaires: [a.numeroAffaire],
-                                        clientName: prev.clientName || a.client || '',
+                                        ...fillFromAffaireIfMissing(
+                                          {
+                                            ...prev,
+                                            affaires: [a.numeroAffaire],
+                                          },
+                                          a.numeroAffaire,
+                                        ),
                                       }));
                                       setAffaireSearch('');
                                       setAffaireOpen(false);

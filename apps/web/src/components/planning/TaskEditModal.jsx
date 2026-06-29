@@ -311,7 +311,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       onSave?.();
       onClose();
     } catch {
-      toast.error('Erreur lors de la fusion');
+      toast.error('Impossible de fusionner les tâches.');
     } finally {
       setMerging(false);
     }
@@ -370,7 +370,7 @@ function TaskEditModal({ task, persons = [], onSave, onClose }) {
       onClose();
     } catch (err) {
       console.error('Erreur mise à jour tâche:', err);
-      toast.error('Erreur lors de la mise à jour');
+      toast.error('Impossible de mettre à jour la tâche.');
     } finally {
       setSaving(false);
     }

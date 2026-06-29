@@ -199,7 +199,7 @@
 .calendar-headers-row .vehicle-column-header {
   position: static;
   flex-shrink: 0;
-  width: 250px;
+  width: var(--planning-vehicle-column-width);
   border-right: 2px solid var(--theme-border-medium);
 }
 
@@ -238,7 +238,7 @@
 /* Colonne véhicules fixe */
 .vehicle-column {
   flex-shrink: 0;
-  width: 250px;
+  width: var(--planning-vehicle-column-width);
   overflow-y: auto;
   overflow-x: visible;
   border-right: 2px solid var(--theme-border-medium);
@@ -266,7 +266,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 88px;
+  height: var(--planning-vehicle-header-height);
   flex-shrink: 0;
   border-radius: 0;
 }
@@ -317,8 +317,8 @@
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
-  height: 80px;
-  min-height: 80px;
+  height: var(--planning-section-header-height);
+  min-height: var(--planning-section-header-height);
 }
 
 .vehicle-section-header > span {
@@ -371,8 +371,8 @@
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
-  min-height: 80px;
-  height: 80px;
+  min-height: var(--planning-section-header-height);
+  height: var(--planning-section-header-height);
 }
 
 .vehicle-section-separator > span {
@@ -629,7 +629,7 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  min-height: 80px;
+  min-height: var(--planning-section-header-height);
   height: auto;
   z-index: var(--z-base);
   position: relative;
@@ -810,7 +810,7 @@
   cursor: pointer;
   transition: background-color 0.2s;
   position: relative;
-  min-height: 80px;
+  min-height: var(--planning-section-header-height);
   height: auto;
   background-color: var(--theme-bg-card);
   z-index: var(--z-base);
@@ -1041,6 +1041,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+}
+
+.reservation-affaire-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.375rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--radius-xs);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--theme-primary-dark);
+  background: var(--theme-purple-bg);
+  border: 1px solid var(--theme-primary-light);
+  vertical-align: middle;
 }
 
 .reservation-location {
@@ -1349,7 +1363,7 @@
 @media (max-width: 1024px) {
   .vehicle-column,
   .calendar-headers-row .vehicle-column-header {
-    width: 200px;
+    width: var(--planning-vehicle-column-width-md);
   }
 
   .week-view {
@@ -1368,7 +1382,7 @@
 @media (max-width: 768px) {
   .vehicle-column,
   .calendar-headers-row .vehicle-column-header {
-    width: 160px;
+    width: var(--planning-vehicle-column-width-sm);
   }
 
   .vehicle-cell {
@@ -1404,7 +1418,7 @@
 @media (max-width: 480px) {
   .vehicle-column,
   .calendar-headers-row .vehicle-column-header {
-    width: 120px;
+    width: var(--planning-vehicle-column-width-xs);
   }
 
   .vehicle-cell {

@@ -679,7 +679,7 @@ const HeaderNotifications = ({
                                 setRejectingRequestId(null);
                                 setRejectionReason('');
                                 api.rejectReservationRequest(request.id, reason).catch(() => {
-                                  toast.error('Erreur lors du refus de la demande');
+                                  toast.error('Impossible de refuser la demande de réservation.');
                                 });
                               }}
                             />
@@ -763,7 +763,7 @@ const HeaderNotifications = ({
                                   }));
                                   toast.success('Demande approuvée ! La réservation a été créée.');
                                   api.approveReservationRequest(request.id).catch(() => {
-                                    toast.error('Erreur lors de la validation');
+                                    toast.error('Impossible de valider la demande de réservation.');
                                   });
                                 },
                               });
@@ -789,7 +789,7 @@ const HeaderNotifications = ({
                               setRejectingRequestId(null);
                               setRejectionReason('');
                               api.rejectReservationRequest(request.id, reason).catch(() => {
-                                toast.error('Erreur lors du refus');
+                                toast.error('Impossible de refuser la demande de réservation.');
                               });
                             }}
                           />

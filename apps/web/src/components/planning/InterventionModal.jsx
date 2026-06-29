@@ -355,6 +355,7 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
             <Select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              disabled={!isAdmin}
               required
             >
               <option value="">Sélectionner...</option>
@@ -364,6 +365,11 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
                 </option>
               ))}
             </Select>
+            {!isAdmin && (
+              <small className="form-hint">
+                Seuls les administrateurs peuvent modifier le statut.
+              </small>
+            )}
           </FormField>
 
           <FormField className="form-group" label="Description">

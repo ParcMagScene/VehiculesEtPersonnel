@@ -528,9 +528,11 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         if (maintenanceImpactsVehicle(updatedIntervention)) {
           refreshBus.publish('vehicles');
         }
+        return true;
       } catch (error) {
         console.error('❌ Erreur mise à jour intervention:', error);
         toast.error(`Erreur mise à jour intervention: ${error.message}`);
+        return false;
       }
     },
     [toast],
@@ -542,9 +544,12 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
         logger.log('🗑️ Suppression intervention:', interventionId);
         await api.deleteMaintenance(interventionId);
         setMaintenances((prev) => prev.filter((m) => m.id !== interventionId));
+        refreshBus.publish('vehicles');
+        return true;
       } catch (error) {
         console.error('❌ Erreur suppression intervention:', error);
         toast.error(`Erreur suppression intervention: ${error.message}`);
+        return false;
       }
     },
     [toast],

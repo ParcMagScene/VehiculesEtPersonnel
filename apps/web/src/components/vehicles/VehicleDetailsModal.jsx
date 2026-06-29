@@ -151,16 +151,20 @@ const VehicleDetailsModal = ({
 
   const handleSaveIntervention = async (updatedIntervention) => {
     if (onUpdateIntervention) {
-      await onUpdateIntervention(updatedIntervention);
+      const success = await onUpdateIntervention(updatedIntervention);
+      if (success === false) return false;
     }
     setSelectedIntervention(null);
+    return true;
   };
 
   const handleDeleteIntervention = async (interventionId) => {
     if (onDeleteIntervention) {
-      await onDeleteIntervention(interventionId);
+      const success = await onDeleteIntervention(interventionId);
+      if (success === false) return false;
     }
     setSelectedIntervention(null);
+    return true;
   };
 
   const getStatusBadge = (status) => {
@@ -564,9 +568,9 @@ const VehicleDetailsModal = ({
               {vehicleMaintenances.map((maintenance) => (
                 <div
                   key={maintenance.id}
-                  className={`maintenance-item status-${maintenance.status} ${isAdmin ? 'clickable' : ''}`}
-                  onClick={isAdmin ? () => handleInterventionClick(maintenance) : undefined}
-                  title={isAdmin ? 'Cliquer pour éditer' : undefined}
+                  className={`maintenance-item status-${maintenance.status} clickable`}
+                  onClick={() => handleInterventionClick(maintenance)}
+                  title="Cliquer pour ouvrir l'intervention"
                 >
                   <div className="maintenance-header">
                     <div className="maintenance-title">

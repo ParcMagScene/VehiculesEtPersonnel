@@ -8,17 +8,34 @@ import { STATUS_COLORS } from '../../constants/colors';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import { getExpiredTechnicalControls, hasExpiredTechnicalControl } from '../../utils/vehicleUtils';
 
-const VehicleCell = ({ vehicle, maintenances, onVehicleClick, onVehicleDoubleClick }) => {
-  const hasBreakdown = maintenances.some(
-    (m) =>
-      m.vehicleId === vehicle.id &&
-      (m.status === 'reported' || m.type === 'breakdown') &&
-      m.status !== STATUS.COMPLETED,
-  );
+const VehicleCell = ({
+  vehicle,
+  maintenances,
+  onVehicleClick,
+  onVehicleDoubleClick,
+  onMaintenanceClick,
+}) => {
+  const activeBreakdowns = maintenances
+    .filter(
+      (m) =>
+        m.vehicleId === vehicle.id &&
+        (m.status === 'reported' || m.type === 'breakdown') &&
+        m.status !== STATUS.COMPLETED,
+    )
+    .sort((a, b) => new Date(b.date || b.created_at || 0) - new Date(a.date || a.created_at || 0));
+  const hasBreakdown = activeBreakdowns.length > 0;
+  const breakdownMaintenance = activeBreakdowns[0];
   const hasExpiredControl = hasExpiredTechnicalControl(vehicle, maintenances);
   const expiredControls = hasExpiredControl
     ? getExpiredTechnicalControls(vehicle, maintenances)
     : [];
+
+  const handleBreakdownClick = (e) => {
+    e.stopPropagation();
+    if (onMaintenanceClick && breakdownMaintenance) {
+      onMaintenanceClick(vehicle, breakdownMaintenance.id);
+    }
+  };
 
   return (
     <div
@@ -47,7 +64,19 @@ const VehicleCell = ({ vehicle, maintenances, onVehicleClick, onVehicleDoubleCli
         )}
         {hasBreakdown && (
           <Tooltip content="Panne signalée" position="bottom">
-            <span className="breakdown-indicator-photo">⚠️</span>
+            <span
+              className="breakdown-indicator-photo"
+              onClick={handleBreakdownClick}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') handleBreakdownClick(e);
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label="Ouvrir l'intervention signalée"
+              style={{ cursor: onMaintenanceClick ? 'pointer' : 'default' }}
+            >
+              ⚠️
+            </span>
           </Tooltip>
         )}
         {hasExpiredControl && (
@@ -79,6 +108,7 @@ const CalendarVehicleColumn = ({
   maintenances,
   onVehicleClick,
   onVehicleDoubleClick,
+  onMaintenanceClick,
 }) => (
   <div className="vehicle-column">
     {vehicleGroups.companyVehicles.length > 0 && (
@@ -91,6 +121,7 @@ const CalendarVehicleColumn = ({
               maintenances={maintenances}
               onVehicleClick={onVehicleClick}
               onVehicleDoubleClick={onVehicleDoubleClick}
+              onMaintenanceClick={onMaintenanceClick}
             />
           ))}
       </>
@@ -121,6 +152,7 @@ const CalendarVehicleColumn = ({
               maintenances={maintenances}
               onVehicleClick={onVehicleClick}
               onVehicleDoubleClick={onVehicleDoubleClick}
+              onMaintenanceClick={onMaintenanceClick}
             />
           ))}
       </>

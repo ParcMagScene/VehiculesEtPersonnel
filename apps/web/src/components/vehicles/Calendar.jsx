@@ -515,6 +515,7 @@ const Calendar = ({
             maintenances={maintenances}
             onVehicleClick={onVehicleClick}
             onVehicleDoubleClick={onVehicleDoubleClick}
+            onMaintenanceClick={onMaintenanceClick}
           />
 
           <div className="calendar-scroll-area" onScroll={handleScroll}>

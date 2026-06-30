@@ -185,21 +185,6 @@ export const PlanningTab = ({
   const [contextMenu, setContextMenu] = useState(null);
   const [periodCalendar, setPeriodCalendar] = useState(null);
 
-  // Drag-to-create state
-  const [dragCreate, setDragCreate] = useState(null);
-  const isDragCreatingRef = useRef(false);
-
-  // Drag-to-move state
-  const [dragMove, setDragMove] = useState(null);
-  const isDragMovingRef = useRef(false);
-  const pendingBlockDragRef = useRef(null);
-
-  // Resize state
-  const [resizeState, setResizeState] = useState(null);
-  const isResizingRef = useRef(false);
-  const lastDragSlotRef = useRef(null);
-  const wasDraggedRef = useRef(false);
-
   // Calcul des jours selon la vue
   const days = useMemo(() => {
     if (view === 'week') {
@@ -556,200 +541,13 @@ export const PlanningTab = ({
     [nonPermanentsSource, sortPersonsByFavorites],
   );
 
-  const handleSlotMouseDown = (person, slotIndex, e) => {
-    if (view === 'year' || e.button !== 0) return;
-    const covered = coveredSlotsForPerson(person.id);
-    if (covered.has(slotIndex)) return;
-    e.preventDefault();
-    isDragCreatingRef.current = true;
-    wasDraggedRef.current = false;
-    lastDragSlotRef.current = slotIndex;
-    setDragCreate({ person, startSlotIdx: slotIndex, endSlotIdx: slotIndex });
-  };
-
-  const handleSlotMouseEnter = (person, slotIndex) => {
-    if (isDragCreatingRef.current && dragCreate && dragCreate.person.id === person.id) {
-      if (slotIndex !== dragCreate.startSlotIdx) wasDraggedRef.current = true;
-      setDragCreate((prev) => ({ ...prev, endSlotIdx: slotIndex }));
-    }
-    if (
-      pendingBlockDragRef.current &&
-      pendingBlockDragRef.current.person.id === person.id &&
-      slotIndex !== pendingBlockDragRef.current.slotIndex
-    ) {
-      const p = pendingBlockDragRef.current;
-      isDragMovingRef.current = true;
-      wasDraggedRef.current = true;
-      const newStartIdx = slotIndex - p.offsetSlots;
-      setDragMove({
-        span: p.span,
-        person: p.person,
-        offsetSlots: p.offsetSlots,
-        originalStartIdx: p.originalStartIdx,
-        currentStartIdx: Math.max(0, Math.min(newStartIdx, days.length - p.span.slotCount)),
-      });
-      pendingBlockDragRef.current = null;
-    }
-    if (isDragMovingRef.current && dragMove && dragMove.person.id === person.id) {
-      const newStartIdx = slotIndex - dragMove.offsetSlots;
-      if (newStartIdx >= 0 && newStartIdx + dragMove.span.slotCount <= days.length) {
-        setDragMove((prev) => ({ ...prev, currentStartIdx: newStartIdx }));
-      }
-    }
-    if (isResizingRef.current && resizeState && resizeState.person.id === person.id) {
-      if (resizeState.edge === 'end') {
-        const newSlotCount = Math.max(1, slotIndex - resizeState.currentStartIdx + 1);
-        setResizeState((prev) => ({ ...prev, currentSlotCount: newSlotCount }));
-      } else {
-        const endIdx = resizeState.currentStartIdx + resizeState.currentSlotCount - 1;
-        if (slotIndex <= endIdx) {
-          setResizeState((prev) => ({
-            ...prev,
-            currentStartIdx: slotIndex,
-            currentSlotCount: endIdx - slotIndex + 1,
-          }));
-        }
-      }
-    }
-  };
-
-  const handleGlobalMouseUp = useCallback(() => {
-    if (pendingBlockDragRef.current) {
-      pendingBlockDragRef.current = null;
-      return;
-    }
-    if (isDragCreatingRef.current && dragCreate) {
-      isDragCreatingRef.current = false;
-      const minIdx = Math.min(dragCreate.startSlotIdx, dragCreate.endSlotIdx);
-      const maxIdx = Math.max(dragCreate.startSlotIdx, dragCreate.endSlotIdx);
-      const startDay = days[minIdx];
-      const endDay = days[maxIdx];
-      if (startDay) {
-        setAssignmentDialog({
-          person: dragCreate.person,
-          day: startDay,
-          endDay: endDay || startDay,
-          period: 'AM',
-        });
-      }
-      setDragCreate(null);
-      return;
-    }
-    if (isDragMovingRef.current && dragMove) {
-      isDragMovingRef.current = false;
-      const { span, currentStartIdx, originalStartIdx } = dragMove;
-      if (currentStartIdx !== originalStartIdx && days[currentStartIdx]) {
-        const delta = currentStartIdx - originalStartIdx;
-        const newStart = new Date(span.missionStart);
-        newStart.setDate(newStart.getDate() + delta);
-        const newEnd = new Date(span.missionEnd);
-        newEnd.setDate(newEnd.getDate() + delta);
-        api
-          .updateMission(span.mission.id, {
-            start_date: format(newStart, 'yyyy-MM-dd'),
-            end_date: format(newEnd, 'yyyy-MM-dd'),
-          })
-          .then(() => loadPlanning())
-          .catch((err) => {
-            console.error('Erreur déplacement:', err);
-            toast.error('Erreur déplacement de la mission');
-            loadPlanning();
-          });
-      }
-      setDragMove(null);
-      return;
-    }
-    if (isResizingRef.current && resizeState) {
-      isResizingRef.current = false;
-      const { span, currentStartIdx, currentSlotCount, originalStartIdx, originalSlotCount } =
-        resizeState;
-      if (currentStartIdx !== originalStartIdx || currentSlotCount !== originalSlotCount) {
-        const deltaStart = currentStartIdx - originalStartIdx;
-        const deltaEnd =
-          currentStartIdx + currentSlotCount - (originalStartIdx + originalSlotCount);
-        const newStart = new Date(span.missionStart);
-        newStart.setDate(newStart.getDate() + deltaStart);
-        const newEnd = new Date(span.missionEnd);
-        newEnd.setDate(newEnd.getDate() + deltaEnd);
-        api
-          .updateMission(span.mission.id, {
-            start_date: format(newStart, 'yyyy-MM-dd'),
-            end_date: format(newEnd, 'yyyy-MM-dd'),
-          })
-          .then(() => loadPlanning())
-          .catch((err) => {
-            console.error('Erreur resize:', err);
-            toast.error('Erreur modification de la mission');
-            loadPlanning();
-          });
-      }
-      setResizeState(null);
-      return;
-    }
-  }, [dragCreate, dragMove, resizeState, days, loadPlanning, toast]);
-
-  useEffect(() => {
-    const onUp = () => handleGlobalMouseUp();
-    document.addEventListener('mouseup', onUp);
-    return () => document.removeEventListener('mouseup', onUp);
-  }, [handleGlobalMouseUp]);
-
-  const handleBlockMouseDown = (e, span, person, slotIndex) => {
-    if (view === 'year' || e.button !== 0) return;
-    if (e.target.closest('.pp-resize-handle') || e.target.closest('.pp-assignment-delete')) return;
-    e.preventDefault();
-    e.stopPropagation();
-    wasDraggedRef.current = false;
-    pendingBlockDragRef.current = {
-      span,
-      person,
-      slotIndex,
-      offsetSlots: slotIndex - span.startSlotIdx,
-      originalStartIdx: span.startSlotIdx,
-    };
-  };
-
-  const handleResizeStart = (e, span, person, edge) => {
-    if (view === 'year' || e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    isResizingRef.current = true;
-    setResizeState({
-      span,
-      person,
-      edge,
-      originalStartIdx: span.startSlotIdx,
-      originalSlotCount: span.slotCount,
-      currentStartIdx: span.startSlotIdx,
-      currentSlotCount: span.slotCount,
-    });
-  };
-
-  // ════════════════════════════════════════════════════════════════
-  // Use dragHandlers hook for all drag/resize operations
-  // ════════════════════════════════════════════════════════════════
-  // Note: Old handleSlotMouseDown, handleSlotMouseEnter,
-  // handleBlockMouseDown, handleResizeStart, isInDragSelection
-  // functions below are now deprecated in favor of dragHandlers hook.
-  // They're kept for reference but dragHandlers versions are used.
-
   const handleSlotClick = (person, day, slotIndex, period) => {
     if (view === 'year') return;
-    if (dragCreate || dragMove || resizeState) return;
+    if (dragHandlers.dragCreate || dragHandlers.dragMove || dragHandlers.resizeState) return;
     const covered = coveredSlotsForPerson(person.id);
     if (covered.has(slotIndex)) return;
     setAssignmentDialog({ person, day, period: period || 'AM' });
   };
-
-  const isInDragSelection = useCallback(
-    (personId, slotIndex) => {
-      if (!dragCreate || dragCreate.person.id !== personId) return false;
-      const minIdx = Math.min(dragCreate.startSlotIdx, dragCreate.endSlotIdx);
-      const maxIdx = Math.max(dragCreate.startSlotIdx, dragCreate.endSlotIdx);
-      return slotIndex >= minIdx && slotIndex <= maxIdx;
-    },
-    [dragCreate],
-  );
 
   const handleAssignmentCreated = () => {
     loadPlanning();
@@ -803,7 +601,7 @@ export const PlanningTab = ({
     const resizingSpanId = isResizing ? dragHandlers.resizeState.span.missionId : null;
 
     return (
-      <div key={person.id} className="pp-person-row" onMouseUp={handleGlobalMouseUp}>
+      <div key={person.id} className="pp-person-row" onMouseUp={dragHandlers.handleGlobalMouseUp}>
         {timeSlots.map((slot, slotIndex) => {
           const weekend = isWeekendFn(slot.day);
           const today = isToday(slot.day);
@@ -833,8 +631,7 @@ export const PlanningTab = ({
             view === 'year'
               ? format(slot.day, 'MMMM yyyy', { locale: fr })
               : format(slot.day, 'EEEE d MMM', { locale: fr });
-          const anyDragActive =
-            isDragCreatingRef.current || isDragMovingRef.current || isResizingRef.current;
+          const anyDragActive = dragHandlers.isAnyDragActive();
           const absenceKey = `${person.id}_${slotIndex}`;
           const absence = absenceSlots[absenceKey];
           const hasAbsence = !!absence;
@@ -872,10 +669,10 @@ export const PlanningTab = ({
               onMouseLeave={() => {
                 if (!anyDragActive) setHoveredSlot(null);
               }}
-              onMouseUp={handleGlobalMouseUp}
+              onMouseUp={dragHandlers.handleGlobalMouseUp}
               onClick={(e) => {
-                if (isCovered || isFullAbsence || wasDraggedRef.current) {
-                  wasDraggedRef.current = false;
+                if (isCovered || isFullAbsence || dragHandlers.wasDraggedRef.current) {
+                  dragHandlers.wasDraggedRef.current = false;
                   return;
                 }
                 e.stopPropagation();
@@ -991,8 +788,8 @@ export const PlanningTab = ({
         }
         onClick={(e) => {
           if (isGhost) return;
-          if (wasDraggedRef.current) {
-            wasDraggedRef.current = false;
+          if (dragHandlers.wasDraggedRef.current) {
+            dragHandlers.wasDraggedRef.current = false;
             return;
           }
           e.stopPropagation();
@@ -1565,7 +1362,7 @@ export const PlanningTab = ({
 
               <div className="pp-scroll-area" ref={scrollAreaRef}>
                 <div
-                  className={`pp-grid ${view}-view${dragCreate ? ' pp-dragging' : ''}${resizeState ? ' pp-resizing' : ''}${dragMove ? ' pp-dragging' : ''}`}
+                  className={`pp-grid ${view}-view${dragHandlers.dragCreate ? ' pp-dragging' : ''}${dragHandlers.resizeState ? ' pp-resizing' : ''}${dragHandlers.dragMove ? ' pp-dragging' : ''}`}
                   style={{ gridTemplateColumns: gridColumns }}
                 >
                   {!collapsedSections.permanents && permanents.map(renderPersonRow)}

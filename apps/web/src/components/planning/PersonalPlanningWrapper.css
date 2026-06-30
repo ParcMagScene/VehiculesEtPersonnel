@@ -1,0 +1,42 @@
+/* ═══ Personal Planning Wrapper ═══ */
+
+.ppw-header {
+  padding: 1rem;
+  background-color: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 1rem;
+  border-radius: 0.375rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ppw-header-title {
+  color: var(--theme-warning-dark, #92400e);
+}
+
+.ppw-header-message {
+  font-size: 0.875rem;
+  color: var(--theme-warning, #a16207);
+  margin-top: 0.25rem;
+}
+
+.ppw-header-logout {
+  color: var(--theme-warning-lighter, #b45309);
+  font-size: 0.875rem;
+}
+
+.ppw-modal-content {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.ppw-modal-icon {
+  color: var(--theme-success, #10b981);
+  margin-bottom: 1rem;
+}
+
+.ppw-modal-message {
+  font-size: 0.875rem;
+  color: var(--theme-text-muted, #6b7280);
+}

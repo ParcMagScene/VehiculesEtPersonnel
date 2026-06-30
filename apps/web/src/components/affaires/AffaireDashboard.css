@@ -56,6 +56,13 @@
   color: var(--theme-danger);
 }
 
+.ad-card-info {
+  border-color: var(--theme-info) !important;
+}
+.ad-card-info .ad-card-value {
+  color: var(--theme-info);
+}
+
 .ad-transitions {
   margin-top: var(--space-2);
 }

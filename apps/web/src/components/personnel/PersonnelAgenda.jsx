@@ -14,20 +14,13 @@ import {
   startOfWeek,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import {
-  Ban,
-  Briefcase,
-  Calendar as CalIcon,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  MapPin,
-  Palmtree,
-  Users,
-} from 'lucide-react';
+import { Ban, Briefcase, Calendar as CalIcon, Clock, MapPin, Palmtree, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Avatar, Button, EmptyState, SearchBar } from '@/design-system';
+import { Button, EmptyState } from '@/design-system';
+
+import PersonnelAgendaSidebar from './PersonnelAgendaSidebar';
+import PersonnelAgendaToolbar from './PersonnelAgendaToolbar';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
@@ -56,6 +49,8 @@ const EVENT_COLORS = {
     text: 'var(--theme-warning-text)',
   },
 };
+
+export { EVENT_COLORS };
 
 const MISSION_TYPE_LABELS = {
   intervention: 'Intervention',
@@ -268,17 +263,6 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
   // Personne sélectionnée
   const selectedPerson = persons.find((p) => p.id === selectedPersonId);
 
-  // Filtre personnes
-  const filteredPersons = useMemo(() => {
-    if (!searchPerson) return persons;
-    const q = searchPerson.toLowerCase();
-    return persons.filter(
-      (p) =>
-        `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
-        (p.email || '').toLowerCase().includes(q),
-    );
-  }, [persons, searchPerson]);
-
   // Titre de la période
   const periodTitle =
     agendaView === 'week'
@@ -288,103 +272,25 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
   return (
     <div className="personnel-agenda">
       {/* Barre latérale - sélection personne */}
-      <div className="agenda-sidebar">
-        <div className="agenda-sidebar-header">
-          <Users size={18} />
-          <span>Personnel</span>
-        </div>
-        <SearchBar
-          value={searchPerson}
-          onChange={setSearchPerson}
-          placeholder="Rechercher..."
-          size="sm"
-        />
-        <div className="agenda-person-list">
-          {filteredPersons.map((person) => (
-            <Button
-              variant="ghost"
-              key={person.id}
-              className={`agenda-person-item ${person.id === selectedPersonId ? 'active' : ''}`}
-              onClick={() => setSelectedPersonId(person.id)}
-            >
-              <Avatar name={`${person.first_name || ''} ${person.last_name || ''}`} size="sm" />
-              <div className="agenda-person-info">
-                <div className="agenda-person-name">
-                  {person.first_name} {person.last_name}
-                </div>
-                <div className="agenda-person-role">
-                  {person.role || person.position || person.type || ''}
-                </div>
-              </div>
-            </Button>
-          ))}
-        </div>
-        {/* Légende */}
-        <div className="agenda-legend">
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: EVENT_COLORS.mission.border }} />
-            <span>Missions</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: EVENT_COLORS.leave.border }} />
-            <span>Congés</span>
-          </div>
-          <div className="legend-item">
-            <span
-              className="legend-dot"
-              style={{ background: EVENT_COLORS.unavailability.border }}
-            />
-            <span>Indisponible</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: EVENT_COLORS.google.border }} />
-            <span>Google</span>
-          </div>
-        </div>
-      </div>
+      <PersonnelAgendaSidebar
+        persons={persons}
+        selectedPersonId={selectedPersonId}
+        onSelectPerson={setSelectedPersonId}
+        searchPerson={searchPerson}
+        onSearchChange={setSearchPerson}
+      />
 
       {/* Zone principale */}
       <div className="agenda-main">
         {/* Toolbar */}
-        <div className="agenda-toolbar">
-          <div className="agenda-toolbar-left">
-            <h2 className="agenda-person-title">
-              {selectedPerson
-                ? `${selectedPerson.first_name} ${selectedPerson.last_name}`
-                : 'Sélectionnez une personne'}
-            </h2>
-          </div>
-          <div className="agenda-toolbar-center">
-            <Button variant="ghost" className="agenda-nav-btn" onClick={() => navigate('prev')}>
-              <ChevronLeft size={18} />
-            </Button>
-            <span className="agenda-period-title">{periodTitle}</span>
-            <Button variant="ghost" className="agenda-nav-btn" onClick={() => navigate('next')}>
-              <ChevronRight size={18} />
-            </Button>
-            <Button variant="ghost" className="agenda-today-btn" onClick={goToday}>
-              Aujourd'hui
-            </Button>
-          </div>
-          <div className="agenda-toolbar-right">
-            <div className="agenda-view-toggle">
-              <Button
-                variant="ghost"
-                className={agendaView === 'week' ? 'active' : ''}
-                onClick={() => setAgendaView('week')}
-              >
-                Semaine
-              </Button>
-              <Button
-                variant="ghost"
-                className={agendaView === 'month' ? 'active' : ''}
-                onClick={() => setAgendaView('month')}
-              >
-                Mois
-              </Button>
-            </div>
-          </div>
-        </div>
+        <PersonnelAgendaToolbar
+          selectedPerson={selectedPerson}
+          agendaView={agendaView}
+          onViewChange={setAgendaView}
+          periodTitle={periodTitle}
+          onNavigate={navigate}
+          onToday={goToday}
+        />
 
         {/* Grille calendrier */}
         {loading ? (

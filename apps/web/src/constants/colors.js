@@ -54,6 +54,11 @@ export const AVATAR_COLORS = [
 
 // ─── Sections planning (partagé TaskPlanningPanel, AddTaskModal,
 //     TaskPDFExportModal, DashboardTasksSidebar) ──────────────
+export const GOOGLE_COLORS = {
+  blue: '#4285f4',
+  red: '#ea4335',
+};
+
 export const PLANNING_SECTIONS = {
   rdv: { label: 'Rendez-vous', emoji: '📅', color: '#059669' },
   evenements: { label: 'Événements Google', emoji: '📌', color: '#64748b' },

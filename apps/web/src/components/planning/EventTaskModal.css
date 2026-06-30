@@ -238,15 +238,15 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  background: #4285f415;
+  background: color-mix(in srgb, var(--plan-google-blue, #4285f4) 8%, transparent);
   color: var(--theme-info);
-  border: 1px solid #4285f430;
+  border: 1px solid color-mix(in srgb, var(--plan-google-blue, #4285f4) 19%, transparent);
   flex-shrink: 0;
   transition: background 0.15s;
   text-decoration: none;
 }
 .etm-maps-link:hover {
-  background: #4285f425;
+  background: color-mix(in srgb, var(--plan-google-blue, #4285f4) 15%, transparent);
 }
 
 /* Footer */

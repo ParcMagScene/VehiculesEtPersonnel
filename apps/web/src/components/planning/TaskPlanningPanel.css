@@ -1019,7 +1019,7 @@
   margin-left: var(--space-1);
   border-radius: var(--radius-md-lg);
   background: rgba(234, 67, 53, 0.08);
-  color: #ea4335;
+  color: var(--plan-google-red, #ea4335);
   border: 1px solid rgba(234, 67, 53, 0.25);
   white-space: nowrap;
   line-height: 1.5;
@@ -2837,7 +2837,7 @@
 }
 
 .wk-expanded-section-label.wk-section-google {
-  color: #4285f4;
+  color: var(--plan-google-blue, #4285f4);
 }
 
 .wk-expanded-section-label.wk-section-affaires {

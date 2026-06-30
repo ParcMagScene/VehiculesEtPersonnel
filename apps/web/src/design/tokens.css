@@ -303,6 +303,10 @@
   --mgmt-color-37: #000000;
   --mgmt-color-38: #e5e7eb;
   --mgmt-color-39: #f3f4f6;
+
+  /* Google Calendar colors (planning components) */
+  --plan-google-blue: #4285f4;
+  --plan-google-red: #ea4335;
 }
 
 /* ═══════════════════════════════════════════════════════════════

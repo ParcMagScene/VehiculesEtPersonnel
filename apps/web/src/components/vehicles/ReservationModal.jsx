@@ -1125,7 +1125,7 @@ const ReservationModal = ({
                                 <div className="rm-affaire-empty">Aucune affaire trouvée</div>
                               ) : (
                                 filteredAffaires.map((a) => (
-                                  <button
+                                  <Button
                                     type="button"
                                     className="rm-affaire-option"
                                     key={a.numeroAffaire}
@@ -1150,7 +1150,7 @@ const ReservationModal = ({
                                     {a.titre && (
                                       <span className="rm-affaire-opt-titre">{a.titre}</span>
                                     )}
-                                  </button>
+                                  </Button>
                                 ))
                               )}
                             </div>

@@ -72,22 +72,22 @@ function SonosPanel({ currentUser, _currentUser }) {
               onChange={(e) => setSourceSearch(e.target.value)}
             />
           </div>
-          <button
+          <Button
             type="button"
             className="sonos-icon-btn"
             onClick={sonos.refresh}
             title="Rafraîchir"
           >
             <RefreshCw size={15} />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className={`sonos-icon-btn${configOpen ? ' sonos-icon-active' : ''}`}
             onClick={() => setConfigOpen((o) => !o)}
             title="Configuration"
           >
             <Settings size={15} />
-          </button>
+          </Button>
         </div>
       </div>
 

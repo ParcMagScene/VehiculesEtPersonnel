@@ -8,7 +8,7 @@ import './LocationsMapPanel.css';
 import { Building2, Map, Maximize2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Modal, ModalBody, ModalHeader } from '@/design-system';
+import { Button, Modal, ModalBody, ModalHeader } from '@/design-system';
 
 import { filterGeoLocations, LOCATION_TYPES } from './map-utils';
 import { loadMapViewState, normalizeViewForStorage, saveMapViewState } from './map-view-state';
@@ -123,7 +123,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
               {geoCount}/{totalCount} géolocalisé{geoCount !== 1 ? 's' : ''}
             </span>
             <div className="locations-map-header-actions">
-              <button
+              <Button
                 type="button"
                 className="locations-map-recenter-btn"
                 onClick={handleRecenter}
@@ -131,7 +131,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
               >
                 <Maximize2 size={14} />
                 Recadrer
-              </button>
+              </Button>
               <MapPrintControl
                 mapContainerRef={mapContainerRef}
                 title={activeView === 'general' ? 'Carte générale' : 'Autour du dépôt'}
@@ -147,7 +147,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
       <ModalBody>
         {/* Onglets */}
         <div className="locations-map-tabs" role="tablist">
-          <button
+          <Button
             type="button"
             role="tab"
             aria-selected={activeView === 'general'}
@@ -156,8 +156,8 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
           >
             <Map size={16} />
             Carte générale
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             role="tab"
             aria-selected={activeView === 'local'}
@@ -166,7 +166,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
           >
             <Building2 size={16} />
             Autour du dépôt
-          </button>
+          </Button>
         </div>
 
         {/* Contenu carte — no-drag empêche useDraggableModals.onDragStart */}

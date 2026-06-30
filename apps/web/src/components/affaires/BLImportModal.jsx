@@ -726,14 +726,14 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                 {pendingFiles.map((f, idx) => (
                   <span key={`pend-${idx}`} className="bl-loc-queue-chip pending" title={f.name}>
                     {f.name}
-                    <button
+                    <Button
                       type="button"
                       className="bl-loc-queue-chip-remove"
                       onClick={() => removePendingAt(idx)}
                       aria-label={`Retirer ${f.name}`}
                     >
                       <X size={10} />
-                    </button>
+                    </Button>
                   </span>
                 ))}
               </div>

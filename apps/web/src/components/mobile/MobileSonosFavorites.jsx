@@ -6,7 +6,7 @@ import { Heart, Music } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
 import RadioLogo from '@/components/sonos/RadioLogo';
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 function MobileSonosFavorites({
   favorites,
@@ -62,7 +62,7 @@ function MobileSonosFavorites({
           </span>
         ) : (
           filtered.map((fav, i) => (
-            <button
+            <Button
               type="button"
               key={i}
               className={`mobile-sonos-fav-item${currentTitle === fav.title ? ' mobile-sonos-fav-playing' : ''}`}
@@ -76,7 +76,7 @@ function MobileSonosFavorites({
                 placeholder={<Music size={20} />}
               />
               <span className="mobile-sonos-fav-title">{fav.title}</span>
-            </button>
+            </Button>
           ))
         )}
       </div>

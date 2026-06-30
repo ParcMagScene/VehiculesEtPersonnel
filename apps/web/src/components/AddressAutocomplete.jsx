@@ -2,6 +2,8 @@ import './AddressAutocomplete.css';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { Button } from '@/design-system';
+
 import { TIMING } from '../constants';
 import api from '../utils/api';
 import { isGoogleMapsLoaded, loadGoogleMapsAPI } from '../utils/googleMapsLoader';
@@ -328,7 +330,7 @@ export default function AddressAutocomplete({
                     Suggestions Google
                   </div>
                 )}
-                <button
+                <Button
                   type="button"
                   role="option"
                   aria-selected={idx === highlightIndex}
@@ -346,7 +348,7 @@ export default function AddressAutocomplete({
                     {item.kind === 'saved' ? '★' : '📍'}
                   </span>
                   <span className="address-autocomplete-option-label">{item.value}</span>
-                </button>
+                </Button>
               </div>
             );
           })}

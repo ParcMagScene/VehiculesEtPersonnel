@@ -23,13 +23,12 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Input, SearchBar } from '@/design-system';
+import { Button, Input, SearchBar } from '@/design-system';
 
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import { refreshBus } from '../../utils/refresh-bus';
-import Button from '../ui/Button';
 import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import FicheSuivi from './FicheSuivi';
 import IncidentsSuiviPanel from './IncidentsSuiviPanel';
@@ -306,7 +305,7 @@ function SuiviPanel({
         key={p.id}
         className={`suivi-person-item ${selectedPerson?.id === p.id ? 'selected' : ''}`}
       >
-        <button
+        <Button
           type="button"
           className={`suivi-person-fav${isFavorite(p.id) ? ' active' : ''}`}
           onClick={(e) => {
@@ -317,7 +316,7 @@ function SuiviPanel({
           aria-label={isFavorite(p.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
         >
           <Star size={12} fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
-        </button>
+        </Button>
         <Input
           type="checkbox"
           className="suivi-person-check"
@@ -518,7 +517,7 @@ function SuiviPanel({
             {/* Sélection de la personne */}
             <div className="suivi-team-person-list">
               {sortPersonsByFavorites(personnel).map((p) => (
-                <button
+                <Button
                   key={p.id}
                   type="button"
                   className={`suivi-team-person-item ${teamSelectedPerson?.id === p.id ? 'selected' : ''}`}
@@ -536,27 +535,27 @@ function SuiviPanel({
                   <span className={`suivi-person-type suivi-type-${p.type || 'permanent'}`}>
                     {TYPE_LABELS[p.type] || p.type}
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
 
             {teamSelectedPerson && (
               <>
                 <div className="suivi-team-auth-mode-toggle">
-                  <button
+                  <Button
                     type="button"
                     className={`suivi-auth-mode-btn ${teamAuthMode === 'pin' ? 'active' : ''}`}
                     onClick={() => setTeamAuthMode('pin')}
                   >
                     Code PIN
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     className={`suivi-auth-mode-btn ${teamAuthMode === 'password' ? 'active' : ''}`}
                     onClick={() => setTeamAuthMode('password')}
                   >
                     Mot de passe
-                  </button>
+                  </Button>
                 </div>
 
                 {teamAuthMode === 'pin' ? (
@@ -594,14 +593,14 @@ function SuiviPanel({
 
             {teamAuthError && <div className="suivi-team-auth-error">{teamAuthError}</div>}
 
-            <button
+            <Button
               type="submit"
               className="suivi-team-auth-submit"
               disabled={!teamSelectedPerson || teamAuthLoading}
             >
               <Lock size={16} />
               {teamAuthLoading ? 'Vérification...' : 'Accéder à mon suivi'}
-            </button>
+            </Button>
           </form>
         </div>
       </div>

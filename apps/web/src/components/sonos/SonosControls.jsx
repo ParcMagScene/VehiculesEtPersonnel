@@ -6,6 +6,8 @@
 import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Square } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
+import { Button } from '@/design-system';
+
 import { formatTime } from '../../hooks/useSonos';
 
 function SonosControls({
@@ -28,7 +30,7 @@ function SonosControls({
 
   return (
     <div className="sonos-transport">
-      <button
+      <Button
         type="button"
         className={`sonos-tbtn sonos-tbtn-sm${shuffleActive ? ' sonos-tbtn-active' : ''}`}
         onClick={() => onShuffle(!shuffleActive)}
@@ -36,8 +38,8 @@ function SonosControls({
         title="Aléatoire"
       >
         <Shuffle size={14} />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         className="sonos-tbtn"
         onClick={onPrevious}
@@ -45,9 +47,9 @@ function SonosControls({
         title="Précédent"
       >
         <SkipBack size={18} />
-      </button>
+      </Button>
       {state === 'playing' ? (
-        <button
+        <Button
           type="button"
           className="sonos-tbtn sonos-tbtn-main"
           onClick={onPause}
@@ -55,9 +57,9 @@ function SonosControls({
           title="Pause"
         >
           <Pause size={22} />
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
           type="button"
           className="sonos-tbtn sonos-tbtn-main"
           onClick={onPlay}
@@ -65,12 +67,12 @@ function SonosControls({
           title="Lecture"
         >
           <Play size={22} />
-        </button>
+        </Button>
       )}
-      <button type="button" className="sonos-tbtn" onClick={onNext} disabled={busy} title="Suivant">
+      <Button type="button" className="sonos-tbtn" onClick={onNext} disabled={busy} title="Suivant">
         <SkipForward size={18} />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         className={`sonos-tbtn sonos-tbtn-sm${repeatMode && repeatMode !== 'none' ? ' sonos-tbtn-active' : ''}`}
         onClick={() => onRepeat(nextRepeatMode())}
@@ -78,7 +80,7 @@ function SonosControls({
         title={`Répétition : ${repeatMode || 'off'}`}
       >
         {repeatMode === 'one' ? <Repeat1 size={14} /> : <Repeat size={14} />}
-      </button>
+      </Button>
     </div>
   );
 }

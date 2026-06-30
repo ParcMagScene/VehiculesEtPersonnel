@@ -14,7 +14,7 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 import {
   filterNearby,
@@ -251,14 +251,14 @@ export default function MapLocal({
         />
         <div className="map-radius-presets">
           {RADIUS_PRESETS.map((km) => (
-            <button
+            <Button
               type="button"
               key={km}
               className={`map-radius-preset ${radius === km * 1000 ? 'active' : ''}`}
               onClick={() => applyZoneChange(zoneCenter, km * 1000)}
             >
               {km} km
-            </button>
+            </Button>
           ))}
         </div>
       </div>

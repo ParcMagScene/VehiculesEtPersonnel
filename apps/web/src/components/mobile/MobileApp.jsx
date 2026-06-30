@@ -361,7 +361,7 @@ function MobileApp({ onSwitchToDesktop }) {
               {PALETTES.map((p) => {
                 const colors = isDark ? p.darkColors : p.colors;
                 return (
-                  <button
+                  <Button
                     type="button"
                     key={p.id}
                     className={`mobile-sheet-palette-btn ${palette === p.id ? 'active' : ''}`}
@@ -374,7 +374,7 @@ function MobileApp({ onSwitchToDesktop }) {
                         background: `linear-gradient(135deg, ${colors.primary} 50%, ${colors.accent} 50%)`,
                       }}
                     />
-                  </button>
+                  </Button>
                 );
               })}
             </div>

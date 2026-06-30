@@ -142,7 +142,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
           const count = (preview[t.key] || []).length;
           const active = tab === t.key;
           return (
-            <button
+            <Button
               type="button"
               key={t.key}
               onClick={() => setTab(t.key)}
@@ -158,7 +158,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
               }}
             >
               {t.label} <strong>({count})</strong>
-            </button>
+            </Button>
           );
         })}
       </div>

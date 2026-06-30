@@ -17,6 +17,7 @@ import {
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
+  Button,
   Input,
   Modal,
   ModalBody,
@@ -28,7 +29,6 @@ import {
 
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
-import Button from '../ui/Button';
 
 function newEntry(period = 'AM', sortOrder = 0) {
   return {
@@ -979,7 +979,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
                       const rolledTask = t.is_rolled === 1 || !!t.rolled_from_date;
 
                       return (
-                        <button
+                        <Button
                           type="button"
                           key={t.id}
                           className={`suivi-planning-item ${rolledTask ? 'is-rolled' : ''}`}
@@ -1031,7 +1031,7 @@ function FicheSuivi({ sheet, onSave, saving }) {
                               </span>
                             ) : null}
                           </div>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -1231,22 +1231,22 @@ function FicheSuivi({ sheet, onSave, saving }) {
                         >
                           {r.active === 1 ? 'Active' : 'Inactive'}
                         </span>
-                        <button
+                        <Button
                           type="button"
                           className="fiche-recurring-edit"
                           onClick={() => handleStartEditRecurring(r)}
                           title="Modifier"
                         >
                           ✎
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
                           className="fiche-recurring-delete"
                           onClick={() => handleDeleteRecurring(r.id)}
                           title="Supprimer"
                         >
                           <Trash2 size={12} />
-                        </button>
+                        </Button>
                       </li>
                     ))}
                 </ul>

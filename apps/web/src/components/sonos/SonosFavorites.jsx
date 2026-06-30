@@ -5,7 +5,7 @@
 import { Music, Search, Star } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 import RadioLogo from './RadioLogo';
 
@@ -54,7 +54,7 @@ function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavori
           </div>
         ) : (
           filtered.map((fav, i) => (
-            <button
+            <Button
               type="button"
               key={i}
               className={`sonos-favs-item${currentTitle === fav.title ? ' sonos-favs-active' : ''}`}
@@ -72,7 +72,7 @@ function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavori
                 <span className="sonos-favs-name">{fav.title}</span>
                 {fav.description && <span className="sonos-favs-desc">{fav.description}</span>}
               </div>
-            </button>
+            </Button>
           ))
         )}
       </div>

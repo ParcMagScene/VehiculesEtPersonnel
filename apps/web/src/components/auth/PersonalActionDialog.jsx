@@ -140,22 +140,22 @@ function PersonalActionDialog({
 
         {/* Onglets PIN/Mot de passe */}
         <div className="pad-tabs">
-          <button
+          <Button
             type="button"
             className={`pad-tab ${authMode === 'pin' ? 'pad-tab--active' : ''}`}
             onClick={() => handleAuthModeChange('pin')}
             disabled={loading}
           >
             Code PIN
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className={`pad-tab ${authMode === 'password' ? 'pad-tab--active' : ''}`}
             onClick={() => handleAuthModeChange('password')}
             disabled={loading}
           >
             Mot de passe
-          </button>
+          </Button>
         </div>
 
         {/* Champ PIN */}
@@ -200,7 +200,7 @@ function PersonalActionDialog({
                 }}
                 disabled={loading}
               />
-              <button
+              <Button
                 type="button"
                 className="pad-password-toggle"
                 onClick={() => setShowPassword((v) => !v)}
@@ -208,7 +208,7 @@ function PersonalActionDialog({
                 aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+              </Button>
             </div>
           </div>
         )}

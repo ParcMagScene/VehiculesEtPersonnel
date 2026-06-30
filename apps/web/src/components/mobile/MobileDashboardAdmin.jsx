@@ -253,14 +253,14 @@ function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
                         <div
                           className={`mda-task-card ${isDone ? 'done' : ''} ${isUpdating ? 'updating' : ''}`}
                         >
-                          <button
+                          <Button
                             type="button"
                             className={`mda-task-check ${isDone ? 'checked' : ''}`}
                             onClick={() => handleToggleTask(task)}
                             disabled={isUpdating}
                           >
                             {isDone ? <CheckCircle size={20} /> : <Circle size={20} />}
-                          </button>
+                          </Button>
                           <div className="mda-task-content">
                             <span className={`mda-task-title ${isDone ? 'done' : ''}`}>
                               {task.title || '—'}

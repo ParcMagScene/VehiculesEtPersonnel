@@ -40,7 +40,7 @@ function MobileQRRefLanding({ reference, onSelectUid, onGoHome }) {
       .filter(Boolean)
       .join(' — ');
     return (
-      <button type="button" key={eq.id} className="qr-ref-item" onClick={() => onSelectUid(eq.uid)}>
+      <Button type="button" key={eq.id} className="qr-ref-item" onClick={() => onSelectUid(eq.uid)}>
         <div className="qr-ref-item-main">
           <div className="qr-ref-item-name">{eq.name || eq.reference}</div>
           {subtitle ? <div className="qr-ref-item-sub">{subtitle}</div> : null}
@@ -51,7 +51,7 @@ function MobileQRRefLanding({ reference, onSelectUid, onGoHome }) {
           ) : null}
         </div>
         <ArrowRight size={18} />
-      </button>
+      </Button>
     );
   };
 

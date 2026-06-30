@@ -10,7 +10,7 @@
 import { Folder, Upload } from 'lucide-react';
 import { useState } from 'react';
 
-import { ModalLayout } from '@/design-system';
+import { Button, ModalLayout } from '@/design-system';
 
 import SAVImportPreview from './SAVImportPreview';
 import SAVImportUpload from './SAVImportUpload';
@@ -42,7 +42,7 @@ export default function SAVManagerModal({ onClose, onImportDone, defaultTab = 'i
   const tabBtn = (key, label, Icon) => {
     const active = tab === key;
     return (
-      <button
+      <Button
         type="button"
         onClick={() => setTab(key)}
         style={{
@@ -60,7 +60,7 @@ export default function SAVManagerModal({ onClose, onImportDone, defaultTab = 'i
         }}
       >
         <Icon size={14} /> {label}
-      </button>
+      </Button>
     );
   };
 

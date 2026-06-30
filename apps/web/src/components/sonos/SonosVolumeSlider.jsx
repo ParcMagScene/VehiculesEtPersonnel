@@ -5,7 +5,7 @@
 import { Volume1, Volume2, VolumeX } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 function SonosVolumeSlider({ volume, muted, onSetVolume, onMute, onUnmute, busy }) {
   const [vol, setVol] = useState(volume ?? 50);
@@ -22,7 +22,7 @@ function SonosVolumeSlider({ volume, muted, onSetVolume, onMute, onUnmute, busy 
 
   return (
     <div className="sonos-vol">
-      <button
+      <Button
         type="button"
         className={`sonos-icon-btn${isMuted ? ' sonos-vol-muted' : ''}`}
         onClick={() => {
@@ -33,7 +33,7 @@ function SonosVolumeSlider({ volume, muted, onSetVolume, onMute, onUnmute, busy 
         title={isMuted ? 'Réactiver le son' : 'Couper le son'}
       >
         <VolumeIcon size={16} />
-      </button>
+      </Button>
       <Input
         type="range"
         min={0}

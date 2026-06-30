@@ -2,6 +2,8 @@ import './MobileTabBar.css';
 
 import { Calendar, CheckSquare, Home, LayoutGrid, ShoppingCart, User } from 'lucide-react';
 
+import { Button } from '@/design-system';
+
 /**
  * MobileTabBar — Barre d'onglets fixe en bas de l'écran mobile.
  *
@@ -59,7 +61,7 @@ function MobileTabBar({ currentScreen, onNavigate, onOpenProfile, profileActive 
           }
         };
         return (
-          <button
+          <Button
             type="button"
             key={tab.id}
             className={`mobile-tab ${isActive ? 'active' : ''}`}
@@ -69,7 +71,7 @@ function MobileTabBar({ currentScreen, onNavigate, onOpenProfile, profileActive 
           >
             <Icon size={20} className="mobile-tab-icon" />
             <span className="mobile-tab-label">{tab.label}</span>
-          </button>
+          </Button>
         );
       })}
     </nav>

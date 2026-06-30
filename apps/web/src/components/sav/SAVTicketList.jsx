@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 
-import { Input, Spinner } from '@/design-system';
+import { Button, Input, Spinner } from '@/design-system';
 
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
@@ -89,7 +89,7 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
         {STATUS_OPTIONS.map((o) => {
           const active = statuses.includes(o.value);
           return (
-            <button
+            <Button
               type="button"
               key={o.value}
               onClick={() => toggleStatus(o.value)}
@@ -105,7 +105,7 @@ export default function SAVTicketList({ onSelect, refreshKey = 0 }) {
               }}
             >
               {o.label}
-            </button>
+            </Button>
           );
         })}
       </div>

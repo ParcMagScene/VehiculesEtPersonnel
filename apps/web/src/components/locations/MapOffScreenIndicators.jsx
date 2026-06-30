@@ -3,6 +3,8 @@
 // marqueurs hors champ visible de la carte
 // ═══════════════════════════════════════════════════════════════
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { Button } from '@/design-system';
 import { createPortal } from 'react-dom';
 import { useMap, useMapEvents } from 'react-leaflet';
 
@@ -130,7 +132,7 @@ export default function MapOffScreenIndicators({ locations }) {
   return createPortal(
     <div className="map-offscreen-layer">
       {offScreen.map((loc) => (
-        <button
+        <Button
           type="button"
           key={loc.id}
           className={`map-offscreen-pill edge-${loc.edge}`}
@@ -157,7 +159,7 @@ export default function MapOffScreenIndicators({ locations }) {
             />
           </svg>
           <span className="map-offscreen-label">{loc.name}</span>
-        </button>
+        </Button>
       ))}
     </div>,
     map.getContainer(),

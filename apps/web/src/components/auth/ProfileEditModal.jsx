@@ -211,20 +211,20 @@ const ProfileEditModal = ({ currentUser, targetUser, onClose, onUserUpdate }) =>
       {/* Onglets (uniquement hors mode admin) */}
       {!isAdminMode && (
         <div className="profile-edit-tabs">
-          <button
+          <Button
             className={`profile-edit-tab ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
             <User size={14} />
             Profil
-          </button>
-          <button
+          </Button>
+          <Button
             className={`profile-edit-tab ${activeTab === 'pin' ? 'active' : ''}`}
             onClick={() => setActiveTab('pin')}
           >
             <Hash size={14} />
             Code PIN
-          </button>
+          </Button>
         </div>
       )}
 

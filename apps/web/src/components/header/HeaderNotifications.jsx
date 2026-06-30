@@ -336,14 +336,14 @@ const HeaderNotifications = ({
                       ? 'Demandes de réservation'
                       : 'Notifications'}
             </h3>
-            <button
+            <Button
               type="button"
               className="close-popup-button"
               onClick={() => setShowNotificationsPopup(false)}
               aria-label="Fermer"
             >
               <X size={18} />
-            </button>
+            </Button>
           </div>
           <div className="notifications-popup-content">
             {(notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
@@ -806,14 +806,14 @@ const HeaderNotifications = ({
               <CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" />
               Demandes de réservation
             </h3>
-            <button
+            <Button
               type="button"
               className="close-popup-button"
               onClick={() => setShowRequestsPopup(false)}
               aria-label="Fermer"
             >
               <X size={18} />
-            </button>
+            </Button>
           </div>
           <div className="notifications-popup-content">
             {pendingReservationRequests.length === 0 ? (

@@ -4,6 +4,8 @@
 
 import { Popup } from 'react-leaflet';
 
+import { Button } from '@/design-system';
+
 import { getLocationType } from './map-utils';
 
 export default function MapPopup({ location, onEdit }) {
@@ -31,13 +33,13 @@ export default function MapPopup({ location, onEdit }) {
 
         <div className="map-popup-actions">
           {onEdit && !location.isCompanyLocation && (
-            <button
+            <Button
               type="button"
               className="map-popup-btn map-popup-btn-edit"
               onClick={() => onEdit(location)}
             >
               Modifier
-            </button>
+            </Button>
           )}
           {location.lat != null && location.lng != null && (
             <a

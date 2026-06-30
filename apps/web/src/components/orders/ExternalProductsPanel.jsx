@@ -833,12 +833,12 @@ export function ExternalProductsPanel({ currentUser }) {
     if (quoteItems.length === 0) return null;
     return (
       // FAB e-shop : style positionnel custom (fixed bottom-right) incompatible
-      // avec ui-btn ; on garde un <button> brut.
+      // avec ui-btn ; on garde un <Button> brut.
       // eslint-disable-next-line react/forbid-elements
-      <button className="eshop-quote-fab" onClick={() => setShowQuote(true)} title="Voir le devis">
+      <Button className="eshop-quote-fab" onClick={() => setShowQuote(true)} title="Voir le devis">
         <ShoppingCart size={18} />
         <span className="eshop-quote-fab-count">{quoteItems.length}</span>
-      </button>
+      </Button>
     );
   };
 

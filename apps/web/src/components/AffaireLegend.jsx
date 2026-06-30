@@ -2,7 +2,7 @@ import './AffaireLegend.css';
 
 import { Info } from 'lucide-react';
 
-import { Tooltip } from '@/design-system';
+import { Button, Tooltip } from '@/design-system';
 
 import { AFFAIRE_TYPES } from '../utils/affaireConstants';
 
@@ -28,14 +28,13 @@ const legendContent = (
 function AffaireLegend({ className = '' }) {
   return (
     <Tooltip content={legendContent} position="bottom">
-      <button
-        type="button"
+      <Button
         className={`affaire-legend-trigger ${className}`.trim()}
         aria-label="Legende des couleurs d'affaires"
       >
         <Info size={14} />
         <span>Légende</span>
-      </button>
+      </Button>
     </Tooltip>
   );
 }

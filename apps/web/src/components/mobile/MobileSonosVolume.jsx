@@ -5,7 +5,7 @@
 import { Volume2, VolumeX } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 function MobileSonosVolume({ volume, muted, onSetVolume, onMute, onUnmute, busy, isAdmin }) {
   const [vol, setVol] = useState(volume ?? 50);
@@ -22,7 +22,7 @@ function MobileSonosVolume({ volume, muted, onSetVolume, onMute, onUnmute, busy,
 
   return (
     <div className="mobile-sonos-volume">
-      <button
+      <Button
         type="button"
         className={`mobile-sonos-transport-btn mobile-sonos-transport-sm${isMuted ? ' mobile-sonos-muted' : ''}`}
         onClick={() => {
@@ -33,7 +33,7 @@ function MobileSonosVolume({ volume, muted, onSetVolume, onMute, onUnmute, busy,
         aria-label={isMuted ? 'Réactiver le son' : 'Couper le son'}
       >
         {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-      </button>
+      </Button>
       <Input
         type="range"
         min={0}

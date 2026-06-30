@@ -1,6 +1,5 @@
 import './Header.css';
 
-import { format } from 'date-fns';
 import { HelpCircle, Moon, Sun, Upload } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 
@@ -27,6 +26,7 @@ const Header = ({
   maintenances = [],
   vehicles = [],
   onOpenMaintenance,
+  onScheduleMaintenance,
   reservations = [],
   currentUser,
   onLogout,
@@ -188,71 +188,38 @@ const Header = ({
     ...overdueInterventions,
   ];
 
-  // Handlers pour les interventions en retard
-  const handleMarkCompleted = async (intervention) => {
+  const handleDeleteSignalement = async (intervention) => {
+    try {
+      await api.deleteMaintenance(intervention.id);
+      if (onRefreshMaintenances) {
+        await onRefreshMaintenances();
+      }
+      refreshBus.publish('planning');
+      toast.success('Signalement supprimé');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du signalement:', error);
+      toast.error('Impossible de supprimer le signalement');
+      throw error;
+    }
+  };
+
+  const handleCloseSignalement = async (intervention, description) => {
     try {
       await onUpdateMaintenance(intervention.id, {
         ...intervention,
         status: STATUS.COMPLETED,
+        notes: (intervention.notes ? `${intervention.notes}\n\n` : '') + `[Clôturé] ${description}`,
       });
       if (onRefreshMaintenances) {
         await onRefreshMaintenances();
       }
+      refreshBus.publish('planning');
+      toast.success('Signalement clôturé');
     } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
-      toast.error("Erreur lors de la mise à jour de l'intervention");
+      console.error('Erreur lors de la clôture du signalement:', error);
+      toast.error('Impossible de clôturer le signalement');
+      throw error;
     }
-  };
-
-  const handleMarkNotCompleted = async (intervention, reason) => {
-    try {
-      await onUpdateMaintenance(intervention.id, {
-        ...intervention,
-        status: STATUS.CANCELLED,
-        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[Annulée] ${reason}`,
-      });
-      if (onRefreshMaintenances) {
-        await onRefreshMaintenances();
-      }
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
-      toast.error("Erreur lors de la mise à jour de l'intervention");
-    }
-  };
-
-  const handleMarkPending = async (intervention, reason) => {
-    try {
-      await onUpdateMaintenance(intervention.id, {
-        ...intervention,
-        status: STATUS.PENDING,
-        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[En attente] ${reason}`,
-      });
-      if (onRefreshMaintenances) {
-        await onRefreshMaintenances();
-      }
-    } catch (error) {
-      console.error('Erreur lors de la mise en attente:', error);
-      toast.error("Erreur lors de la mise en attente de l'intervention");
-    }
-  };
-
-  const handleReschedule = async (intervention) => {
-    try {
-      await onUpdateMaintenance(intervention.id, {
-        ...intervention,
-        status: 'rescheduled',
-        notes:
-          (intervention.notes ? intervention.notes + '\n\n' : '') +
-          `[Reportée] Intervention reportée le ${format(new Date(), 'dd/MM/yyyy')}`,
-      });
-      if (onRefreshMaintenances) {
-        await onRefreshMaintenances();
-      }
-    } catch (error) {
-      console.error('Erreur lors du report:', error);
-      toast.error("Erreur lors du report de l'intervention");
-    }
-    setSelectedOverdueIntervention(null);
   };
 
   return (
@@ -376,6 +343,9 @@ const Header = ({
             activeInterventions={activeInterventions}
             vehicles={vehicles}
             onOpenMaintenance={onOpenMaintenance}
+            onDeleteSignalement={handleDeleteSignalement}
+            onCloseSignalement={handleCloseSignalement}
+            onScheduleMaintenance={onScheduleMaintenance}
             currentUser={currentUser}
             pendingReservationRequests={pendingReservationRequests}
             setPendingReservationRequests={setPendingReservationRequests}
@@ -415,10 +385,9 @@ const Header = ({
           intervention={selectedOverdueIntervention.intervention}
           vehicle={selectedOverdueIntervention.vehicle}
           onClose={() => setSelectedOverdueIntervention(null)}
-          onMarkCompleted={handleMarkCompleted}
-          onMarkNotCompleted={handleMarkNotCompleted}
-          onMarkPending={handleMarkPending}
-          onReschedule={handleReschedule}
+          onPlanIntervention={onScheduleMaintenance}
+          onDeleteSignalement={handleDeleteSignalement}
+          onCloseSignalement={handleCloseSignalement}
         />
       )}
 

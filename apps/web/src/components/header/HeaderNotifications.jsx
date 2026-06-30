@@ -195,6 +195,9 @@ const HeaderNotifications = ({
   immobilizedVehicles: _immobilizedVehicles,
   vehicles,
   onOpenMaintenance,
+  onScheduleMaintenance,
+  onDeleteSignalement,
+  onCloseSignalement,
   currentUser,
   pendingReservationRequests,
   setPendingReservationRequests,
@@ -208,6 +211,8 @@ const HeaderNotifications = ({
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const [expandedReportedId, setExpandedReportedId] = useState(null);
+  const [closingReportedId, setClosingReportedId] = useState(null);
+  const [closureDescription, setClosureDescription] = useState('');
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [popoverStyle, setPopoverStyle] = useState({});
@@ -560,6 +565,7 @@ const HeaderNotifications = ({
                         {reportedMaintenances.map((maintenance) => {
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId);
                           const isExpanded = expandedReportedId === maintenance.id;
+                          const isClosing = closingReportedId === maintenance.id;
 
                           return (
                             <div
@@ -591,25 +597,116 @@ const HeaderNotifications = ({
                                   {vehicle.registration}
                                 </span>
                               )}
-                              <div
-                                className="notification-actions"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Button
-                                  variant="ghost"
-                                  className="notif-action-btn create-intervention"
-                                  onClick={() => {
-                                    setShowNotificationsPopup(false);
-                                    setExpandedReportedId(null);
-                                    if (onOpenMaintenance && vehicle) {
-                                      onOpenMaintenance(vehicle, maintenance.id);
-                                    }
-                                  }}
+                              {isExpanded && (
+                                <div
+                                  className="notification-actions reported-actions"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
-                                  <Wrench size={14} />
-                                  Créer une intervention
-                                </Button>
-                              </div>
+                                  <Button
+                                    variant="ghost"
+                                    className="notif-action-btn create-intervention"
+                                    onClick={() => {
+                                      setShowNotificationsPopup(false);
+                                      setExpandedReportedId(null);
+                                      if (onScheduleMaintenance && vehicle) {
+                                        onScheduleMaintenance(vehicle);
+                                      } else if (onOpenMaintenance && vehicle) {
+                                        onOpenMaintenance(vehicle, maintenance.id);
+                                      }
+                                    }}
+                                  >
+                                    <Wrench size={14} />
+                                    Planifier une intervention
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    className="notif-action-btn delete-intervention"
+                                    onClick={() => {
+                                      confirm({
+                                        title: 'Supprimer le signalement',
+                                        message: 'Supprimer ce signalement de panne ?',
+                                        confirmLabel: 'Supprimer',
+                                        variant: 'danger',
+                                        onConfirm: async () => {
+                                          try {
+                                            if (onDeleteSignalement) {
+                                              await onDeleteSignalement(maintenance);
+                                            }
+                                            setExpandedReportedId(null);
+                                            setShowNotificationsPopup(false);
+                                          } catch {
+                                            // toast déjà géré par le handler parent
+                                          }
+                                        },
+                                      });
+                                    }}
+                                  >
+                                    <XCircle size={14} />
+                                    Supprimer
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    className="notif-action-btn close-signalement"
+                                    onClick={() => {
+                                      setClosingReportedId(isClosing ? null : maintenance.id);
+                                      setClosureDescription('');
+                                    }}
+                                  >
+                                    <Clock size={14} />
+                                    Clôturer le signalement
+                                  </Button>
+                                </div>
+                              )}
+                              {isClosing && (
+                                <div
+                                  className="notification-actions reject-form"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Textarea
+                                    className="reject-reason-input"
+                                    value={closureDescription}
+                                    onChange={(e) => setClosureDescription(e.target.value)}
+                                    placeholder="Description de l'intervention..."
+                                    aria-label="Description de l'intervention"
+                                    rows={3}
+                                    autoFocus
+                                  />
+                                  <div className="reject-form-buttons">
+                                    <Button
+                                      variant="ghost"
+                                      className="notif-action-btn confirm-reject"
+                                      disabled={!closureDescription.trim()}
+                                      onClick={async () => {
+                                        if (!onCloseSignalement) return;
+                                        try {
+                                          await onCloseSignalement(
+                                            maintenance,
+                                            closureDescription.trim(),
+                                          );
+                                          setClosingReportedId(null);
+                                          setExpandedReportedId(null);
+                                          setShowNotificationsPopup(false);
+                                          setClosureDescription('');
+                                        } catch {
+                                          // toast déjà géré par le handler parent
+                                        }
+                                      }}
+                                    >
+                                      <Check size={14} /> Confirmer la clôture
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="notif-action-btn dismiss"
+                                      onClick={() => {
+                                        setClosingReportedId(null);
+                                        setClosureDescription('');
+                                      }}
+                                    >
+                                      Annuler
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}

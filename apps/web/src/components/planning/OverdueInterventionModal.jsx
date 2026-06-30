@@ -1,11 +1,10 @@
 import './OverdueInterventionModal.css';
 
-import { Calendar, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Clock, Trash2, Wrench } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button, ModalLayout, Textarea } from '@/design-system';
 
-import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
@@ -15,52 +14,45 @@ const OverdueInterventionModal = ({
   intervention,
   vehicle,
   onClose,
-  onMarkCompleted,
-  onMarkNotCompleted,
-  onMarkPending,
-  onReschedule,
+  onPlanIntervention,
+  onDeleteSignalement,
+  onCloseSignalement,
 }) => {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
-  const [reason, setReason] = useState('');
+  const [closureDescription, setClosureDescription] = useState('');
   const [showReasonInput, setShowReasonInput] = useState(false);
-  const [action, setAction] = useState(null); // 'completed', 'cancelled', 'pending', 'reschedule'
 
-  const { resetDirty, guardClose } = useDirtyForm({ reason }, { confirmer: confirm });
+  const { resetDirty, guardClose } = useDirtyForm({ closureDescription }, { confirmer: confirm });
   const handleSafeClose = guardClose(onClose);
 
-  const handleAction = async (actionType) => {
-    setAction(actionType);
-    if (actionType === STATUS.CANCELLED || actionType === STATUS.PENDING) {
-      setShowReasonInput(true);
-    } else if (actionType === STATUS.COMPLETED) {
-      confirm({
-        message: "Confirmer que l'intervention a été réalisée ?",
-        onConfirm: async () => {
-          await onMarkCompleted(intervention);
-          resetDirty();
-          onClose();
-        },
-      });
-    } else if (actionType === 'reschedule') {
-      await onReschedule(intervention);
-      resetDirty();
-      onClose();
-    }
+  const handleCloseSignalement = () => {
+    setShowReasonInput(true);
   };
 
-  const handleSubmitWithReason = async () => {
-    if (reason.trim()) {
-      if (action === STATUS.CANCELLED) {
-        await onMarkNotCompleted(intervention, reason);
-      } else if (action === STATUS.PENDING) {
-        await onMarkPending(intervention, reason);
-      }
-      resetDirty();
-      onClose();
-    } else {
-      toast.warning('Veuillez indiquer un motif');
+  const handleSubmitClosure = async () => {
+    if (!closureDescription.trim()) {
+      toast.warning("Veuillez saisir la description de l'intervention");
+      return;
     }
+
+    await onCloseSignalement(intervention, closureDescription.trim());
+    resetDirty();
+    onClose();
+  };
+
+  const handleDelete = () => {
+    confirm({
+      title: 'Supprimer le signalement',
+      message: 'Supprimer ce signalement de panne ?',
+      confirmLabel: 'Supprimer',
+      variant: 'danger',
+      onConfirm: async () => {
+        await onDeleteSignalement(intervention);
+        resetDirty();
+        onClose();
+      },
+    });
   };
 
   return (
@@ -68,7 +60,7 @@ const OverdueInterventionModal = ({
       <ModalLayout
         open
         onClose={handleSafeClose}
-        title="Intervention en retard"
+        title="Signalement de panne"
         size="md"
         className="overdue-intervention-modal no-drag-resize"
         footer={
@@ -76,31 +68,23 @@ const OverdueInterventionModal = ({
             <div className="action-buttons">
               <Button
                 variant="ghost"
-                className="action-button completed"
-                onClick={() => handleAction('completed')}
+                className="action-button plan"
+                onClick={() => {
+                  onPlanIntervention(intervention, vehicle);
+                  onClose();
+                }}
               >
-                <CheckCircle size={20} /> Effectuée
+                <Wrench size={20} /> Planifier une intervention
               </Button>
               <Button
                 variant="ghost"
-                className="action-button pending"
-                onClick={() => handleAction('pending')}
+                className="action-button close"
+                onClick={handleCloseSignalement}
               >
-                <Clock size={20} /> Mettre en attente
+                <Clock size={20} /> Clôturer le signalement
               </Button>
-              <Button
-                variant="ghost"
-                className="action-button not-completed"
-                onClick={() => handleAction('cancelled')}
-              >
-                <XCircle size={20} /> Annuler l'intervention
-              </Button>
-              <Button
-                variant="ghost"
-                className="action-button reschedule"
-                onClick={() => handleAction('reschedule')}
-              >
-                <Calendar size={20} /> Reporter
+              <Button variant="ghost" className="action-button delete" onClick={handleDelete}>
+                <Trash2 size={20} /> Supprimer
               </Button>
             </div>
           ) : (
@@ -109,14 +93,13 @@ const OverdueInterventionModal = ({
                 variant="ghost"
                 onClick={() => {
                   setShowReasonInput(false);
-                  setReason('');
-                  setAction(null);
+                  setClosureDescription('');
                 }}
               >
                 Retour
               </Button>
-              <Button variant="primary" onClick={handleSubmitWithReason}>
-                Confirmer
+              <Button variant="primary" onClick={handleSubmitClosure}>
+                Confirmer la clôture
               </Button>
             </div>
           )
@@ -138,18 +121,12 @@ const OverdueInterventionModal = ({
 
         {showReasonInput && (
           <div className="reason-input-container">
-            <label htmlFor="reason">
-              {action === STATUS.CANCELLED ? "Motif d'annulation :" : 'Motif de mise en attente :'}
-            </label>
+            <label htmlFor="reason">Description de l'intervention :</label>
             <Textarea
               id="reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder={
-                action === STATUS.CANCELLED
-                  ? 'Pourquoi annuler cette intervention ?'
-                  : 'Pourquoi mettre en attente ?'
-              }
+              value={closureDescription}
+              onChange={(e) => setClosureDescription(e.target.value)}
+              placeholder="Décrivez l'intervention réalisée..."
               rows={4}
               autoFocus
             />

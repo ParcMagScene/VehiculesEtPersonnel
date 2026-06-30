@@ -727,6 +727,7 @@
 /* Actions dans les notifications */
 .notification-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
   padding-top: 10px;
@@ -735,6 +736,19 @@
 
 .notification-actions.reject-form {
   flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.notification-actions.reported-actions {
+  align-items: stretch;
+}
+
+.notification-actions.reported-actions .notif-action-btn {
+  flex: 1 1 180px;
+}
+
+.notification-actions.reported-actions .notif-action-btn:last-child {
+  flex-basis: 100%;
 }
 
 .reject-reason-input {
@@ -756,13 +770,16 @@
 .reject-form-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .notif-action-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 6px 12px;
+  min-height: 36px;
+  padding: 8px 12px;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
@@ -775,11 +792,31 @@
 .notif-action-btn.create-intervention {
   background: var(--theme-info);
   color: var(--theme-text-inverse);
-  flex: 1;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-info) 28%, transparent);
 }
 
 .notif-action-btn.create-intervention:hover {
   background: var(--theme-info-dark);
+}
+
+.notif-action-btn.delete-intervention {
+  background: var(--theme-danger);
+  color: var(--theme-text-inverse);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-danger) 28%, transparent);
+}
+
+.notif-action-btn.delete-intervention:hover {
+  background: var(--theme-danger-dark);
+}
+
+.notif-action-btn.close-signalement {
+  background: var(--theme-success-alt);
+  color: var(--theme-text-inverse);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-success-alt) 28%, transparent);
+}
+
+.notif-action-btn.close-signalement:hover {
+  background: var(--theme-success-text);
 }
 
 .notif-action-btn.approve {
@@ -805,7 +842,7 @@
 .notif-action-btn.confirm-reject {
   background: var(--theme-danger);
   color: var(--theme-text-inverse);
-  flex: 1;
+  flex: 1 1 180px;
 }
 
 .notif-action-btn.confirm-reject:hover {
@@ -821,10 +858,15 @@
 .notif-action-btn.dismiss {
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-gray);
+  flex: 1 1 120px;
 }
 
 .notif-action-btn.dismiss:hover {
   background: var(--theme-border-medium);
+}
+
+.notif-action-btn svg {
+  flex-shrink: 0;
 }
 
 .notification-item.expanded {

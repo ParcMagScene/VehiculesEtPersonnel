@@ -18,7 +18,7 @@ import { useMemo, useState } from 'react';
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader, Select } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { ACCENT_COLORS, PLANNING_SECTIONS, STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import { useToast } from '../../hooks/useToast';
@@ -111,6 +111,10 @@ const TASK_STEPS = [
   },
 ];
 
+const SECTION_OPTIONS = Object.entries(PLANNING_SECTIONS).filter(
+  ([key]) => !['rdv', 'evenements', 'depot'].includes(key),
+);
+
 // Toutes les étapes sont disponibles pour tous les types d'événement
 const getVisibleSteps = () => TASK_STEPS;
 
@@ -198,6 +202,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
         period: existing?.period || defaultPeriod,
         notes: existing?.notes || '',
         locationAddress: existing?.locationAddress || existing?.location_address || '',
+        section: existing?.section || getSectionForStep(step.key),
         taskId: existing?.id || null,
       };
     });
@@ -234,13 +239,15 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
   const handleSafeClose = guardClose(onClose);
 
   // Déterminer la section en fonction du type de step + affaire
-  const getSectionForStep = (stepKey) => {
+  function getSectionForStep(stepKey) {
     if (stepKey === 'preparation') {
       return AFFAIRE_TYPE_SECTIONS[eventInfo.affaireType] || 'prep_locations';
     }
     const stepDef = TASK_STEPS.find((s) => s.key === stepKey);
     return stepDef?.defaultSection || 'manual';
-  };
+  }
+
+  const isCourseSection = (section) => section === 'courses';
 
   // Mapping step → type d'événement d'affichage
   const STEP_TO_DISPLAY_TYPE = {
@@ -308,7 +315,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
           period: s.period || null,
           time: s.time || null,
           end_time: s.endTime || null,
-          section: getSectionForStep(step.key),
+          section: s.section || getSectionForStep(step.key),
           title: `${step.emoji} ${step.label}${eventInfo.cleanSummary ? ` — ${eventInfo.cleanSummary}` : ''}`,
           notes: s.notes || '',
           source_type: sourceType,
@@ -450,7 +457,20 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
                           onChange={(e) => updateStep(step.key, 'notes', e.target.value)}
                         />
                       </div>
-                      {step.defaultSection === 'courses' && (
+                      <div className="etm-field full">
+                        <label>Type de tâche</label>
+                        <Select
+                          value={s.section}
+                          onChange={(e) => updateStep(step.key, 'section', e.target.value)}
+                        >
+                          {SECTION_OPTIONS.map(([key, info]) => (
+                            <option key={key} value={key}>
+                              {info.emoji} {info.label}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                      {isCourseSection(s.section) && (
                         <div className="etm-field full">
                           <label>
                             <MapPin size={12} /> Lieu

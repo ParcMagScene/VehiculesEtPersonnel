@@ -225,8 +225,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   app.put(
     '/api/persons/:id',
     authenticateToken,
-    validate(numericIdSchema),
-    validate(personSchema),
+    validate({ params: numericIdSchema, body: personSchema }),
     (req, res) => {
       try {
         const p = req.body;
@@ -339,7 +338,7 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
     '/api/persons/:id',
     authenticateToken,
     requireAdmin,
-    validate(numericIdSchema),
+    validate({ params: numericIdSchema }),
     (req, res) => {
       try {
         const existing = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);

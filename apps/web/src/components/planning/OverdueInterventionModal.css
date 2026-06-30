@@ -160,52 +160,40 @@
   background: var(--surface-primary);
 }
 
-.action-button.completed {
+.action-button.plan {
+  border-color: var(--theme-primary-light);
+  color: var(--theme-primary-light);
+}
+
+.action-button.plan:hover {
+  background: var(--theme-primary-light);
+  color: var(--text-inverse);
+  transform: translateY(-2px);
+  box-shadow: var(--btn-primary-hover-shadow);
+}
+
+.action-button.close {
   border-color: var(--theme-success);
   color: var(--theme-success);
 }
 
-.action-button.completed:hover {
+.action-button.close:hover {
   background: var(--theme-success);
   color: var(--text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px var(--success-tint-medium);
 }
 
-.action-button.not-completed {
+.action-button.delete {
   border-color: var(--theme-danger);
   color: var(--theme-danger);
 }
 
-.action-button.not-completed:hover {
+.action-button.delete:hover {
   background: var(--theme-danger);
   color: var(--text-inverse);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px var(--danger-tint-medium);
-}
-
-.action-button.reschedule {
-  border-color: var(--btn-warning-color, var(--theme-warning-dark));
-  color: var(--btn-warning-color, var(--theme-warning-dark));
-}
-
-.action-button.reschedule:hover {
-  background: var(--btn-warning-color, var(--theme-warning-dark));
-  color: var(--text-inverse);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
-}
-
-.action-button.pending {
-  border-color: var(--theme-primary-light);
-  color: var(--theme-primary-light);
-}
-
-.action-button.pending:hover {
-  background: var(--theme-primary-light);
-  color: var(--text-inverse);
-  transform: translateY(-2px);
-  box-shadow: var(--btn-primary-hover-shadow);
 }
 
 .reason-input-container {

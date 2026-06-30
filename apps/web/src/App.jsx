@@ -574,6 +574,7 @@ function AppContent() {
       setMaintenanceActionType(null);
       setMaintenanceToEdit(maintenanceId);
     },
+    onScheduleMaintenance: handleScheduleMaintenance,
     currentUser,
     onLogout: logout,
     onUserUpdate: updateUser,

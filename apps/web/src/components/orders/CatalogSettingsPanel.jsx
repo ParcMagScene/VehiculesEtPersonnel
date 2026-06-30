@@ -127,7 +127,11 @@ function ParserLearningTab() {
         setReport({ result, analysis, parserLabel: result.parserLabel });
       }
     } catch (e) {
-      toast.error('Erreur analyse: ' + e.message);
+      toast.error(
+        e?.message
+          ? "Impossible d'analyser le PDF : " + e.message
+          : "Impossible d'analyser le PDF.",
+      );
     } finally {
       setAnalyzing(false);
     }
@@ -471,7 +475,7 @@ function TaxonomyTab() {
       setTaxonomy(data);
       setSelectedRules([]);
     } catch {
-      toast.error('Erreur chargement taxonomie');
+      toast.error('Impossible de charger la taxonomie.');
     } finally {
       setLoading(false);
     }
@@ -497,7 +501,11 @@ function TaxonomyTab() {
       toast.success(`Normalisation appliquée : ${result.totalChanged} articles modifiés`);
       await loadTaxonomy();
     } catch (e) {
-      toast.error('Erreur normalisation: ' + (e.message || 'erreur'));
+      toast.error(
+        e?.message
+          ? `Impossible d'appliquer la normalisation: ${e.message}`
+          : "Impossible d'appliquer la normalisation.",
+      );
     } finally {
       setApplying(false);
     }

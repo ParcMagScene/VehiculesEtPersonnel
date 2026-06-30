@@ -929,7 +929,7 @@
   background: rgba(250, 204, 21, 0.22);
   color: #fde68a;
 }
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .suivi-planning-modal-tools {
     grid-template-columns: 1fr;
   }

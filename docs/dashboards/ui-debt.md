@@ -18,6 +18,19 @@ Pour un snapshot local : `node scripts/measure-ui-debt.mjs --update`.
 | JSX inline padding/margin/gap | 123 | 0 |
 | JSX <button> HTML brut | 0 | 0 |
 | CSS gap/padding/margin Npx hors ui/ | 1835 | <200 |
+| Breakpoints exotiques (480/640/768/1024) | 168 | 0 |
+
+
+## Snapshot 2026-06-30
+
+| Métrique | Valeur | Cible |
+|---|---:|---:|
+| Stylelint hex (color-no-hex) | 203 | 0 |
+| Stylelint rgb/rgba | 433 | 0 |
+| JSX inline color/border | 236 | 0 |
+| JSX inline padding/margin/gap | 123 | 0 |
+| JSX <button> HTML brut | 0 | 0 |
+| CSS gap/padding/margin Npx hors ui/ | 1835 | <200 |
 | Breakpoints exotiques (480/640/768/1024) | 160 | 0 |
 
 

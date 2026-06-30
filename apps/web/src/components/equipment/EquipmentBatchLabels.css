@@ -499,7 +499,7 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .ebl-content {
     flex-direction: column;
   }

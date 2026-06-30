@@ -293,6 +293,15 @@
      lg: 1024px   — tablette paysage / desktop petit
      xl: 1200px   — desktop large (calendrier)
      Exception: 380px — MobileApp ultra-petit
+     
+     MUST USE THESE VALUES FOR ALL @media queries:
+     @media (max-width: 480px)  — xs breakpoint
+     @media (max-width: 640px)  — sm breakpoint
+     @media (max-width: 768px)  — md breakpoint
+     @media (max-width: 1024px) — lg breakpoint
+     
+     PROHIBITED: 760px, 900px, 1100px, 1200px in @media queries.
+     USE: 768px for tablet portrait, 1024px for desktop small.
   ─── */
 
   /* ─── [AUDIT] Shadow Scale ─── */

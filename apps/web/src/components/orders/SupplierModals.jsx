@@ -842,7 +842,11 @@ export const SupplierDetailModal = React.memo(
         setUploadingDoc(null);
         onReload();
       } catch (error) {
-        toast.error('Erreur: ' + error.message);
+        toast.error(
+          error?.message
+            ? `Impossible d'enregistrer le document: ${error.message}`
+            : "Impossible d'enregistrer le document.",
+        );
       }
     };
 

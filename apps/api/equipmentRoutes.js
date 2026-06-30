@@ -951,7 +951,7 @@ export function setupSavTicketsRoutes(
   requireEquipmentMaintenanceAccess,
 ) {
   // GET /api/sav-tickets
-  app.get('/api/sav-tickets', authenticateToken, (req, res) => {
+  app.get('/api/sav-tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { equipment_id, status, priority } = req.query;
       let sql = `
@@ -992,40 +992,52 @@ export function setupSavTicketsRoutes(
   });
 
   // GET /api/sav-tickets/stats
-  app.get('/api/sav-tickets/stats', authenticateToken, (req, res) => {
-    try {
-      const stats = {
-        open: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'open'").get().c,
-        in_progress: db
-          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'in_progress'")
-          .get().c,
-        waiting_parts: db
-          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'waiting_parts'")
-          .get().c,
-        resolved: db
-          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'resolved'")
-          .get().c,
-        closed: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'closed'").get().c,
-        total_cost: db
-          .prepare('SELECT COALESCE(SUM(cost), 0) as total FROM sav_tickets WHERE cost IS NOT NULL')
-          .get().total,
-      };
-      res.json(stats);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+  app.get(
+    '/api/sav-tickets/stats',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const stats = {
+          open: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'open'").get().c,
+          in_progress: db
+            .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'in_progress'")
+            .get().c,
+          waiting_parts: db
+            .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'waiting_parts'")
+            .get().c,
+          resolved: db
+            .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'resolved'")
+            .get().c,
+          closed: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'closed'").get()
+            .c,
+          total_cost: db
+            .prepare(
+              'SELECT COALESCE(SUM(cost), 0) as total FROM sav_tickets WHERE cost IS NOT NULL',
+            )
+            .get().total,
+        };
+        res.json(stats);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // GET /api/sav-tickets/report — Rapport maintenance matériel (journalier/hebdo/mensuel)
   // Query params: start (YYYY-MM-DD), end (YYYY-MM-DD), type ('entries'|'exits'|'all')
-  app.get('/api/sav-tickets/report', authenticateToken, (req, res) => {
-    try {
-      const { start, end, type } = req.query;
-      if (!start || !end)
-        return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
+  app.get(
+    '/api/sav-tickets/report',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const { start, end, type } = req.query;
+        if (!start || !end)
+          return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
 
-      let sql = `
+        let sql = `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
                st.created_at, st.resolved_at, st.updated_at,
                e.name as equipment_name, e.reference as equipment_reference,
@@ -1036,30 +1048,31 @@ export function setupSavTicketsRoutes(
         LEFT JOIN users u ON st.reported_by = u.id
         WHERE 1=1
       `;
-      const params = [];
+        const params = [];
 
-      if (type === 'entries') {
-        sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
-        params.push(start, end);
-      } else if (type === 'exits') {
-        sql +=
-          ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
-        params.push(start, end);
-      } else {
-        // 'all' : entrées OU sorties dans la période
-        sql +=
-          ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
-        params.push(start, end, start, end);
+        if (type === 'entries') {
+          sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
+          params.push(start, end);
+        } else if (type === 'exits') {
+          sql +=
+            ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
+          params.push(start, end);
+        } else {
+          // 'all' : entrées OU sorties dans la période
+          sql +=
+            ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
+          params.push(start, end, start, end);
+        }
+        sql += ' ORDER BY st.created_at DESC';
+
+        const rows = db.prepare(sql).all(...params);
+        res.json(rows);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-      sql += ' ORDER BY st.created_at DESC';
-
-      const rows = db.prepare(sql).all(...params);
-      res.json(rows);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // Helper : recalcule le statut d'un équipement en fonction de ses tickets SAV et assignments
   const refreshEquipmentStatus = (equipmentId) => {
@@ -1090,8 +1103,14 @@ export function setupSavTicketsRoutes(
   app.post('/api/sav-tickets/request', authenticateToken, (req, res) => {
     try {
       const { equipment_id, title, description, type, priority } = req.body;
-      if (!equipment_id || !title)
+      const equipmentId = Number.parseInt(equipment_id, 10);
+      if (!Number.isInteger(equipmentId) || equipmentId <= 0 || !title)
         return res.status(400).json({ success: false, error: 'Équipement et titre requis' });
+
+      const equipmentExists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(equipmentId);
+      if (!equipmentExists) {
+        return res.status(400).json({ success: false, error: 'Équipement introuvable' });
+      }
 
       const result = db
         .prepare(
@@ -1100,13 +1119,13 @@ export function setupSavTicketsRoutes(
         VALUES (?, ?, NULL, ?, ?, 'open', ?, ?)
       `,
         )
-        .run(equipment_id, req.user.id, type || 'panne', priority || 'medium', title, description);
+        .run(equipmentId, req.user.id, type || 'panne', priority || 'medium', title, description);
 
       // Alerte email aux admins
       try {
         alertSavTicketCreated(
           db,
-          { equipment_id, title, type, priority, description },
+          { equipment_id: equipmentId, title, type, priority, description },
           req.user.name,
         );
       } catch (emailErr) {
@@ -1124,8 +1143,27 @@ export function setupSavTicketsRoutes(
   app.post('/api/sav-tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { equipment_id, assigned_to, type, priority, title, description } = req.body;
-      if (!equipment_id || !title)
+      const equipmentId = Number.parseInt(equipment_id, 10);
+      if (!Number.isInteger(equipmentId) || equipmentId <= 0 || !title)
         return res.status(400).json({ success: false, error: 'Équipement et titre requis' });
+
+      const equipmentExists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(equipmentId);
+      if (!equipmentExists) {
+        return res.status(400).json({ success: false, error: 'Équipement introuvable' });
+      }
+
+      let assignedTo = null;
+      if (assigned_to !== null && assigned_to !== undefined && assigned_to !== '') {
+        const parsedAssigned = Number.parseInt(assigned_to, 10);
+        if (!Number.isInteger(parsedAssigned) || parsedAssigned <= 0) {
+          return res.status(400).json({ success: false, error: 'Technicien assigné invalide' });
+        }
+        const personExists = db.prepare('SELECT id FROM persons WHERE id = ?').get(parsedAssigned);
+        if (!personExists) {
+          return res.status(400).json({ success: false, error: 'Technicien assigné introuvable' });
+        }
+        assignedTo = parsedAssigned;
+      }
 
       const result = db
         .prepare(
@@ -1135,9 +1173,9 @@ export function setupSavTicketsRoutes(
       `,
         )
         .run(
-          equipment_id,
+          equipmentId,
           req.user.id,
-          assigned_to,
+          assignedTo,
           type || 'panne',
           priority || 'medium',
           title,
@@ -1145,13 +1183,13 @@ export function setupSavTicketsRoutes(
         );
 
       // Mettre l'équipement en maintenance
-      refreshEquipmentStatus(equipment_id);
+      refreshEquipmentStatus(equipmentId);
 
       // Alerte email aux admins
       try {
         alertSavTicketCreated(
           db,
-          { equipment_id, title, type, priority, description },
+          { equipment_id: equipmentId, title, type, priority, description },
           req.user.name,
         );
       } catch (emailErr) {
@@ -1299,23 +1337,28 @@ export function setupSavTicketsRoutes(
   );
 
   // GET /api/sav-tickets/unlinked — Tickets SAV importés non liés à un équipement
-  app.get('/api/sav-tickets/unlinked', authenticateToken, (req, res) => {
-    try {
-      const tickets = db
-        .prepare(
-          `
+  app.get(
+    '/api/sav-tickets/unlinked',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const tickets = db
+          .prepare(
+            `
         SELECT id, title, description, status, cost, import_code, import_serial, import_name, created_at, resolved_at
         FROM sav_tickets WHERE equipment_id IS NULL
         ORDER BY created_at DESC
       `,
-        )
-        .all();
-      res.json(tickets);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+          )
+          .all();
+        res.json(tickets);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // PUT /api/sav-tickets/:id/link — Lier manuellement un ticket à un équipement
   app.put(
@@ -1479,13 +1522,17 @@ export function setupSavTicketsRoutes(
   };
 
   // GET /api/sav-tickets/report/pdf — Rapport maintenance en PDF (par période)
-  app.get('/api/sav-tickets/report/pdf', authenticateToken, (req, res) => {
-    try {
-      const { start, end, type } = req.query;
-      if (!start || !end)
-        return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
+  app.get(
+    '/api/sav-tickets/report/pdf',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const { start, end, type } = req.query;
+        if (!start || !end)
+          return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
 
-      let sql = `
+        let sql = `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
                st.created_at, st.resolved_at,
                e.name as equipment_name, e.reference as equipment_reference,
@@ -1496,52 +1543,57 @@ export function setupSavTicketsRoutes(
         LEFT JOIN users u ON st.reported_by = u.id
         WHERE 1=1
       `;
-      const params = [];
-      if (type === 'entries') {
-        sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
-        params.push(start, end);
-      } else if (type === 'exits') {
-        sql +=
-          ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
-        params.push(start, end);
-      } else {
-        sql +=
-          ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
-        params.push(start, end, start, end);
+        const params = [];
+        if (type === 'entries') {
+          sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
+          params.push(start, end);
+        } else if (type === 'exits') {
+          sql +=
+            ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
+          params.push(start, end);
+        } else {
+          sql +=
+            ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
+          params.push(start, end, start, end);
+        }
+        sql += ' ORDER BY st.created_at DESC';
+        const rows = db.prepare(sql).all(...params);
+
+        const TYPE_LABELS = { entries: 'Entrées', exits: 'Sorties', all: 'Entrées & Sorties' };
+        const subtitle = `Du ${start} au ${end} — ${TYPE_LABELS[type] || 'Tous'}`;
+
+        const doc = new PDFDocument({
+          size: 'A4',
+          layout: 'landscape',
+          margins: { top: 25, bottom: 20, left: 20, right: 20 },
+          info: { Title: `Rapport Maintenance - ${start} au ${end}`, Author: 'eM@g' },
+        });
+        const filename = safeContentDispositionName(
+          `rapport-maintenance-${start}-${end}.pdf`,
+          'rapport-maintenance.pdf',
+        );
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        doc.pipe(res);
+        drawSavPdfTable(doc, rows, 'Rapport Maintenance Matériel', subtitle);
+        doc.end();
+      } catch (error) {
+        logger.error('GET /api/sav-tickets/report/pdf error:', error);
+        res.status(500).json({ success: false, error: 'Erreur génération PDF' });
       }
-      sql += ' ORDER BY st.created_at DESC';
-      const rows = db.prepare(sql).all(...params);
-
-      const TYPE_LABELS = { entries: 'Entrées', exits: 'Sorties', all: 'Entrées & Sorties' };
-      const subtitle = `Du ${start} au ${end} — ${TYPE_LABELS[type] || 'Tous'}`;
-
-      const doc = new PDFDocument({
-        size: 'A4',
-        layout: 'landscape',
-        margins: { top: 25, bottom: 20, left: 20, right: 20 },
-        info: { Title: `Rapport Maintenance - ${start} au ${end}`, Author: 'eM@g' },
-      });
-      const filename = safeContentDispositionName(
-        `rapport-maintenance-${start}-${end}.pdf`,
-        'rapport-maintenance.pdf',
-      );
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      doc.pipe(res);
-      drawSavPdfTable(doc, rows, 'Rapport Maintenance Matériel', subtitle);
-      doc.end();
-    } catch (error) {
-      logger.error('GET /api/sav-tickets/report/pdf error:', error);
-      res.status(500).json({ success: false, error: 'Erreur génération PDF' });
-    }
-  });
+    },
+  );
 
   // GET /api/sav-tickets/active/pdf — PDF de tout le matériel en SAV (tickets actifs)
-  app.get('/api/sav-tickets/active/pdf', authenticateToken, (req, res) => {
-    try {
-      const rows = db
-        .prepare(
-          `
+  app.get(
+    '/api/sav-tickets/active/pdf',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const rows = db
+          .prepare(
+            `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
                st.created_at, st.resolved_at,
                e.name as equipment_name, e.reference as equipment_reference,
@@ -1553,32 +1605,33 @@ export function setupSavTicketsRoutes(
         WHERE st.status IN ('open', 'in_progress', 'waiting_parts')
         ORDER BY st.created_at DESC
       `,
-        )
-        .all();
+          )
+          .all();
 
-      const doc = new PDFDocument({
-        size: 'A4',
-        layout: 'landscape',
-        margins: { top: 25, bottom: 20, left: 20, right: 20 },
-        info: { Title: 'Matériel en SAV / Maintenance', Author: 'eM@g' },
-      });
-      const today = new Date().toISOString().slice(0, 10);
-      const filename = `materiel-en-sav-${today}.pdf`;
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      doc.pipe(res);
-      drawSavPdfTable(
-        doc,
-        rows,
-        'Matériel en SAV / Maintenance',
-        'Tickets actifs (ouverts, en cours, en attente de pièces)',
-      );
-      doc.end();
-    } catch (error) {
-      logger.error('GET /api/sav-tickets/active/pdf error:', error);
-      res.status(500).json({ success: false, error: 'Erreur génération PDF' });
-    }
-  });
+        const doc = new PDFDocument({
+          size: 'A4',
+          layout: 'landscape',
+          margins: { top: 25, bottom: 20, left: 20, right: 20 },
+          info: { Title: 'Matériel en SAV / Maintenance', Author: 'eM@g' },
+        });
+        const today = new Date().toISOString().slice(0, 10);
+        const filename = `materiel-en-sav-${today}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        doc.pipe(res);
+        drawSavPdfTable(
+          doc,
+          rows,
+          'Matériel en SAV / Maintenance',
+          'Tickets actifs (ouverts, en cours, en attente de pièces)',
+        );
+        doc.end();
+      } catch (error) {
+        logger.error('GET /api/sav-tickets/active/pdf error:', error);
+        res.status(500).json({ success: false, error: 'Erreur génération PDF' });
+      }
+    },
+  );
 }
 
 // ═══ LISTES FAVORIS / SURVEILLANCE ═══

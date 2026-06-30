@@ -165,7 +165,7 @@ function StockPanel({
       setAllDepotZones(allZonesData);
     } catch (error) {
       console.error('Erreur chargement stock:', error);
-      toast.error('Erreur de chargement du stock');
+      toast.error('Impossible de charger le stock.');
     } finally {
       setLoading(false);
     }
@@ -209,7 +209,11 @@ function StockPanel({
       refreshBus.publish('stock');
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer l'article: ${error.message}`
+          : "Impossible d'enregistrer l'article.",
+      );
     }
   };
 
@@ -224,7 +228,11 @@ function StockPanel({
           refreshBus.publish('stock');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer l'article: ${error.message}`
+              : "Impossible de supprimer l'article.",
+          );
         }
       },
     });
@@ -243,7 +251,11 @@ function StockPanel({
       refreshBus.publish('stock');
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer la catégorie: ${error.message}`
+          : "Impossible d'enregistrer la catégorie.",
+      );
     }
   };
 
@@ -257,7 +269,11 @@ function StockPanel({
           refreshBus.publish('stock');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer la catégorie: ${error.message}`
+              : 'Impossible de supprimer la catégorie.',
+          );
         }
       },
     });
@@ -281,7 +297,11 @@ function StockPanel({
         loadMovements(dialogItem.id);
       }
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer le mouvement: ${error.message}`
+          : "Impossible d'enregistrer le mouvement.",
+      );
     }
   };
 
@@ -2084,7 +2104,11 @@ function ImportStockModal({ onDone, onClose }) {
       resetDirty();
       onDone();
     } catch (e) {
-      setError('Erreur import: ' + (e.message || 'erreur serveur'));
+      setError(
+        e?.message
+          ? `Impossible d'importer le stock: ${e.message}`
+          : "Impossible d'importer le stock.",
+      );
       setStep('preview');
     }
   };

@@ -87,6 +87,16 @@
   --toolbar-height: 56px;
   --header-height: 64px;
 
+  /* ─── Planning / Calendrier (véhicules + bannière Google) ───── */
+  --planning-sticky-top: 72px;
+  --planning-banner-collapsed-height: 35px;
+  --planning-vehicle-column-width: 250px;
+  --planning-vehicle-column-width-md: 200px;
+  --planning-vehicle-column-width-sm: 160px;
+  --planning-vehicle-column-width-xs: 120px;
+  --planning-vehicle-header-height: 88px;
+  --planning-section-header-height: 80px;
+
   /* ─── Breakpoints (référence canonique) ───────────────
      À utiliser dans toute nouvelle media query :
        @media (min-width: 600px)  → tablette portrait

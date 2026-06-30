@@ -393,7 +393,7 @@ const LeaveRequestForm = ({
         setSaving(false);
       }
     } catch (err) {
-      const msg = err.error || err.message || 'Erreur lors de la création';
+      const msg = err.error || err.message || 'Impossible de créer la demande de congé.';
       setError(msg);
       setSaving(false);
     }
@@ -427,7 +427,13 @@ const LeaveRequestForm = ({
     justificationName,
   };
   const { guardClose } = useDirtyForm(formSnapshot, { confirmer: confirm });
-  const handleSafeClose = guardClose(onClose);
+  const guardedClose = guardClose(onClose);
+  const handleSafeClose = () => {
+    if (saving) {
+      return;
+    }
+    guardedClose();
+  };
 
   return (
     <>
@@ -465,7 +471,11 @@ const LeaveRequestForm = ({
         <form onSubmit={handleSubmit} className="lrf-form">
           <ModalBody>
             {/* Erreur globale */}
-            {error && <InlineAlert>{error}</InlineAlert>}
+            {error && (
+              <InlineAlert variant="error" dismissible onDismiss={() => setError('')}>
+                <span style={{ whiteSpace: 'pre-line' }}>{error}</span>
+              </InlineAlert>
+            )}
 
             {/* Avertissements légaux */}
             {warnings.length > 0 && (
@@ -785,7 +795,7 @@ const LeaveRequestForm = ({
             <Button variant="ghost" onClick={handleSafeClose}>
               Annuler
             </Button>
-            <Button variant="primary" type="submit" disabled={saving}>
+            <Button variant="success" type="submit" disabled={saving}>
               {saving ? (
                 <>
                   <Clock size={14} /> Envoi en cours...

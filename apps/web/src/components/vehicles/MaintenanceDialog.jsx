@@ -41,6 +41,7 @@ import { useToast } from '../../hooks/useToast';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import api from '../../utils/api';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
+import { userHasPermission } from '../../utils/permissions';
 
 function MaintenanceDialog({
   vehicle,
@@ -59,11 +60,7 @@ function MaintenanceDialog({
     : null;
 
   // Vérifier les droits - admin ou utilisateur avec permission maintenance véhicules
-  const isAdmin = currentUser?.isAdmin === true;
-  const canManageMaintenance =
-    isAdmin ||
-    currentUser?.permissions?.canManageVehicleMaintenance === true ||
-    currentUser?.permissions?.canManageMaintenance === true;
+  const canManageMaintenance = userHasPermission(currentUser, 'canManageVehicleMaintenance');
   // Mode consultation : utilisateur sans droit maintenance qui ouvre une intervention existante
   const isViewMode = !canManageMaintenance && !!maintenanceToEditData;
   const canSchedule = canManageMaintenance;

@@ -41,6 +41,7 @@ import api from '../../utils/api';
 import { AVAILABLE_PARSERS, parseCatalog } from '../../utils/catalogParsers';
 import { formatDateTime } from '../../utils/formatUtils';
 import { extractPDFMeta } from '../../utils/pdfParser';
+import { userHasPermission } from '../../utils/permissions';
 import CatalogSettingsPanel from './CatalogSettingsPanel';
 
 const PAGE_SIZE = 50;
@@ -72,8 +73,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
   const [showImport, setShowImport] = useState(false);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
-  const isAdmin = currentUser?.isAdmin;
-  const canWrite = isAdmin || currentUser?.permissions?.canManageCatalog === true;
+  const canWrite = userHasPermission(currentUser, 'canManageCatalog');
 
   // ── Charger les filtres dynamiques ──
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
       setArticles(data.articles || []);
       setTotal(data.total || 0);
     } catch (e) {
-      toast.error('Erreur chargement articles fournisseurs');
+      toast.error('Impossible de charger les articles fournisseurs.');
     } finally {
       setLoading(false);
     }
@@ -155,7 +155,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
           toast.success('Article supprimé');
           loadArticles();
         } catch {
-          toast.error('Erreur suppression');
+          toast.error("Impossible de supprimer l'article.");
         }
       },
     });
@@ -175,7 +175,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
           loadImports();
           loadArticles();
         } catch {
-          toast.error('Erreur suppression import');
+          toast.error("Impossible de supprimer l'import.");
         }
       },
     });
@@ -202,7 +202,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
               .then((s) => setStats(s))
               .catch(() => {});
         } catch {
-          toast.error('Erreur lors de la purge');
+          toast.error('Impossible de purger la base des articles fournisseurs.');
         }
       },
     });
@@ -228,7 +228,7 @@ export default function SupplierCatalogPanel({ currentUser }) {
         })
         .catch(() => {});
     } catch {
-      toast.error('Erreur lors de la mise à jour des marques');
+      toast.error('Impossible de mettre à jour les marques.');
     } finally {
       setRefreshingBrands(false);
     }
@@ -664,7 +664,7 @@ function ImportPDFModal({ onDone, onClose }) {
       setParseResults(results);
       setStep('preview');
     } catch (e) {
-      setError("Erreur lors de l'analyse : " + e.message);
+      setError("Impossible d'analyser le catalogue : " + e.message);
       setStep('select');
     }
   };
@@ -696,7 +696,7 @@ function ImportPDFModal({ onDone, onClose }) {
       );
       onDone();
     } catch (e) {
-      setError('Erreur import: ' + (e.message || 'erreur serveur'));
+      setError("Impossible d'importer le catalogue : " + (e.message || 'erreur serveur'));
       setStep('preview');
     }
   };

@@ -432,7 +432,7 @@ setupEquipmentRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentAssignmentsRoutes(app, authenticateToken);
 setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess);
 // Module SAV unifié (Phase 3 — synchro LocMat)
-setupSavRoutes(app, authenticateToken, requireAdmin);
+setupSavRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess);
 setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
 // Vignettes WebP à la volée pour /Photos/ (cache disque)
 setupPhotoThumbRoutes(app);

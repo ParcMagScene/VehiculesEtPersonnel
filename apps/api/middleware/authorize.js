@@ -21,7 +21,29 @@ const VALID_PERMISSION_KEYS = new Set([
   'can_manage_video',
   'can_manage_messaging',
   'read_only',
+  // Legacy camelCase keys still present on some historical accounts
+  'canManageVehicleMaintenance',
+  'canManageMaintenance',
+  'canManageCatalog',
+  'canManageEquipmentMaintenance',
+  'canManageTrucks',
+  'readOnly',
 ]);
+
+const PERMISSION_ALIASES = {
+  can_manage_vehicle_maintenance: ['canManageVehicleMaintenance'],
+  can_manage_maintenance: ['canManageMaintenance'],
+  can_manage_catalog: ['canManageCatalog'],
+  can_manage_equipment_maintenance: ['canManageEquipmentMaintenance'],
+  can_manage_trucks: ['canManageTrucks'],
+  read_only: ['readOnly'],
+};
+
+function hasPermission(perms, permissionKey) {
+  if (perms[permissionKey]) return true;
+  const aliases = PERMISSION_ALIASES[permissionKey] || [];
+  return aliases.some((alias) => !!perms[alias]);
+}
 
 /**
  * Résoudre permissions depuis JWT ou DB (fallback pour anciens tokens)
@@ -75,7 +97,7 @@ export function requirePermission(permissionKey, errorMessage, flagName) {
     const user = resolvePermissions(req);
     if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
     const perms = parsePermissions(user);
-    if (user.is_admin || perms[permissionKey]) {
+    if (user.is_admin || hasPermission(perms, permissionKey)) {
       req.user.isAdmin = !!user.is_admin;
       if (flagName) req.user[flagName] = true;
       req.user.permissions = perms;
@@ -116,7 +138,11 @@ export function requireMaintenanceAccessCompat(req, res, next) {
   const user = resolvePermissions(req);
   if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
   const perms = parsePermissions(user);
-  if (user.is_admin || perms.can_manage_vehicle_maintenance || perms.can_manage_maintenance) {
+  if (
+    user.is_admin ||
+    hasPermission(perms, 'can_manage_vehicle_maintenance') ||
+    hasPermission(perms, 'can_manage_maintenance')
+  ) {
     req.user.isAdmin = !!user.is_admin;
     req.user.canManageMaintenance = true;
     req.user.permissions = perms;
@@ -154,7 +180,7 @@ export function requireNotReadOnly(req, res, next) {
   if (!user) return res.status(403).json({ error: 'Utilisateur non trouvé' });
   const perms = parsePermissions(user);
 
-  if (user.is_admin || !perms.read_only) {
+  if (user.is_admin || !hasPermission(perms, 'read_only')) {
     req.user.isAdmin = !!user.is_admin;
     req.user.permissions = perms;
     return next();

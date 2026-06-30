@@ -3,19 +3,7 @@
    Module Gestion des Congés — eM@g
    ═══════════════════════════════════════════════════════════════ */
 
-.lrf-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--theme-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-modal);
-  padding: var(--space-5);
-  backdrop-filter: blur(2px);
-}
-
-.lrf-modal {
+.lrf-modal.ui-modal {
   background: var(--theme-bg-card);
   border-radius: var(--radius-lg);
   width: 100%;
@@ -25,39 +13,6 @@
   box-shadow: var(--shadow-modal);
   display: flex;
   flex-direction: column;
-}
-
-/* ─── HEADER ─── */
-.lrf-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--theme-border);
-  background: linear-gradient(135deg, var(--theme-info-text) 0%, var(--theme-info) 100%);
-  color: var(--theme-text-inverse);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  position: sticky;
-  top: 0;
-  z-index: var(--z-dropdown);
-}
-
-.lrf-header-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.lrf-header-title h2 {
-  margin: 0;
-  font-size: var(--font-md);
-  font-weight: 600;
-}
-
-.lrf-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .lrf-btn-info {
@@ -72,21 +27,6 @@
 }
 
 .lrf-btn-info:hover {
-  background: var(--glass-medium);
-}
-
-.lrf-close-btn {
-  background: var(--glass-light);
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 6px;
-  cursor: pointer;
-  color: var(--theme-text-inverse);
-  display: flex;
-  align-items: center;
-}
-
-.lrf-close-btn:hover {
   background: var(--glass-medium);
 }
 
@@ -576,69 +516,11 @@
   font-weight: 500;
 }
 
-/* ─── ACTIONS ─── */
-.lrf-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: var(--space-3) var(--space-5);
-  border-top: 1px solid var(--theme-border);
-  flex-shrink: 0;
-  background: var(--theme-bg-card);
-}
-
-.lrf-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px var(--space-5);
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: var(--font-base);
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.lrf-btn-cancel {
-  background: var(--theme-border-light);
-  color: var(--theme-text-subtle);
-}
-
-.lrf-btn-cancel:hover {
-  background: var(--theme-border);
-}
-
-.lrf-btn-submit {
-  background: linear-gradient(135deg, var(--theme-info-text) 0%, var(--theme-info) 100%);
-  color: var(--theme-text-inverse);
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
-}
-
-.lrf-btn-submit:hover {
-  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
-  transform: translateY(-1px);
-}
-
-.lrf-btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
 /* ─── RESPONSIVE ─── */
 @media (max-width: 640px) {
-  .lrf-overlay {
-    padding: 0;
-  }
-
-  .lrf-modal {
+  .lrf-modal.ui-modal {
     max-width: 100%;
     max-height: 100dvh;
-    border-radius: 0;
-  }
-
-  .lrf-header {
     border-radius: 0;
   }
 
@@ -660,14 +542,5 @@
 
   .lrf-legal-info ul {
     grid-template-columns: 1fr;
-  }
-
-  .lrf-actions {
-    flex-direction: column;
-  }
-
-  .lrf-btn {
-    width: 100%;
-    justify-content: center;
   }
 }

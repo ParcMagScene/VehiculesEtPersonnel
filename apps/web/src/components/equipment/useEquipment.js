@@ -4,6 +4,7 @@ import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { userHasPermission, userIsAdmin } from '../../utils/permissions';
 import { findZone } from './equipmentUtils';
 
 export const useEquipment = ({ currentUser, initialTab }) => {
@@ -70,9 +71,11 @@ export const useEquipment = ({ currentUser, initialTab }) => {
     return depotZones || allDepotZones?.depots?.[0] || null;
   }, [depotMapModalZone, depotZones, allDepotZones]);
 
-  const isAdmin = currentUser?.isAdmin === true;
-  const canManageEquipmentMaintenance =
-    isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance === true;
+  const isAdmin = userIsAdmin(currentUser);
+  const canManageEquipmentMaintenance = userHasPermission(
+    currentUser,
+    'canManageEquipmentMaintenance',
+  );
 
   const loadData = useCallback(async () => {
     try {

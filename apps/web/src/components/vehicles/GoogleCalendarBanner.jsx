@@ -287,64 +287,77 @@ function GoogleCalendarBanner({
 
   // Synchroniser les largeurs avec le calendrier principal (ou le planning personnel)
   useEffect(() => {
+    let retryTimer = null;
+    let rafId = null;
+
     const syncWidths = () => {
       // Chercher la grille principale : Calendar (.calendar-grid) ou PersonnelPanel (.pp-grid)
-      const calendarGrid =
-        document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+      const calendarGrid = document.querySelector('.calendar-grid, .pp-grid');
       const bannerGrid = document.querySelector('.banner-grid');
-      const bannerScrollArea = document.querySelector('.banner-scroll-area');
 
-      if (calendarGrid && bannerGrid && bannerScrollArea) {
-        // Copier les colonnes calculées du calendrier pour toutes les vues
+      if (calendarGrid && bannerGrid) {
+        // Copier les colonnes calculées du calendrier pour toutes les vues.
+        // On évite les writes inutiles pour limiter le layout thrash.
         const gridComputedStyle = window.getComputedStyle(calendarGrid);
         const gridColumns = gridComputedStyle.gridTemplateColumns;
-        const columnWidths = gridColumns.split(' ').map((width) => width);
-        bannerGrid.style.gridTemplateColumns = columnWidths.join(' ');
+
+        if (gridColumns && bannerGrid.style.gridTemplateColumns !== gridColumns) {
+          bannerGrid.style.gridTemplateColumns = gridColumns;
+        }
+      } else if (!retryTimer) {
+        // Lazy mounts (module/tab) : retenter brièvement si la grille n'est pas encore prête.
+        retryTimer = setTimeout(() => {
+          retryTimer = null;
+          syncWidths();
+        }, 80);
       }
     };
 
-    // Attendre que le DOM soit complètement rendu après changement de vue
-    const timer1 = setTimeout(syncWidths, 50);
-    const timer2 = setTimeout(syncWidths, 150);
-    const timer3 = setTimeout(syncWidths, TIMING.DEBOUNCE_SEARCH);
-    const timer4 = setTimeout(syncWidths, TIMING.PRINT_DELAY);
+    const scheduleSync = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(syncWidths);
+    };
+
+    // Attendre le paint initial + un second passage court post-layout.
+    scheduleSync();
+    const afterLayoutTimer = setTimeout(scheduleSync, 150);
 
     // Observer les changements de taille du calendrier ou du planning personnel
-    const calendarGrid =
-      document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+    const calendarGrid = document.querySelector('.calendar-grid, .pp-grid');
     let resizeObserver;
 
     if (calendarGrid) {
-      resizeObserver = new ResizeObserver(syncWidths);
+      resizeObserver = new ResizeObserver(scheduleSync);
       resizeObserver.observe(calendarGrid);
     }
 
     // Synchroniser lors du resize de la fenêtre
-    window.addEventListener('resize', syncWidths);
+    window.addEventListener('resize', scheduleSync);
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timer4);
+      clearTimeout(afterLayoutTimer);
+      if (retryTimer) clearTimeout(retryTimer);
+      if (rafId) cancelAnimationFrame(rafId);
       if (resizeObserver) resizeObserver.disconnect();
-      window.removeEventListener('resize', syncWidths);
+      window.removeEventListener('resize', scheduleSync);
     };
-  }, [view, currentDate, events.length]);
+  }, [activeModule, view, currentDate, events.length]);
 
   // Synchroniser le scroll entre le calendrier et le banner
   useEffect(() => {
     let cleanupFn = null;
+    let attachTimer = null;
+    let disposed = false;
 
     const attachScrollListeners = () => {
+      if (disposed) return;
+
       // Chercher la zone de scroll principale : Calendar ou PersonnelPanel
-      const calendarScrollArea =
-        document.querySelector('.calendar-scroll-area') ||
-        document.querySelector('.pp-scroll-area');
+      const calendarScrollArea = document.querySelector('.calendar-scroll-area, .pp-scroll-area');
       const bannerScrollArea = document.querySelector('.banner-scroll-area');
 
       if (!calendarScrollArea || !bannerScrollArea) {
-        setTimeout(attachScrollListeners, 50);
+        attachTimer = setTimeout(attachScrollListeners, 80);
         return;
       }
 
@@ -379,10 +392,11 @@ function GoogleCalendarBanner({
       };
     };
 
-    const timer = setTimeout(attachScrollListeners, 100);
+    attachTimer = setTimeout(attachScrollListeners, 100);
 
     return () => {
-      clearTimeout(timer);
+      disposed = true;
+      if (attachTimer) clearTimeout(attachTimer);
       if (cleanupFn) cleanupFn();
     };
   }, [events.length, view]);

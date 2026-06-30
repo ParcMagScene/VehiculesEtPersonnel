@@ -457,6 +457,10 @@ const AssignmentDialog = ({
   };
 
   const handleSafeClose = () => {
+    if (saving) {
+      return;
+    }
+
     if (hasFormChanges()) {
       setShowUnsavedWarning(true);
       return;
@@ -862,7 +866,7 @@ const AssignmentDialog = ({
       console.error('[AssignmentDialog] ERREUR sauvegarde:', err);
       console.error('[AssignmentDialog] err.message:', err.message);
       console.error('[AssignmentDialog] err.stack:', err.stack);
-      setError(err.message || 'Erreur lors de la sauvegarde');
+      setError(err.message || "Impossible de sauvegarder l'affectation.");
     } finally {
       setSaving(false);
     }
@@ -1431,7 +1435,11 @@ const AssignmentDialog = ({
           </div>
 
           {/* Erreur / Succès */}
-          {error && <InlineAlert>{error}</InlineAlert>}
+          {error && (
+            <InlineAlert variant="error" dismissible onDismiss={() => setError(null)}>
+              <span style={{ whiteSpace: 'pre-line' }}>{error}</span>
+            </InlineAlert>
+          )}
           {success && (
             <InlineAlert variant="success">
               {isEdit

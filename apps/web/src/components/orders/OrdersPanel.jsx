@@ -264,7 +264,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setEditingOrder(null);
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer la commande: ${error.message}`
+          : "Impossible d'enregistrer la commande.",
+      );
     }
   };
   const handleDeleteOrder = (order) => {
@@ -278,7 +282,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedOrder(null);
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer la commande: ${error.message}`
+              : 'Impossible de supprimer la commande.',
+          );
         }
       },
     });
@@ -289,7 +297,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setEditingOrder(full);
       setShowOrderForm(true);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir la commande: ${error.message}`
+          : "Impossible d'ouvrir la commande.",
+      );
     }
   };
   const handleViewOrder = async (order) => {
@@ -297,7 +309,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const full = await api.getOrderById(order.id);
       setSelectedOrder(full);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'afficher la commande: ${error.message}`
+          : "Impossible d'afficher la commande.",
+      );
     }
   };
   const handleOpenOrderDialog = async (order) => {
@@ -305,7 +321,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const full = await api.getOrderById(order.id);
       setDialogOrder(full);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir le détail de la commande: ${error.message}`
+          : "Impossible d'ouvrir le détail de la commande.",
+      );
     }
   };
 
@@ -319,7 +339,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setEditingQuote(null);
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer le devis: ${error.message}`
+          : "Impossible d'enregistrer le devis.",
+      );
     }
   };
   const handleDeleteQuote = (quote) => {
@@ -333,7 +357,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedQuote(null);
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer le devis: ${error.message}`
+              : 'Impossible de supprimer le devis.',
+          );
         }
       },
     });
@@ -344,7 +372,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setEditingQuote(full);
       setShowQuoteForm(true);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer la demande: ${error.message}`
+          : "Impossible d'enregistrer la demande.",
+      );
     }
   };
   const handleViewQuote = async (quote) => {
@@ -352,7 +384,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const full = await api.getQuoteById(quote.id);
       setSelectedQuote(full);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir le devis: ${error.message}`
+          : "Impossible d'ouvrir le devis.",
+      );
     }
   };
   const handleOpenQuoteDialog = async (quote) => {
@@ -360,7 +396,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const full = await api.getQuoteById(quote.id);
       setDialogQuote(full);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir le détail du devis: ${error.message}`
+          : "Impossible d'ouvrir le détail du devis.",
+      );
     }
   };
   const handleConvertQuote = (quote) => {
@@ -374,7 +414,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedQuote(null);
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de convertir le devis en commande: ${error.message}`
+              : 'Impossible de convertir le devis en commande.',
+          );
         }
       },
     });
@@ -414,7 +458,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       // Rafraîchissement silencieux : pas de spinner, l'update optimiste reste visible
       refreshSuppliersOnly();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer le fournisseur: ${error.message}`
+          : "Impossible d'enregistrer le fournisseur.",
+      );
     }
   };
   const handleDeleteSupplier = (supplier) => {
@@ -427,7 +475,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           refreshBus.publish('orders');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer le fournisseur: ${error.message}`
+              : 'Impossible de supprimer le fournisseur.',
+          );
         }
       },
     });
@@ -451,7 +503,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setShowRequestModal(false);
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer la demande: ${error.message}`
+          : "Impossible d'enregistrer la demande.",
+      );
     }
   };
   const handleEditRequest = (request) => {
@@ -465,7 +521,11 @@ function OrdersPanel({ currentUser, isMobile }) {
         const data = await api.getEligibleOrdersForRequest(request.id);
         setApprovingRequest({ request, eligibleData: data });
       } catch (error) {
-        toast.error('Erreur chargement commandes: ' + error.message);
+        toast.error(
+          error?.message
+            ? `Impossible de charger les commandes éligibles: ${error.message}`
+            : 'Impossible de charger les commandes éligibles.',
+        );
       }
       return;
     }
@@ -477,7 +537,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       refreshBus.publish('orders');
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de valider la demande: ${error.message}`
+          : 'Impossible de valider la demande.',
+      );
     }
   };
 
@@ -503,7 +567,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       refreshBus.publish('orders');
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de valider la demande: ${error.message}`
+          : 'Impossible de valider la demande.',
+      );
     }
   };
 
@@ -578,7 +646,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       });
       await finalizeApproval(dispatchPrefill.request.id, finalAssignments);
     } catch (error) {
-      toast.error('Erreur création commande: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de créer la commande: ${error.message}`
+          : 'Impossible de créer la commande.',
+      );
     }
   };
   const handleDeleteRequest = (request) => {
@@ -596,7 +668,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           refreshBus.publish('orders');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer la demande: ${error.message}`
+              : 'Impossible de supprimer la demande.',
+          );
         }
       },
     });
@@ -613,7 +689,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           toast.success('Demande retirée de la commande');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + (error.message || 'Impossible de retirer la demande'));
+          toast.error(
+            error?.message
+              ? `Impossible de retirer la demande de la commande: ${error.message}`
+              : 'Impossible de retirer la demande de la commande.',
+          );
         }
       },
     });
@@ -628,7 +708,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       ]);
       setSelectedSupplierPanel({ ...supplier, orders, catalogs });
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de charger le fournisseur: ${error.message}`
+          : 'Impossible de charger le fournisseur.',
+      );
     }
   };
   const handleSupplierDoubleClick = async (supplier) => {
@@ -636,7 +720,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const detail = await api.getSupplierFullDetail(supplier.id);
       setSupplierDetailData(detail);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir le fournisseur: ${error.message}`
+          : "Impossible d'ouvrir le fournisseur.",
+      );
     }
   };
 
@@ -645,7 +733,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       await api.markAlertRead(alertId);
       setCompletionAlerts((prev) => prev.filter((a) => a.id !== alertId));
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de marquer l'alerte comme lue: ${error.message}`
+          : "Impossible de marquer l'alerte comme lue.",
+      );
     }
   };
 
@@ -1040,7 +1132,11 @@ function OrdersPanel({ currentUser, isMobile }) {
                     setSelectedOrder(full);
                     loadData();
                   } catch (error) {
-                    toast.error('Erreur: ' + error.message);
+                    toast.error(
+                      error?.message
+                        ? `Impossible de mettre à jour la commande: ${error.message}`
+                        : 'Impossible de mettre à jour la commande.',
+                    );
                   }
                 }}
               />
@@ -1112,7 +1208,11 @@ function OrdersPanel({ currentUser, isMobile }) {
                 setDialogOrder(full);
                 loadData();
               } catch (error) {
-                toast.error('Erreur: ' + error.message);
+                toast.error(
+                  error?.message
+                    ? `Impossible de mettre à jour la commande: ${error.message}`
+                    : 'Impossible de mettre à jour la commande.',
+                );
               }
             }}
           />
@@ -1140,7 +1240,11 @@ function OrdersPanel({ currentUser, isMobile }) {
                 setDialogQuote(full);
                 loadData();
               } catch (error) {
-                toast.error('Erreur: ' + error.message);
+                toast.error(
+                  error?.message
+                    ? `Impossible de mettre à jour le devis: ${error.message}`
+                    : 'Impossible de mettre à jour le devis.',
+                );
               }
             }}
           />

@@ -14,10 +14,12 @@ import {
   Wrench,
 } from 'lucide-react';
 
+import { userHasPermission, userIsAdmin } from '../../utils/permissions';
+
 function MobileHome({ onNavigate, currentUser }) {
-  const isAdmin = !!currentUser?.isAdmin;
-  const canManageEquipment = isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance;
-  const canManageCatalog = isAdmin || currentUser?.permissions?.canManageCatalog;
+  const isAdmin = userIsAdmin(currentUser);
+  const canManageEquipment = userHasPermission(currentUser, 'canManageEquipmentMaintenance');
+  const canManageCatalog = userHasPermission(currentUser, 'canManageCatalog');
 
   return (
     <div className="mobile-home">

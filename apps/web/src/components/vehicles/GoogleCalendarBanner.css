@@ -4,7 +4,7 @@
   max-width: 100vw;
   margin-bottom: 0;
   position: sticky;
-  top: 72px;
+  top: var(--planning-sticky-top);
   z-index: var(--z-sticky);
   background: var(--theme-bg-card);
   transition: all 0.3s ease;
@@ -21,18 +21,18 @@
 
 /* Mode fermé : une seule ligne avec le bouton */
 .google-calendar-banner-grid.closed {
-  height: 35px;
+  height: var(--planning-banner-collapsed-height);
   overflow: hidden;
 }
 
 .google-calendar-banner-grid.closed .calendar-banner {
-  height: 35px;
-  min-height: 35px;
+  height: var(--planning-banner-collapsed-height);
+  min-height: var(--planning-banner-collapsed-height);
   background: var(--theme-gradient);
 }
 
 .google-calendar-banner-grid.closed .banner-vehicle-header {
-  height: 35px;
+  height: var(--planning-banner-collapsed-height);
   font-size: var(--font-sm);
   padding: 0 1rem;
   align-items: center;
@@ -59,7 +59,7 @@
 
 .google-calendar-banner-grid.compact .calendar-banner {
   height: auto;
-  min-height: 35px;
+  min-height: var(--planning-banner-collapsed-height);
 }
 
 .google-calendar-banner-grid.compact .banner-scroll-area {
@@ -127,8 +127,8 @@
 
 /* Colonne véhicule fixe à gauche */
 .banner-vehicle-column {
-  width: 250px;
-  min-width: 250px;
+  width: var(--planning-vehicle-column-width);
+  min-width: var(--planning-vehicle-column-width);
   flex-shrink: 0;
   background: var(--theme-gradient);
   color: var(--theme-text-inverse);
@@ -363,7 +363,7 @@
 /* Zone scrollable à droite */
 .banner-scroll-area {
   flex: 1;
-  max-width: calc(100vw - 250px);
+  max-width: calc(100vw - var(--planning-vehicle-column-width));
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -680,21 +680,21 @@
 /* Responsive banner */
 @media (max-width: 1024px) {
   .banner-vehicle-column {
-    width: 200px;
-    min-width: 200px;
+    width: var(--planning-vehicle-column-width-md);
+    min-width: var(--planning-vehicle-column-width-md);
   }
   .banner-scroll-area {
-    max-width: calc(100vw - 200px);
+    max-width: calc(100vw - var(--planning-vehicle-column-width-md));
   }
 }
 
 @media (max-width: 768px) {
   .banner-vehicle-column {
-    width: 160px;
-    min-width: 160px;
+    width: var(--planning-vehicle-column-width-sm);
+    min-width: var(--planning-vehicle-column-width-sm);
   }
   .banner-scroll-area {
-    max-width: calc(100vw - 160px);
+    max-width: calc(100vw - var(--planning-vehicle-column-width-sm));
   }
   .banner-vehicle-header {
     font-size: var(--font-sm);
@@ -704,11 +704,11 @@
 
 @media (max-width: 480px) {
   .banner-vehicle-column {
-    width: 120px;
-    min-width: 120px;
+    width: var(--planning-vehicle-column-width-xs);
+    min-width: var(--planning-vehicle-column-width-xs);
   }
   .banner-scroll-area {
-    max-width: calc(100vw - 120px);
+    max-width: calc(100vw - var(--planning-vehicle-column-width-xs));
   }
   .banner-vehicle-header {
     font-size: 0.7rem;

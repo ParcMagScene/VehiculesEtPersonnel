@@ -59,7 +59,12 @@ function loadEquipmentList() {
     .all();
 }
 
-export function setupSavRoutes(app, authenticateToken, requireAdmin) {
+export function setupSavRoutes(
+  app,
+  authenticateToken,
+  requireAdmin,
+  requireEquipmentMaintenanceAccess,
+) {
   // ─────────────────────────────────────────────────────────────
   // POST /api/sav/import/preview
   // ─────────────────────────────────────────────────────────────
@@ -375,7 +380,7 @@ export function setupSavRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────────────────────────────────────────────────────
   // GET /api/sav/tickets — Liste filtrée
   // ─────────────────────────────────────────────────────────────
-  app.get('/api/sav/tickets', authenticateToken, (req, res) => {
+  app.get('/api/sav/tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { status, q, equipment_id } = req.query;
       const conds = ['1=1'];
@@ -418,33 +423,38 @@ export function setupSavRoutes(app, authenticateToken, requireAdmin) {
   // ─────────────────────────────────────────────────────────────
   // GET /api/sav/tickets/:id — Détail + historique
   // ─────────────────────────────────────────────────────────────
-  app.get('/api/sav/tickets/:id', authenticateToken, (req, res) => {
-    try {
-      const ticket = db
-        .prepare(
-          `SELECT st.*, e.name as equipment_name, e.reference as equipment_reference,
+  app.get(
+    '/api/sav/tickets/:id',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const ticket = db
+          .prepare(
+            `SELECT st.*, e.name as equipment_name, e.reference as equipment_reference,
                   e.uid as equipment_uid, e.serial_number as equipment_serial_number
              FROM sav_tickets st
              LEFT JOIN equipment e ON st.equipment_id = e.id
             WHERE st.id = ?`,
-        )
-        .get(req.params.id);
-      if (!ticket) return res.status(404).json({ success: false, error: 'Ticket introuvable' });
-      const history = db
-        .prepare(
-          `SELECT h.*, u.name as user_name
+          )
+          .get(req.params.id);
+        if (!ticket) return res.status(404).json({ success: false, error: 'Ticket introuvable' });
+        const history = db
+          .prepare(
+            `SELECT h.*, u.name as user_name
              FROM sav_ticket_history h
              LEFT JOIN users u ON h.user_id = u.id
             WHERE h.ticket_id = ?
             ORDER BY h.timestamp DESC`,
-        )
-        .all(req.params.id);
-      res.json({ success: true, ticket, history, statusLabels: SAV_STATUS_LABELS });
-    } catch (e) {
-      logger.error('SAV ticket detail error:', e);
-      res.status(500).json({ success: false, error: 'Erreur serveur' });
-    }
-  });
+          )
+          .all(req.params.id);
+        res.json({ success: true, ticket, history, statusLabels: SAV_STATUS_LABELS });
+      } catch (e) {
+        logger.error('SAV ticket detail error:', e);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
 
   // ─────────────────────────────────────────────────────────────
   // PATCH /api/sav/tickets/:id — Modif interne eM@g

@@ -57,6 +57,7 @@ import { PersonnelSlidePanel } from './PersonnelDetailPanel';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
 import LeaveValidationPanel from '../leaves/LeaveValidationPanel';
 import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
+import useDragHandlers from './useDragHandlers';
 
 // ═══════════════════════════════════════
 // Personnel Planning View (extracted from PlanningTab)
@@ -438,6 +439,23 @@ export const PlanningTab = ({
     [missionSpans],
   );
 
+  // Initialize drag handlers hook
+  const dragHandlers = useDragHandlers({
+    days,
+    view,
+    coveredSlotsForPerson,
+    loadPlanning,
+    toast,
+    onAssignmentDialogOpen: (dialogState) => setAssignmentDialog(dialogState),
+  });
+
+  // Add global mouseup listener for drag handlers
+  useEffect(() => {
+    const onUp = () => dragHandlers.handleGlobalMouseUp();
+    document.addEventListener('mouseup', onUp);
+    return () => document.removeEventListener('mouseup', onUp);
+  }, [dragHandlers]);
+
   const windowWidth = useWindowWidth();
   const gridColumns = useMemo(
     () => computeGridColumnsCss({ view, days, module: 'planning', windowWidth }),
@@ -707,6 +725,14 @@ export const PlanningTab = ({
     });
   };
 
+  // ════════════════════════════════════════════════════════════════
+  // Use dragHandlers hook for all drag/resize operations
+  // ════════════════════════════════════════════════════════════════
+  // Note: Old handleSlotMouseDown, handleSlotMouseEnter,
+  // handleBlockMouseDown, handleResizeStart, isInDragSelection
+  // functions below are now deprecated in favor of dragHandlers hook.
+  // They're kept for reference but dragHandlers versions are used.
+
   const handleSlotClick = (person, day, slotIndex, period) => {
     if (view === 'year') return;
     if (dragCreate || dragMove || resizeState) return;
@@ -771,10 +797,10 @@ export const PlanningTab = ({
     const personSpanList = missionSpans[person.id] || [];
     const covered = coveredSlotsForPerson(person.id);
     const personName = `${person.firstName} ${person.lastName || ''}`;
-    const isMoving = dragMove && dragMove.person.id === person.id;
-    const isResizing = resizeState && resizeState.person.id === person.id;
-    const movingSpanId = isMoving ? dragMove.span.missionId : null;
-    const resizingSpanId = isResizing ? resizeState.span.missionId : null;
+    const isMoving = dragHandlers.dragMove && dragHandlers.dragMove.person.id === person.id;
+    const isResizing = dragHandlers.resizeState && dragHandlers.resizeState.person.id === person.id;
+    const movingSpanId = isMoving ? dragHandlers.dragMove.span.missionId : null;
+    const resizingSpanId = isResizing ? dragHandlers.resizeState.span.missionId : null;
 
     return (
       <div key={person.id} className="pp-person-row" onMouseUp={handleGlobalMouseUp}>
@@ -784,15 +810,22 @@ export const PlanningTab = ({
           const todayCls = today ? ' today-slot' : '';
           let spanHere = personSpanList.find((s) => s.startSlotIdx === slotIndex);
           const isCovered = covered.has(slotIndex);
-          const isDragSel = isInDragSelection(person.id, slotIndex);
+          const isDragSel = dragHandlers.isInDragSelection(person.id, slotIndex);
           let movePreviewHere = null;
-          if (isMoving && dragMove.currentStartIdx === slotIndex && movingSpanId) {
-            movePreviewHere = dragMove.span;
+          if (isMoving && dragHandlers.dragMove.currentStartIdx === slotIndex && movingSpanId) {
+            movePreviewHere = dragHandlers.dragMove.span;
           }
           const isOriginalBeingMoved = spanHere && isMoving && spanHere.missionId === movingSpanId;
           let resizePreviewHere = null;
-          if (isResizing && resizeState.currentStartIdx === slotIndex && resizingSpanId) {
-            resizePreviewHere = { ...resizeState.span, slotCount: resizeState.currentSlotCount };
+          if (
+            isResizing &&
+            dragHandlers.resizeState.currentStartIdx === slotIndex &&
+            resizingSpanId
+          ) {
+            resizePreviewHere = {
+              ...dragHandlers.resizeState.span,
+              slotCount: dragHandlers.resizeState.currentSlotCount,
+            };
           }
           const isOriginalBeingResized =
             spanHere && isResizing && spanHere.missionId === resizingSpanId;
@@ -823,7 +856,9 @@ export const PlanningTab = ({
               key={slotIndex}
               className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isHovered ? ' pp-cell-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}${hasBlockingAbsence ? ' pp-slot-absence' : ''}`}
               onMouseDown={(e) =>
-                !isCovered && !isFullAbsence && handleSlotMouseDown(person, slotIndex, e)
+                !isCovered &&
+                !isFullAbsence &&
+                dragHandlers.handleSlotMouseDown(person, slotIndex, e)
               }
               onContextMenu={(e) => {
                 if (isCovered) return;
@@ -831,7 +866,7 @@ export const PlanningTab = ({
                 setContextMenu({ x: e.clientX, y: e.clientY, person, day: slot.day });
               }}
               onMouseEnter={() => {
-                handleSlotMouseEnter(person, slotIndex);
+                dragHandlers.handleSlotMouseEnter(person, slotIndex);
                 if (!anyDragActive) setHoveredSlot({ personId: person.id, slotIndex });
               }}
               onMouseLeave={() => {
@@ -951,7 +986,9 @@ export const PlanningTab = ({
           width: `calc(${spanHere.slotCount * 100}% + ${spanHere.slotCount - 1}px)`,
         }}
         title=""
-        onMouseDown={(e) => !isGhost && handleBlockMouseDown(e, spanHere, person, slotIndex)}
+        onMouseDown={(e) =>
+          !isGhost && dragHandlers.handleBlockMouseDown(e, spanHere, person, slotIndex)
+        }
         onClick={(e) => {
           if (isGhost) return;
           if (wasDraggedRef.current) {
@@ -1022,14 +1059,14 @@ export const PlanningTab = ({
             {view !== 'year' && !spanHere.clippedLeft && (
               <div
                 className="pp-resize-handle pp-resize-handle-start"
-                onMouseDown={(e) => handleResizeStart(e, spanHere, person, 'start')}
+                onMouseDown={(e) => dragHandlers.handleResizeStart(e, spanHere, person, 'start')}
                 title="Glisser pour modifier le début"
               />
             )}
             {view !== 'year' && !spanHere.clippedRight && (
               <div
                 className="pp-resize-handle pp-resize-handle-end"
-                onMouseDown={(e) => handleResizeStart(e, spanHere, person, 'end')}
+                onMouseDown={(e) => dragHandlers.handleResizeStart(e, spanHere, person, 'end')}
                 title="Glisser pour modifier la fin"
               />
             )}

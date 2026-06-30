@@ -18,6 +18,7 @@ import { EQUIPMENT_STATUS, STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { userHasPermission } from '../../utils/permissions';
 import { refreshBus } from '../../utils/refresh-bus';
 import MobileControlsScreen from './MobileControlsScreen';
 
@@ -68,9 +69,10 @@ function MobileEquipmentQR({ uid, onBack, onNavigateHome, currentUser }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(null);
 
-  const isAdmin = currentUser?.isAdmin === true;
-  const canManageEquipmentMaintenance =
-    isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance === true;
+  const canManageEquipmentMaintenance = userHasPermission(
+    currentUser,
+    'canManageEquipmentMaintenance',
+  );
 
   useEffect(() => {
     const load = async () => {

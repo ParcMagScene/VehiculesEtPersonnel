@@ -48,6 +48,32 @@ import { ACCENT_COLORS, MANAGEMENT_PALETTE, STATUS_COLORS } from '../../constant
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 
+/**
+ * Helper: récupère les 40 couleurs de gestion depuis les tokens CSS.
+ * Fallback sur MANAGEMENT_PALETTE si les tokens ne sont pas disponibles.
+ */
+function getMgmtColors() {
+  if (typeof window === 'undefined') return MANAGEMENT_PALETTE;
+
+  const root = document.documentElement;
+  const computed = getComputedStyle(root);
+  const colors = [];
+
+  for (let i = 0; i < 40; i++) {
+    const tokenName = `--mgmt-color-${i}`;
+    let value = computed.getPropertyValue(tokenName).trim();
+
+    // Si le token n'est pas trouvé, utiliser la palette JS
+    if (!value) {
+      value = MANAGEMENT_PALETTE[i] || '#999999';
+    }
+
+    colors.push(value);
+  }
+
+  return colors;
+}
+
 const ManagementPanel = ({
   vehicles,
   setVehicles,
@@ -72,6 +98,7 @@ const ManagementPanel = ({
   onNavigateToPersonnel,
 }) => {
   const toast = useToast();
+  const [colors, setColors] = useState(getMgmtColors());
   const [activeTab, setActiveTab] = useState(() => {
     if (panelType === 'settings') return 'account';
     return 'vehicles';
@@ -196,8 +223,18 @@ const ManagementPanel = ({
             ? [
                 { id: 'users', label: 'Utilisateurs', icon: Shield, color: STATUS_COLORS.danger },
                 { id: 'sync', label: 'Import/Export', icon: Cloud, color: ACCENT_COLORS.pink },
-                { id: 'google-config', label: 'Config Google', icon: Settings, color: '#14b8a6' },
-                { id: 'mobile', label: 'Accès Mobile', icon: Smartphone, color: '#a855f7' },
+                {
+                  id: 'google-config',
+                  label: 'Config Google',
+                  icon: Settings,
+                  color: ACCENT_COLORS.cyanLight,
+                },
+                {
+                  id: 'mobile',
+                  label: 'Accès Mobile',
+                  icon: Smartphone,
+                  color: ACCENT_COLORS.violetLight,
+                },
                 {
                   id: 'depot-map',
                   label: 'Plan Dépôt',
@@ -217,7 +254,7 @@ const ManagementPanel = ({
                   id: 'rental-reports',
                   label: 'Rapports Locations',
                   icon: Gauge,
-                  color: ACCENT_COLORS.cyan || '#06b6d4',
+                  color: ACCENT_COLORS.cyan,
                 },
               ]
             : []),
@@ -724,8 +761,6 @@ const ManagementPanel = ({
     }
   };
 
-  const colors = MANAGEMENT_PALETTE;
-
   const panelTitle =
     panelType === 'settings'
       ? 'Paramètres'
@@ -1065,7 +1100,10 @@ const ManagementPanel = ({
                   style={{
                     padding: '8px 18px',
                     borderRadius: 8,
-                    border: activeDepot === 1 ? '2px solid #10b981' : '1px solid #334155',
+                    border:
+                      activeDepot === 1
+                        ? `2px solid ${STATUS_COLORS.success}`
+                        : '1px solid #334155',
                     background: activeDepot === 1 ? 'rgba(16,185,129,0.15)' : 'rgba(30,41,59,0.5)',
                     color: activeDepot === 1 ? STATUS_COLORS.success : 'var(--theme-text-muted)',
                     fontWeight: activeDepot === 1 ? 600 : 400,
@@ -1082,7 +1120,8 @@ const ManagementPanel = ({
                   style={{
                     padding: '8px 18px',
                     borderRadius: 8,
-                    border: activeDepot === 2 ? '2px solid #3b82f6' : '1px solid #334155',
+                    border:
+                      activeDepot === 2 ? `2px solid ${STATUS_COLORS.info}` : '1px solid #334155',
                     background: activeDepot === 2 ? 'rgba(59,130,246,0.15)' : 'rgba(30,41,59,0.5)',
                     color: activeDepot === 2 ? STATUS_COLORS.info : 'var(--theme-text-muted)',
                     fontWeight: activeDepot === 2 ? 600 : 400,

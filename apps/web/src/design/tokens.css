@@ -252,6 +252,57 @@
   --motion-smooth: var(--duration-smooth) var(--ease-in-out);
   --motion-slow: var(--duration-slow) var(--ease-in-out);
   --motion-spring: var(--duration-smooth) var(--ease-spring);
+
+  /* ─── Palette de gestion (ManagementPanel color picker) ─── */
+  /* 40 teintes Tailwind pour sélection visuelle modulaire */
+  /* Bleus */
+  --mgmt-color-0: #3b82f6;
+  --mgmt-color-1: #2563eb;
+  --mgmt-color-2: #1d4ed8;
+  --mgmt-color-3: #60a5fa;
+  --mgmt-color-4: #93c5fd;
+  /* Violets */
+  --mgmt-color-5: #8b5cf6;
+  --mgmt-color-6: #7c3aed;
+  --mgmt-color-7: #6366f1;
+  --mgmt-color-8: #a78bfa;
+  --mgmt-color-9: #c4b5fd;
+  /* Roses / Rouges */
+  --mgmt-color-10: #ec4899;
+  --mgmt-color-11: #db2777;
+  --mgmt-color-12: #ef4444;
+  --mgmt-color-13: #dc2626;
+  --mgmt-color-14: #f87171;
+  /* Oranges / Jaunes */
+  --mgmt-color-15: #f59e0b;
+  --mgmt-color-16: #f97316;
+  --mgmt-color-17: #fb923c;
+  --mgmt-color-18: #fbbf24;
+  --mgmt-color-19: #fcd34d;
+  /* Verts */
+  --mgmt-color-20: #10b981;
+  --mgmt-color-21: #059669;
+  --mgmt-color-22: #14b8a6;
+  --mgmt-color-23: #22c55e;
+  --mgmt-color-24: #4ade80;
+  /* Cyans */
+  --mgmt-color-25: #06b6d4;
+  --mgmt-color-26: #0891b2;
+  --mgmt-color-27: #22d3ee;
+  --mgmt-color-28: #67e8f9;
+  --mgmt-color-29: #a5f3fc;
+  /* Gris */
+  --mgmt-color-30: #6b7280;
+  --mgmt-color-31: #4b5563;
+  --mgmt-color-32: #374151;
+  --mgmt-color-33: #9ca3af;
+  --mgmt-color-34: #d1d5db;
+  /* Noirs / Blancs */
+  --mgmt-color-35: #1f2937;
+  --mgmt-color-36: #111827;
+  --mgmt-color-37: #000000;
+  --mgmt-color-38: #e5e7eb;
+  --mgmt-color-39: #f3f4f6;
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -26,8 +26,10 @@ export const STATUS_COLORS = {
 // ─── Couleurs accent ────────────────────────────────────────
 export const ACCENT_COLORS = {
   violet: '#8b5cf6',
+  violetLight: '#a855f7', // Pour tab "Accès Mobile"
   indigo: '#6366f1',
   cyan: '#06b6d4',
+  cyanLight: '#14b8a6', // Pour tab "Config Google"
   cyanDark: '#0891b2',
   pink: '#ec4899',
   orange: '#f97316',

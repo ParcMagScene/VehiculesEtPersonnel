@@ -48,6 +48,8 @@ export const personSchema = z
     contract_end: optDate,
     weekly_hours: optNum,
     position_id: optInt,
+    user_id: optInt,
+    driver_id: optInt,
     // ── Annuaire Personnel (étendu) ──
     country: optStr(100),
     phone_personal: optStr(30),

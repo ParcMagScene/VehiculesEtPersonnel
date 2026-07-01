@@ -327,8 +327,9 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
 
         res.json(updated);
       } catch (error) {
-        logger.error(error);
-        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+        logger.error('PUT /api/persons/:id error:', error.message, error.code);
+        const msg = error.message || 'Erreur serveur interne';
+        res.status(500).json({ success: false, error: msg, code: error.code });
       }
     },
   );

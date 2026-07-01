@@ -342,21 +342,75 @@ export const contactSchema = z
   .passthrough();
 
 // ── Middleware factory de validation Zod ──
-export function validate(schema) {
+export function validate(schemaOrConfig) {
+  // Support both: validate(schema) and validate({ params: schema, body: schema })
+  const isConfig = schemaOrConfig && typeof schemaOrConfig === 'object' && !schemaOrConfig._type;
+
+  if (!isConfig) {
+    // Legacy: single schema for body validation
+    const schema = schemaOrConfig;
+    return (req, res, next) => {
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        const zodIssues = Array.isArray(result.error?.issues)
+          ? result.error.issues
+          : Array.isArray(result.error?.errors)
+            ? result.error.errors
+            : [];
+        const errors = zodIssues.map(
+          (e) => `${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
+        );
+        return res
+          .status(400)
+          .json({ success: false, error: 'Données invalides', details: errors });
+      }
+      req.body = result.data;
+      next();
+    };
+  }
+
+  // New: object config with { params, body }
   return (req, res, next) => {
-    const result = schema.safeParse(req.body);
-    if (!result.success) {
-      const zodIssues = Array.isArray(result.error?.issues)
-        ? result.error.issues
-        : Array.isArray(result.error?.errors)
-          ? result.error.errors
-          : [];
-      const errors = zodIssues.map(
-        (e) => `${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
-      );
-      return res.status(400).json({ success: false, error: 'Données invalides', details: errors });
+    const { params: paramsSchema, body: bodySchema } = schemaOrConfig;
+
+    // Validate params if schema provided
+    if (paramsSchema) {
+      const paramsResult = paramsSchema.safeParse(req.params);
+      if (!paramsResult.success) {
+        const zodIssues = Array.isArray(paramsResult.error?.issues)
+          ? paramsResult.error.issues
+          : Array.isArray(paramsResult.error?.errors)
+            ? paramsResult.error.errors
+            : [];
+        const errors = zodIssues.map(
+          (e) => `params.${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
+        );
+        return res
+          .status(400)
+          .json({ success: false, error: 'Paramètres invalides', details: errors });
+      }
+      req.params = paramsResult.data;
     }
-    req.body = result.data;
+
+    // Validate body if schema provided
+    if (bodySchema) {
+      const bodyResult = bodySchema.safeParse(req.body);
+      if (!bodyResult.success) {
+        const zodIssues = Array.isArray(bodyResult.error?.issues)
+          ? bodyResult.error.issues
+          : Array.isArray(bodyResult.error?.errors)
+            ? bodyResult.error.errors
+            : [];
+        const errors = zodIssues.map(
+          (e) => `${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
+        );
+        return res
+          .status(400)
+          .json({ success: false, error: 'Données invalides', details: errors });
+      }
+      req.body = bodyResult.data;
+    }
+
     next();
   };
 }

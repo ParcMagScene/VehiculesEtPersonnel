@@ -29,8 +29,8 @@ export const PlanningHeader = ({
   const viewOptions = ['week', 'month', 'year'];
 
   return (
-    <div className="pp-header">
-      <div className="pp-header-left">
+    <div className="pp-planning-header">
+      <div className="pp-planning-header-left">
         {/* Navigation buttons */}
         <Button variant="ghost" size="sm" onClick={goToPrevious}>
           <ChevronLeft size={16} />
@@ -59,7 +59,7 @@ export const PlanningHeader = ({
         </Button>
       </div>
 
-      <div className="pp-header-right">
+      <div className="pp-planning-header-right">
         {/* View toggle buttons */}
         {viewOptions.map((v) => (
           <Button

@@ -70,9 +70,8 @@ export const PersonnelPlanningEditModal = ({
 }) => {
   const [editForm, setEditForm] = useState(() => createFormFromPerson(person));
 
-  // IMPORTANT: Quand le person prop change, mise à jour du formulaire
+  // Quand le person prop change, mise à jour du formulaire
   useEffect(() => {
-    console.log('[PersonnelEditModal] person prop changed:', person);
     setEditForm(createFormFromPerson(person));
   }, [person?.id, open]);
 

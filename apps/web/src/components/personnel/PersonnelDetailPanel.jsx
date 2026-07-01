@@ -86,17 +86,6 @@ const LEAVE_APPROVAL_COLORS = {
 };
 
 const PersonnelDetailContent = ({ person, positions = [], _skills = [], onRequestLeave }) => {
-  // DEBUG
-  console.log('[PersonnelDetailContent] person prop:', person);
-  if (person) {
-    console.log('[PersonnelDetailContent] person.id:', person.id);
-    console.log('[PersonnelDetailContent] person.firstName:', person.firstName);
-    console.log('[PersonnelDetailContent] person.first_name:', person.first_name);
-    console.log('[PersonnelDetailContent] person.phone:', person.phone);
-    console.log('[PersonnelDetailContent] person.email:', person.email);
-    console.log('[PersonnelDetailContent] person keys:', Object.keys(person));
-  }
-
   if (!person || !person.id) {
     return (
       <div className="pdp-section" style={{ textAlign: 'center', padding: '20px' }}>
@@ -358,24 +347,15 @@ const PersonnelSlidePanel = ({
   onEdit,
   onRequestLeave,
 }) => {
-  // DEBUG
-  console.log('[PersonnelSlidePanel] person prop:', person);
-
   const currentPerson = person || {};
   const firstName = currentPerson.firstName || currentPerson.first_name || '';
   const lastName = currentPerson.lastName || currentPerson.last_name || '';
   const fullName = (firstName + ' ' + lastName).trim() || 'Personnel';
 
-  console.log('[PersonnelSlidePanel] currentPerson:', currentPerson);
-  console.log('[PersonnelSlidePanel] fullName:', fullName);
-
   return (
     <Drawer
       open={!!person}
       onClose={onClose}
-      side="right"
-      width={420}
-      inline
       overlay={false}
       className="personnel-slide-panel"
       icon={<Avatar name={fullName} size="xs" />}

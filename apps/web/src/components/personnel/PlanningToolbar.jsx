@@ -15,10 +15,7 @@ export const PlanningToolbar = ({
   filteredCount,
   totalCount,
 }) => {
-  const typeOptions = [
-    { value: '', label: 'Tous les types' },
-    ...Object.entries(PERSON_TYPES).map(([key, label]) => ({ value: key, label })),
-  ];
+  const typeOptions = [{ value: '', label: 'Tous les types' }, ...PERSON_TYPES];
 
   return (
     <div className="pp-toolbar">

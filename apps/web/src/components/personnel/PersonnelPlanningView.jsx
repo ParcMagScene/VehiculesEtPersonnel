@@ -1067,6 +1067,9 @@ export const PlanningTab = ({
                         if (clickTimerRef.current) return;
                         clickTimerRef.current = setTimeout(() => {
                           clickTimerRef.current = null;
+                          console.log('[PPV-permanents] Clicked person:', person);
+                          console.log('[PPV-permanents] person.id:', person?.id);
+                          console.log('[PPV-permanents] person.firstName:', person?.firstName);
                           setSelectedPersonForDetails(person);
                         }, 250);
                       }}

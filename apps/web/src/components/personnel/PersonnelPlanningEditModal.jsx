@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Check, Save, User } from 'lucide-react';
 
 import { Button, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
@@ -15,6 +15,50 @@ import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import PhoneInput from '../PhoneInput';
 
+const createFormFromPerson = (person) => {
+  if (!person) {
+    return {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      type: 'permanent',
+      contractType: '',
+      userId: null,
+      status: STATUS.ACTIVE,
+      notes: '',
+      skills: [],
+      defaultPositions: [],
+      showInPlanning: true,
+    };
+  }
+
+  return {
+    firstName: person.firstName || person.first_name || '',
+    lastName: person.lastName || person.last_name || '',
+    email: person.email || '',
+    phone: person.phone || '',
+    type: person.type || 'permanent',
+    contractType: person.contractType || person.contract_type || '',
+    userId: person.userId || person.user_id || null,
+    status: person.status || 'active',
+    notes: person.notes || '',
+    showInPlanning: person.show_in_planning !== 0 && person.showInPlanning !== false,
+    skills: (person.skills || []).map((s) => ({
+      skillId: s.skillId || s.skill_id,
+      level: s.level || 'intermédiaire',
+    })),
+    defaultPositions: (() => {
+      try {
+        const raw = person.defaultPositions || person.default_positions;
+        return raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
+      } catch {
+        return [];
+      }
+    })(),
+  };
+};
+
 export const PersonnelPlanningEditModal = ({
   open,
   onClose,
@@ -24,67 +68,18 @@ export const PersonnelPlanningEditModal = ({
   onSuccess,
   onError,
 }) => {
-  const [editForm, setEditForm] = useState(
-    person
-      ? {
-          firstName: person.firstName || '',
-          lastName: person.lastName || '',
-          email: person.email || '',
-          phone: person.phone || '',
-          type: person.type || 'permanent',
-          contractType: person.contractType || '',
-          userId: person.userId || null,
-          status: person.status || 'active',
-          notes: person.notes || '',
-          showInPlanning: person.show_in_planning !== 0 && person.showInPlanning !== false,
-          skills: (person.skills || []).map((s) => ({
-            skillId: s.skillId || s.skill_id,
-            level: s.level || 'intermédiaire',
-          })),
-          defaultPositions: (() => {
-            try {
-              const raw = person.defaultPositions || person.default_positions;
-              return raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : [];
-            } catch {
-              return [];
-            }
-          })(),
-        }
-      : {
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          type: 'permanent',
-          contractType: '',
-          userId: null,
-          status: STATUS.ACTIVE,
-          notes: '',
-          skills: [],
-          defaultPositions: [],
-          showInPlanning: true,
-        },
-  );
+  const [editForm, setEditForm] = useState(() => createFormFromPerson(person));
+
+  // IMPORTANT: Quand le person prop change, mise à jour du formulaire
+  useEffect(() => {
+    console.log('[PersonnelEditModal] person prop changed:', person);
+    setEditForm(createFormFromPerson(person));
+  }, [person?.id, open]);
 
   const [submitting, setSubmitting] = useState(false);
 
   const resetForm = () => {
-    if (!person) {
-      setEditForm({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        type: 'permanent',
-        contractType: '',
-        userId: null,
-        status: STATUS.ACTIVE,
-        notes: '',
-        skills: [],
-        defaultPositions: [],
-        showInPlanning: true,
-      });
-    }
+    setEditForm(createFormFromPerson(person));
     onClose();
   };
 

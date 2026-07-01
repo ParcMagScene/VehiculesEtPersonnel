@@ -178,6 +178,7 @@ export const PersonnelPlanningEditModal = ({
             <div className="form-row">
               <FormField className="form-group" label="Prénom" required>
                 <Input
+                  size="sm"
                   required
                   maxLength={100}
                   value={editForm.firstName}
@@ -187,6 +188,7 @@ export const PersonnelPlanningEditModal = ({
               </FormField>
               <FormField className="form-group" label="Nom" required>
                 <Input
+                  size="sm"
                   required
                   maxLength={100}
                   value={editForm.lastName}
@@ -198,6 +200,7 @@ export const PersonnelPlanningEditModal = ({
             <div className="form-row">
               <FormField className="form-group" label="Email">
                 <Input
+                  size="sm"
                   type="email"
                   maxLength={254}
                   value={editForm.email}
@@ -216,6 +219,7 @@ export const PersonnelPlanningEditModal = ({
             <div className="form-row">
               <FormField className="form-group" label="Catégorie">
                 <Select
+                  size="sm"
                   value={editForm.type}
                   onChange={(e) =>
                     setEditForm({
@@ -236,6 +240,7 @@ export const PersonnelPlanningEditModal = ({
               {editForm.type === 'contractuel' ? (
                 <FormField className="form-group" label="Type de contrat">
                   <Select
+                    size="sm"
                     value={editForm.contractType}
                     onChange={(e) => setEditForm({ ...editForm, contractType: e.target.value })}
                     disabled={submitting}
@@ -251,6 +256,7 @@ export const PersonnelPlanningEditModal = ({
               ) : (
                 <FormField className="form-group" label="Statut">
                   <Select
+                    size="sm"
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                     disabled={submitting}
@@ -264,6 +270,7 @@ export const PersonnelPlanningEditModal = ({
             {editForm.type === 'contractuel' && (
               <FormField className="form-group" label="Statut">
                 <Select
+                  size="sm"
                   value={editForm.status}
                   onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                   disabled={submitting}
@@ -275,6 +282,7 @@ export const PersonnelPlanningEditModal = ({
             )}
             <FormField className="form-group" label="Notes">
               <Textarea
+                size="sm"
                 rows={2}
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
@@ -315,6 +323,7 @@ export const PersonnelPlanningEditModal = ({
                       </Button>
                       {selected && (
                         <Select
+                          size="sm"
                           className="skill-level-select"
                           value={selected.level}
                           onChange={(e) => updateEditSkillLevel(skill.id, e.target.value)}

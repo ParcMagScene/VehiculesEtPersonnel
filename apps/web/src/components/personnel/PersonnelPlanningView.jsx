@@ -16,18 +16,7 @@ import {
   startOfYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import {
-  CalendarDays,
-  CalendarOff,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Filter,
-  Plus,
-  Star,
-  Trash2,
-} from 'lucide-react';
+import { CalendarDays, CalendarOff, Check, Clock, Plus, Star, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, EmptyState, Input, SearchBar, Select, Textarea, Tooltip } from '@/design-system';
@@ -40,10 +29,7 @@ import { useToast } from '../../hooks/useToast';
 import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
 import { computeGridColumnsCss } from '../../utils/planningGridColumns';
-import MonthSelector from '../MonthSelector';
 import PeriodCalendarModal from '../planning/PeriodCalendarModal';
-import WeekSelector from '../WeekSelector';
-import YearSelector from '../YearSelector';
 import AssignmentDialog from './AssignmentDialog';
 import PersonnelAgenda from './PersonnelAgenda';
 import {
@@ -58,6 +44,8 @@ import LeaveRequestForm from '../leaves/LeaveRequestForm';
 import LeaveValidationPanel from '../leaves/LeaveValidationPanel';
 import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
 import useDragHandlers from './useDragHandlers';
+import { PlanningHeader } from './PlanningHeader';
+import { PlanningToolbar } from './PlanningToolbar';
 
 // ═══════════════════════════════════════
 // Personnel Planning View (extracted from PlanningTab)
@@ -909,82 +897,32 @@ export const PlanningTab = ({
     <div className="personnel-tab-content planning-full">
       <div className="pp-planning-toolbar">
         {setView && setCurrentDate && (
-          <div className="cal-nav-toolbar pp-nav-toolbar">
-            <div className="cal-nav-views">
-              <Button
-                variant="ghost"
-                className={`cal-nav-view-btn ${view === 'week' ? 'active' : ''}`}
-                onClick={() => setView('week')}
-              >
-                Semaine
-              </Button>
-              <Button
-                variant="ghost"
-                className={`cal-nav-view-btn ${view === 'month' ? 'active' : ''}`}
-                onClick={() => setView('month')}
-              >
-                Mois
-              </Button>
-            </div>
-            <div className="cal-nav-date">
-              <Button
-                variant="ghost"
-                className="cal-nav-btn"
-                onClick={goToPrevious}
-                aria-label="Mois précédent"
-              >
-                <ChevronLeft size={18} />
-              </Button>
-              <Button
-                variant="ghost"
-                className={`cal-nav-btn cal-nav-today ${ppShowTodayHighlight ? 'highlight' : ''}`}
-                onClick={goToToday}
-              >
-                Aujourd'hui
-              </Button>
-              <Button
-                variant="ghost"
-                className="cal-nav-btn"
-                onClick={goToNext}
-                aria-label="Mois suivant"
-              >
-                <ChevronRight size={18} />
-              </Button>
-              <span
-                className="cal-nav-label clickable"
-                onClick={() => {
-                  if (view === 'month') setShowMonthSelector(true);
-                  if (view === 'week') setShowWeekSelector(true);
-                  if (view === 'year') setShowYearSelector(true);
-                }}
-                title={
-                  view === 'month'
-                    ? 'Sélectionner un mois'
-                    : view === 'week'
-                      ? 'Sélectionner une semaine'
-                      : 'Sélectionner une année'
-                }
-              >
-                {getDateLabel()}
-              </span>
-            </div>
-          </div>
+          <PlanningHeader
+            view={view}
+            setView={setView}
+            currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
+            getDateLabel={getDateLabel}
+            ppShowTodayHighlight={ppShowTodayHighlight}
+            goToPrevious={goToPrevious}
+            goToNext={goToNext}
+            goToToday={goToToday}
+            showMonthSelector={showMonthSelector}
+            setShowMonthSelector={setShowMonthSelector}
+            showWeekSelector={showWeekSelector}
+            setShowWeekSelector={setShowWeekSelector}
+            showYearSelector={showYearSelector}
+            setShowYearSelector={setShowYearSelector}
+          />
         )}
-        <div className="pp-planning-filters">
-          <Filter size={14} />
-          <Select
-            value={planningFilter}
-            onChange={(e) => setPlanningFilter(e.target.value)}
-            className="pp-planning-filter-select"
-          >
-            <option value="">Tous les types</option>
-            {PERSON_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <PlanningToolbar
+          planningSearch={planningSearch}
+          setPlanningSearch={setPlanningSearch}
+          planningFilter={planningFilter}
+          setPlanningFilter={setPlanningFilter}
+          filteredCount={filteredPersons.length}
+          totalCount={persons.length}
+        />
       </div>
 
       {googleBanner}
@@ -1530,37 +1468,6 @@ export const PlanningTab = ({
           isAdmin={false}
           onClose={() => setPeriodCalendar(null)}
           onCreated={() => loadPlanning()}
-        />
-      )}
-
-      {showMonthSelector && (
-        <MonthSelector
-          currentDate={currentDate}
-          onSelectMonth={(date) => {
-            setCurrentDate(date);
-            setShowMonthSelector(false);
-          }}
-          onClose={() => setShowMonthSelector(false)}
-        />
-      )}
-      {showWeekSelector && (
-        <WeekSelector
-          currentDate={currentDate}
-          onSelectWeek={(date) => {
-            setCurrentDate(date);
-            setShowWeekSelector(false);
-          }}
-          onClose={() => setShowWeekSelector(false)}
-        />
-      )}
-      {showYearSelector && (
-        <YearSelector
-          currentDate={currentDate}
-          onSelectYear={(date) => {
-            setCurrentDate(date);
-            setShowYearSelector(false);
-          }}
-          onClose={() => setShowYearSelector(false)}
         />
       )}
     </div>

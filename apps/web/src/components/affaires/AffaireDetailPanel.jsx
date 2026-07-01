@@ -1897,18 +1897,16 @@ const AffaireDetailContent = ({
               {linkSearchResults.length > 0 && (
                 <div className="link-search-results">
                   {linkSearchResults.map((a) => (
-                    <div
+                    <button
+                      type="button"
                       key={a.id}
                       className="link-search-item"
-                      role="button"
-                      tabIndex={0}
                       onClick={() => handleAddLink(a.id)}
-                      onKeyDown={(e) => triggerOnEnterSpace(e, () => handleAddLink(a.id))}
                     >
                       <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                       <span className="link-search-client">{a.client || '—'}</span>
                       <span className="link-search-title">{a.titre || a.eventName || ''}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

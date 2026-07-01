@@ -1,7 +1,7 @@
 import { Check, Link2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, Input, ModalLayout, Select, Textarea } from '@/design-system';
+import { Button, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
@@ -154,8 +154,7 @@ export const PersonnelFormModal = ({
       >
         <form id="person-form" onSubmit={handleSubmit} className="eq-modal-body">
           <div className="eq-form-grid">
-            <div className="eq-form-field">
-              <label>Prénom *</label>
+            <FormField className="eq-form-field" label="Prénom" required>
               <Input
                 type="text"
                 required
@@ -164,9 +163,8 @@ export const PersonnelFormModal = ({
                 onChange={(e) => setForm({ ...form, firstName: e.target.value })}
                 autoFocus
               />
-            </div>
-            <div className="eq-form-field">
-              <label>Nom *</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Nom" required>
               <Input
                 type="text"
                 required
@@ -174,22 +172,19 @@ export const PersonnelFormModal = ({
                 value={form.lastName}
                 onChange={(e) => setForm({ ...form, lastName: e.target.value })}
               />
-            </div>
-            <div className="eq-form-field">
-              <label>Email</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Email">
               <Input
                 type="email"
                 maxLength={254}
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
-            </div>
-            <div className="eq-form-field">
-              <label>Téléphone</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Téléphone">
               <PhoneInput value={form.phone} onChange={(val) => setForm({ ...form, phone: val })} />
-            </div>
-            <div className="eq-form-field">
-              <label>Catégorie</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Catégorie">
               <Select
                 value={form.type}
                 onChange={(e) =>
@@ -206,10 +201,9 @@ export const PersonnelFormModal = ({
                   </option>
                 ))}
               </Select>
-            </div>
+            </FormField>
             {form.type === 'contractuel' && (
-              <div className="eq-form-field">
-                <label>Type de contrat</label>
+              <FormField className="eq-form-field" label="Type de contrat">
                 <Select
                   value={form.contractType}
                   onChange={(e) => setForm({ ...form, contractType: e.target.value })}
@@ -221,10 +215,9 @@ export const PersonnelFormModal = ({
                     </option>
                   ))}
                 </Select>
-              </div>
+              </FormField>
             )}
-            <div className="eq-form-field">
-              <label>Statut</label>
+            <FormField className="eq-form-field" label="Statut">
               <Select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -232,11 +225,15 @@ export const PersonnelFormModal = ({
                 <option value="active">Actif</option>
                 <option value="inactive">Inactif</option>
               </Select>
-            </div>
-            <div className="eq-form-field">
-              <label>
-                <Link2 size={14} /> Compte utilisateur
-              </label>
+            </FormField>
+            <FormField
+              className="eq-form-field"
+              label={
+                <>
+                  <Link2 size={14} /> Compte utilisateur
+                </>
+              }
+            >
               <Select
                 value={form.userId || ''}
                 onChange={(e) => setForm({ ...form, userId: e.target.value || null })}
@@ -248,15 +245,14 @@ export const PersonnelFormModal = ({
                   </option>
                 ))}
               </Select>
-            </div>
-            <div className="eq-form-field eq-form-full">
-              <label>Notes</label>
+            </FormField>
+            <FormField className="eq-form-field eq-form-full" label="Notes">
               <Textarea
                 rows={2}
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
-            </div>
+            </FormField>
 
             {/* Annuaire — coordonnées étendues + contact d'urgence (+ RH si admin) */}
             <div className="eq-form-field eq-form-full">
@@ -272,68 +268,60 @@ export const PersonnelFormModal = ({
             </div>
             {showAnnuaire && (
               <>
-                <div className="eq-form-field eq-form-full">
-                  <label>Adresse</label>
+                <FormField className="eq-form-field eq-form-full" label="Adresse">
                   <Input
                     type="text"
                     maxLength={500}
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Code postal</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Code postal">
                   <Input
                     type="text"
                     maxLength={10}
                     value={form.postalCode}
                     onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Ville</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Ville">
                   <Input
                     type="text"
                     maxLength={100}
                     value={form.city}
                     onChange={(e) => setForm({ ...form, city: e.target.value })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Pays</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Pays">
                   <Input
                     type="text"
                     maxLength={100}
                     value={form.country}
                     onChange={(e) => setForm({ ...form, country: e.target.value })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Date de naissance</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Date de naissance">
                   <Input
                     type="date"
                     value={form.birthDate || ''}
                     onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Téléphone personnel</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Téléphone personnel">
                   <PhoneInput
                     value={form.phonePersonal}
                     onChange={(val) => setForm({ ...form, phonePersonal: val })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Email personnel</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Email personnel">
                   <Input
                     type="email"
                     maxLength={254}
                     value={form.personalEmail}
                     onChange={(e) => setForm({ ...form, personalEmail: e.target.value })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>LinkedIn</label>
+                </FormField>
+                <FormField className="eq-form-field" label="LinkedIn">
                   <Input
                     type="url"
                     maxLength={500}
@@ -341,25 +329,22 @@ export const PersonnelFormModal = ({
                     value={form.linkedinUrl}
                     onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Contact d'urgence — Nom</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Contact d'urgence — Nom">
                   <Input
                     type="text"
                     maxLength={255}
                     value={form.emergencyContactName}
                     onChange={(e) => setForm({ ...form, emergencyContactName: e.target.value })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Contact d'urgence — Téléphone</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Contact d'urgence — Téléphone">
                   <PhoneInput
                     value={form.emergencyContactPhone}
                     onChange={(val) => setForm({ ...form, emergencyContactPhone: val })}
                   />
-                </div>
-                <div className="eq-form-field">
-                  <label>Contact d'urgence — Lien</label>
+                </FormField>
+                <FormField className="eq-form-field" label="Contact d'urgence — Lien">
                   <Input
                     type="text"
                     maxLength={100}
@@ -367,11 +352,13 @@ export const PersonnelFormModal = ({
                     value={form.emergencyContactRelation}
                     onChange={(e) => setForm({ ...form, emergencyContactRelation: e.target.value })}
                   />
-                </div>
+                </FormField>
                 {isAdmin && (
                   <>
-                    <div className="eq-form-field eq-form-full">
-                      <label>🔒 N° Sécurité sociale (admin)</label>
+                    <FormField
+                      className="eq-form-field eq-form-full"
+                      label="🔒 N° Sécurité sociale (admin)"
+                    >
                       <Input
                         type="text"
                         maxLength={30}
@@ -379,9 +366,8 @@ export const PersonnelFormModal = ({
                         value={form.socialSecurityNumber}
                         onChange={(e) => setForm({ ...form, socialSecurityNumber: e.target.value })}
                       />
-                    </div>
-                    <div className="eq-form-field eq-form-full">
-                      <label>🔒 IBAN (admin)</label>
+                    </FormField>
+                    <FormField className="eq-form-field eq-form-full" label="🔒 IBAN (admin)">
                       <Input
                         type="text"
                         maxLength={40}
@@ -389,15 +375,14 @@ export const PersonnelFormModal = ({
                         value={form.iban}
                         onChange={(e) => setForm({ ...form, iban: e.target.value })}
                       />
-                    </div>
-                    <div className="eq-form-field eq-form-full">
-                      <label>🔒 Notes RH (admin)</label>
+                    </FormField>
+                    <FormField className="eq-form-field eq-form-full" label="🔒 Notes RH (admin)">
                       <Textarea
                         rows={3}
                         value={form.hrNotes}
                         onChange={(e) => setForm({ ...form, hrNotes: e.target.value })}
                       />
-                    </div>
+                    </FormField>
                   </>
                 )}
               </>
@@ -405,7 +390,7 @@ export const PersonnelFormModal = ({
 
             {/* Compétences */}
             <div className="eq-form-field eq-form-full">
-              <label>Compétences</label>
+              <div className="ui-form-label">Compétences</div>
               <div className="skills-selector">
                 {skills.map((skill) => {
                   const selected = form.skills.find((s) => s.skillId === skill.id);
@@ -444,7 +429,7 @@ export const PersonnelFormModal = ({
 
             {/* Postes habituels */}
             <div className="eq-form-field eq-form-full">
-              <label>Postes habituels</label>
+              <div className="ui-form-label">Postes habituels</div>
               <div className="skills-selector">
                 {positions.map((pos) => {
                   const selected = form.defaultPositions.includes(pos.name);

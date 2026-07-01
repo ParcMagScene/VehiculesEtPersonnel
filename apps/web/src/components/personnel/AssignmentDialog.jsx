@@ -24,12 +24,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Dialog,
+  FormField,
   InlineAlert,
   Input,
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Select,
   Spinner,
   Textarea,
 } from '@/design-system';
@@ -56,6 +58,12 @@ const POSITION_CATEGORIES = [
   { value: 'production', label: 'Production', color: '#78716c' },
   { value: 'autre', label: 'Autre', color: 'var(--theme-text-gray)' },
 ];
+
+function triggerOnEnterSpace(event, callback) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  callback();
+}
 
 /** Composant autonome : sélecteur multi-postes avec dropdown */
 const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }) => {
@@ -95,15 +103,21 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
 
   return (
     <div className="asd-field asd-position-selector" ref={containerRef}>
-      <label>
+      <div className="asd-field-label">
         Poste(s) occupé(s)
         {selectedPositions.length > 0 && (
           <span className="asd-count-badge">{selectedPositions.length}</span>
         )}
-      </label>
+      </div>
 
       {/* Zone cliquable : affiche les postes sélectionnés ou placeholder */}
-      <div className="asd-position-trigger" onClick={() => setOpen((prev) => !prev)}>
+      <div
+        className="asd-position-trigger"
+        onClick={() => setOpen((prev) => !prev)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => triggerOnEnterSpace(e, () => setOpen((prev) => !prev))}
+      >
         {selectedPositions.length === 0 ? (
           <span className="asd-position-placeholder">Choisir un ou plusieurs postes…</span>
         ) : (
@@ -120,15 +134,17 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
                   style={{ borderColor: catColor, color: catColor }}
                 >
                   {name}
-                  <span
+                  <button
+                    type="button"
                     className="asd-position-tag-remove"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggle(name);
                     }}
+                    aria-label={`Retirer le poste ${name}`}
                   >
                     ×
-                  </span>
+                  </button>
                 </span>
               );
             })}
@@ -171,6 +187,10 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
                       key={`c-${p.id}`}
                       className={`asd-position-item${checked ? ' selected' : ''}`}
                       onClick={() => toggle(p.name)}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={checked}
+                      onKeyDown={(e) => triggerOnEnterSpace(e, () => toggle(p.name))}
                     >
                       <span className="asd-position-check">{checked ? '✓' : ''}</span>
                       <span className="asd-position-dot" style={{ background: catColor }} />
@@ -196,6 +216,10 @@ const PositionSelector = ({ positions, selectedPositions, setSelectedPositions }
                         key={p.id}
                         className={`asd-position-item${checked ? ' selected' : ''}`}
                         onClick={() => toggle(p.name)}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={checked}
+                        onKeyDown={(e) => triggerOnEnterSpace(e, () => toggle(p.name))}
                       >
                         <span className="asd-position-check">{checked ? '✓' : ''}</span>
                         <span className="asd-position-dot" style={{ background: cat.color }} />
@@ -936,6 +960,11 @@ const AssignmentDialog = ({
                 <div
                   className="asd-person-badge asd-person-selectable"
                   onClick={() => setShowPersonDropdown(!showPersonDropdown)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) =>
+                    triggerOnEnterSpace(e, () => setShowPersonDropdown(!showPersonDropdown))
+                  }
                 >
                   <span className="asd-person-name">
                     {selectedPerson.firstName} {selectedPerson.lastName}
@@ -965,6 +994,15 @@ const AssignmentDialog = ({
                             setShowPersonDropdown(false);
                             setPersonSearch('');
                           }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) =>
+                            triggerOnEnterSpace(e, () => {
+                              setSelectedPersonId(p.id);
+                              setShowPersonDropdown(false);
+                              setPersonSearch('');
+                            })
+                          }
                         >
                           <span
                             className={`asd-person-fav-icon${isFavorite(p.id) ? ' active' : ''}`}
@@ -1078,6 +1116,14 @@ const AssignmentDialog = ({
                                 setAdditionalPersonIds((prev) => [...prev, p.id]);
                                 setAddPersonSearch('');
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) =>
+                                triggerOnEnterSpace(e, () => {
+                                  setAdditionalPersonIds((prev) => [...prev, p.id]);
+                                  setAddPersonSearch('');
+                                })
+                              }
                             >
                               <span
                                 className={`asd-person-fav-icon${isFavorite(p.id) ? ' active' : ''}`}
@@ -1184,6 +1230,17 @@ const AssignmentDialog = ({
                               source: 'free',
                             })
                           }
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) =>
+                            triggerOnEnterSpace(e, () =>
+                              selectAffaire({
+                                numeroAffaire: '',
+                                titre: affaireSearch.trim(),
+                                source: 'free',
+                              }),
+                            )
+                          }
                           style={{
                             borderBottom: '1px solid var(--theme-border)',
                             fontStyle: 'italic',
@@ -1211,6 +1268,9 @@ const AssignmentDialog = ({
                             key={a.id || a.numeroAffaire}
                             className={`asd-affaire-option ${a._overlaps ? 'overlaps' : 'no-overlap'}`}
                             onClick={() => selectAffaire(a)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => triggerOnEnterSpace(e, () => selectAffaire(a))}
                           >
                             <div className="asd-affaire-opt-left">
                               <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
@@ -1250,30 +1310,26 @@ const AssignmentDialog = ({
               <span>Dates & Horaires</span>
             </div>
             <div className="asd-dates-grid">
-              <div className="asd-field">
-                <label>Début</label>
+              <FormField className="asd-field" label="Début">
                 <Input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
-              </div>
-              <div className="asd-field">
-                <label>Fin</label>
+              </FormField>
+              <FormField className="asd-field" label="Fin">
                 <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-              </div>
-              <div className="asd-field">
-                <label>Heure début</label>
+              </FormField>
+              <FormField className="asd-field" label="Heure début">
                 <Input
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
                 />
-              </div>
-              <div className="asd-field">
-                <label>Heure fin</label>
+              </FormField>
+              <FormField className="asd-field" label="Heure fin">
                 <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-              </div>
+              </FormField>
             </div>
           </div>
 
@@ -1323,6 +1379,10 @@ const AssignmentDialog = ({
                       key={key}
                       className={`asd-day-cell ${isOff ? 'off' : 'on'} ${weekend ? 'weekend' : ''} ${today ? 'today' : ''}`}
                       onClick={() => toggleDayState(key)}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={!isOff}
+                      onKeyDown={(e) => triggerOnEnterSpace(e, () => toggleDayState(key))}
                       title={`${format(d, 'EEEE d MMMM', { locale: fr })} — ${isOff ? 'OFF' : 'ON'}`}
                     >
                       <span className="asd-day-label">{format(d, 'EEE', { locale: fr })}</span>
@@ -1350,7 +1410,7 @@ const AssignmentDialog = ({
                 setSelectedPositions={setSelectedPositions}
               />
               <div className="asd-field">
-                <label>Compétences requises</label>
+                <div className="asd-field-label">Compétences requises</div>
                 <div className="asd-skills-multi">
                   {Object.entries(skillsByCategory).map(([cat, catSkills]) => {
                     const catInfo = SKILL_CATEGORIES.find((c) => c.value === cat);
@@ -1376,6 +1436,18 @@ const AssignmentDialog = ({
                                       : [...prev, s.id],
                                   );
                                 }}
+                                role="button"
+                                tabIndex={0}
+                                aria-pressed={checked}
+                                onKeyDown={(e) =>
+                                  triggerOnEnterSpace(e, () => {
+                                    setSelectedSkillIds((prev) =>
+                                      prev.includes(s.id)
+                                        ? prev.filter((id) => id !== s.id)
+                                        : [...prev, s.id],
+                                    );
+                                  })
+                                }
                               >
                                 {checked && <Check size={10} />}
                                 <span className="asd-skill-check-name">{s.name}</span>
@@ -1402,7 +1474,7 @@ const AssignmentDialog = ({
             </div>
             <div className="asd-status-grid">
               <div className="asd-field">
-                <label>Statut de l'affectation</label>
+                <div className="asd-field-label">Statut de l'affectation</div>
                 <div className="asd-status-options">
                   {[
                     { value: 'confirmed', label: 'Confirmé', color: STATUS_COLORS.success },
@@ -1422,15 +1494,14 @@ const AssignmentDialog = ({
                   ))}
                 </div>
               </div>
-              <div className="asd-field">
-                <label>Notes</label>
+              <FormField className="asd-field" label="Notes">
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Notes de mission…"
                   rows={2}
                 />
-              </div>
+              </FormField>
             </div>
           </div>
 

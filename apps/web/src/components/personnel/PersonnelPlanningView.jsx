@@ -72,6 +72,12 @@ export const PlanningTab = ({
   onOpenSuivi,
   googleBanner = null,
 }) => {
+  const triggerOnEnterSpace = useCallback((event, callback) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    callback();
+  }, []);
+
   const toast = useToast();
   const { confirm: confirmDelete, ConfirmDialogRenderer: DeleteConfirmRenderer } =
     useConfirmDialog();
@@ -642,6 +648,8 @@ export const PlanningTab = ({
             <div
               key={slotIndex}
               className={`pp-slot${weekend ? ' weekend' : ''}${todayCls}${isCovered && !isOriginalBeingMoved ? ' has-assignment' : ''}${isHovered ? ' pp-cell-hovered' : ''}${isDragSel ? ' pp-drag-selected' : ''}${hasBlockingAbsence ? ' pp-slot-absence' : ''}`}
+              role={!isCovered && !isFullAbsence && view !== 'year' ? 'button' : undefined}
+              tabIndex={!isCovered && !isFullAbsence && view !== 'year' ? 0 : undefined}
               onMouseDown={(e) =>
                 !isCovered &&
                 !isFullAbsence &&
@@ -673,6 +681,19 @@ export const PlanningTab = ({
                   : undefined;
                 handleSlotClick(person, slot.day, slotIndex, period);
               }}
+              onKeyDown={(e) =>
+                !isCovered &&
+                !isFullAbsence &&
+                view !== 'year' &&
+                triggerOnEnterSpace(e, () => {
+                  const period = hasBlockingAbsence
+                    ? absence.period === 'AM'
+                      ? 'PM'
+                      : 'AM'
+                    : undefined;
+                  handleSlotClick(person, slot.day, slotIndex, period);
+                })
+              }
               data-emag-tooltip={
                 isHovered && !anyDragActive
                   ? hasAbsence
@@ -764,6 +785,8 @@ export const PlanningTab = ({
     return (
       <div
         className={`pp-assignment-block${spanHere.clippedLeft ? ' clipped-left' : ''}${spanHere.clippedRight ? ' clipped-right' : ''}${isGhost ? ' pp-ghost' : ''}`}
+        role={!isGhost ? 'button' : undefined}
+        tabIndex={!isGhost ? 0 : undefined}
         style={{
           backgroundColor: 'transparent',
           '--indicator-color': getStatusColor(assignStatus),
@@ -790,6 +813,17 @@ export const PlanningTab = ({
             editMission: spanHere,
           });
         }}
+        onKeyDown={(e) =>
+          !isGhost &&
+          triggerOnEnterSpace(e, () =>
+            setAssignmentDialog({
+              person,
+              day: days[slotIndex],
+              period: 'AM',
+              editMission: spanHere,
+            }),
+          )
+        }
       >
         <div className="pp-assignment-days">
           {Array.from({ length: spanHere.slotCount }, (_, i) => {
@@ -846,6 +880,8 @@ export const PlanningTab = ({
             {view !== 'year' && !spanHere.clippedLeft && (
               <div
                 className="pp-resize-handle pp-resize-handle-start"
+                role="separator"
+                aria-orientation="horizontal"
                 onMouseDown={(e) => dragHandlers.handleResizeStart(e, spanHere, person, 'start')}
                 title="Glisser pour modifier le début"
               />
@@ -853,6 +889,8 @@ export const PlanningTab = ({
             {view !== 'year' && !spanHere.clippedRight && (
               <div
                 className="pp-resize-handle pp-resize-handle-end"
+                role="separator"
+                aria-orientation="horizontal"
                 onMouseDown={(e) => dragHandlers.handleResizeStart(e, spanHere, person, 'end')}
                 title="Glisser pour modifier la fin"
               />
@@ -1037,8 +1075,10 @@ export const PlanningTab = ({
                 ref={personColumnRef}
                 style={{ width: personColumnWidth }}
               >
-                <div
+                <button
+                  type="button"
                   className="pp-column-resize-handle"
+                  aria-label="Redimensionner la colonne du personnel"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     const startX = e.clientX;
@@ -1057,12 +1097,20 @@ export const PlanningTab = ({
                     document.addEventListener('mousemove', onMove);
                     document.addEventListener('mouseup', onUp);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                    e.preventDefault();
+                    const delta = e.key === 'ArrowLeft' ? -16 : 16;
+                    setPersonColumnWidth((width) => Math.max(150, Math.min(420, width + delta)));
+                  }}
                 />
                 {!collapsedSections.permanents &&
                   permanents.map((person) => (
                     <div
                       key={person.id}
                       className={`pp-person-cell u-cursor-pointer${isHovered?.personId === person.id ? ' pp-row-hovered' : ''}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         if (clickTimerRef.current) return;
                         clickTimerRef.current = setTimeout(() => {
@@ -1078,6 +1126,9 @@ export const PlanningTab = ({
                         }
                         onPersonEdit && onPersonEdit(person);
                       }}
+                      onKeyDown={(e) =>
+                        triggerOnEnterSpace(e, () => setSelectedPersonForDetails(person))
+                      }
                       onContextMenu={(e) => {
                         e.preventDefault();
                         setContextMenu({ x: e.clientX, y: e.clientY, person });
@@ -1096,9 +1147,6 @@ export const PlanningTab = ({
                       >
                         <Star size={12} fill={isFavorite(person.id) ? 'currentColor' : 'none'} />
                       </Button>
-                      <span className="pp-person-name">
-                        {person.firstName} {person.lastName || ''}
-                      </span>
                       <span className={`person-type-badge mini type-${person.type}`}>
                         {PERSON_TYPES.find((t) => t.value === person.type)?.label || person.type}
                       </span>
@@ -1127,6 +1175,8 @@ export const PlanningTab = ({
                     <div
                       key={person.id}
                       className={`pp-person-cell u-cursor-pointer pp-person-favorite${isHovered?.personId === person.id ? ' pp-row-hovered' : ''}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         if (clickTimerRef.current) return;
                         clickTimerRef.current = setTimeout(() => {
@@ -1142,6 +1192,9 @@ export const PlanningTab = ({
                         }
                         onPersonEdit && onPersonEdit(person);
                       }}
+                      onKeyDown={(e) =>
+                        triggerOnEnterSpace(e, () => setSelectedPersonForDetails(person))
+                      }
                       onContextMenu={(e) => {
                         e.preventDefault();
                         setContextMenu({ x: e.clientX, y: e.clientY, person });
@@ -1192,6 +1245,8 @@ export const PlanningTab = ({
                     <div
                       key={person.id}
                       className={`pp-person-cell u-cursor-pointer${isHovered?.personId === person.id ? ' pp-row-hovered' : ''}${isFavorite(person.id) ? ' pp-person-favorite' : ''}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         if (clickTimerRef.current) return;
                         clickTimerRef.current = setTimeout(() => {
@@ -1207,6 +1262,9 @@ export const PlanningTab = ({
                         }
                         onPersonEdit && onPersonEdit(person);
                       }}
+                      onKeyDown={(e) =>
+                        triggerOnEnterSpace(e, () => setSelectedPersonForDetails(person))
+                      }
                       onContextMenu={(e) => {
                         e.preventDefault();
                         setContextMenu({ x: e.clientX, y: e.clientY, person });
@@ -1259,6 +1317,8 @@ export const PlanningTab = ({
                     <div
                       key={person.id}
                       className={`pp-person-cell u-cursor-pointer pp-person-inactive${isHovered?.personId === person.id ? ' pp-row-hovered' : ''}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         if (clickTimerRef.current) return;
                         clickTimerRef.current = setTimeout(() => {
@@ -1274,6 +1334,9 @@ export const PlanningTab = ({
                         }
                         onPersonEdit && onPersonEdit(person);
                       }}
+                      onKeyDown={(e) =>
+                        triggerOnEnterSpace(e, () => setSelectedPersonForDetails(person))
+                      }
                       onContextMenu={(e) => {
                         e.preventDefault();
                         setContextMenu({ x: e.clientX, y: e.clientY, person });

@@ -25,12 +25,20 @@ const Card = React.forwardRef(function Card(
     .filter(Boolean)
     .join(' ');
 
+  const handleKeyDown = (event) => {
+    if (!onClick) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    onClick(event);
+  };
+
   return (
     <div
       ref={ref}
       className={cls}
       style={style}
       onClick={onClick}
+      onKeyDown={onClick ? handleKeyDown : undefined}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       {...rest}

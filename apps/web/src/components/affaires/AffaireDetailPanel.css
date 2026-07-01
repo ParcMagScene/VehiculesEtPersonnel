@@ -89,7 +89,8 @@
   grid-column: 1 / -1;
 }
 
-.detail-field label {
+.detail-field label,
+.detail-field .detail-label {
   font-size: var(--font-2xs);
   font-weight: 600;
   color: var(--theme-text-muted);
@@ -993,7 +994,8 @@
   flex-wrap: wrap;
 }
 
-.tsf-row label {
+.tsf-row label,
+.tsf-row .tsf-label {
   font-size: var(--font-sm);
   color: var(--theme-text-secondary);
   min-width: 40px;
@@ -1832,7 +1834,8 @@ select.edit-input {
   padding: var(--space-1);
 }
 
-.autocomplete-dropdown li {
+.autocomplete-dropdown li,
+.autocomplete-dropdown .autocomplete-option {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1844,7 +1847,16 @@ select.edit-input {
   transition: background 0.1s;
 }
 
-.autocomplete-dropdown li:hover {
+.autocomplete-dropdown .autocomplete-option {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.autocomplete-dropdown li:hover,
+.autocomplete-dropdown .autocomplete-option:hover,
+.autocomplete-dropdown .autocomplete-option:focus-visible {
   background: var(--theme-primary-light, var(--theme-info-bg));
 }
 

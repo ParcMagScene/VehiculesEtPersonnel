@@ -453,7 +453,8 @@
   gap: 3px;
 }
 
-.asd-field label {
+.asd-field label,
+.asd-field .asd-field-label {
   font-size: var(--font-xs);
   font-weight: 600;
   color: var(--text-subtle);

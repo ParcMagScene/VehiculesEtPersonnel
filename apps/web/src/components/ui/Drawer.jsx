@@ -1,7 +1,7 @@
 import './Drawer.css';
 
 import { X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getModalRoot, pop, push, zIndexFor } from '../../utils/modalManager';
@@ -32,6 +32,9 @@ function Drawer({
   overlay = true,
   inline = false,
   closeOnBackdrop = false,
+  ariaLabel,
+  ariaLabelledBy,
+  ariaDescribedBy,
   className = '',
   children,
 }) {
@@ -42,6 +45,9 @@ function Drawer({
   const [animating, setAnimating] = useState(false);
   const [stackToken, setStackToken] = useState(null);
   const panelRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const generatedTitleId = useId();
+  const titleId = ariaLabelledBy || generatedTitleId;
 
   /* ── Open animation ── */
   useEffect(() => {
@@ -66,6 +72,52 @@ function Drawer({
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
+
+  /* ── Focus trap + restore focus (mode overlay) ── */
+  useEffect(() => {
+    if (!open || inline) return undefined;
+    previousFocusRef.current = document.activeElement;
+
+    const focusableSelector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [role="button"], [role="link"], [role="menuitem"], [contenteditable]:not([contenteditable="false"])';
+
+    const focusFirst = () => {
+      const focusable = panelRef.current?.querySelectorAll(focusableSelector);
+      if (focusable?.length) {
+        focusable[0].focus();
+        return;
+      }
+      panelRef.current?.focus();
+    };
+
+    const timer = requestAnimationFrame(() => requestAnimationFrame(focusFirst));
+
+    const handleTrap = (e) => {
+      if (e.key !== 'Tab') return;
+      const focusable = panelRef.current?.querySelectorAll(focusableSelector);
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleTrap);
+    return () => {
+      cancelAnimationFrame(timer);
+      document.removeEventListener('keydown', handleTrap);
+      previousFocusRef.current?.focus?.();
+    };
+  }, [open, inline]);
 
   /* ── Inscription ModalManager (pile + scroll-lock unifiés) ──
    * Quand `useOverlay=false` (mode docked ou non-bloquant) : on ne pousse pas
@@ -106,13 +158,25 @@ function Drawer({
   // Mode docked ou overlay=false → fallback aux valeurs CSS d'origine.
   const z = stackToken ? zIndexFor(stackToken) : null;
 
+  const panelRole = inline ? 'complementary' : 'dialog';
+
   const panel = (
-    <aside className={cls} ref={panelRef} style={z ? { ...style, zIndex: z.dialog } : style}>
+    <aside
+      className={cls}
+      ref={panelRef}
+      style={z ? { ...style, zIndex: z.dialog } : style}
+      role={panelRole}
+      aria-modal={!inline ? 'true' : undefined}
+      aria-label={ariaLabel || undefined}
+      aria-labelledby={!ariaLabel && title ? titleId : undefined}
+      aria-describedby={ariaDescribedBy || undefined}
+      tabIndex={inline ? undefined : -1}
+    >
       {title && (
         <div className="ui-drawer-header">
           <div className="ui-drawer-title">
             {icon && <span className="ui-drawer-icon">{icon}</span>}
-            <h3>{title}</h3>
+            <h3 id={titleId}>{title}</h3>
           </div>
           <div className="ui-drawer-header-actions">
             {headerActions}

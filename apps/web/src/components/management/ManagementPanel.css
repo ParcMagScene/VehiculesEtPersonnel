@@ -474,6 +474,10 @@
   transform: scale(1.1);
 }
 
+.color-option-direct {
+  background: var(--management-color-option-bg, transparent);
+}
+
 .add-button {
   padding: 0.75rem 1.5rem;
   background: var(--btn-primary-bg);
@@ -770,6 +774,12 @@
 
 .management-field--compact {
   gap: 0.25rem;
+}
+
+.management-direct-edit {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-2) 0;
 }
 
 .edit-form input {

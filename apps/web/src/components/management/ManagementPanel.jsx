@@ -147,6 +147,8 @@ const ManagementPanel = ({
     setEditingItem({ ...initialVehicleToEdit });
   }, [initialVehicleToEdit]);
 
+  const isDirectVehicleEdit = panelType === 'management' && Boolean(initialVehicleToEdit);
+
   // State pour le plan dépôt (onglet settings)
   const [depotZones, setDepotZones] = useState(null);
   const [locationStats, setLocationStats] = useState(null);
@@ -532,6 +534,9 @@ const ManagementPanel = ({
     }
 
     setEditingItem(null);
+    if (isDirectVehicleEdit) {
+      onClose?.();
+    }
   };
 
   const handleDelete = (id) => {
@@ -778,6 +783,158 @@ const ManagementPanel = ({
       : activeModule === 'personnel'
         ? 'Gestion Personnel'
         : 'Gestion Véhicules';
+
+  if (isDirectVehicleEdit && editingItem) {
+    return (
+      <Modal open={true} onClose={onClose} size="lg" className="management-panel">
+        <ModalHeader onClose={onClose}>Modifier le véhicule</ModalHeader>
+        <ModalBody>
+          <div className="management-direct-edit">
+            <div className="edit-form">
+              <div className="management-field management-field--compact">
+                <label>Nom</label>
+                <Input
+                  type="text"
+                  value={editingItem.name}
+                  onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                  placeholder="Nom"
+                />
+              </div>
+              <div className="management-field management-field--compact">
+                <label>Catégorie</label>
+                <Input
+                  type="text"
+                  value={editingItem.type || editingItem.category || ''}
+                  onChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      type: e.target.value,
+                      category: e.target.value,
+                    })
+                  }
+                  placeholder="Catégorie"
+                />
+              </div>
+              <div className="management-field management-field--compact">
+                <label>Usage</label>
+                <Select
+                  value={editingItem.isLocation ? 'location' : 'entreprise'}
+                  onChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      isLocation: e.target.value === 'location',
+                    })
+                  }
+                >
+                  <option value="entreprise">Entreprise</option>
+                  <option value="location">Location</option>
+                </Select>
+              </div>
+              <div className="management-field management-field--compact">
+                <label>Immatriculation</label>
+                <Input
+                  type="text"
+                  value={editingItem.immatriculation || editingItem.registration || ''}
+                  onChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      immatriculation: e.target.value,
+                      registration: e.target.value,
+                    })
+                  }
+                  placeholder="Immatriculation"
+                />
+              </div>
+              <div className="management-field management-field--compact">
+                <label>Marque</label>
+                <Input
+                  type="text"
+                  value={editingItem.marque || editingItem.brand || ''}
+                  onChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      marque: e.target.value,
+                      brand: e.target.value,
+                    })
+                  }
+                  placeholder="Marque"
+                />
+              </div>
+              <div className="management-field management-field--compact">
+                <label>Couleur véhicule</label>
+                <Input
+                  type="text"
+                  value={editingItem.couleurVehicule || editingItem.color || ''}
+                  onChange={(e) =>
+                    setEditingItem({
+                      ...editingItem,
+                      couleurVehicule: e.target.value,
+                      color: e.target.value,
+                    })
+                  }
+                  placeholder="Couleur véhicule"
+                />
+              </div>
+              <div className="management-field management-field--compact">
+                <label>Photo</label>
+                <div className="photo-select-wrapper">
+                  <Select
+                    value={editingItem.photo || ''}
+                    onChange={(e) => setEditingItem({ ...editingItem, photo: e.target.value })}
+                  >
+                    <option value="">Pas de photo</option>
+                    {availablePhotos.map((photo) => (
+                      <option key={photo} value={photo}>
+                        {photo}
+                      </option>
+                    ))}
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                    onClick={refreshPhotoList}
+                    title="Rafraîchir la liste des photos"
+                  >
+                    <RefreshCw size={16} />
+                  </Button>
+                </div>
+              </div>
+              <div className="color-picker-inline">
+                <label>Couleur d'affichage:</label>
+                <div className="color-options-grid">
+                  {colors.map((color) => (
+                    <Button
+                      variant="ghost"
+                      key={color}
+                      className={`color-option color-option-direct ${(editingItem.displayColor || editingItem.color) === color ? 'selected' : ''}`}
+                      style={{ '--management-color-option-bg': color }}
+                      onClick={() =>
+                        setEditingItem({
+                          ...editingItem,
+                          color,
+                          displayColor: color,
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="edit-actions">
+                <Button variant="primary" onClick={handleSaveEdit}>
+                  Enregistrer
+                </Button>
+                <Button variant="ghost" onClick={onClose}>
+                  Annuler
+                </Button>
+              </div>
+            </div>
+          </div>
+        </ModalBody>
+      </Modal>
+    );
+  }
 
   // Si gestion personnel, déléguer entièrement à PersonnelPanel
   if (panelType === 'management' && activeModule === 'personnel') {

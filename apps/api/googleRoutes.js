@@ -79,6 +79,8 @@ function oauthRemovedResponse(res) {
   });
 }
 
+const GOOGLE_EVENTS_CACHE_TTL_MS = 10 * 60_000;
+
 export function setupGoogleRoutes(app, authenticateToken) {
   // ── Nouveau flux principal ──
   app.get(
@@ -92,7 +94,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
   app.get(
     '/api/calendar/events',
     authenticateToken,
-    cacheMiddleware(googleCalendarCache, eventsCacheKey),
+    cacheMiddleware(googleCalendarCache, eventsCacheKey, GOOGLE_EVENTS_CACHE_TTL_MS),
     gcalRoute(async (req, res) => {
       const data = await getEvents(normalizeEventsQuery(req.query));
       res.json(data);
@@ -133,7 +135,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
   app.get(
     '/api/google/events',
     authenticateToken,
-    cacheMiddleware(googleCalendarCache, eventsCacheKey),
+    cacheMiddleware(googleCalendarCache, eventsCacheKey, GOOGLE_EVENTS_CACHE_TTL_MS),
     gcalRoute(async (req, res) => {
       const data = await getEvents(normalizeEventsQuery(req.query));
       res.json(data);

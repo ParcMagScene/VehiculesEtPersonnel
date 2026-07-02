@@ -4,6 +4,8 @@ import { google } from 'googleapis';
 import db from './database.js';
 
 const CALENDAR_READ_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+const EVENTS_LIST_FIELDS =
+  'nextPageToken,items(id,status,summary,description,location,start,end,updated,htmlLink,recurringEventId,colorId,creator(email,displayName),organizer(email,displayName),attendees(email,displayName,responseStatus),conferenceData,attachments)';
 
 let cachedCredentialsCacheKey = null;
 let cachedCredentials = null;
@@ -147,6 +149,7 @@ export async function getEvents({
     orderBy,
     q,
     pageToken,
+    fields: EVENTS_LIST_FIELDS,
   });
 
   return response.data;

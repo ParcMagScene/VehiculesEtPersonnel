@@ -16,6 +16,7 @@ function PlanningView({
   reservations = [],
   maintenances = [],
   currentDate,
+  onVehicleClick,
   onVehicleContextMenu,
   onOpenReservation,
   onOpenMaintenance,
@@ -228,7 +229,11 @@ function PlanningView({
               ? vehicles.map((vehicle) => (
                   <div
                     key={vehicle.id}
-                    className={`planning-vehicle-row ${onVehicleContextMenu ? 'vehicle-editable' : ''}`}
+                    className={`planning-vehicle-row ${onVehicleContextMenu || onVehicleClick ? 'vehicle-editable' : ''}`}
+                    onClick={() => {
+                      if (!onVehicleClick) return;
+                      onVehicleClick(vehicle);
+                    }}
                     onContextMenu={(e) => {
                       if (!onVehicleContextMenu) return;
                       e.preventDefault();
@@ -236,7 +241,9 @@ function PlanningView({
                       onVehicleContextMenu(vehicle);
                     }}
                     title={
-                      onVehicleContextMenu ? 'Clic droit pour modifier le véhicule' : undefined
+                      onVehicleContextMenu || onVehicleClick
+                        ? 'Clic pour modifier, clic droit pour accès contextuel'
+                        : undefined
                     }
                   >
                     <div className="planning-vehicle-name">{vehicle.name}</div>

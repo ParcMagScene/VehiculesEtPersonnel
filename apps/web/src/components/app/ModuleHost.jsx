@@ -72,6 +72,7 @@ function ModuleHost({
   handleReportBreakdown,
   setShowManagement,
   setVehicleForManagementEdit,
+  toast,
 }) {
   return (
     <>
@@ -84,11 +85,20 @@ function ModuleHost({
                 reservations={data.reservations}
                 maintenances={data.maintenances}
                 currentDate={currentDate}
+                onVehicleClick={(v) => {
+                  setSelectedVehicleForDetails(null);
+                  setVehicleForDialog(null);
+                  setVehicleForManagementEdit(v);
+                  setShowManagement(true);
+                }}
                 onVehicleContextMenu={(v) => {
                   setSelectedVehicleForDetails(null);
                   setVehicleForDialog(null);
                   setVehicleForManagementEdit(v);
                   setShowManagement(true);
+                  toast?.info('Fiche véhicule ouverte en modification', {
+                    duration: 1800,
+                  });
                 }}
                 onOpenReservation={(reservation) => {
                   const vehicle = data.vehicles.find((v) => v.id === reservation.vehicleId);

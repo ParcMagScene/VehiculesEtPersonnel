@@ -660,6 +660,7 @@ function AppContent() {
               handleReportBreakdown={handleReportBreakdown}
               setShowManagement={setShowManagement}
               setVehicleForManagementEdit={setVehicleForManagementEdit}
+              toast={toast}
             />
 
             <GlobalOverlays

@@ -101,7 +101,7 @@ function VehiclePickerCards({
           {isDesktop && (
             <div
               className="vehicle-color-indicator"
-              style={{ backgroundColor: vehicle.displayColor || vehicle.color }}
+              style={{ '--vehicle-picker-color': vehicle.displayColor || vehicle.color }}
             />
           )}
 

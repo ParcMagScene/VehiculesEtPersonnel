@@ -56,6 +56,7 @@
 .vdp-slide-color {
   width: 8px;
   height: 36px;
+  background: var(--vdp-slide-color, var(--theme-info));
   border-radius: var(--radius-xs);
   flex-shrink: 0;
   box-shadow:

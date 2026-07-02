@@ -374,7 +374,10 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                           <span>{formatDateSimple(controle.deadline)}</span>
                         </div>
                         {status && (
-                          <div className="controle-status" style={{ color: status.color }}>
+                          <div
+                            className="controle-status"
+                            style={{ '--controle-status-color': status.color }}
+                          >
                             {status.status === 'expired' && '⚠️ '}
                             {status.status === 'warning' && '⏰ '}
                             {status.status === 'ok' && '✅ '}

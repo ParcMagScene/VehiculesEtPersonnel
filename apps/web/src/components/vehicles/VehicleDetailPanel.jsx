@@ -380,7 +380,7 @@ const VehicleSlidePanel = ({
           <div
             className="vdp-slide-color"
             style={{
-              backgroundColor:
+              '--vdp-slide-color':
                 currentVehicle.displayColor || currentVehicle.color || STATUS_COLORS.info,
             }}
           />

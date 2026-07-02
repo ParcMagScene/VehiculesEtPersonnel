@@ -375,20 +375,16 @@ export class ApiClient {
     //     headers custom, skipCamelCase (chacune peut différer entre callers).
     const method = (options.method || 'GET').toUpperCase();
     const canDedup =
-      method === 'GET' &&
-      !_isRetry &&
-      !options.body &&
-      !options.signal &&
-      !options.headers &&
-      !options.skipCamelCase;
+      method === 'GET' && !_isRetry && !options.body && !options.signal && !options.headers;
     if (canDedup) {
       if (!this._inFlightGets) this._inFlightGets = new Map();
-      const existing = this._inFlightGets.get(endpoint);
+      const dedupKey = `${endpoint}|skipCamel:${options.skipCamelCase ? '1' : '0'}`;
+      const existing = this._inFlightGets.get(dedupKey);
       if (existing) return existing;
       const promise = this._executeRequest(endpoint, options, _isRetry).finally(() => {
-        if (this._inFlightGets.get(endpoint) === promise) this._inFlightGets.delete(endpoint);
+        if (this._inFlightGets.get(dedupKey) === promise) this._inFlightGets.delete(dedupKey);
       });
-      this._inFlightGets.set(endpoint, promise);
+      this._inFlightGets.set(dedupKey, promise);
       return promise;
     }
 

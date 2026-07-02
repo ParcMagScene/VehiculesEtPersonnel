@@ -280,6 +280,14 @@ function AddEquipmentDialog({ reservationId, onAdded, onClose }) {
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedItem(item);
+                  }
+                }}
                 style={{
                   padding: '0.5rem 0.75rem',
                   cursor: 'pointer',

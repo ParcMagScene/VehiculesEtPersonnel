@@ -102,14 +102,19 @@ const DriverSelect = ({
           <div
             className={`driver-select-option ${!value ? 'selected' : ''}`}
             onClick={() => handleSelect('')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleSelect('');
+              }
+            }}
           >
             <div className="driver-select-option-avatar">
-              <User size={16} style={{ color: 'var(--theme-text-muted)' }} />
+              <User size={16} className="driver-select-option-icon-muted" />
             </div>
-            <span
-              className="driver-select-option-label"
-              style={{ color: 'var(--theme-text-muted)' }}
-            >
+            <span className="driver-select-option-label driver-select-option-label-muted">
               Aucun conducteur
             </span>
           </div>
@@ -123,6 +128,14 @@ const DriverSelect = ({
                   key={`q-${driver.id}`}
                   className={`driver-select-option ${value === driver.name ? 'selected' : ''}`}
                   onClick={() => handleSelect(driver.name)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelect(driver.name);
+                    }
+                  }}
                 >
                   <div className="driver-select-option-avatar">{renderAvatar(driver, 28)}</div>
                   <div className="driver-select-option-info">
@@ -146,6 +159,14 @@ const DriverSelect = ({
                   key={`h-${idx}`}
                   className={`driver-select-option ${value === name ? 'selected' : ''}`}
                   onClick={() => handleSelect(name)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelect(name);
+                    }
+                  }}
                 >
                   <div className="driver-select-option-avatar">{renderAvatar({ name }, 28)}</div>
                   <div className="driver-select-option-info">

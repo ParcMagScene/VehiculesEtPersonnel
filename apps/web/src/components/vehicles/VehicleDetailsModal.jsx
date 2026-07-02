@@ -570,6 +570,14 @@ const VehicleDetailsModal = ({
                   key={maintenance.id}
                   className={`maintenance-item status-${maintenance.status} clickable`}
                   onClick={() => handleInterventionClick(maintenance)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleInterventionClick(maintenance);
+                    }
+                  }}
                   title="Cliquer pour ouvrir l'intervention"
                 >
                   <div className="maintenance-header">

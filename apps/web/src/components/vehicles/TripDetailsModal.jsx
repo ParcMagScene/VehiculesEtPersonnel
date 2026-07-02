@@ -825,6 +825,14 @@ const TripDetailsModal = ({
               key={i}
               className={`timeline-step timeline-step--${step.type}`}
               onClick={() => setActiveTab(step.eventIdx)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setActiveTab(step.eventIdx);
+                }
+              }}
             >
               <div className="timeline-step-marker">
                 <span className="timeline-step-icon">{step.icon}</span>

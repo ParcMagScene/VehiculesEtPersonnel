@@ -16,6 +16,7 @@ function PlanningView({
   reservations = [],
   maintenances = [],
   currentDate,
+  onVehicleContextMenu,
   onOpenReservation,
   onOpenMaintenance,
   clients = [],
@@ -225,7 +226,19 @@ function PlanningView({
           <div className="planning-vehicles-list">
             {planningMode === 'vehicles'
               ? vehicles.map((vehicle) => (
-                  <div key={vehicle.id} className="planning-vehicle-row">
+                  <div
+                    key={vehicle.id}
+                    className={`planning-vehicle-row ${onVehicleContextMenu ? 'vehicle-editable' : ''}`}
+                    onContextMenu={(e) => {
+                      if (!onVehicleContextMenu) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onVehicleContextMenu(vehicle);
+                    }}
+                    title={
+                      onVehicleContextMenu ? 'Clic droit pour modifier le véhicule' : undefined
+                    }
+                  >
                     <div className="planning-vehicle-name">{vehicle.name}</div>
                     <div className="planning-vehicle-registration">{vehicle.registration}</div>
                   </div>

@@ -72,6 +72,10 @@
   background: var(--theme-bg-secondary);
 }
 
+.planning-vehicle-row.vehicle-editable {
+  cursor: context-menu;
+}
+
 .planning-vehicle-name {
   font-weight: 600;
   font-size: 15px;

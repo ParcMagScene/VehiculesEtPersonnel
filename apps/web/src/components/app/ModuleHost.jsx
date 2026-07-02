@@ -84,6 +84,12 @@ function ModuleHost({
                 reservations={data.reservations}
                 maintenances={data.maintenances}
                 currentDate={currentDate}
+                onVehicleContextMenu={(v) => {
+                  setSelectedVehicleForDetails(null);
+                  setVehicleForDialog(null);
+                  setVehicleForManagementEdit(v);
+                  setShowManagement(true);
+                }}
                 onOpenReservation={(reservation) => {
                   const vehicle = data.vehicles.find((v) => v.id === reservation.vehicleId);
                   if (vehicle) {

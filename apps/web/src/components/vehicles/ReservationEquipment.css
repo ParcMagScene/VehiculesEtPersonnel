@@ -1,3 +1,7 @@
+.reservation-equipment-root {
+  padding: 0.5rem 0;
+}
+
 /* ─── Summary bar (ReservationEquipment) ─── */
 .reservation-equipment-summary {
   display: flex;
@@ -82,6 +86,69 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.catalog-empty-spacious {
+  padding: 2rem 1rem;
+}
+
+.reservation-equipment-weight {
+  font-size: 0.8rem;
+}
+
+.catalog-search-icon {
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.catalog-search-input {
+  padding-left: 2.25rem;
+}
+
+.catalog-results {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--theme-border);
+}
+
+.catalog-result-empty-state {
+  padding: 1rem;
+}
+
+.catalog-result-item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  background: transparent;
+  border-bottom: 1px solid var(--theme-border);
+  border-left: 3px solid transparent;
+}
+
+.catalog-result-item.selected {
+  background: rgba(99, 102, 241, 0.1);
+  border-left-color: var(--theme-primary);
+}
+
+.catalog-result-name {
+  font-size: 0.9rem;
+}
+
+.catalog-result-meta {
+  font-size: 0.8rem;
+}
+
+.catalog-quantity-input {
+  max-width: 120px;
+}
+
+.catalog-flightcase-hint {
+  font-size: 0.8rem;
+  color: #059669;
+}
+
+.catalog-flightcase-hint-icon {
+  display: inline;
+  margin-right: 0.25rem;
 }
 
 /* ── Responsive ── */

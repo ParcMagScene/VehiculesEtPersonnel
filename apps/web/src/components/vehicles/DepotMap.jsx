@@ -745,7 +745,7 @@ export default function DepotMap({
               if (onZoneFilter) onZoneFilter(zone.id === selectedZone ? '' : zone.id);
             }}
           >
-            <span className="legend-dot" style={{ backgroundColor: zone.color }} />
+            <span className="legend-dot" style={{ '--legend-dot-color': zone.color }} />
             {zone.label}
             {searchResults?.[zone.id] > 0 ? (
               <span className="legend-count search-count">{searchResults[zone.id]}</span>

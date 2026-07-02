@@ -1546,7 +1546,7 @@ function DetailView({
             as="h4"
             title={`Contacts (${detail.contacts?.length || 0})`}
             actions={
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div className="contacts-section-actions">
                 <Button variant="ghost" size="sm" onClick={() => setShowLinkSearch((s) => !s)}>
                   <Contact size={13} /> Lier existant
                 </Button>
@@ -2131,9 +2131,9 @@ function EntityFormModal({
               </div>
 
               <FormField className="form-group" label="Lieu lié">
-                <div className="form-row" style={{ gap: 8, alignItems: 'center' }}>
+                <div className="form-row location-link-row">
                   <Select
-                    style={{ flex: 1 }}
+                    className="location-link-select"
                     value={form.location_id || ''}
                     onChange={(e) =>
                       handleChange('location_id', e.target.value ? Number(e.target.value) : null)

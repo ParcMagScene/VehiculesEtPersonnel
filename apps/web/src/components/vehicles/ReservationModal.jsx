@@ -1016,7 +1016,7 @@ const ReservationModal = ({
           <Checkbox
             checked={formData.isTournee}
             onChange={(e) => setFormData((prev) => ({ ...prev, isTournee: e.target.checked }))}
-            style={{ margin: 0, cursor: isReadOnly ? 'default' : 'pointer' }}
+            className={`reservation-tournee-checkbox ${isReadOnly ? 'is-read-only' : ''}`}
             disabled={isReadOnly}
           />
           <span className="reservation-tournee-label">🚐 Tournée</span>
@@ -1466,12 +1466,8 @@ const ReservationModal = ({
                               return (
                                 <div
                                   key={eventId}
-                                  className="selected-event-display clickable-event"
-                                  style={{
-                                    backgroundColor: getEventColor(event) + '20',
-                                    padding: '0.25rem 0.5rem',
-                                    cursor: 'pointer',
-                                  }}
+                                  className="selected-event-display clickable-event reservation-tournee-selected-event"
+                                  style={{ '--reservation-event-color': getEventColor(event) }}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     if (onRequestViewEvent) {
@@ -1541,11 +1537,8 @@ const ReservationModal = ({
 
                           return (
                             <div
-                              className="selected-event-display clickable-event"
-                              style={{
-                                backgroundColor: getEventColor(event) + '20',
-                                cursor: 'pointer',
-                              }}
+                              className="selected-event-display clickable-event reservation-tournee-selected-event"
+                              style={{ '--reservation-event-color': getEventColor(event) }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (onRequestViewEvent) {
@@ -1638,7 +1631,7 @@ const ReservationModal = ({
                               key={event.id}
                               className={`custom-dropdown-item ${isEventLinked ? 'affaire-added' : ''}`}
                               onClick={() => selectGoogleEvent(event)}
-                              style={{ backgroundColor: getEventColor(event) + '20' }}
+                              style={{ '--reservation-event-color': getEventColor(event) }}
                               role="button"
                               tabIndex={0}
                               onKeyDown={(keyboardEvent) =>
@@ -1762,21 +1755,10 @@ const ReservationModal = ({
                     return (
                       <div
                         key={eventId}
-                        className={`event-card-with-trip ${isInGroup ? 'in-group' : ''}`}
+                        className={`event-card-with-trip reservation-event-card ${isInGroup ? 'in-group' : ''} ${hasTripDetails ? 'has-trip-details' : 'is-event-colored'}`}
                         style={{
-                          backgroundColor: hasTripDetails
-                            ? 'var(--theme-success-bg)'
-                            : getEventColor(event) + '20',
-                          padding: '0.75rem',
-                          borderRadius: isInGroup ? '0' : '0.375rem',
-                          border: hasTripDetails
-                            ? `2px solid ${STATUS_COLORS.success}`
-                            : '1px solid ' + getEventColor(event) + '40',
-                          borderBottom: isInGroup ? 'none' : undefined,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.375rem',
-                          transition: 'all 0.2s ease',
+                          '--reservation-event-color': getEventColor(event),
+                          '--reservation-success-color': STATUS_COLORS.success,
                         }}
                       >
                         <div

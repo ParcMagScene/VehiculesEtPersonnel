@@ -243,7 +243,7 @@ const SavTicketsList = ({
                 <td>
                   <span
                     className="eq-pri-dot"
-                    style={{ background: pri.color }}
+                    style={{ '--eq-priority-color': pri.color }}
                     title={pri.label}
                   />
                 </td>
@@ -265,7 +265,7 @@ const SavTicketsList = ({
                 </td>
                 <td>{SAV_TYPES[t.type] || t.type}</td>
                 <td>
-                  <span className="eq-status-badge" style={{ background: tst.color }}>
+                  <span className="eq-status-badge" style={{ '--eq-status-color': tst.color }}>
                     {tst.label}
                   </span>
                 </td>
@@ -991,7 +991,7 @@ const SavSlidePanel = ({
       title={
         <span className="eq-slide-title-row">
           <span className="eq-slide-name">🔧 {t.title}</span>
-          <span className="eq-slide-status" style={{ background: tst.color }}>
+          <span className="eq-slide-status" style={{ '--eq-status-color': tst.color }}>
             {tst.label}
           </span>
         </span>
@@ -1028,7 +1028,9 @@ const SavSlidePanel = ({
         <div className="eq-detail-field">
           <span>🎯</span>
           <span>Priorité</span>
-          <strong style={{ color: pri.color }}>{pri.label}</strong>
+          <strong className="eq-priority-value" style={{ '--eq-priority-color': pri.color }}>
+            {pri.label}
+          </strong>
         </div>
         <div className="eq-detail-field">
           <span>🔧</span>
@@ -1115,7 +1117,11 @@ const SavDetailDialog = ({
       size="lg"
       className="eq-dialog eq-dialog-sav"
     >
-      <ModalHeader onClose={handleClose} style={{ background: tst.color }}>
+      <ModalHeader
+        onClose={handleClose}
+        className="eq-sav-modal-header"
+        style={{ '--eq-status-color': tst.color }}
+      >
         <span className="eq-sav-title-status">🔧 {tst.label}</span>
         {(eq || t.importName || t.importCode) && (
           <span className="eq-sav-title-ref">
@@ -1135,7 +1141,9 @@ const SavDetailDialog = ({
             <div className="eq-detail-field">
               <span>🎯</span>
               <span>Priorité</span>
-              <strong style={{ color: pri.color }}>{pri.label}</strong>
+              <strong className="eq-priority-value" style={{ '--eq-priority-color': pri.color }}>
+                {pri.label}
+              </strong>
             </div>
             <div className="eq-detail-field">
               <span>🔧</span>

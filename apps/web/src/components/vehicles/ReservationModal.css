@@ -12,12 +12,27 @@
   padding: 1rem;
   backdrop-filter: blur(4px);
   isolation: isolate;
+
+  .reservation-tournee-checkbox {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .reservation-tournee-checkbox.is-read-only {
+    cursor: default;
+  }
   animation: overlayFadeIn 0.2s ease-out;
 }
 
 .reservation-modal.ui-modal {
   background: var(--theme-bg-page);
   border-radius: var(--radius-xl);
+
+  .reservation-tournee-selected-event {
+    background-color: color-mix(in srgb, var(--reservation-event-color) 20%, transparent);
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+  }
   max-width: 900px !important;
   width: 100%;
   max-height: 90vh;
@@ -30,10 +45,35 @@
   z-index: var(--z-base);
 }
 
+.custom-dropdown-item[style*='--reservation-event-color'] {
+  background-color: color-mix(in srgb, var(--reservation-event-color) 20%, transparent);
+}
+
 .reservation-modal .modal-form {
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
+
+  .reservation-event-card {
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid color-mix(in srgb, var(--reservation-event-color) 40%, transparent);
+    transition: all 0.2s ease;
+  }
+
+  .reservation-event-card.in-group {
+    border-radius: 0;
+    border-bottom: none;
+  }
+
+  .reservation-event-card.is-event-colored {
+    background-color: color-mix(in srgb, var(--reservation-event-color) 20%, transparent);
+  }
+
+  .reservation-event-card.has-trip-details {
+    background-color: var(--theme-success-bg);
+    border: 2px solid var(--reservation-success-color);
+  }
   padding: var(--space-5);
 }
 

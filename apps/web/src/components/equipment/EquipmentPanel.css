@@ -1423,6 +1423,7 @@
   width: var(--space-2);
   height: var(--space-2);
   border-radius: var(--radius-full);
+  background: var(--eq-priority-color, var(--theme-warning));
 }
 
 .eq-ticket-title-cell {
@@ -1447,6 +1448,11 @@
   color: var(--theme-text-inverse);
   font-size: var(--font-2xs);
   font-weight: 600;
+  background: var(--eq-status-color, var(--theme-info));
+}
+
+.eq-priority-value {
+  color: var(--eq-priority-color, var(--theme-warning));
 }
 
 .eq-table-actions {
@@ -2694,9 +2700,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  background: var(--glass-light) !important;
+  background: var(--eq-status-color, var(--glass-light)) !important;
   backdrop-filter: blur(4px);
   width: fit-content;
+}
+
+.eq-sav-modal-header {
+  background: var(--eq-status-color, var(--theme-info));
 }
 
 .eq-slide-type {

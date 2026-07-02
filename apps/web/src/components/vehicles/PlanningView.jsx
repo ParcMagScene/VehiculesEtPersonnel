@@ -106,26 +106,57 @@ function PlanningView({
     [personnelData.availabilities],
   );
 
-  // Obtenir les réservations pour un véhicule et un jour
-  const getReservationsForDay = (vehicleId, day) => {
-    return reservations.filter((r) => {
-      if (r.vehicleId !== vehicleId) return false;
-      const startDate = parseISO(r.date);
-      const endDate = r.endDate ? parseISO(r.endDate) : startDate;
-      return day >= startDate && day <= endDate;
-    });
-  };
+  const vehicleDayReservations = useMemo(() => {
+    const grouped = new Map();
 
-  // Obtenir les interventions pour un véhicule et un jour
-  const getMaintenancesForDay = (vehicleId, day) => {
-    return maintenances.filter((m) => {
-      if (m.vehicleId !== vehicleId) return false;
-      if (!m.startDate) return false;
-      const startDate = parseISO(m.startDate);
-      const endDate = m.endDate ? parseISO(m.endDate) : startDate;
-      return day >= startDate && day <= endDate;
-    });
-  };
+    for (const reservation of reservations) {
+      if (reservation.vehicleId == null || !reservation.date) continue;
+      const startDate = parseISO(reservation.date);
+      const endDate = reservation.endDate ? parseISO(reservation.endDate) : startDate;
+      for (let day = startDate; day <= endDate; day = addDays(day, 1)) {
+        const dayKey = format(day, 'yyyy-MM-dd');
+        if (!grouped.has(reservation.vehicleId)) grouped.set(reservation.vehicleId, new Map());
+        const vehicleMap = grouped.get(reservation.vehicleId);
+        if (!vehicleMap.has(dayKey)) vehicleMap.set(dayKey, []);
+        vehicleMap.get(dayKey).push(reservation);
+      }
+    }
+
+    return grouped;
+  }, [reservations]);
+
+  const vehicleDayMaintenances = useMemo(() => {
+    const grouped = new Map();
+
+    for (const maintenance of maintenances) {
+      if (maintenance.vehicleId == null || !maintenance.startDate) continue;
+      const startDate = parseISO(maintenance.startDate);
+      const endDate = maintenance.endDate ? parseISO(maintenance.endDate) : startDate;
+      for (let day = startDate; day <= endDate; day = addDays(day, 1)) {
+        const dayKey = format(day, 'yyyy-MM-dd');
+        if (!grouped.has(maintenance.vehicleId)) grouped.set(maintenance.vehicleId, new Map());
+        const vehicleMap = grouped.get(maintenance.vehicleId);
+        if (!vehicleMap.has(dayKey)) vehicleMap.set(dayKey, []);
+        vehicleMap.get(dayKey).push(maintenance);
+      }
+    }
+
+    return grouped;
+  }, [maintenances]);
+
+  const getReservationsForDay = useCallback(
+    (vehicleId, day) => {
+      return vehicleDayReservations.get(vehicleId)?.get(format(day, 'yyyy-MM-dd')) || [];
+    },
+    [vehicleDayReservations],
+  );
+
+  const getMaintenancesForDay = useCallback(
+    (vehicleId, day) => {
+      return vehicleDayMaintenances.get(vehicleId)?.get(format(day, 'yyyy-MM-dd')) || [];
+    },
+    [vehicleDayMaintenances],
+  );
 
   // Obtenir le client
   const getClient = (clientId) => {

@@ -20,7 +20,7 @@ import SonosZoneSelector from './SonosZoneSelector';
 
 function SonosPanel({ currentUser, _currentUser }) {
   const isAdmin = !!currentUser?.isAdmin || !!_currentUser?.isAdmin;
-  const sonos = useSonos({ autoPolling: true, pollInterval: 5000 });
+  const sonos = useSonos({ autoPolling: true, pollInterval: 15000 });
   const [configOpen, setConfigOpen] = useState(false);
   const [sourceSearch, setSourceSearch] = useState('');
 
@@ -112,7 +112,7 @@ function SonosPanel({ currentUser, _currentUser }) {
               checked={sonos.polling}
               onChange={(e) => sonos.setPolling(e.target.checked)}
             />
-            <label>Monitoring temps réel (5s)</label>
+            <label>Monitoring temps réel (15s)</label>
           </div>
         </div>
       )}

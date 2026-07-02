@@ -61,22 +61,16 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
     (req, res) => {
       try {
         // Pagination cursor-based optionnelle : ?cursor=<id>&limit=<n>
-        // Sans paramètres → comportement legacy (toutes les affaires, LIMIT 5000)
-        const limit = req.query.limit ? Math.min(parseInt(req.query.limit, 10) || 200, 500) : null;
+        // Sans paramètres → fallback compact (LIMIT 200) pour éviter un chargement massif
+        const limit = req.query.limit ? Math.min(parseInt(req.query.limit, 10) || 200, 500) : 200;
         const cursor = req.query.cursor ? parseInt(req.query.cursor, 10) : null;
 
         // 1. Affaires explicitement enregistrées en DB
         let dbAffaires;
-        if (limit !== null) {
-          const sql = cursor
-            ? 'SELECT * FROM affaires WHERE id > ? ORDER BY id ASC LIMIT ?'
-            : 'SELECT * FROM affaires ORDER BY date_debut DESC LIMIT ?';
-          dbAffaires = cursor ? db.prepare(sql).all(cursor, limit) : db.prepare(sql).all(limit);
-        } else {
-          dbAffaires = db
-            .prepare('SELECT * FROM affaires ORDER BY date_debut DESC LIMIT 5000')
-            .all();
-        }
+        const sql = cursor
+          ? 'SELECT * FROM affaires WHERE id > ? ORDER BY id ASC LIMIT ?'
+          : 'SELECT * FROM affaires ORDER BY date_debut DESC LIMIT ?';
+        dbAffaires = cursor ? db.prepare(sql).all(cursor, limit) : db.prepare(sql).all(limit);
 
         // [PERF Phase 4] Compteurs en batch — 3 requêtes au lieu de 3×N
         const resCounts = {};

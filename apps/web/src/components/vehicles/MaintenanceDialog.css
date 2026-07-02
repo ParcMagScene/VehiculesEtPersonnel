@@ -204,6 +204,28 @@
   min-height: 80px;
 }
 
+.maintenance-dialog .modal-header {
+  border-bottom: 3px solid var(--maintenance-header-status-color, transparent);
+}
+
+.maintenance-dialog-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.maintenance-dialog-help-text {
+  display: block;
+}
+
+.maintenance-dialog-date-row {
+  gap: 10px;
+}
+
+.maintenance-dialog-period-select {
+  width: 80px;
+}
+
 .maintenance-dialog .form-actions {
   display: flex;
   justify-content: space-between;
@@ -548,6 +570,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  background: var(--maintenance-status-bg, transparent);
+  color: var(--maintenance-status-color, inherit);
+  border-color: var(--maintenance-status-border, currentColor);
 }
 
 .edit-maintenance-button,
@@ -600,6 +625,48 @@
 .detail-value {
   color: var(--theme-text-heading);
   font-weight: 600;
+}
+
+.maintenance-dialog-detail-success {
+  color: #059669;
+}
+
+.maintenance-dialog-detail-italic {
+  font-style: italic;
+}
+
+.maintenance-dialog-inline-gap-sm {
+  gap: 6px;
+}
+
+.km-history-header-bar {
+  padding: 10px 14px;
+  background: var(--theme-bg-tertiary);
+}
+
+.maintenance-dialog-registration-chip {
+  font-size: 0.9em;
+  color: var(--theme-text-subtle);
+  background: var(--theme-bg-tertiary);
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.maintenance-card-km-history {
+  border-left-color: var(--theme-primary);
+}
+
+.maintenance-dialog-history-chip {
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--theme-bg-tertiary);
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.maintenance-dialog-history-chip-text {
+  font-size: 0.9em;
+  color: var(--theme-text-subtle);
 }
 
 .maintenance-notes {

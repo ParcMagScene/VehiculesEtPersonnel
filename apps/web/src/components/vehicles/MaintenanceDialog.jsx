@@ -570,9 +570,9 @@ function MaintenanceDialog({
         style={
           editingId
             ? {
-                borderBottom: `3px solid ${getStatusColor(formData.status)}`,
+                '--maintenance-header-status-color': getStatusColor(formData.status),
               }
-            : {}
+            : undefined
         }
       >
         {getDialogTitle()} - {vehicle.name}
@@ -606,7 +606,7 @@ function MaintenanceDialog({
           <div className="maintenance-dialog-content">
             <TabPanel value="new">
               <form id="maintenance-form" onSubmit={handleSubmit} className="maintenance-form">
-                <fieldset disabled={isViewMode} style={{ border: 'none', margin: 0, padding: 0 }}>
+                <fieldset disabled={isViewMode} className="maintenance-dialog-fieldset">
                   {/* Détails de l'intervention en mode édition */}
                   {editingId && maintenanceToEditData && (
                     <div className="intervention-details-card">
@@ -614,9 +614,9 @@ function MaintenanceDialog({
                         <span
                           className="intervention-status-badge"
                           style={{
-                            backgroundColor: getStatusColor(formData.status) + '15',
-                            color: getStatusColor(formData.status),
-                            borderColor: getStatusColor(formData.status),
+                            '--maintenance-status-bg': getStatusColor(formData.status) + '15',
+                            '--maintenance-status-color': getStatusColor(formData.status),
+                            '--maintenance-status-border': getStatusColor(formData.status),
                           }}
                         >
                           {getStatusIcon(formData.status)}
@@ -843,10 +843,7 @@ function MaintenanceDialog({
                                 ) : null;
                               })()}
                             {!formData.technicalControlType && (
-                              <small
-                                className="u-text-secondary u-font-xs u-mt-1"
-                                style={{ display: 'block' }}
-                              >
+                              <small className="u-text-secondary u-font-xs u-mt-1 maintenance-dialog-help-text">
                                 ℹ️ Sélectionnez un type pour voir sa périodicité
                               </small>
                             )}
@@ -878,7 +875,7 @@ function MaintenanceDialog({
                     <>
                       <div className="form-row">
                         <FormField className="form-group" label="Date de début" required>
-                          <div className="u-flex" style={{ gap: '10px' }}>
+                          <div className="u-flex maintenance-dialog-date-row">
                             <Input
                               ref={startDateInputRef}
                               type="date"
@@ -890,7 +887,7 @@ function MaintenanceDialog({
                             <Select
                               value={formData.startDatePeriod}
                               onChange={(e) => handleChange('startDatePeriod', e.target.value)}
-                              style={{ width: '80px' }}
+                              className="maintenance-dialog-period-select"
                             >
                               <option value="AM">🌅 AM</option>
                               <option value="PM">🌆 PM</option>
@@ -899,7 +896,7 @@ function MaintenanceDialog({
                         </FormField>
 
                         <FormField className="form-group" label="Date de fin" required>
-                          <div className="u-flex" style={{ gap: '10px' }}>
+                          <div className="u-flex maintenance-dialog-date-row">
                             <Input
                               type="date"
                               value={formData.endDate}
@@ -911,7 +908,7 @@ function MaintenanceDialog({
                             <Select
                               value={formData.endDatePeriod}
                               onChange={(e) => handleChange('endDatePeriod', e.target.value)}
-                              style={{ width: '80px' }}
+                              className="maintenance-dialog-period-select"
                             >
                               <option value="AM">🌅 AM</option>
                               <option value="PM">🌆 PM</option>
@@ -1029,25 +1026,13 @@ function MaintenanceDialog({
             <TabPanel value="km-history">
               <div className="maintenance-history">
                 {/* En-tête avec immatriculation */}
-                <div
-                  className="km-history-header u-flex-between u-mb-4 u-rounded"
-                  style={{ padding: '10px 14px', background: 'var(--theme-bg-tertiary)' }}
-                >
+                <div className="km-history-header km-history-header-bar u-flex-between u-mb-4 u-rounded">
                   <div className="u-flex-center u-gap-2">
                     <Gauge size={18} />
                     <strong>Historique des relevés kilométriques</strong>
                   </div>
                   {vehicle.registration && (
-                    <span
-                      className="u-font-semibold"
-                      style={{
-                        fontSize: '0.9em',
-                        color: 'var(--theme-text-subtle)',
-                        background: 'var(--theme-bg-tertiary)',
-                        padding: '3px 10px',
-                        borderRadius: '6px',
-                      }}
-                    >
+                    <span className="u-font-semibold maintenance-dialog-registration-chip">
                       🚛 {vehicle.registration}
                     </span>
                   )}
@@ -1061,12 +1046,11 @@ function MaintenanceDialog({
                     {mileageHistory.map((entry, idx) => (
                       <div
                         key={entry.id || idx}
-                        className="maintenance-card"
-                        style={{ borderLeft: '4px solid var(--theme-primary)' }}
+                        className="maintenance-card maintenance-card-km-history"
                       >
                         <div className="maintenance-card-header">
                           <div className="maintenance-card-title">
-                            <h3 className="u-flex-center" style={{ gap: '6px' }}>
+                            <h3 className="u-flex-center maintenance-dialog-inline-gap-sm">
                               <Gauge size={16} />
                               {entry.parsed.newKilometrage
                                 ? parseInt(entry.parsed.newKilometrage).toLocaleString('fr-FR') +
@@ -1104,7 +1088,7 @@ function MaintenanceDialog({
                               entry.parsed.newKilometrage !== undefined && (
                                 <div className="detail-item">
                                   <span className="detail-label">Différence :</span>
-                                  <span className="detail-value" style={{ color: '#059669' }}>
+                                  <span className="detail-value maintenance-dialog-detail-success">
                                     +
                                     {(
                                       parseInt(entry.parsed.newKilometrage) -
@@ -1127,7 +1111,7 @@ function MaintenanceDialog({
                             {entry.parsed.description && (
                               <div className="detail-item">
                                 <span className="detail-label">Source :</span>
-                                <span className="detail-value" style={{ fontStyle: 'italic' }}>
+                                <span className="detail-value maintenance-dialog-detail-italic">
                                   {entry.parsed.description}
                                 </span>
                               </div>
@@ -1144,20 +1128,8 @@ function MaintenanceDialog({
               <div className="maintenance-history">
                 {/* En-tête avec immatriculation */}
                 {vehicle.registration && (
-                  <div
-                    className="u-flex-center u-mb-3"
-                    style={{
-                      gap: '6px',
-                      padding: '6px 12px',
-                      background: 'var(--theme-bg-tertiary)',
-                      borderRadius: '6px',
-                      width: 'fit-content',
-                    }}
-                  >
-                    <span
-                      className="u-font-semibold"
-                      style={{ fontSize: '0.9em', color: 'var(--theme-text-subtle)' }}
-                    >
+                  <div className="u-flex-center u-mb-3 maintenance-dialog-history-chip">
+                    <span className="u-font-semibold maintenance-dialog-history-chip-text">
                       🚛 {vehicle.registration}
                     </span>
                   </div>

@@ -141,6 +141,7 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
   const mountedRef = useRef(true);
   const eventsRef = useRef([]); // stable ref pour le diff (évite de recréer fetchEvents)
   const lastSyncRef = useRef(0);
+  const cachedTimestampRef = useRef(0);
 
   // Cache key for the current view
   const dateStr = currentDate ? currentDate.toISOString().slice(0, 10) : '';
@@ -346,6 +347,7 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
         setEvents(cached.events);
         setLastSync(cached.timestamp || null);
         lastSyncRef.current = cached.timestamp || 0;
+        cachedTimestampRef.current = cached.timestamp || 0;
       }
     })();
 
@@ -371,7 +373,13 @@ export function useGoogleSync({ isSignedIn, view, currentDate, calendarId }) {
   useEffect(() => {
     if (!isSignedIn || !view) return;
 
-    // Always do a fresh fetch on view/date change (leader or not for first load)
+    // Skip the startup network hit when the IndexedDB cache is still fresh.
+    const cachedTimestamp = cachedTimestampRef.current || 0;
+    if (cachedTimestamp && Date.now() - cachedTimestamp < SYNC_INTERVAL_MS) {
+      return;
+    }
+
+    // Otherwise do a fresh fetch on view/date change (leader or not for first load).
     const initialTimer = setTimeout(() => {
       fetchEvents(false);
     }, 300); // small debounce

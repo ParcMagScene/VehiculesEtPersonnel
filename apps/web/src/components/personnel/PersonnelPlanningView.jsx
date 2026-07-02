@@ -1147,6 +1147,9 @@ export const PlanningTab = ({
                       >
                         <Star size={12} fill={isFavorite(person.id) ? 'currentColor' : 'none'} />
                       </Button>
+                      <span className="pp-person-name">
+                        {person.firstName} {person.lastName || ''}
+                      </span>
                       <span className={`person-type-badge mini type-${person.type}`}>
                         {PERSON_TYPES.find((t) => t.value === person.type)?.label || person.type}
                       </span>

@@ -133,11 +133,12 @@ const ReservationRequestCard = React.memo(
           <span className="notification-registration">{request.registration}</span>
         )}
         {isRejecting ? (
-          <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
+          <div className="notification-actions reject-form">
             <Textarea
               className="reject-reason-input"
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
+              onClick={(event) => event.stopPropagation()}
               placeholder="Motif du refus..."
               aria-label="Motif du refus"
               rows={2}
@@ -148,26 +149,46 @@ const ReservationRequestCard = React.memo(
                 variant="ghost"
                 className="notif-action-btn confirm-reject"
                 disabled={!rejectionReason.trim()}
-                onClick={onConfirmReject}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onConfirmReject();
+                }}
               >
                 {confirmRejectIcon && <X size={14} />} Confirmer le refus
               </Button>
               <Button
                 variant="ghost"
                 className={`notif-action-btn ${cancelRejectClassName}`}
-                onClick={onCancelReject}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCancelReject();
+                }}
               >
                 Annuler
               </Button>
             </div>
           </div>
         ) : (
-          <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" className="notif-action-btn approve" onClick={onApprove}>
+          <div className="notification-actions">
+            <Button
+              variant="ghost"
+              className="notif-action-btn approve"
+              onClick={(event) => {
+                event.stopPropagation();
+                onApprove();
+              }}
+            >
               <Check size={14} />
               {approveLabel}
             </Button>
-            <Button variant="ghost" className="notif-action-btn reject" onClick={onReject}>
+            <Button
+              variant="ghost"
+              className="notif-action-btn reject"
+              onClick={(event) => {
+                event.stopPropagation();
+                onReject();
+              }}
+            >
               <X size={14} />
               Refuser
             </Button>
@@ -218,6 +239,13 @@ const HeaderNotifications = ({
   const [popoverStyle, setPopoverStyle] = useState({});
 
   const isAnyPopupOpen = showNotificationsPopup || showRequestsPopup;
+
+  const handleActivateWithKeyboard = useCallback((event, callback) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      callback();
+    }
+  }, []);
 
   const updatePopoverPosition = useCallback(() => {
     const anchor = document.querySelector('.header-notification-badges');
@@ -311,6 +339,15 @@ const HeaderNotifications = ({
           setShowNotificationsPopup(false);
           setShowRequestsPopup(false);
         }}
+        onKeyDown={(event) =>
+          handleActivateWithKeyboard(event, () => {
+            setShowNotificationsPopup(false);
+            setShowRequestsPopup(false);
+          })
+        }
+        role="button"
+        tabIndex={0}
+        aria-label="Fermer les notifications"
       />
 
       {/* Popup des notifications */}
@@ -318,7 +355,6 @@ const HeaderNotifications = ({
         <div
           className="notifications-popup notifications-popover"
           style={popoverStyle}
-          onMouseDown={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="false"
           aria-label="Notifications"
@@ -379,6 +415,17 @@ const HeaderNotifications = ({
                                   vehicle,
                                 });
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () => {
+                                  setShowNotificationsPopup(false);
+                                  setSelectedOverdueIntervention({
+                                    intervention: maintenance,
+                                    vehicle,
+                                  });
+                                })
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -430,6 +477,16 @@ const HeaderNotifications = ({
                                   onOpenMaintenance(vehicle, maintenance.id);
                                 }
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () => {
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenance.id);
+                                  }
+                                })
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -483,6 +540,16 @@ const HeaderNotifications = ({
                                   onOpenMaintenance(vehicle, maintenance.id);
                                 }
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () => {
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenance.id);
+                                  }
+                                })
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -534,6 +601,16 @@ const HeaderNotifications = ({
                                   onOpenMaintenance(vehicle, maintenance.id);
                                 }
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () => {
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenance.id);
+                                  }
+                                })
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -574,6 +651,14 @@ const HeaderNotifications = ({
                               onClick={() =>
                                 setExpandedReportedId(isExpanded ? null : maintenance.id)
                               }
+                              role="button"
+                              tabIndex={0}
+                              aria-expanded={isExpanded}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () =>
+                                  setExpandedReportedId(isExpanded ? null : maintenance.id),
+                                )
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -598,14 +683,12 @@ const HeaderNotifications = ({
                                 </span>
                               )}
                               {isExpanded && (
-                                <div
-                                  className="notification-actions reported-actions"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
+                                <div className="notification-actions reported-actions">
                                   <Button
                                     variant="ghost"
                                     className="notif-action-btn create-intervention"
-                                    onClick={() => {
+                                    onClick={(event) => {
+                                      event.stopPropagation();
                                       setShowNotificationsPopup(false);
                                       setExpandedReportedId(null);
                                       if (onScheduleMaintenance && vehicle) {
@@ -621,7 +704,8 @@ const HeaderNotifications = ({
                                   <Button
                                     variant="ghost"
                                     className="notif-action-btn delete-intervention"
-                                    onClick={() => {
+                                    onClick={(event) => {
+                                      event.stopPropagation();
                                       confirm({
                                         title: 'Supprimer le signalement',
                                         message: 'Supprimer ce signalement de panne ?',
@@ -647,7 +731,8 @@ const HeaderNotifications = ({
                                   <Button
                                     variant="ghost"
                                     className="notif-action-btn close-signalement"
-                                    onClick={() => {
+                                    onClick={(event) => {
+                                      event.stopPropagation();
                                       setClosingReportedId(isClosing ? null : maintenance.id);
                                       setClosureDescription('');
                                     }}
@@ -658,14 +743,12 @@ const HeaderNotifications = ({
                                 </div>
                               )}
                               {isClosing && (
-                                <div
-                                  className="notification-actions reject-form"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
+                                <div className="notification-actions reject-form">
                                   <Textarea
                                     className="reject-reason-input"
                                     value={closureDescription}
                                     onChange={(e) => setClosureDescription(e.target.value)}
+                                    onClick={(event) => event.stopPropagation()}
                                     placeholder="Description de l'intervention..."
                                     aria-label="Description de l'intervention"
                                     rows={3}
@@ -676,7 +759,8 @@ const HeaderNotifications = ({
                                       variant="ghost"
                                       className="notif-action-btn confirm-reject"
                                       disabled={!closureDescription.trim()}
-                                      onClick={async () => {
+                                      onClick={async (event) => {
+                                        event.stopPropagation();
                                         if (!onCloseSignalement) return;
                                         try {
                                           await onCloseSignalement(
@@ -697,7 +781,8 @@ const HeaderNotifications = ({
                                     <Button
                                       variant="ghost"
                                       className="notif-action-btn dismiss"
-                                      onClick={() => {
+                                      onClick={(event) => {
+                                        event.stopPropagation();
                                         setClosingReportedId(null);
                                         setClosureDescription('');
                                       }}
@@ -796,7 +881,6 @@ const HeaderNotifications = ({
         <div
           className="notifications-popup notifications-popover"
           style={popoverStyle}
-          onMouseDown={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="false"
           aria-label="Demandes de réservation"

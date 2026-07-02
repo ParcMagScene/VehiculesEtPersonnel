@@ -321,20 +321,46 @@
   justify-content: center;
   width: 20px;
   height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: var(--theme-text-muted);
+  color: var(--text-primary);
+  opacity: 0.82;
   cursor: pointer;
   flex-shrink: 0;
 }
 
+.suivi-person-fav .suivi-person-fav-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
 .suivi-person-fav:hover {
-  background: var(--surface-secondary);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+.suivi-person-fav:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 1px;
 }
 
 .suivi-person-fav.active {
   color: var(--btn-warning-text);
+  background: rgba(251, 146, 60, 0.12);
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .suivi-person-fav.ui-btn {
+    min-width: 20px;
+    min-height: 20px;
+  }
 }
 .suivi-person-check {
   width: 14px;

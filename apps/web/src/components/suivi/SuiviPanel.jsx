@@ -306,6 +306,7 @@ function SuiviPanel({
         className={`suivi-person-item ${selectedPerson?.id === p.id ? 'selected' : ''}`}
       >
         <Button
+          variant="ghost"
           type="button"
           className={`suivi-person-fav${isFavorite(p.id) ? ' active' : ''}`}
           onClick={(e) => {
@@ -315,7 +316,12 @@ function SuiviPanel({
           title={isFavorite(p.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           aria-label={isFavorite(p.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
         >
-          <Star size={12} fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
+          <Star
+            size={14}
+            strokeWidth={2.25}
+            className="suivi-person-fav-icon"
+            fill={isFavorite(p.id) ? 'currentColor' : 'none'}
+          />
         </Button>
         <Input
           type="checkbox"

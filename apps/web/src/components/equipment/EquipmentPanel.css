@@ -468,6 +468,8 @@
   cursor: pointer;
   transition: border-color 0.15s;
   min-height: 44px;
+  width: 100%;
+  text-align: left;
 }
 .eq-photo-picker-preview:hover {
   border-color: var(--theme-primary);
@@ -594,6 +596,9 @@
   cursor: pointer;
   border: var(--space-0-5) solid transparent;
   transition: all 0.15s;
+  width: 100%;
+  background: transparent;
+  text-align: center;
 }
 .eq-photo-picker-item:hover {
   background: var(--theme-bg-hover);

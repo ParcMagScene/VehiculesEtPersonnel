@@ -881,6 +881,12 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
                       role="button"
                       tabIndex={0}
                       onClick={() => handleSelect(eq)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleSelect(eq);
+                        }
+                      }}
                       className="eq-sav-dropdown-item"
                     >
                       <span className="eq-sav-dropdown-icon">
@@ -1033,12 +1039,14 @@ const SavSlidePanel = ({
           <div className="eq-detail-field">
             <Package size={14} />
             <span>Matériel</span>
-            <strong
+            <Button
+              variant="ghost"
+              type="button"
               className="eq-clickable-link"
               onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}
             >
               {eq.categoryIcon || '📦'} {cleanName(eq.name)}
-            </strong>
+            </Button>
           </div>
         )}
         <div className="eq-detail-field">

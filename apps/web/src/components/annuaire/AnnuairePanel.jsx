@@ -1575,6 +1575,14 @@ function DetailView({
                       key={c.id}
                       className="link-contact-item"
                       onClick={() => handleLinkContact(c)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleLinkContact(c);
+                        }
+                      }}
                     >
                       <span>
                         {c.first_name} <strong>{c.last_name}</strong>
@@ -1911,6 +1919,14 @@ function EntityFormModal({
                                   key={e.id}
                                   className="contact-parent-result-item"
                                   onClick={() => handleSelectParentEntity(e)}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                      event.preventDefault();
+                                      handleSelectParentEntity(e);
+                                    }
+                                  }}
                                 >
                                   <strong>{e.name}</strong>
                                   {e.city && <span className="result-city">{e.city}</span>}

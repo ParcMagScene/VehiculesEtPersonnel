@@ -67,6 +67,13 @@ const ReservationModal = ({
     return `${year}-${month}-${day}`;
   };
 
+  const activateOnEnterOrSpace = (event, callback) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      callback();
+    }
+  };
+
   // Initialiser les affaires en tant que tableau (compatibilité avec l'ancien format)
   const initAffaires = () => {
     if (reservation?.affaires && Array.isArray(reservation.affaires)) {
@@ -1263,6 +1270,18 @@ const ReservationModal = ({
                                     setShowLocationDropdown(false);
                                   }}
                                   className="reservation-location-item"
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(event) =>
+                                    activateOnEnterOrSpace(event, () => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        locationName: location.name,
+                                      }));
+                                      setLocationSearch('');
+                                      setShowLocationDropdown(false);
+                                    })
+                                  }
                                 >
                                   <div className="reservation-location-item-name">
                                     {location.name}
@@ -1417,6 +1436,14 @@ const ReservationModal = ({
                     <div
                       className="custom-dropdown-trigger"
                       onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isEventDropdownOpen}
+                      onKeyDown={(event) =>
+                        activateOnEnterOrSpace(event, () =>
+                          setIsEventDropdownOpen(!isEventDropdownOpen),
+                        )
+                      }
                     >
                       {formData.isTournee ? (
                         // Mode tournée : afficher tous les événements liés
@@ -1453,6 +1480,16 @@ const ReservationModal = ({
                                     }
                                   }}
                                   title="Cliquer pour voir l'événement"
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(keyboardEvent) =>
+                                    activateOnEnterOrSpace(keyboardEvent, () => {
+                                      if (onRequestViewEvent) {
+                                        onRequestViewEvent(event);
+                                        onClose();
+                                      }
+                                    })
+                                  }
                                 >
                                   <span className="event-dates reservation-event-date-xs">
                                     {dateRange}
@@ -1517,6 +1554,16 @@ const ReservationModal = ({
                                 }
                               }}
                               title="Cliquer pour voir l'événement"
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(keyboardEvent) =>
+                                activateOnEnterOrSpace(keyboardEvent, () => {
+                                  if (onRequestViewEvent) {
+                                    onRequestViewEvent(event);
+                                    onClose();
+                                  }
+                                })
+                              }
                             >
                               <span className="event-dates">{dateRange}</span>
                               <span className="event-title">{cleanTitle}</span>
@@ -1537,6 +1584,11 @@ const ReservationModal = ({
                         <div
                           className="custom-dropdown-item"
                           onClick={() => selectGoogleEvent(null)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(event) =>
+                            activateOnEnterOrSpace(event, () => selectGoogleEvent(null))
+                          }
                         >
                           <span className="event-dates">—</span>
                           <span className="event-title">Aucun événement</span>
@@ -1587,6 +1639,13 @@ const ReservationModal = ({
                               className={`custom-dropdown-item ${isEventLinked ? 'affaire-added' : ''}`}
                               onClick={() => selectGoogleEvent(event)}
                               style={{ backgroundColor: getEventColor(event) + '20' }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(keyboardEvent) =>
+                                activateOnEnterOrSpace(keyboardEvent, () =>
+                                  selectGoogleEvent(event),
+                                )
+                              }
                             >
                               <span className="event-dates">{dateRange}</span>
                               <span className="event-title">
@@ -1730,6 +1789,16 @@ const ReservationModal = ({
                             }
                           }}
                           title="Cliquer pour voir l'événement"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(keyboardEvent) =>
+                            activateOnEnterOrSpace(keyboardEvent, () => {
+                              if (onRequestViewEvent) {
+                                onRequestViewEvent(event);
+                                onClose();
+                              }
+                            })
+                          }
                         >
                           <div className="reservation-event-header">
                             <span className="reservation-event-date-badge">📅 {dateRange}</span>
@@ -1807,10 +1876,7 @@ const ReservationModal = ({
                               Lier à un événement
                             </Button>
                             {linkEventComboboxOpen === eventId && (
-                              <div
-                                className="link-event-combobox"
-                                onClick={(e) => e.stopPropagation()}
-                              >
+                              <div className="link-event-combobox">
                                 <div className="combobox-header">Choisir un événement à lier</div>
                                 <div className="combobox-list">
                                   {/* Événements déjà dans la tournée mais pas liés */}
@@ -1849,6 +1915,14 @@ const ReservationModal = ({
                                             handleLinkTrips(eventId, ge.id);
                                             setLinkEventComboboxOpen(null);
                                           }}
+                                          role="button"
+                                          tabIndex={0}
+                                          onKeyDown={(keyboardEvent) =>
+                                            activateOnEnterOrSpace(keyboardEvent, () => {
+                                              handleLinkTrips(eventId, ge.id);
+                                              setLinkEventComboboxOpen(null);
+                                            })
+                                          }
                                         >
                                           <span className="combobox-date">
                                             🚐{' '}
@@ -1902,6 +1976,13 @@ const ReservationModal = ({
                                           key={ge.id}
                                           className="combobox-item"
                                           onClick={() => handleLinkBannerEvent(eventId, ge)}
+                                          role="button"
+                                          tabIndex={0}
+                                          onKeyDown={(keyboardEvent) =>
+                                            activateOnEnterOrSpace(keyboardEvent, () =>
+                                              handleLinkBannerEvent(eventId, ge),
+                                            )
+                                          }
                                         >
                                           <span className="combobox-date">
                                             {geStart

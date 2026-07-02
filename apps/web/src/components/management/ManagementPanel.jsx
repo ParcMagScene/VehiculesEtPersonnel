@@ -922,72 +922,90 @@ const ManagementPanel = ({
 
                     {activeTab === 'vehicles' && (
                       <>
-                        <Select
-                          value={newItem.isLocation ? 'location' : 'entreprise'}
-                          onChange={(e) =>
-                            setNewItem({
-                              ...newItem,
-                              isLocation: e.target.value === 'location',
-                            })
-                          }
-                        >
-                          <option value="entreprise">Type: Entreprise</option>
-                          <option value="location">Type: Location</option>
-                        </Select>
-                        <Input
-                          type="text"
-                          placeholder="Catégorie (VL 20m3, Porteur...)"
-                          value={newItem.type}
-                          onChange={(e) =>
-                            setNewItem({
-                              ...newItem,
-                              type: e.target.value,
-                            })
-                          }
-                        />
-                        <Input
-                          type="text"
-                          placeholder="Immatriculation"
-                          value={newItem.immatriculation}
-                          onChange={(e) =>
-                            setNewItem({ ...newItem, immatriculation: e.target.value })
-                          }
-                        />
-                        <Input
-                          type="text"
-                          placeholder="Marque"
-                          value={newItem.marque}
-                          onChange={(e) => setNewItem({ ...newItem, marque: e.target.value })}
-                        />
-                        <Input
-                          type="text"
-                          placeholder="Couleur véhicule"
-                          value={newItem.couleurVehicule}
-                          onChange={(e) =>
-                            setNewItem({ ...newItem, couleurVehicule: e.target.value })
-                          }
-                        />
-                        <div className="photo-select-wrapper">
+                        <div className="management-field">
+                          <label>Usage</label>
                           <Select
-                            value={newItem.photo}
-                            onChange={(e) => setNewItem({ ...newItem, photo: e.target.value })}
+                            value={newItem.isLocation ? 'location' : 'entreprise'}
+                            onChange={(e) =>
+                              setNewItem({
+                                ...newItem,
+                                isLocation: e.target.value === 'location',
+                              })
+                            }
                           >
-                            <option value="">Pas de photo</option>
-                            {availablePhotos.map((photo) => (
-                              <option key={photo} value={photo}>
-                                {photo}
-                              </option>
-                            ))}
+                            <option value="entreprise">Entreprise</option>
+                            <option value="location">Location</option>
                           </Select>
-                          <Button
-                            variant="ghost"
-                            type="button"
-                            className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                            onClick={refreshPhotoList}
-                            title="Rafraîchir la liste des photos"
-                          >
-                            <RefreshCw size={16} />
-                          </Button>
+                        </div>
+                        <div className="management-field">
+                          <label>Catégorie</label>
+                          <Input
+                            type="text"
+                            placeholder="VL 20m3, Porteur..."
+                            value={newItem.type}
+                            onChange={(e) =>
+                              setNewItem({
+                                ...newItem,
+                                type: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="management-field">
+                          <label>Immatriculation</label>
+                          <Input
+                            type="text"
+                            placeholder="Immatriculation"
+                            value={newItem.immatriculation}
+                            onChange={(e) =>
+                              setNewItem({ ...newItem, immatriculation: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="management-field">
+                          <label>Marque</label>
+                          <Input
+                            type="text"
+                            placeholder="Marque"
+                            value={newItem.marque}
+                            onChange={(e) => setNewItem({ ...newItem, marque: e.target.value })}
+                          />
+                        </div>
+                        <div className="management-field">
+                          <label>Couleur véhicule</label>
+                          <Input
+                            type="text"
+                            placeholder="Couleur véhicule"
+                            value={newItem.couleurVehicule}
+                            onChange={(e) =>
+                              setNewItem({ ...newItem, couleurVehicule: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="management-field">
+                          <label>Photo</label>
+                          <div className="photo-select-wrapper">
+                            <Select
+                              value={newItem.photo}
+                              onChange={(e) => setNewItem({ ...newItem, photo: e.target.value })}
+                            >
+                              <option value="">Pas de photo</option>
+                              {availablePhotos.map((photo) => (
+                                <option key={photo} value={photo}>
+                                  {photo}
+                                </option>
+                              ))}
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              type="button"
+                              className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                              onClick={refreshPhotoList}
+                              title="Rafraîchir la liste des photos"
+                            >
+                              <RefreshCw size={16} />
+                            </Button>
+                          </div>
                         </div>
                         <div className="color-picker">
                           <label>Couleur d'affichage:</label>
@@ -1213,109 +1231,130 @@ const ManagementPanel = ({
                             >
                               {editingItem?.id === item.id ? (
                                 <div className="edit-form">
-                                  <Input
-                                    type="text"
-                                    value={editingItem.name}
-                                    onChange={(e) =>
-                                      setEditingItem({ ...editingItem, name: e.target.value })
-                                    }
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                                    placeholder="Nom"
-                                  />
+                                  <div className="management-field management-field--compact">
+                                    <label>Nom</label>
+                                    <Input
+                                      type="text"
+                                      value={editingItem.name}
+                                      onChange={(e) =>
+                                        setEditingItem({ ...editingItem, name: e.target.value })
+                                      }
+                                      onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                                      placeholder="Nom"
+                                    />
+                                  </div>
                                   {activeTab === 'vehicles' && (
                                     <>
-                                      <Input
-                                        type="text"
-                                        value={editingItem.type || editingItem.category || ''}
-                                        onChange={(e) =>
-                                          setEditingItem({
-                                            ...editingItem,
-                                            type: e.target.value,
-                                            category: e.target.value,
-                                          })
-                                        }
-                                        placeholder="Catégorie"
-                                      />
-                                      <Select
-                                        value={editingItem.isLocation ? 'location' : 'entreprise'}
-                                        onChange={(e) =>
-                                          setEditingItem({
-                                            ...editingItem,
-                                            isLocation: e.target.value === 'location',
-                                          })
-                                        }
-                                      >
-                                        <option value="entreprise">Type: Entreprise</option>
-                                        <option value="location">Type: Location</option>
-                                      </Select>
-                                      <Input
-                                        type="text"
-                                        value={
-                                          editingItem.immatriculation ||
-                                          editingItem.registration ||
-                                          ''
-                                        }
-                                        onChange={(e) =>
-                                          setEditingItem({
-                                            ...editingItem,
-                                            immatriculation: e.target.value,
-                                            registration: e.target.value,
-                                          })
-                                        }
-                                        placeholder="Immatriculation"
-                                      />
-                                      <Input
-                                        type="text"
-                                        value={editingItem.marque || editingItem.brand || ''}
-                                        onChange={(e) =>
-                                          setEditingItem({
-                                            ...editingItem,
-                                            marque: e.target.value,
-                                            brand: e.target.value,
-                                          })
-                                        }
-                                        placeholder="Marque"
-                                      />
-                                      <Input
-                                        type="text"
-                                        value={
-                                          editingItem.couleurVehicule || editingItem.color || ''
-                                        }
-                                        onChange={(e) =>
-                                          setEditingItem({
-                                            ...editingItem,
-                                            couleurVehicule: e.target.value,
-                                            color: e.target.value,
-                                          })
-                                        }
-                                        placeholder="Couleur véhicule"
-                                      />
-                                      <div className="photo-select-wrapper">
-                                        <Select
-                                          value={editingItem.photo || ''}
+                                      <div className="management-field management-field--compact">
+                                        <label>Catégorie</label>
+                                        <Input
+                                          type="text"
+                                          value={editingItem.type || editingItem.category || ''}
                                           onChange={(e) =>
                                             setEditingItem({
                                               ...editingItem,
-                                              photo: e.target.value,
+                                              type: e.target.value,
+                                              category: e.target.value,
+                                            })
+                                          }
+                                          placeholder="Catégorie"
+                                        />
+                                      </div>
+                                      <div className="management-field management-field--compact">
+                                        <label>Usage</label>
+                                        <Select
+                                          value={editingItem.isLocation ? 'location' : 'entreprise'}
+                                          onChange={(e) =>
+                                            setEditingItem({
+                                              ...editingItem,
+                                              isLocation: e.target.value === 'location',
                                             })
                                           }
                                         >
-                                          <option value="">Pas de photo</option>
-                                          {availablePhotos.map((photo) => (
-                                            <option key={photo} value={photo}>
-                                              {photo}
-                                            </option>
-                                          ))}
+                                          <option value="entreprise">Entreprise</option>
+                                          <option value="location">Location</option>
                                         </Select>
-                                        <Button
-                                          variant="ghost"
-                                          type="button"
-                                          className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                                          onClick={refreshPhotoList}
-                                          title="Rafraîchir la liste des photos"
-                                        >
-                                          <RefreshCw size={16} />
-                                        </Button>
+                                      </div>
+                                      <div className="management-field management-field--compact">
+                                        <label>Immatriculation</label>
+                                        <Input
+                                          type="text"
+                                          value={
+                                            editingItem.immatriculation ||
+                                            editingItem.registration ||
+                                            ''
+                                          }
+                                          onChange={(e) =>
+                                            setEditingItem({
+                                              ...editingItem,
+                                              immatriculation: e.target.value,
+                                              registration: e.target.value,
+                                            })
+                                          }
+                                          placeholder="Immatriculation"
+                                        />
+                                      </div>
+                                      <div className="management-field management-field--compact">
+                                        <label>Marque</label>
+                                        <Input
+                                          type="text"
+                                          value={editingItem.marque || editingItem.brand || ''}
+                                          onChange={(e) =>
+                                            setEditingItem({
+                                              ...editingItem,
+                                              marque: e.target.value,
+                                              brand: e.target.value,
+                                            })
+                                          }
+                                          placeholder="Marque"
+                                        />
+                                      </div>
+                                      <div className="management-field management-field--compact">
+                                        <label>Couleur véhicule</label>
+                                        <Input
+                                          type="text"
+                                          value={
+                                            editingItem.couleurVehicule || editingItem.color || ''
+                                          }
+                                          onChange={(e) =>
+                                            setEditingItem({
+                                              ...editingItem,
+                                              couleurVehicule: e.target.value,
+                                              color: e.target.value,
+                                            })
+                                          }
+                                          placeholder="Couleur véhicule"
+                                        />
+                                      </div>
+                                      <div className="management-field management-field--compact">
+                                        <label>Photo</label>
+                                        <div className="photo-select-wrapper">
+                                          <Select
+                                            value={editingItem.photo || ''}
+                                            onChange={(e) =>
+                                              setEditingItem({
+                                                ...editingItem,
+                                                photo: e.target.value,
+                                              })
+                                            }
+                                          >
+                                            <option value="">Pas de photo</option>
+                                            {availablePhotos.map((photo) => (
+                                              <option key={photo} value={photo}>
+                                                {photo}
+                                              </option>
+                                            ))}
+                                          </Select>
+                                          <Button
+                                            variant="ghost"
+                                            type="button"
+                                            className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                                            onClick={refreshPhotoList}
+                                            title="Rafraîchir la liste des photos"
+                                          >
+                                            <RefreshCw size={16} />
+                                          </Button>
+                                        </div>
                                       </div>
                                       <div className="color-picker-inline">
                                         <label>Couleur d'affichage:</label>
@@ -1524,100 +1563,123 @@ const ManagementPanel = ({
                               {editingItem?.id === item.id ? (
                                 <div className="edit-form">
                                   {/* Contenu d'édition identique */}
-                                  <Input
-                                    type="text"
-                                    value={editingItem.name}
-                                    onChange={(e) =>
-                                      setEditingItem({ ...editingItem, name: e.target.value })
-                                    }
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                                    placeholder="Nom"
-                                  />
-                                  <Input
-                                    type="text"
-                                    value={editingItem.type || editingItem.category || ''}
-                                    onChange={(e) =>
-                                      setEditingItem({
-                                        ...editingItem,
-                                        type: e.target.value,
-                                        category: e.target.value,
-                                      })
-                                    }
-                                    placeholder="Catégorie"
-                                  />
-                                  <Select
-                                    value={editingItem.isLocation ? 'location' : 'entreprise'}
-                                    onChange={(e) =>
-                                      setEditingItem({
-                                        ...editingItem,
-                                        isLocation: e.target.value === 'location',
-                                      })
-                                    }
-                                  >
-                                    <option value="entreprise">Type: Entreprise</option>
-                                    <option value="location">Type: Location</option>
-                                  </Select>
-                                  <Input
-                                    type="text"
-                                    value={
-                                      editingItem.immatriculation || editingItem.registration || ''
-                                    }
-                                    onChange={(e) =>
-                                      setEditingItem({
-                                        ...editingItem,
-                                        immatriculation: e.target.value,
-                                        registration: e.target.value,
-                                      })
-                                    }
-                                    placeholder="Immatriculation"
-                                  />
-                                  <Input
-                                    type="text"
-                                    value={editingItem.marque || editingItem.brand || ''}
-                                    onChange={(e) =>
-                                      setEditingItem({
-                                        ...editingItem,
-                                        marque: e.target.value,
-                                        brand: e.target.value,
-                                      })
-                                    }
-                                    placeholder="Marque"
-                                  />
-                                  <Input
-                                    type="text"
-                                    value={editingItem.couleurVehicule || editingItem.color || ''}
-                                    onChange={(e) =>
-                                      setEditingItem({
-                                        ...editingItem,
-                                        couleurVehicule: e.target.value,
-                                        color: e.target.value,
-                                      })
-                                    }
-                                    placeholder="Couleur véhicule"
-                                  />
-                                  <div className="photo-select-wrapper">
-                                    <Select
-                                      value={editingItem.photo || ''}
+                                  <div className="management-field management-field--compact">
+                                    <label>Nom</label>
+                                    <Input
+                                      type="text"
+                                      value={editingItem.name}
                                       onChange={(e) =>
-                                        setEditingItem({ ...editingItem, photo: e.target.value })
+                                        setEditingItem({ ...editingItem, name: e.target.value })
+                                      }
+                                      onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
+                                      placeholder="Nom"
+                                    />
+                                  </div>
+                                  <div className="management-field management-field--compact">
+                                    <label>Catégorie</label>
+                                    <Input
+                                      type="text"
+                                      value={editingItem.type || editingItem.category || ''}
+                                      onChange={(e) =>
+                                        setEditingItem({
+                                          ...editingItem,
+                                          type: e.target.value,
+                                          category: e.target.value,
+                                        })
+                                      }
+                                      placeholder="Catégorie"
+                                    />
+                                  </div>
+                                  <div className="management-field management-field--compact">
+                                    <label>Usage</label>
+                                    <Select
+                                      value={editingItem.isLocation ? 'location' : 'entreprise'}
+                                      onChange={(e) =>
+                                        setEditingItem({
+                                          ...editingItem,
+                                          isLocation: e.target.value === 'location',
+                                        })
                                       }
                                     >
-                                      <option value="">Pas de photo</option>
-                                      {availablePhotos.map((photo) => (
-                                        <option key={photo} value={photo}>
-                                          {photo}
-                                        </option>
-                                      ))}
+                                      <option value="entreprise">Entreprise</option>
+                                      <option value="location">Location</option>
                                     </Select>
-                                    <Button
-                                      variant="ghost"
-                                      type="button"
-                                      className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                                      onClick={refreshPhotoList}
-                                      title="Rafraîchir la liste des photos"
-                                    >
-                                      <RefreshCw size={16} />
-                                    </Button>
+                                  </div>
+                                  <div className="management-field management-field--compact">
+                                    <label>Immatriculation</label>
+                                    <Input
+                                      type="text"
+                                      value={
+                                        editingItem.immatriculation ||
+                                        editingItem.registration ||
+                                        ''
+                                      }
+                                      onChange={(e) =>
+                                        setEditingItem({
+                                          ...editingItem,
+                                          immatriculation: e.target.value,
+                                          registration: e.target.value,
+                                        })
+                                      }
+                                      placeholder="Immatriculation"
+                                    />
+                                  </div>
+                                  <div className="management-field management-field--compact">
+                                    <label>Marque</label>
+                                    <Input
+                                      type="text"
+                                      value={editingItem.marque || editingItem.brand || ''}
+                                      onChange={(e) =>
+                                        setEditingItem({
+                                          ...editingItem,
+                                          marque: e.target.value,
+                                          brand: e.target.value,
+                                        })
+                                      }
+                                      placeholder="Marque"
+                                    />
+                                  </div>
+                                  <div className="management-field management-field--compact">
+                                    <label>Couleur véhicule</label>
+                                    <Input
+                                      type="text"
+                                      value={editingItem.couleurVehicule || editingItem.color || ''}
+                                      onChange={(e) =>
+                                        setEditingItem({
+                                          ...editingItem,
+                                          couleurVehicule: e.target.value,
+                                          color: e.target.value,
+                                        })
+                                      }
+                                      placeholder="Couleur véhicule"
+                                    />
+                                  </div>
+                                  <div className="management-field management-field--compact">
+                                    <label>Photo</label>
+                                    <div className="photo-select-wrapper">
+                                      <Select
+                                        value={editingItem.photo || ''}
+                                        onChange={(e) =>
+                                          setEditingItem({ ...editingItem, photo: e.target.value })
+                                        }
+                                      >
+                                        <option value="">Pas de photo</option>
+                                        {availablePhotos.map((photo) => (
+                                          <option key={photo} value={photo}>
+                                            {photo}
+                                          </option>
+                                        ))}
+                                      </Select>
+                                      <Button
+                                        variant="ghost"
+                                        type="button"
+                                        className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+                                        onClick={refreshPhotoList}
+                                        title="Rafraîchir la liste des photos"
+                                      >
+                                        <RefreshCw size={16} />
+                                      </Button>
+                                    </div>
                                   </div>
                                   <div className="color-picker-inline">
                                     <label>Couleur d'affichage:</label>

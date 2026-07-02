@@ -13,6 +13,7 @@ const VehicleCell = ({
   maintenances,
   onVehicleClick,
   onVehicleDoubleClick,
+  onVehicleContextMenu,
   onMaintenanceClick,
 }) => {
   const activeBreakdowns = maintenances
@@ -44,6 +45,12 @@ const VehicleCell = ({
       onDoubleClick={(e) => {
         e.stopPropagation();
         onVehicleDoubleClick && onVehicleDoubleClick(vehicle);
+      }}
+      onContextMenu={(e) => {
+        if (!onVehicleContextMenu) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onVehicleContextMenu(vehicle);
       }}
       style={{ cursor: onVehicleClick ? 'pointer' : 'default' }}
     >
@@ -108,6 +115,7 @@ const CalendarVehicleColumn = ({
   maintenances,
   onVehicleClick,
   onVehicleDoubleClick,
+  onVehicleContextMenu,
   onMaintenanceClick,
 }) => (
   <div className="vehicle-column">
@@ -121,6 +129,7 @@ const CalendarVehicleColumn = ({
               maintenances={maintenances}
               onVehicleClick={onVehicleClick}
               onVehicleDoubleClick={onVehicleDoubleClick}
+              onVehicleContextMenu={onVehicleContextMenu}
               onMaintenanceClick={onMaintenanceClick}
             />
           ))}
@@ -152,6 +161,7 @@ const CalendarVehicleColumn = ({
               maintenances={maintenances}
               onVehicleClick={onVehicleClick}
               onVehicleDoubleClick={onVehicleDoubleClick}
+              onVehicleContextMenu={onVehicleContextMenu}
               onMaintenanceClick={onMaintenanceClick}
             />
           ))}

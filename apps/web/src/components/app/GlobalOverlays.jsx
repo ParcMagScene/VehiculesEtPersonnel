@@ -35,6 +35,8 @@ function GlobalOverlays({
   setMaintenanceActionType,
   vehicleForDialog,
   setVehicleForDialog,
+  vehicleForManagementEdit,
+  setVehicleForManagementEdit,
   selectedVehicleForKilometrageControl,
   setSelectedVehicleForKilometrageControl,
   showMessaging,
@@ -91,7 +93,9 @@ function GlobalOverlays({
             currentUser={currentUser}
             activeModule={activeModule}
             panelType="management"
+            initialVehicleToEdit={vehicleForManagementEdit}
             onClose={() => {
+              setVehicleForManagementEdit(null);
               setShowManagement(false);
               if (activeModule === 'planning') {
                 setPersonnelRefreshKey((k) => k + 1);

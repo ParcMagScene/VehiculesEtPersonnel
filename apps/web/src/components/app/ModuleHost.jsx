@@ -71,6 +71,7 @@ function ModuleHost({
   setSelectedVehicleForKilometrageControl,
   handleReportBreakdown,
   setShowManagement,
+  setVehicleForManagementEdit,
 }) {
   return (
     <>
@@ -128,6 +129,12 @@ function ModuleHost({
                     onVehicleDoubleClick={(v) => {
                       setSelectedVehicleForDetails(null);
                       setVehicleForDialog(v);
+                    }}
+                    onVehicleContextMenu={(v) => {
+                      setSelectedVehicleForDetails(null);
+                      setVehicleForDialog(null);
+                      setVehicleForManagementEdit(v);
+                      setShowManagement(true);
                     }}
                     onMaintenanceClick={(vehicle, maintenanceId) => {
                       setMaintenanceActionType(null);

@@ -96,6 +96,7 @@ const ManagementPanel = ({
   activeModule = 'vehicles',
   panelType = 'management',
   onNavigateToPersonnel,
+  initialVehicleToEdit = null,
 }) => {
   const toast = useToast();
   const [colors, setColors] = useState(getMgmtColors());
@@ -138,6 +139,13 @@ const ManagementPanel = ({
   const _inputRef = useRef(null);
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!initialVehicleToEdit) return;
+    setActiveTab('vehicles');
+    setShowAddForm(false);
+    setEditingItem({ ...initialVehicleToEdit });
+  }, [initialVehicleToEdit]);
 
   // State pour le plan dépôt (onglet settings)
   const [depotZones, setDepotZones] = useState(null);

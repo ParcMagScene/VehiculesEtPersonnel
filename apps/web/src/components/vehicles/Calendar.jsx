@@ -51,6 +51,7 @@ const Calendar = ({
   onReservationEditComplete,
   onVehicleClick,
   onVehicleDoubleClick,
+  onVehicleContextMenu,
   onMaintenanceClick,
   onRequestViewEvent,
   currentUser,
@@ -515,6 +516,7 @@ const Calendar = ({
             maintenances={maintenances}
             onVehicleClick={onVehicleClick}
             onVehicleDoubleClick={onVehicleDoubleClick}
+            onVehicleContextMenu={onVehicleContextMenu}
             onMaintenanceClick={onMaintenanceClick}
           />
 

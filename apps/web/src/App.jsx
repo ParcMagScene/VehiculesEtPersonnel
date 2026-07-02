@@ -194,6 +194,7 @@ function AppContent() {
   const [maintenanceActionType, setMaintenanceActionType] = useState(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState(null);
   const [vehicleForDialog, setVehicleForDialog] = useState(null);
+  const [vehicleForManagementEdit, setVehicleForManagementEdit] = useState(null);
   const [selectedVehicleForKilometrageControl, setSelectedVehicleForKilometrageControl] =
     useState(null);
   const [googleEventForReservation, setGoogleEventForReservation] = useState(null);
@@ -658,6 +659,7 @@ function AppContent() {
               setSelectedVehicleForKilometrageControl={setSelectedVehicleForKilometrageControl}
               handleReportBreakdown={handleReportBreakdown}
               setShowManagement={setShowManagement}
+              setVehicleForManagementEdit={setVehicleForManagementEdit}
             />
 
             <GlobalOverlays
@@ -676,6 +678,8 @@ function AppContent() {
               setMaintenanceActionType={setMaintenanceActionType}
               vehicleForDialog={vehicleForDialog}
               setVehicleForDialog={setVehicleForDialog}
+              vehicleForManagementEdit={vehicleForManagementEdit}
+              setVehicleForManagementEdit={setVehicleForManagementEdit}
               selectedVehicleForKilometrageControl={selectedVehicleForKilometrageControl}
               setSelectedVehicleForKilometrageControl={setSelectedVehicleForKilometrageControl}
               showMessaging={showMessaging}

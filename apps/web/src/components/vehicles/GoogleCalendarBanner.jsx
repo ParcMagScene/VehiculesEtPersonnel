@@ -202,21 +202,17 @@ function GoogleCalendarBanner({
   useEffect(() => {
     const loadGoogleStatus = async () => {
       try {
-        const [configuredData, calendarIdData, statusData] = await Promise.all([
-          api.getGoogleOAuthConfigured(),
-          api.getGoogleCalendarId(),
-          api.getGoogleOAuthStatus(),
-        ]);
-        setGoogleConfigured(configuredData?.configured || false);
-        setGoogleCalendarId(calendarIdData?.value || null);
-        if (statusData?.connected) {
+        const statusData = await api.getCalendarServiceStatus();
+        setGoogleConfigured(!!statusData?.configured);
+        setGoogleCalendarId(statusData?.calendarId || null);
+        if (statusData?.configured) {
           setIsSignedIn(true);
           setGoogleEmail(statusData.email || null);
           // Persister pour éviter le flash au prochain chargement
           saveGoogleStateToStorage({
             isSignedIn: true,
             email: statusData.email || null,
-            calendarId: calendarIdData?.value || null,
+            calendarId: statusData?.calendarId || null,
           });
         } else {
           setIsSignedIn(false);

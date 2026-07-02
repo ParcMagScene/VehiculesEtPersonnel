@@ -107,6 +107,7 @@ const ManagementPanel = ({
   const [editingItem, setEditingItem] = useState(null);
   const [newItem, setNewItem] = useState({
     name: '',
+    isLocation: false,
     type: '',
     color: STATUS_COLORS.info,
     immatriculation: '',
@@ -342,6 +343,7 @@ const ManagementPanel = ({
       name: newItem.name,
       ...(activeTab === 'vehicles' && {
         type: newItem.type || 'Véhicule',
+        category: newItem.type || 'Véhicule',
         color: newItem.color,
         displayColor: newItem.color,
         registration: newItem.immatriculation || '',
@@ -351,7 +353,7 @@ const ManagementPanel = ({
         comment: '',
         photo: newItem.photo || '',
         order: currentList.length,
-        isLocation: false,
+        isLocation: Boolean(newItem.isLocation),
       }),
       ...(activeTab === 'locations' && {
         address: newItem.address || '',
@@ -396,6 +398,7 @@ const ManagementPanel = ({
 
     setNewItem({
       name: '',
+      isLocation: false,
       type: '',
       color: STATUS_COLORS.info,
       immatriculation: '',
@@ -919,11 +922,28 @@ const ManagementPanel = ({
 
                     {activeTab === 'vehicles' && (
                       <>
+                        <Select
+                          value={newItem.isLocation ? 'location' : 'entreprise'}
+                          onChange={(e) =>
+                            setNewItem({
+                              ...newItem,
+                              isLocation: e.target.value === 'location',
+                            })
+                          }
+                        >
+                          <option value="entreprise">Type: Entreprise</option>
+                          <option value="location">Type: Location</option>
+                        </Select>
                         <Input
                           type="text"
-                          placeholder="Type (VL 20m3, Porteur...)"
+                          placeholder="Catégorie (VL 20m3, Porteur...)"
                           value={newItem.type}
-                          onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
+                          onChange={(e) =>
+                            setNewItem({
+                              ...newItem,
+                              type: e.target.value,
+                            })
+                          }
                         />
                         <Input
                           type="text"
@@ -1206,12 +1226,28 @@ const ManagementPanel = ({
                                     <>
                                       <Input
                                         type="text"
-                                        value={editingItem.type || ''}
+                                        value={editingItem.type || editingItem.category || ''}
                                         onChange={(e) =>
-                                          setEditingItem({ ...editingItem, type: e.target.value })
+                                          setEditingItem({
+                                            ...editingItem,
+                                            type: e.target.value,
+                                            category: e.target.value,
+                                          })
                                         }
-                                        placeholder="Type"
+                                        placeholder="Catégorie"
                                       />
+                                      <Select
+                                        value={editingItem.isLocation ? 'location' : 'entreprise'}
+                                        onChange={(e) =>
+                                          setEditingItem({
+                                            ...editingItem,
+                                            isLocation: e.target.value === 'location',
+                                          })
+                                        }
+                                      >
+                                        <option value="entreprise">Type: Entreprise</option>
+                                        <option value="location">Type: Location</option>
+                                      </Select>
                                       <Input
                                         type="text"
                                         value={
@@ -1499,12 +1535,28 @@ const ManagementPanel = ({
                                   />
                                   <Input
                                     type="text"
-                                    value={editingItem.type || ''}
+                                    value={editingItem.type || editingItem.category || ''}
                                     onChange={(e) =>
-                                      setEditingItem({ ...editingItem, type: e.target.value })
+                                      setEditingItem({
+                                        ...editingItem,
+                                        type: e.target.value,
+                                        category: e.target.value,
+                                      })
                                     }
-                                    placeholder="Type"
+                                    placeholder="Catégorie"
                                   />
+                                  <Select
+                                    value={editingItem.isLocation ? 'location' : 'entreprise'}
+                                    onChange={(e) =>
+                                      setEditingItem({
+                                        ...editingItem,
+                                        isLocation: e.target.value === 'location',
+                                      })
+                                    }
+                                  >
+                                    <option value="entreprise">Type: Entreprise</option>
+                                    <option value="location">Type: Location</option>
+                                  </Select>
                                   <Input
                                     type="text"
                                     value={

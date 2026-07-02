@@ -762,7 +762,20 @@
   font-size: var(--font-base);
 }
 
+.edit-form select {
+  padding: 0.5rem;
+  border: 2px solid var(--theme-border-medium);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  background: var(--theme-bg-card);
+}
+
 .edit-form input:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+}
+
+.edit-form select:focus {
   outline: none;
   border-color: var(--theme-primary);
 }

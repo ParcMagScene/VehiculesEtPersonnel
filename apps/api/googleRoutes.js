@@ -11,6 +11,8 @@ import {
 } from './GoogleCalendarServiceAccount.js';
 import logger from './logger.js';
 
+const inFlightEventsFetches = new Map();
+
 const gcalRoute = (fn) => async (req, res) => {
   try {
     await fn(req, res);
@@ -81,6 +83,19 @@ function oauthRemovedResponse(res) {
 
 const GOOGLE_EVENTS_CACHE_TTL_MS = 10 * 60_000;
 
+async function getEventsSingleFlight(query) {
+  const key = JSON.stringify(query || {});
+  const existing = inFlightEventsFetches.get(key);
+  if (existing) return existing;
+
+  const requestPromise = getEvents(query).finally(() => {
+    inFlightEventsFetches.delete(key);
+  });
+
+  inFlightEventsFetches.set(key, requestPromise);
+  return requestPromise;
+}
+
 export function setupGoogleRoutes(app, authenticateToken) {
   // ── Nouveau flux principal ──
   app.get(
@@ -96,7 +111,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
     authenticateToken,
     cacheMiddleware(googleCalendarCache, eventsCacheKey, GOOGLE_EVENTS_CACHE_TTL_MS),
     gcalRoute(async (req, res) => {
-      const data = await getEvents(normalizeEventsQuery(req.query));
+      const data = await getEventsSingleFlight(normalizeEventsQuery(req.query));
       res.json(data);
     }),
   );
@@ -137,7 +152,7 @@ export function setupGoogleRoutes(app, authenticateToken) {
     authenticateToken,
     cacheMiddleware(googleCalendarCache, eventsCacheKey, GOOGLE_EVENTS_CACHE_TTL_MS),
     gcalRoute(async (req, res) => {
-      const data = await getEvents(normalizeEventsQuery(req.query));
+      const data = await getEventsSingleFlight(normalizeEventsQuery(req.query));
       res.json(data);
     }),
   );

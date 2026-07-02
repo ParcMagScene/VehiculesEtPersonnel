@@ -25,12 +25,11 @@ const GoogleCalendarConfig = () => {
   const loadConfig = async () => {
     try {
       setIsLoading(true);
-      const [calendarIdData, mapsApiKeyData, statusData] = await Promise.all([
-        api.getGoogleCalendarId(),
+      const [mapsApiKeyData, statusData] = await Promise.all([
         api.getGoogleMapsApiKey(),
         api.getCalendarServiceStatus(),
       ]);
-      setCalendarId(calendarIdData.value || '');
+      setCalendarId(statusData?.calendarId || '');
       setMapsApiKey(mapsApiKeyData.value || '');
       setServiceStatus(statusData || null);
     } catch (error) {

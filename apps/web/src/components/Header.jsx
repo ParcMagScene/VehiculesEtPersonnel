@@ -90,14 +90,14 @@ const Header = ({
     loadAdminBadges();
     const interval = setInterval(loadAdminBadges, 30000);
     return () => clearInterval(interval);
-  }, [currentUser, maintenances]);
+  }, [currentUser?.isAdmin]);
 
   // Badge onglet Contrôles : rechargé à l'ouverture, périodiquement, et sur
   // événement refreshBus('controls') publié après création/édition/effectuation.
   useEffect(() => {
     let cancelled = false;
     const loadControlsBadge = async () => {
-      if (!currentUser) return;
+      if (!currentUser?.id) return;
       if (isApiCoolingDown()) return;
       try {
         const r = await api.getControlsDashboard();
@@ -119,7 +119,7 @@ const Header = ({
       clearInterval(interval);
       unsub();
     };
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   // Charger les demandes de réservation en attente (au démarrage + quand un popup s'ouvre)
   useEffect(() => {
@@ -135,7 +135,7 @@ const Header = ({
       }
     };
     loadPendingReservations();
-  }, [showRequestsPopup, showNotificationsPopup, currentUser]);
+  }, [showRequestsPopup, showNotificationsPopup, currentUser?.isAdmin]);
 
   // Fonction pour détecter les conflits entre une intervention et les réservations
   const getMaintenanceConflicts = (maintenance) => {

@@ -44,6 +44,8 @@ import {
   QuotesList,
 } from './OrdersListViews';
 
+const REQUEST_STATS_REFRESH_INTERVAL_MS = 30000;
+
 // ─────────────────────────────────────────────────────────────
 // Code-split : modales/dialogs/slide-panels ne se rendent qu'à
 // l'interaction utilisateur (clic sur item, bouton Nouveau, ...).
@@ -141,6 +143,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   // ═══ Chargement des données ═══
   const abortRef = useRef(null);
   const debounceRef = useRef(null);
+  const requestStatsFetchedAtRef = useRef(0);
 
   const loadData = useCallback(async () => {
     if (abortRef.current) abortRef.current.abort();
@@ -167,12 +170,15 @@ function OrdersPanel({ currentUser, isMobile }) {
         setSuppliers(results[3]);
       } else {
         const promises = [api.getSuppliers(searchTerm ? { search: searchTerm } : {})];
+        const shouldFetchRequestStats =
+          activeTab === 'requests' ||
+          Date.now() - requestStatsFetchedAtRef.current > REQUEST_STATS_REFRESH_INTERVAL_MS;
         if (activeTab === 'orders' || !orders.length) promises.push(api.getOrders(params));
         if (activeTab === 'quotes' || !quotes.length) promises.push(api.getQuotes(params));
         promises.push(api.getOrdersStats());
         if (!clients.length) promises.push(api.getClients());
         if (activeTab === 'requests') promises.push(api.getMaterialRequests(params));
-        promises.push(api.getMaterialRequestsStats());
+        if (shouldFetchRequestStats) promises.push(api.getMaterialRequestsStats());
         if (activeTab === 'suppliers')
           promises.push(api.getSuppliersWithOrders(showArchivedSuppliers));
         promises.push(api.getCompletionAlerts(true));
@@ -190,7 +196,10 @@ function OrdersPanel({ currentUser, isMobile }) {
           idx++;
         } else if (!clients.length) idx++;
         if (activeTab === 'requests') setMaterialRequests(results[idx++]);
-        setRequestStats(results[idx++]);
+        if (shouldFetchRequestStats) {
+          setRequestStats(results[idx++]);
+          requestStatsFetchedAtRef.current = Date.now();
+        }
         if (activeTab === 'suppliers') setSuppliersWithOrders(results[idx++]);
         setCompletionAlerts(results[idx] || []);
       }

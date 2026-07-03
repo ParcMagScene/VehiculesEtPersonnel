@@ -131,6 +131,7 @@ function StockPanel({
   const isAdmin = currentUser?.isAdmin === true;
   const clickTimerRef = useRef(null);
   const debounceRef = useRef(null);
+  const ancillaryLoadRef = useRef(null);
 
   // Debounce search (300ms)
   useEffect(() => {
@@ -147,22 +148,14 @@ function StockPanel({
       if (categoryFilter) params.category_id = categoryFilter;
       if (lowStockFilter) params.low_stock = 'true';
 
-      const [itemsData, catsData, statsData, suppData, zonesData, allZonesData] = await Promise.all(
-        [
-          api.getStockItems(params),
-          api.getStockCategories(),
-          api.getStockStats({ stock_type: stockType }),
-          api.getSuppliers({}).catch(() => []),
-          api.getEquipmentDepotZones().catch(() => null),
-          api.getAllDepotZones().catch(() => null),
-        ],
-      );
+      const [itemsData, catsData, statsData] = await Promise.all([
+        api.getStockItems(params),
+        api.getStockCategories(),
+        api.getStockStats({ stock_type: stockType }),
+      ]);
       setItems(itemsData);
       setCategories(catsData);
       setStats(statsData);
-      setSuppliers(suppData);
-      setDepotZones(zonesData);
-      setAllDepotZones(allZonesData);
     } catch (error) {
       console.error('Erreur chargement stock:', error);
       toast.error('Impossible de charger le stock.');
@@ -170,6 +163,27 @@ function StockPanel({
       setLoading(false);
     }
   }, [stockType, debouncedSearch, categoryFilter, lowStockFilter, toast]);
+
+  const ensureAncillaryData = useCallback(async () => {
+    if (ancillaryLoadRef.current) return ancillaryLoadRef.current;
+    if (suppliers.length > 0 && depotZones && allDepotZones) return null;
+
+    ancillaryLoadRef.current = Promise.all([
+      suppliers.length > 0 ? Promise.resolve(null) : api.getSuppliers({}).catch(() => []),
+      depotZones ? Promise.resolve(null) : api.getEquipmentDepotZones().catch(() => null),
+      allDepotZones ? Promise.resolve(null) : api.getAllDepotZones().catch(() => null),
+    ])
+      .then(([suppData, zonesData, allZonesData]) => {
+        if (suppData) setSuppliers(suppData);
+        if (zonesData) setDepotZones(zonesData);
+        if (allZonesData) setAllDepotZones(allZonesData);
+      })
+      .finally(() => {
+        ancillaryLoadRef.current = null;
+      });
+
+    return ancillaryLoadRef.current;
+  }, [allDepotZones, depotZones, suppliers.length]);
 
   const loadMovements = useCallback(async (itemId) => {
     try {
@@ -185,6 +199,11 @@ function StockPanel({
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!showItemForm && !selectedItem && !dialogItem) return;
+    ensureAncillaryData();
+  }, [dialogItem, ensureAncillaryData, selectedItem, showItemForm]);
 
   // Auto-refresh quand le stock change ailleurs
   useRefreshSubscription('stock', loadData);

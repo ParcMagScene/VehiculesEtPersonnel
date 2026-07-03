@@ -144,6 +144,7 @@ function OrdersPanel({ currentUser, isMobile }) {
   const abortRef = useRef(null);
   const debounceRef = useRef(null);
   const requestStatsFetchedAtRef = useRef(0);
+  const suppliersLoadRef = useRef(null);
 
   const loadData = useCallback(async () => {
     if (abortRef.current) abortRef.current.abort();
@@ -162,12 +163,10 @@ function OrdersPanel({ currentUser, isMobile }) {
           activeTab === 'requests' ||
           !requestStats ||
           Date.now() - requestStatsFetchedAtRef.current > REQUEST_STATS_REFRESH_INTERVAL_MS;
-        const shouldFetchSimpleSuppliers = activeTab === 'requests' && !suppliers.length;
 
         const promises = [api.getMyLinkedOrders()];
         if (shouldFetchSimpleRequests) promises.push(api.getMaterialRequests(requestParams));
         if (shouldFetchSimpleRequestStats) promises.push(api.getMaterialRequestsStats());
-        if (shouldFetchSimpleSuppliers) promises.push(api.getSuppliers({}));
 
         const results = await Promise.all(promises);
         if (controller.signal.aborted) return;
@@ -179,7 +178,6 @@ function OrdersPanel({ currentUser, isMobile }) {
           setRequestStats(results[idx++]);
           requestStatsFetchedAtRef.current = Date.now();
         }
-        if (shouldFetchSimpleSuppliers) setSuppliers(results[idx++]);
       } else {
         const promises = [api.getSuppliers(searchTerm ? { search: searchTerm } : {})];
         const shouldFetchRequestStats =
@@ -222,6 +220,29 @@ function OrdersPanel({ currentUser, isMobile }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, statusFilter, activeTab, showArchivedSuppliers]);
+
+  const ensureRequestSuppliers = useCallback(async () => {
+    if (!isSimpleUser || suppliers.length > 0) return;
+    if (suppliersLoadRef.current) return suppliersLoadRef.current;
+
+    suppliersLoadRef.current = api
+      .getSuppliers({})
+      .then((data) => {
+        setSuppliers(data);
+        return data;
+      })
+      .catch(() => {})
+      .finally(() => {
+        suppliersLoadRef.current = null;
+      });
+
+    return suppliersLoadRef.current;
+  }, [isSimpleUser, suppliers.length]);
+
+  useEffect(() => {
+    if (!showRequestModal) return;
+    ensureRequestSuppliers();
+  }, [showRequestModal, ensureRequestSuppliers]);
 
   // Rafraîchissement silencieux des fournisseurs (sans spinner) après création/modification
   const refreshSuppliersOnly = useCallback(async () => {
@@ -1040,7 +1061,10 @@ function OrdersPanel({ currentUser, isMobile }) {
               <Button
                 variant="ghost"
                 className="orders-add-btn"
-                onClick={() => setShowRequestModal(true)}
+                onClick={() => {
+                  setShowRequestModal(true);
+                  ensureRequestSuppliers();
+                }}
               >
                 <Plus size={16} /> Nouvelle demande
               </Button>

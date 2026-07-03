@@ -158,6 +158,7 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
   const [modifiedEndDate, setModifiedEndDate] = useState('');
   const [adminSignature, setAdminSignature] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const currentYear = new Date().getFullYear();
 
   const handleSafeClose = () => {
     if (processing) {
@@ -166,19 +167,17 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
     onClose();
   };
 
-  // Charger les données
+  // Charger les données principales
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [pending, allLeaves, conflictsData, statsData] = await Promise.all([
+      const [pending, allLeaves, conflictsData] = await Promise.all([
         api.getPendingLeaves(),
         api.getAllLeaves(),
         api.getLeaveConflicts().catch(() => []),
-        api.getLeaveStats(new Date().getFullYear()).catch(() => null),
       ]);
       setRequests(tab === STATUS.PENDING ? pending : allLeaves);
       setConflicts(conflictsData || []);
-      setStats(statsData);
     } catch (err) {
       console.error('Erreur chargement:', err);
       setError('Impossible de charger les données');
@@ -187,12 +186,25 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
     }
   }, [tab]);
 
+  const loadStats = useCallback(async () => {
+    try {
+      const statsData = await api.getLeaveStats(currentYear).catch(() => null);
+      setStats(statsData);
+    } catch {
+      // Non bloquant : les stats sont purement informatives.
+    }
+  }, [currentYear]);
+
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    loadStats();
+  }, [loadData, loadStats]);
 
   // Auto-refresh quand des congés changent ailleurs (mobile, salarié, etc.)
-  useRefreshSubscription('leaves', loadData);
+  useRefreshSubscription('leaves', () => {
+    loadData();
+    loadStats();
+  });
 
   // Formatter date
   const fmtDate = (d) => {
@@ -258,6 +270,7 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
       toast.error(message);
     } finally {
       setProcessing(false);
+      loadStats();
     }
   };
 
@@ -284,7 +297,10 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
         <Button
           variant="ghost"
           className="lvp-btn-refresh"
-          onClick={loadData}
+          onClick={() => {
+            loadData();
+            loadStats();
+          }}
           aria-label="Actualiser"
         >
           <RefreshCw size={16} />

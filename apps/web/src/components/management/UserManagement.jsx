@@ -65,12 +65,29 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   });
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
+  const loadPersonsMap = async () => {
+    try {
+      const personsData = await api.getPersons().catch(() => []);
+      const pMap = {};
+      if (Array.isArray(personsData)) {
+        for (const p of personsData) {
+          if (p.userId) pMap[p.userId] = p;
+        }
+      }
+      setPersonsMap(pMap);
+    } catch {
+      // Non bloquant : la colonne Personnel se mettra à jour au prochain refresh.
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadPersonsMap();
 
     // Rafraîchir les données toutes les 30 secondes
     const interval = setInterval(() => {
       loadData(true);
+      loadPersonsMap();
     }, 30000);
 
     return () => clearInterval(interval);
@@ -80,23 +97,14 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   const loadData = async (silent = false) => {
     try {
       if (!silent) setIsLoading(true);
-      const [emailsData, usersData, requestsData, personsData] = await Promise.all([
+      const [emailsData, usersData, requestsData] = await Promise.all([
         api.getAuthorizedEmails(),
         api.getUsers(),
         api.getAccessRequests(),
-        api.getPersons().catch(() => []),
       ]);
       setAuthorizedEmails(emailsData);
       setUsers(usersData);
       setAccessRequests(requestsData);
-      // Construire la map user_id -> person
-      const pMap = {};
-      if (Array.isArray(personsData)) {
-        for (const p of personsData) {
-          if (p.userId) pMap[p.userId] = p;
-        }
-      }
-      setPersonsMap(pMap);
     } catch (error) {
       console.error('Erreur chargement données:', error);
       toast.error('Erreur lors du chargement des données');
@@ -113,6 +121,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       await api.addAuthorizedEmail(newEmail);
       setNewEmail('');
       loadData(true);
+      loadPersonsMap();
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
     }
@@ -128,6 +137,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         try {
           await api.removeAuthorizedEmail(id);
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -147,6 +157,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           await api.updateUser(userId, { isAdmin: !currentIsAdmin });
           toast.success('Droits modifiés avec succès');
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -167,6 +178,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     try {
       await api.updateUser(userId, { permissions: updatedPerms });
       loadData(true);
+      loadPersonsMap();
     } catch (error) {
       // Revert on error
       setUsers((prev) =>
@@ -187,6 +199,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           await api.deleteUser(userId);
           toast.success('Utilisateur supprimé avec succès');
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -212,6 +225,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
             `Réinitialisation demandée L'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`,
           );
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -239,6 +253,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           await api.updateUser(userId, { isBlocked: !currentlyBlocked });
           toast.success(`Utilisateur ${currentlyBlocked ? 'débloqué' : 'bloqué'} avec succès`);
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -277,6 +292,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
       setApproveModal(null);
       loadData(true);
+      loadPersonsMap();
       onAccessRequestChange?.();
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
@@ -294,6 +310,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           await api.updateAccessRequest(requestId, 'rejected');
           toast.success('Demande rejetée');
           loadData(true);
+          loadPersonsMap();
           onAccessRequestChange?.();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
@@ -332,6 +349,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         canManageTrucks: false,
       });
       loadData(true);
+      loadPersonsMap();
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
     }

@@ -157,17 +157,29 @@ function OrdersPanel({ currentUser, isMobile }) {
 
       if (isSimpleUser) {
         const requestParams = { ...params, requested_by: currentUser.id };
-        const results = await Promise.all([
-          api.getMaterialRequests(requestParams),
-          api.getMaterialRequestsStats(),
-          api.getMyLinkedOrders(),
-          api.getSuppliers({}),
-        ]);
+        const shouldFetchSimpleRequests = activeTab === 'requests';
+        const shouldFetchSimpleRequestStats =
+          activeTab === 'requests' ||
+          !requestStats ||
+          Date.now() - requestStatsFetchedAtRef.current > REQUEST_STATS_REFRESH_INTERVAL_MS;
+        const shouldFetchSimpleSuppliers = activeTab === 'requests' && !suppliers.length;
+
+        const promises = [api.getMyLinkedOrders()];
+        if (shouldFetchSimpleRequests) promises.push(api.getMaterialRequests(requestParams));
+        if (shouldFetchSimpleRequestStats) promises.push(api.getMaterialRequestsStats());
+        if (shouldFetchSimpleSuppliers) promises.push(api.getSuppliers({}));
+
+        const results = await Promise.all(promises);
         if (controller.signal.aborted) return;
-        setMaterialRequests(results[0]);
-        setRequestStats(results[1]);
-        setMyLinkedOrders(results[2]);
-        setSuppliers(results[3]);
+
+        let idx = 0;
+        setMyLinkedOrders(results[idx++]);
+        if (shouldFetchSimpleRequests) setMaterialRequests(results[idx++]);
+        if (shouldFetchSimpleRequestStats) {
+          setRequestStats(results[idx++]);
+          requestStatsFetchedAtRef.current = Date.now();
+        }
+        if (shouldFetchSimpleSuppliers) setSuppliers(results[idx++]);
       } else {
         const promises = [api.getSuppliers(searchTerm ? { search: searchTerm } : {})];
         const shouldFetchRequestStats =

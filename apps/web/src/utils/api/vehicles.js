@@ -130,28 +130,46 @@ export function registerVehicleMethods(ApiClient) {
 
     // Trip Details (détails de trajet)
     async getTripDetails(reservationId) {
-      return this.request(`/trip-details/${reservationId}`, { skipCamelCase: true });
+      if (!this._tripDetailsCache) this._tripDetailsCache = new Map();
+      const cacheKey = String(reservationId);
+      const cached = this._tripDetailsCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.data;
+      }
+
+      const data = await this.request(`/trip-details/${reservationId}`, { skipCamelCase: true });
+      this._tripDetailsCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + 10_000,
+      });
+      return data;
     },
     async saveTripDetails(data) {
-      return this.request('/trip-details', {
+      const result = await this.request('/trip-details', {
         method: 'POST',
         body: JSON.stringify(data),
         skipCamelCase: true,
       });
+      this._tripDetailsCache?.clear();
+      return result;
     },
     async linkTrips(data) {
-      return this.request('/trip-details/link', {
+      const result = await this.request('/trip-details/link', {
         method: 'POST',
         body: JSON.stringify(data),
         skipCamelCase: true,
       });
+      this._tripDetailsCache?.clear();
+      return result;
     },
     async unlinkTrip(data) {
-      return this.request('/trip-details/unlink', {
+      const result = await this.request('/trip-details/unlink', {
         method: 'POST',
         body: JSON.stringify(data),
         skipCamelCase: true,
       });
+      this._tripDetailsCache?.clear();
+      return result;
     },
 
     // Location — calcul de prix et reporting

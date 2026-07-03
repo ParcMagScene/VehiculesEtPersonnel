@@ -171,12 +171,18 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [pending, allLeaves, conflictsData] = await Promise.all([
-        api.getPendingLeaves(),
-        api.getAllLeaves(),
+      const leavesPromise =
+        tab === STATUS.PENDING
+          ? api.getPendingLeaves()
+          : tab === 'all'
+            ? api.getAllLeaves()
+            : Promise.resolve([]);
+
+      const [leavesData, conflictsData] = await Promise.all([
+        leavesPromise,
         api.getLeaveConflicts().catch(() => []),
       ]);
-      setRequests(tab === STATUS.PENDING ? pending : allLeaves);
+      setRequests(leavesData || []);
       setConflicts(conflictsData || []);
     } catch (err) {
       console.error('Erreur chargement:', err);

@@ -60,6 +60,8 @@ function MobileApp({ onSwitchToDesktop }) {
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [maintenances, setMaintenances] = useState([]);
+  const [coreLoaded, setCoreLoaded] = useState(false);
+  const [coreDataLoading, setCoreDataLoading] = useState(false);
   const [clients, setClients] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [garages, setGarages] = useState([]);
@@ -119,15 +121,17 @@ function MobileApp({ onSwitchToDesktop }) {
     checkAuth();
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await api.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setCoreLoaded(false);
     setCurrentScreen('home');
-  };
+  }, [setCurrentScreen]);
 
   // Charger les données coeur (utilisées par l'accueil/parc)
   const loadCoreParcData = useCallback(async () => {
+    setCoreDataLoading(true);
     try {
       const [vehiclesData, reservationsData, maintenancesData] = await Promise.all([
         api.getVehicles(),
@@ -138,13 +142,16 @@ function MobileApp({ onSwitchToDesktop }) {
       setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
       setReservations(reservationsData);
       setMaintenances(maintenancesData);
+      setCoreLoaded(true);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       if (error.message.includes('authentification') || error.message.includes('401')) {
         handleLogout();
       }
+    } finally {
+      setCoreDataLoading(false);
     }
-  }, []);
+  }, [handleLogout]);
 
   // Charger les référentiels à la demande (écrans planning/réservation/maintenance)
   const loadAuxiliaryParcData = useCallback(
@@ -201,7 +208,7 @@ function MobileApp({ onSwitchToDesktop }) {
         setAuxDataLoading(false);
       }
     },
-    [auxLoaded],
+    [auxLoaded, handleLogout],
   );
 
   // Refresh complet demandé par certains écrans
@@ -217,10 +224,18 @@ function MobileApp({ onSwitchToDesktop }) {
     ]);
   }, [loadCoreParcData, loadAuxiliaryParcData]);
 
+  const needsParcCoreData =
+    currentScreen === 'parc-dashboard' ||
+    currentScreen === 'planning' ||
+    currentScreen === 'availability' ||
+    currentScreen === 'reservations' ||
+    currentScreen === 'maintenances';
+
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
+    if (!needsParcCoreData || coreLoaded) return;
     loadCoreParcData();
-  }, [isAuthenticated, isLoading, loadCoreParcData]);
+  }, [isAuthenticated, isLoading, needsParcCoreData, coreLoaded, loadCoreParcData]);
 
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
@@ -438,20 +453,23 @@ function MobileApp({ onSwitchToDesktop }) {
           />
         )}
 
-        {currentScreen === 'parc-dashboard' && (
-          <MobileParcDashboard
-            vehicles={vehicles}
-            reservations={reservations}
-            maintenances={maintenances}
-            onNavigate={setCurrentScreen}
-            onBack={() => setCurrentScreen('home')}
-            onCreateReservation={handleCreateReservation}
-            onCreateMaintenance={handleCreateMaintenance}
-          />
-        )}
+        {currentScreen === 'parc-dashboard' &&
+          (coreDataLoading || !coreLoaded ? (
+            <MobileScreenFallback />
+          ) : (
+            <MobileParcDashboard
+              vehicles={vehicles}
+              reservations={reservations}
+              maintenances={maintenances}
+              onNavigate={setCurrentScreen}
+              onBack={() => setCurrentScreen('home')}
+              onCreateReservation={handleCreateReservation}
+              onCreateMaintenance={handleCreateMaintenance}
+            />
+          ))}
 
         {currentScreen === 'planning' &&
-          (!planningDepsReady || auxDataLoading ? (
+          (!coreLoaded || coreDataLoading || !planningDepsReady || auxDataLoading ? (
             <MobileScreenFallback />
           ) : (
             <Suspense fallback={<MobileScreenFallback />}>
@@ -468,22 +486,25 @@ function MobileApp({ onSwitchToDesktop }) {
             </Suspense>
           ))}
 
-        {currentScreen === 'availability' && (
-          <Suspense fallback={<MobileScreenFallback />}>
-            <MobileAvailability
-              vehicles={vehicles}
-              reservations={reservations}
-              maintenances={maintenances}
-              onClose={() => setCurrentScreen('parc-dashboard')}
-              onCreateReservation={(_vehicleId, _date) => {
-                setCurrentScreen('reservations');
-              }}
-            />
-          </Suspense>
-        )}
+        {currentScreen === 'availability' &&
+          (coreDataLoading || !coreLoaded ? (
+            <MobileScreenFallback />
+          ) : (
+            <Suspense fallback={<MobileScreenFallback />}>
+              <MobileAvailability
+                vehicles={vehicles}
+                reservations={reservations}
+                maintenances={maintenances}
+                onClose={() => setCurrentScreen('parc-dashboard')}
+                onCreateReservation={(_vehicleId, _date) => {
+                  setCurrentScreen('reservations');
+                }}
+              />
+            </Suspense>
+          ))}
 
         {currentScreen === 'reservations' &&
-          (!reservationsDepsReady || auxDataLoading ? (
+          (!coreLoaded || coreDataLoading || !reservationsDepsReady || auxDataLoading ? (
             <MobileScreenFallback />
           ) : (
             <Suspense fallback={<MobileScreenFallback />}>
@@ -502,7 +523,7 @@ function MobileApp({ onSwitchToDesktop }) {
           ))}
 
         {currentScreen === 'maintenances' &&
-          (!maintenancesDepsReady || auxDataLoading ? (
+          (!coreLoaded || coreDataLoading || !maintenancesDepsReady || auxDataLoading ? (
             <MobileScreenFallback />
           ) : (
             <Suspense fallback={<MobileScreenFallback />}>

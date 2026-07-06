@@ -800,6 +800,7 @@ const HeaderNotifications = ({
                                     value={closureDescription}
                                     onChange={(e) => setClosureDescription(e.target.value)}
                                     onClick={(event) => event.stopPropagation()}
+                                    onKeyDown={(event) => event.stopPropagation()}
                                     placeholder="Description de l'intervention..."
                                     aria-label="Description de l'intervention"
                                     rows={3}

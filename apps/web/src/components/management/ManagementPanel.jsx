@@ -166,10 +166,15 @@ const ManagementPanel = ({
         /* silencieux */
       }
     };
+
+    // Toujours faire un chargement initial pour alimenter le badge onglet.
     loadPendingCount();
+
+    // Polling uniquement quand l'onglet utilisateurs est affiché.
+    if (activeTab !== 'users') return;
     const interval = setInterval(loadPendingCount, 30000);
     return () => clearInterval(interval);
-  }, [currentUser]);
+  }, [currentUser?.isAdmin, activeTab]);
 
   // Charger l'adresse du siège depuis la config
   useEffect(() => {

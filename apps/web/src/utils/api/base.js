@@ -200,6 +200,9 @@ export class ApiClient {
     this._initReady = this.user ? Promise.resolve() : this._recoverAuth();
     // Mutex : une seule tentative de refresh à la fois
     this._refreshPromise = null;
+    // Cooldown très court après un refresh réussi pour absorber les 401 en rafale
+    // provoqués par plusieurs pollings/concurrences au même instant.
+    this._lastRefreshAt = 0;
   }
 
   /**
@@ -304,6 +307,7 @@ export class ApiClient {
           const data = await response.json();
           if (data?.user) {
             this.setAuth(data.user);
+            this._lastRefreshAt = Date.now();
             console.warn('[Auth] Refresh réussi — session prolongée');
             return true;
           }
@@ -346,6 +350,13 @@ export class ApiClient {
       endpoint === '/admin/reset-password' ||
       endpoint.match(/^\/users\/[^/]+\/reset-password$/);
     if (isAuthEndpoint) return false;
+
+    // Si un refresh vient tout juste de réussir, on réessaie directement la requête.
+    // Cela évite de relancer un nouveau refresh pour plusieurs 401 arrivant en rafale
+    // juste après la prolongation de session.
+    if (Date.now() - this._lastRefreshAt < 5000) {
+      return true;
+    }
 
     console.warn(`[Auth] 401 reçu sur ${endpoint} — tentative de refresh silencieux`);
     const refreshed = await this._tryRefreshToken();

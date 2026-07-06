@@ -32,6 +32,7 @@ const DashboardPanel = ({
   const today = useMemo(() => startOfDay(new Date()), []);
   const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]);
   const weekEnd = useMemo(() => endOfWeek(today, { weekStartsOn: 1 }), [today]);
+  const isAdmin = currentUser?.role === ROLES.ADMIN;
 
   // Charger les données complémentaires
   useEffect(() => {
@@ -40,7 +41,9 @@ const DashboardPanel = ({
       try {
         const results = await Promise.allSettled([
           api.request('/stock/articles?low_stock=true').catch(() => []),
-          api.getPendingRequestsCount().catch(() => ({ count: 0 })),
+          isAdmin
+            ? api.getPendingRequestsCount().catch(() => ({ count: 0 }))
+            : Promise.resolve(null),
           api.request('/orders').catch(() => []),
           api.request('/affaires').catch(() => []),
         ]);
@@ -54,8 +57,10 @@ const DashboardPanel = ({
         }
 
         // Pending requests
-        const pendingData = results[1].status === 'fulfilled' ? results[1].value : { count: 0 };
-        setPendingRequests(pendingData?.count || pendingData?.total || 0);
+        if (isAdmin) {
+          const pendingData = results[1].status === 'fulfilled' ? results[1].value : { count: 0 };
+          setPendingRequests(pendingData?.count || pendingData?.total || 0);
+        }
 
         // Orders
         const ordersData = results[2].status === 'fulfilled' ? results[2].value : [];
@@ -81,7 +86,7 @@ const DashboardPanel = ({
     };
 
     loadDashboardData();
-  }, []);
+  }, [isAdmin]);
 
   // ─── KPIs calculés ───
 

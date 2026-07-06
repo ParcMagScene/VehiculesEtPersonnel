@@ -44,7 +44,7 @@ const DashboardPanel = ({
           isAdmin
             ? api.getPendingRequestsCount().catch(() => ({ count: 0 }))
             : Promise.resolve(null),
-          api.request('/orders').catch(() => []),
+          api.getOrdersStats().catch(() => null),
           api.request('/affaires').catch(() => []),
         ]);
 
@@ -63,13 +63,16 @@ const DashboardPanel = ({
         }
 
         // Orders
-        const ordersData = results[2].status === 'fulfilled' ? results[2].value : [];
-        if (Array.isArray(ordersData)) {
+        const ordersStatsData = results[2].status === 'fulfilled' ? results[2].value : null;
+        const ordersStats = ordersStatsData?.orders;
+        if (ordersStats && typeof ordersStats === 'object') {
+          const draft = Number(ordersStats.draft || 0);
+          const sent = Number(ordersStats.sent || 0);
+          const confirmed = Number(ordersStats.confirmed || 0);
+          const explicitPending = Number(ordersStats.pending || ordersStats.en_attente || 0);
           setOrdersCount({
-            pending: ordersData.filter(
-              (o) => o.status === STATUS.PENDING || o.status === 'en_attente',
-            ).length,
-            total: ordersData.length,
+            pending: explicitPending || draft + sent + confirmed,
+            total: Number(ordersStats.total || 0),
           });
         }
 

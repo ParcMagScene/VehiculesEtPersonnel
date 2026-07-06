@@ -67,6 +67,8 @@ const Header = ({
   // pour grouper les requêtes (compteur demandes interventions/réservations + compteur
   // demandes d'accès admin). Évite un timer redondant et déclenche les 2 fetch en parallèle.
   useEffect(() => {
+    let interval = null;
+
     const loadAdminBadges = async () => {
       if (!currentUser?.isAdmin) return;
       if (isApiCoolingDown()) return;
@@ -87,15 +89,55 @@ const Header = ({
       // Erreurs silencieuses : valeurs initiales conservées (badges = 0)
     };
 
+    const startPolling = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        loadAdminBadges();
+      }, 30000);
+    };
+
+    const stopPolling = () => {
+      if (!interval) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
+    const refreshOnVisible = () => {
+      if (document.visibilityState !== 'visible') {
+        stopPolling();
+        return;
+      }
+      loadAdminBadges();
+      startPolling();
+    };
+
+    const refreshOnFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      loadAdminBadges();
+      startPolling();
+    };
+
     loadAdminBadges();
-    const interval = setInterval(loadAdminBadges, 30000);
-    return () => clearInterval(interval);
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+    document.addEventListener('visibilitychange', refreshOnVisible);
+    window.addEventListener('focus', refreshOnFocus);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', refreshOnVisible);
+      window.removeEventListener('focus', refreshOnFocus);
+    };
   }, [currentUser?.isAdmin]);
 
   // Badge onglet Contrôles : rechargé à l'ouverture, périodiquement, et sur
   // événement refreshBus('controls') publié après création/édition/effectuation.
   useEffect(() => {
     let cancelled = false;
+    let interval = null;
+
     const loadControlsBadge = async () => {
       if (!currentUser?.id) return;
       if (isApiCoolingDown()) return;
@@ -111,12 +153,48 @@ const Header = ({
         // silencieux : badge inchangé
       }
     };
+
+    const startPolling = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        loadControlsBadge();
+      }, 60000);
+    };
+
+    const stopPolling = () => {
+      if (!interval) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
+    const refreshOnVisible = () => {
+      if (document.visibilityState !== 'visible') {
+        stopPolling();
+        return;
+      }
+      loadControlsBadge();
+      startPolling();
+    };
+
+    const refreshOnFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      loadControlsBadge();
+      startPolling();
+    };
+
     loadControlsBadge();
-    const interval = setInterval(loadControlsBadge, 60000);
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+    document.addEventListener('visibilitychange', refreshOnVisible);
+    window.addEventListener('focus', refreshOnFocus);
     const unsub = refreshBus.subscribe('controls', loadControlsBadge);
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      stopPolling();
+      document.removeEventListener('visibilitychange', refreshOnVisible);
+      window.removeEventListener('focus', refreshOnFocus);
       unsub();
     };
   }, [currentUser?.id]);

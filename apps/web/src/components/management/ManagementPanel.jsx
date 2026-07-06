@@ -155,7 +155,7 @@ const ManagementPanel = ({
   const [activeDepot, setActiveDepot] = useState(1);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
-  // Charger le nombre de demandes d'accès en attente
+  // Charger une première fois le nombre de demandes d'accès en attente
   useEffect(() => {
     if (!currentUser?.isAdmin) return;
     const loadPendingCount = async () => {
@@ -167,11 +167,24 @@ const ManagementPanel = ({
       }
     };
 
-    // Toujours faire un chargement initial pour alimenter le badge onglet.
     loadPendingCount();
+  }, [currentUser?.isAdmin]);
 
-    // Polling uniquement quand l'onglet utilisateurs est affiché.
+  // Polling uniquement quand l'onglet utilisateurs est affiché.
+  useEffect(() => {
+    if (!currentUser?.isAdmin) return;
     if (activeTab !== 'users') return;
+
+    const loadPendingCount = async () => {
+      try {
+        const data = await api.getPendingAccessRequestsCount();
+        setPendingAccessCount(data.count || 0);
+      } catch (_e) {
+        /* silencieux */
+      }
+    };
+
+    loadPendingCount();
     const interval = setInterval(loadPendingCount, 30000);
     return () => clearInterval(interval);
   }, [currentUser?.isAdmin, activeTab]);

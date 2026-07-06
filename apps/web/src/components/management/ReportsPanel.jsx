@@ -209,14 +209,16 @@ const ReportsPanel = ({ _currentUser }) => {
   );
 
   const loadOrdersData = useCallback(
-    async ({ force = false } = {}) => {
+    async ({ force = false, includeStats = true } = {}) => {
       if (loadedSections.orders && !force) return;
       setLoading(true);
       setError('');
       try {
-        const [o, os] = await Promise.all([api.getOrders(), api.getOrdersStats()]);
+        const requests = [api.getOrders()];
+        if (includeStats) requests.push(api.getOrdersStats());
+        const [o, os] = await Promise.all(requests);
         setOrders(o || []);
-        setOrdersStats(os || null);
+        if (includeStats) setOrdersStats(os || null);
         markSectionLoaded('orders');
       } catch (err) {
         setError('Erreur de chargement');
@@ -250,13 +252,13 @@ const ReportsPanel = ({ _currentUser }) => {
       if (targetSection === 'fleet') return loadFleetData({ force });
       if (targetSection === STATUS.MAINTENANCE) return loadMaintenanceData({ force });
       if (targetSection === 'personnel') return loadPersonnelData({ force });
-      if (targetSection === 'orders') return loadOrdersData({ force });
+      if (targetSection === 'orders') return loadOrdersData({ force, includeStats: true });
       if (targetSection === 'affaires') return loadAffairesData({ force });
       if (targetSection === 'exports') {
         await loadFleetData({ force });
         await loadMaintenanceData({ force });
         await loadPersonnelData({ force });
-        await loadOrdersData({ force });
+        await loadOrdersData({ force, includeStats: false });
         await loadAffairesData({ force });
       }
       return null;
@@ -277,7 +279,8 @@ const ReportsPanel = ({ _currentUser }) => {
 
   // Auto-refresh quand des commandes changent ailleurs
   useRefreshSubscription('orders', () => {
-    if (section === 'orders' || section === 'exports') loadOrdersData({ force: true });
+    if (section === 'orders') loadOrdersData({ force: true, includeStats: true });
+    if (section === 'exports') loadOrdersData({ force: true, includeStats: false });
   });
 
   // ═══════════════════════════════════════

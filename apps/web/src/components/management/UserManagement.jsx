@@ -84,13 +84,54 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     loadData();
     loadPersonsMap();
 
-    // Rafraîchir les données toutes les 30 secondes
-    const interval = setInterval(() => {
+    let interval = null;
+
+    const refreshSilent = () => {
       loadData(true);
       loadPersonsMap();
-    }, 30000);
+    };
 
-    return () => clearInterval(interval);
+    const startPolling = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        refreshSilent();
+      }, 30000);
+    };
+
+    const stopPolling = () => {
+      if (!interval) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') {
+        stopPolling();
+        return;
+      }
+      refreshSilent();
+      startPolling();
+    };
+
+    const onFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      refreshSilent();
+      startPolling();
+    };
+
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

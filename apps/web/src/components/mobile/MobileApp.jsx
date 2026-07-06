@@ -87,6 +87,7 @@ function MobileApp({ onSwitchToDesktop }) {
   const maintenanceFormRef = useRef(null);
   const msgToastTimerRef = useRef(null);
   const currentScreenRef = useRef('home');
+  const coreLoadPromiseRef = useRef(null);
 
   // SSE messagerie temps réel (fallback polling auto)
   const handleNewMessage = useCallback((msg) => {
@@ -131,26 +132,37 @@ function MobileApp({ onSwitchToDesktop }) {
 
   // Charger les données coeur (utilisées par l'accueil/parc)
   const loadCoreParcData = useCallback(async () => {
-    setCoreDataLoading(true);
-    try {
-      const [vehiclesData, reservationsData, maintenancesData] = await Promise.all([
-        api.getVehicles(),
-        api.getReservations(),
-        api.getMaintenances(),
-      ]);
+    if (coreLoadPromiseRef.current) return coreLoadPromiseRef.current;
 
-      setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
-      setReservations(reservationsData);
-      setMaintenances(maintenancesData);
-      setCoreLoaded(true);
-    } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
-      if (error.message.includes('authentification') || error.message.includes('401')) {
-        handleLogout();
+    const loadPromise = (async () => {
+      setCoreDataLoading(true);
+      try {
+        const [vehiclesData, reservationsData, maintenancesData] = await Promise.all([
+          api.getVehicles(),
+          api.getReservations(),
+          api.getMaintenances(),
+        ]);
+
+        setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
+        setReservations(reservationsData);
+        setMaintenances(maintenancesData);
+        setCoreLoaded(true);
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        if (error.message.includes('authentification') || error.message.includes('401')) {
+          handleLogout();
+        }
+      } finally {
+        setCoreDataLoading(false);
       }
-    } finally {
-      setCoreDataLoading(false);
-    }
+    })();
+
+    coreLoadPromiseRef.current = loadPromise;
+    return loadPromise.finally(() => {
+      if (coreLoadPromiseRef.current === loadPromise) {
+        coreLoadPromiseRef.current = null;
+      }
+    });
   }, [handleLogout]);
 
   // Charger les référentiels à la demande (écrans planning/réservation/maintenance)
@@ -233,9 +245,16 @@ function MobileApp({ onSwitchToDesktop }) {
 
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
-    if (!needsParcCoreData || coreLoaded) return;
+    if (!needsParcCoreData || coreLoaded || coreDataLoading) return;
     loadCoreParcData();
-  }, [isAuthenticated, isLoading, needsParcCoreData, coreLoaded, loadCoreParcData]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    needsParcCoreData,
+    coreLoaded,
+    coreDataLoading,
+    loadCoreParcData,
+  ]);
 
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;

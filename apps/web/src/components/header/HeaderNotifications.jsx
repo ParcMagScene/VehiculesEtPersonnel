@@ -282,6 +282,11 @@ const HeaderNotifications = ({
     });
   }, []);
 
+  const getMaintenanceId = useCallback((maintenance) => {
+    const id = maintenance?.id ?? maintenance?.maintenanceId ?? maintenance?.maintenance_id;
+    return id == null ? '' : String(id).trim();
+  }, []);
+
   useEffect(() => {
     if (!isAnyPopupOpen) return;
 
@@ -399,6 +404,7 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {overdueInterventions.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId);
                           const daysOverdue = Math.floor(
                             (today - new Date(maintenance.endDate)) / (1000 * 60 * 60 * 24),
@@ -406,12 +412,16 @@ const HeaderNotifications = ({
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className="notification-item overdue"
                               onClick={() => {
+                                if (!maintenanceId) {
+                                  toast.error("Identifiant d'intervention introuvable");
+                                  return;
+                                }
                                 setShowNotificationsPopup(false);
                                 setSelectedOverdueIntervention({
-                                  intervention: maintenance,
+                                  intervention: { ...maintenance, id: maintenanceId },
                                   vehicle,
                                 });
                               }}
@@ -419,9 +429,13 @@ const HeaderNotifications = ({
                               tabIndex={0}
                               onKeyDown={(event) =>
                                 handleActivateWithKeyboard(event, () => {
+                                  if (!maintenanceId) {
+                                    toast.error("Identifiant d'intervention introuvable");
+                                    return;
+                                  }
                                   setShowNotificationsPopup(false);
                                   setSelectedOverdueIntervention({
-                                    intervention: maintenance,
+                                    intervention: { ...maintenance, id: maintenanceId },
                                     vehicle,
                                   });
                                 })
@@ -462,6 +476,7 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {scheduledMaintenances.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId) || {
                             id: maintenance.vehicleId,
                             name: maintenance.vehicleName || 'Véhicule inconnu',
@@ -469,21 +484,29 @@ const HeaderNotifications = ({
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className="notification-item"
                               onClick={() => {
+                                if (!maintenanceId) {
+                                  toast.error("Identifiant d'intervention introuvable");
+                                  return;
+                                }
                                 setShowNotificationsPopup(false);
                                 if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
+                                  onOpenMaintenance(vehicle, maintenanceId);
                                 }
                               }}
                               role="button"
                               tabIndex={0}
                               onKeyDown={(event) =>
                                 handleActivateWithKeyboard(event, () => {
+                                  if (!maintenanceId) {
+                                    toast.error("Identifiant d'intervention introuvable");
+                                    return;
+                                  }
                                   setShowNotificationsPopup(false);
                                   if (onOpenMaintenance) {
-                                    onOpenMaintenance(vehicle, maintenance.id);
+                                    onOpenMaintenance(vehicle, maintenanceId);
                                   }
                                 })
                               }
@@ -525,6 +548,7 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {inProgressMaintenances.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId) || {
                             id: maintenance.vehicleId,
                             name: maintenance.vehicleName || 'Véhicule inconnu',
@@ -532,21 +556,29 @@ const HeaderNotifications = ({
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className="notification-item"
                               onClick={() => {
+                                if (!maintenanceId) {
+                                  toast.error("Identifiant d'intervention introuvable");
+                                  return;
+                                }
                                 setShowNotificationsPopup(false);
                                 if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
+                                  onOpenMaintenance(vehicle, maintenanceId);
                                 }
                               }}
                               role="button"
                               tabIndex={0}
                               onKeyDown={(event) =>
                                 handleActivateWithKeyboard(event, () => {
+                                  if (!maintenanceId) {
+                                    toast.error("Identifiant d'intervention introuvable");
+                                    return;
+                                  }
                                   setShowNotificationsPopup(false);
                                   if (onOpenMaintenance) {
-                                    onOpenMaintenance(vehicle, maintenance.id);
+                                    onOpenMaintenance(vehicle, maintenanceId);
                                   }
                                 })
                               }
@@ -586,6 +618,7 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {pendingMaintenances.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId) || {
                             id: maintenance.vehicleId,
                             name: maintenance.vehicleName || 'Véhicule inconnu',
@@ -593,21 +626,29 @@ const HeaderNotifications = ({
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className="notification-item"
                               onClick={() => {
+                                if (!maintenanceId) {
+                                  toast.error("Identifiant d'intervention introuvable");
+                                  return;
+                                }
                                 setShowNotificationsPopup(false);
                                 if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
+                                  onOpenMaintenance(vehicle, maintenanceId);
                                 }
                               }}
                               role="button"
                               tabIndex={0}
                               onKeyDown={(event) =>
                                 handleActivateWithKeyboard(event, () => {
+                                  if (!maintenanceId) {
+                                    toast.error("Identifiant d'intervention introuvable");
+                                    return;
+                                  }
                                   setShowNotificationsPopup(false);
                                   if (onOpenMaintenance) {
-                                    onOpenMaintenance(vehicle, maintenance.id);
+                                    onOpenMaintenance(vehicle, maintenanceId);
                                   }
                                 })
                               }
@@ -640,23 +681,24 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {reportedMaintenances.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId);
-                          const isExpanded = expandedReportedId === maintenance.id;
-                          const isClosing = closingReportedId === maintenance.id;
+                          const isExpanded = expandedReportedId === maintenanceId;
+                          const isClosing = closingReportedId === maintenanceId;
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className={`notification-item ${isExpanded ? 'expanded' : ''}`}
                               onClick={() =>
-                                setExpandedReportedId(isExpanded ? null : maintenance.id)
+                                setExpandedReportedId(isExpanded ? null : maintenanceId)
                               }
                               role="button"
                               tabIndex={0}
                               aria-expanded={isExpanded}
                               onKeyDown={(event) =>
                                 handleActivateWithKeyboard(event, () =>
-                                  setExpandedReportedId(isExpanded ? null : maintenance.id),
+                                  setExpandedReportedId(isExpanded ? null : maintenanceId),
                                 )
                               }
                             >
@@ -693,8 +735,10 @@ const HeaderNotifications = ({
                                       setExpandedReportedId(null);
                                       if (onScheduleMaintenance && vehicle) {
                                         onScheduleMaintenance(vehicle);
-                                      } else if (onOpenMaintenance && vehicle) {
-                                        onOpenMaintenance(vehicle, maintenance.id);
+                                      } else if (onOpenMaintenance && vehicle && maintenanceId) {
+                                        onOpenMaintenance(vehicle, maintenanceId);
+                                      } else if (!maintenanceId) {
+                                        toast.error("Identifiant d'intervention introuvable");
                                       }
                                     }}
                                   >
@@ -714,7 +758,10 @@ const HeaderNotifications = ({
                                         onConfirm: async () => {
                                           try {
                                             if (onDeleteSignalement) {
-                                              await onDeleteSignalement(maintenance);
+                                              await onDeleteSignalement({
+                                                ...maintenance,
+                                                id: maintenanceId,
+                                              });
                                             }
                                             setExpandedReportedId(null);
                                             setShowNotificationsPopup(false);
@@ -733,7 +780,11 @@ const HeaderNotifications = ({
                                     className="notif-action-btn close-signalement"
                                     onClick={(event) => {
                                       event.stopPropagation();
-                                      setClosingReportedId(isClosing ? null : maintenance.id);
+                                      if (!maintenanceId) {
+                                        toast.error("Identifiant d'intervention introuvable");
+                                        return;
+                                      }
+                                      setClosingReportedId(isClosing ? null : maintenanceId);
                                       setClosureDescription('');
                                     }}
                                   >
@@ -762,9 +813,13 @@ const HeaderNotifications = ({
                                       onClick={async (event) => {
                                         event.stopPropagation();
                                         if (!onCloseSignalement) return;
+                                        if (!maintenanceId) {
+                                          toast.error("Identifiant d'intervention introuvable");
+                                          return;
+                                        }
                                         try {
                                           await onCloseSignalement(
-                                            maintenance,
+                                            { ...maintenance, id: maintenanceId },
                                             closureDescription.trim(),
                                           );
                                           setClosingReportedId(null);

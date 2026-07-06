@@ -45,7 +45,7 @@ const DashboardPanel = ({
             ? api.getPendingRequestsCount().catch(() => ({ count: 0 }))
             : Promise.resolve(null),
           api.getOrdersStats().catch(() => null),
-          api.request('/affaires').catch(() => []),
+          api.request('/affaires?limit=1').catch(() => null),
         ]);
 
         // Stock alerts
@@ -77,9 +77,12 @@ const DashboardPanel = ({
         }
 
         // Affaires count
-        const affairesData = results[3].status === 'fulfilled' ? results[3].value : [];
+        const affairesData = results[3].status === 'fulfilled' ? results[3].value : null;
         if (Array.isArray(affairesData)) {
           setAffairesCount(affairesData.length);
+        } else if (affairesData && typeof affairesData === 'object') {
+          if (typeof affairesData.total === 'number') setAffairesCount(affairesData.total);
+          else if (Array.isArray(affairesData.data)) setAffairesCount(affairesData.data.length);
         }
       } catch (err) {
         logger.log('Dashboard: erreur chargement données complémentaires', err);

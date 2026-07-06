@@ -124,14 +124,14 @@ const Header = ({
   // Charger les demandes de réservation en attente (au démarrage + quand un popup s'ouvre)
   useEffect(() => {
     const loadPendingReservations = async () => {
-      if (currentUser?.isAdmin) {
-        if (isApiCoolingDown()) return;
-        try {
-          const data = await api.getPendingReservationRequests();
-          setPendingReservationRequests(data);
-        } catch {
-          // Silencieux : liste vide conservée
-        }
+      if (!currentUser?.isAdmin) return;
+      if (!showRequestsPopup && !showNotificationsPopup) return;
+      if (isApiCoolingDown()) return;
+      try {
+        const data = await api.getPendingReservationRequests();
+        setPendingReservationRequests(data);
+      } catch {
+        // Silencieux : liste vide conservée
       }
     };
     loadPendingReservations();

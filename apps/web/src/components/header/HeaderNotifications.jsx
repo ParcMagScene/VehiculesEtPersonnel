@@ -807,7 +807,7 @@ const HeaderNotifications = ({
                                   )}
                                 </div>
                               )}
-                              {isClosing && (
+                              {isClosing && canManageVehicleMaintenance && (
                                 <div className="notification-actions reject-form">
                                   <Textarea
                                     className="reject-reason-input"
@@ -828,6 +828,12 @@ const HeaderNotifications = ({
                                       onClick={async (event) => {
                                         event.stopPropagation();
                                         if (!onCloseSignalement) return;
+                                        if (!canManageVehicleMaintenance) {
+                                          toast.error(
+                                            "Vous n'avez pas les droits pour clôturer ce signalement",
+                                          );
+                                          return;
+                                        }
                                         if (!maintenanceId) {
                                           toast.error("Identifiant d'intervention introuvable");
                                           return;

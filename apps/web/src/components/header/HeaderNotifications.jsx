@@ -136,6 +136,7 @@ const ReservationRequestCard = React.memo(
         {isRejecting ? (
           <div className="notification-actions reject-form">
             <Textarea
+              size="md"
               className="reject-reason-input"
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
@@ -810,6 +811,7 @@ const HeaderNotifications = ({
                               {isClosing && canManageVehicleMaintenance && (
                                 <div className="notification-actions reject-form">
                                   <Textarea
+                                    size="md"
                                     className="reject-reason-input"
                                     value={closureDescription}
                                     onChange={(e) => setClosureDescription(e.target.value)}

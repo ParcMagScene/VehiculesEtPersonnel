@@ -1096,11 +1096,17 @@ export function setupVehicleRoutes(
           });
         }
 
-        // Empêcher le changement de statut pour les non-autorisés
-        if (maintenance.status !== existing.status) {
+        // Autoriser uniquement la clôture de son propre signalement pour les non-autorisés.
+        const wantsStatusChange = maintenance.status !== existing.status;
+        const isOwnClosureAllowed =
+          maintenance.status === 'completed' &&
+          (existing.status === 'reported' || existing.status === 'pending');
+
+        if (wantsStatusChange && !isOwnClosureAllowed) {
           return res.status(403).json({
             error: 'Accès refusé',
-            message: "Seuls les administrateurs peuvent changer le statut d'une intervention.",
+            message:
+              'Seuls les administrateurs peuvent changer le statut, sauf clôture de votre propre signalement.',
           });
         }
       }

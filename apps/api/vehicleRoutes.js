@@ -74,6 +74,27 @@ function calculateRentalPrice(vehicle, startDate, startPeriod, endDate, endPerio
   return Math.round(total * 100) / 100; // Arrondi 2 décimales
 }
 
+// Résoudre les droits maintenance côté DB (source de vérité), avec compat legacy camelCase.
+function hasMaintenanceFullAccess(userId, tokenIsAdmin = false) {
+  if (tokenIsAdmin) return true;
+
+  const userDb = db.prepare('SELECT is_admin, permissions FROM users WHERE id = ?').get(userId);
+  if (!userDb) return false;
+  if (userDb.is_admin) return true;
+
+  try {
+    const perms = userDb.permissions ? JSON.parse(userDb.permissions) : {};
+    return (
+      !!perms.can_manage_vehicle_maintenance ||
+      !!perms.can_manage_maintenance ||
+      !!perms.canManageVehicleMaintenance ||
+      !!perms.canManageMaintenance
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function setupVehicleRoutes(
   app,
   authenticateToken,
@@ -941,16 +962,7 @@ export function setupVehicleRoutes(
       const maintenance = req.body;
 
       // Vérifier permissions (admin, can_manage_vehicle_maintenance ou legacy can_manage_maintenance)
-      let canFullAccess = req.user.isAdmin;
-      if (!canFullAccess) {
-        const userDb = db.prepare('SELECT permissions FROM users WHERE id = ?').get(req.user.id);
-        try {
-          const perms = userDb?.permissions ? JSON.parse(userDb.permissions) : {};
-          canFullAccess = !!perms.can_manage_vehicle_maintenance || !!perms.can_manage_maintenance;
-        } catch {
-          /* ignore */
-        }
-      }
+      const canFullAccess = hasMaintenanceFullAccess(req.user.id, req.user.isAdmin);
 
       // Les utilisateurs sans permission ne peuvent créer que des signalements
       if (!canFullAccess && maintenance.status !== 'reported') {
@@ -1064,16 +1076,7 @@ export function setupVehicleRoutes(
       const maintenance = req.body;
 
       // Vérifier permissions (can_manage_vehicle_maintenance ou legacy can_manage_maintenance)
-      let canFullAccess = req.user.isAdmin;
-      if (!canFullAccess) {
-        const userDb = db.prepare('SELECT permissions FROM users WHERE id = ?').get(req.user.id);
-        try {
-          const perms = userDb?.permissions ? JSON.parse(userDb.permissions) : {};
-          canFullAccess = !!perms.can_manage_vehicle_maintenance || !!perms.can_manage_maintenance;
-        } catch {
-          /* ignore */
-        }
-      }
+      const canFullAccess = hasMaintenanceFullAccess(req.user.id, req.user.isAdmin);
 
       // Utilisateurs avec permission maintenance = accès complet, sinon restrictions
       if (!canFullAccess) {

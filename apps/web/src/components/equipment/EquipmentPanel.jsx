@@ -264,6 +264,7 @@ const EquipmentPanel = ({
               </Tooltip>
               {depotZones && (
                 <Select
+                  size="sm"
                   className="eq-filter eq-zone-filter"
                   value={filterZone}
                   onChange={(e) => setFilterZone(e.target.value)}
@@ -337,6 +338,7 @@ const EquipmentPanel = ({
                 </Tooltip>
               )}
               <Select
+                size="sm"
                 className="eq-filter"
                 value={savFilterStatus}
                 onChange={(e) => setSavFilterStatus(e.target.value)}
@@ -881,6 +883,7 @@ const EquipmentPanel = ({
                     </Button>
                     <div className="u-mt-2">
                       <Select
+                        size="sm"
                         className="eq-filter"
                         value={exportFamilyId}
                         onChange={(e) => setExportFamilyId(e.target.value)}

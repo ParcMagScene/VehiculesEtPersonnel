@@ -15,7 +15,7 @@ import DepotMap from '../vehicles/DepotMap';
 import LocationSelector from '../vehicles/LocationSelector';
 import CategoryCascadePicker from './CategoryCascadePicker';
 import { EQUIPMENT_STATUS } from './equipmentConstants';
-import { getCategoryHierarchy, matchPhotoToEquipment } from './equipmentUtils';
+import { getCategoryHierarchy, matchPhotoToEquipment, toThumbUrl } from './equipmentUtils';
 
 const EquipmentFormModal = ({
   equipment: eq,
@@ -123,7 +123,7 @@ const EquipmentFormModal = ({
       const [groupKey, key] = form.photo.slice(8).split('/');
       return GENERIC_IMAGES[groupKey]?.[key] || null;
     }
-    return `/Photos/Matériel/${form.photo}`;
+    return toThumbUrl(`/Photos/Matériel/${form.photo}`, 240);
   }, [form.photo, autoMatchedPhoto]);
 
   const resolvedCat = useMemo(() => {
@@ -307,7 +307,11 @@ const EquipmentFormModal = ({
                           }}
                           title={p}
                         >
-                          <img src={`/Photos/Matériel/${p}`} alt={p} loading="lazy" />
+                          <img
+                            src={toThumbUrl(`/Photos/Matériel/${p}`, 80)}
+                            alt={p}
+                            loading="lazy"
+                          />
                           <span className="eq-photo-picker-item-label">
                             {p.replace(/\.[^.]+$/, '')}
                           </span>

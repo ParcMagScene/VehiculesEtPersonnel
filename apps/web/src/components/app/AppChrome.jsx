@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { NavigationProvider } from '../../contexts/NavigationContext';
 import Header from '../Header';
 import { PrintPreviewProvider } from '../ui/PrintPreviewProvider';
+import '../../App.css';
 
 function AppChrome({
   onNavigateToEntity,

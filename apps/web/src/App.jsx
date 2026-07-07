@@ -9,19 +9,17 @@ import {
   useTransition,
 } from 'react';
 
-import AppChrome from './components/app/AppChrome';
-import AppStatusBar from './components/app/AppStatusBar';
-import GlobalOverlays from './components/app/GlobalOverlays';
-import ModuleHost from './components/app/ModuleHost';
+const AppChrome = lazy(() => import('./components/app/AppChrome'));
+const AppStatusBar = lazy(() => import('./components/app/AppStatusBar'));
+const GlobalOverlays = lazy(() => import('./components/app/GlobalOverlays'));
+const ModuleHost = lazy(() => import('./components/app/ModuleHost'));
 const GoogleCalendarBanner = lazy(() => import('./components/vehicles/GoogleCalendarBanner'));
-import './App.css';
-import './styles/draggable-modals.css';
+import './AppBase.css';
 
 import LoginForm from './components/auth/LoginForm';
 import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PersonalAuthProvider } from './contexts/PersonalAuthContext.jsx';
-import { LoadingOverlay } from './design-system';
 import { useAppData } from './hooks/useAppData';
 import { useDocumentBadge } from './hooks/useDocumentBadge';
 import { useDraggableModals } from './hooks/useDraggableModals';
@@ -49,6 +47,17 @@ import { getApiNetworkStatus, subscribeApiNetworkStatus } from './utils/api/base
 const PresetDetachedView = lazy(() => import('./components/video/PresetDetachedView'));
 
 const MobileApp = lazy(() => import('./components/mobile/MobileApp'));
+
+function AppShellFallback({ label = 'Chargement...' }) {
+  return (
+    <div className="app loading">
+      <div className="loading-container">
+        <div className="loading-spinner" />
+        <p>{label}</p>
+      </div>
+    </div>
+  );
+}
 
 // Détection fiable d'un appareil mobile (matchMedia)
 const detectMobile = () => {
@@ -520,7 +529,7 @@ function AppContent() {
   if (isMobile) {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<LoadingOverlay label="Chargement..." />}>
+        <Suspense fallback={<AppShellFallback label="Chargement..." />}>
           <MobileApp
             onSwitchToDesktop={() => {
               sessionStorage.setItem('forceDesktop', 'true');
@@ -603,115 +612,123 @@ function AppContent() {
   return (
     <ErrorBoundary>
       <ToastProvider toast={toast}>
-        <AppChrome
-          onNavigateToEntity={handleNavigateToEntity}
-          apiNetworkStatus={apiNetworkStatus}
-          headerProps={headerProps}
-          showGoogleBanner={showGoogleBanner}
-          googleBannerProps={googleBannerProps}
-          GoogleCalendarBanner={GoogleCalendarBanner}
-        >
-          <main id="main-content">
-            <ModuleHost
-              activeModule={activeModule}
-              view={view}
-              setView={setView}
-              currentDate={currentDate}
-              setCurrentDate={setCurrentDate}
-              data={data}
-              currentUser={currentUser}
-              showEquipmentManagement={showEquipmentManagement}
-              setShowEquipmentManagement={setShowEquipmentManagement}
-              stockSubTab={stockSubTab}
-              setStockSubTab={setStockSubTab}
-              showStockManagement={showStockManagement}
-              setShowStockManagement={setShowStockManagement}
-              allGoogleEvents={allGoogleEvents}
-              handleNavigateToEntity={handleNavigateToEntity}
-              personnelRefreshKey={personnelRefreshKey}
-              navigateToPersonId={navigateToPersonId}
-              setNavigateToPersonId={setNavigateToPersonId}
-              quickAssignmentSlot={quickAssignmentSlot}
-              setQuickAssignmentSlot={setQuickAssignmentSlot}
-              googleBannerSlot={
-                <Suspense fallback={null}>
-                  <GoogleCalendarBanner {...googleBannerProps} />
-                </Suspense>
-              }
-              handleCalendarScroll={handleCalendarScroll}
-              googleEventForReservation={googleEventForReservation}
-              setGoogleEventForReservation={setGoogleEventForReservation}
-              googleEvents={googleEvents}
-              highlightedReservationIds={highlightedReservationIds}
-              reservationToEdit={reservationToEdit}
-              setReservationToEdit={setReservationToEdit}
-              setSelectedVehicleForDetails={setSelectedVehicleForDetails}
-              setVehicleForDialog={setVehicleForDialog}
-              setMaintenanceActionType={setMaintenanceActionType}
-              setSelectedVehicleForMaintenance={setSelectedVehicleForMaintenance}
-              setMaintenanceToEdit={setMaintenanceToEdit}
-              openEventDetailsModalRef={openEventDetailsModalRef}
-              quickReservationSlot={quickReservationSlot}
-              setQuickReservationSlot={setQuickReservationSlot}
-              selectedVehicleForDetails={selectedVehicleForDetails}
-              handleScheduleMaintenance={handleScheduleMaintenance}
-              handleRequestMaintenance={handleRequestMaintenance}
-              setSelectedVehicleForKilometrageControl={setSelectedVehicleForKilometrageControl}
-              handleReportBreakdown={handleReportBreakdown}
-              setShowManagement={setShowManagement}
-              setVehicleForManagementEdit={setVehicleForManagementEdit}
-              toast={toast}
-            />
+        <Suspense fallback={<AppShellFallback label="Chargement..." />}>
+          <AppChrome
+            onNavigateToEntity={handleNavigateToEntity}
+            apiNetworkStatus={apiNetworkStatus}
+            headerProps={headerProps}
+            showGoogleBanner={showGoogleBanner}
+            googleBannerProps={googleBannerProps}
+            GoogleCalendarBanner={GoogleCalendarBanner}
+          >
+            <main id="main-content">
+              <ModuleHost
+                activeModule={activeModule}
+                view={view}
+                setView={setView}
+                currentDate={currentDate}
+                setCurrentDate={setCurrentDate}
+                data={data}
+                currentUser={currentUser}
+                showEquipmentManagement={showEquipmentManagement}
+                setShowEquipmentManagement={setShowEquipmentManagement}
+                stockSubTab={stockSubTab}
+                setStockSubTab={setStockSubTab}
+                showStockManagement={showStockManagement}
+                setShowStockManagement={setShowStockManagement}
+                allGoogleEvents={allGoogleEvents}
+                handleNavigateToEntity={handleNavigateToEntity}
+                personnelRefreshKey={personnelRefreshKey}
+                navigateToPersonId={navigateToPersonId}
+                setNavigateToPersonId={setNavigateToPersonId}
+                quickAssignmentSlot={quickAssignmentSlot}
+                setQuickAssignmentSlot={setQuickAssignmentSlot}
+                googleBannerSlot={
+                  <Suspense fallback={null}>
+                    <GoogleCalendarBanner {...googleBannerProps} />
+                  </Suspense>
+                }
+                handleCalendarScroll={handleCalendarScroll}
+                googleEventForReservation={googleEventForReservation}
+                setGoogleEventForReservation={setGoogleEventForReservation}
+                googleEvents={googleEvents}
+                highlightedReservationIds={highlightedReservationIds}
+                reservationToEdit={reservationToEdit}
+                setReservationToEdit={setReservationToEdit}
+                setSelectedVehicleForDetails={setSelectedVehicleForDetails}
+                setVehicleForDialog={setVehicleForDialog}
+                setMaintenanceActionType={setMaintenanceActionType}
+                setSelectedVehicleForMaintenance={setSelectedVehicleForMaintenance}
+                setMaintenanceToEdit={setMaintenanceToEdit}
+                openEventDetailsModalRef={openEventDetailsModalRef}
+                quickReservationSlot={quickReservationSlot}
+                setQuickReservationSlot={setQuickReservationSlot}
+                selectedVehicleForDetails={selectedVehicleForDetails}
+                handleScheduleMaintenance={handleScheduleMaintenance}
+                handleRequestMaintenance={handleRequestMaintenance}
+                setSelectedVehicleForKilometrageControl={setSelectedVehicleForKilometrageControl}
+                handleReportBreakdown={handleReportBreakdown}
+                setShowManagement={setShowManagement}
+                setVehicleForManagementEdit={setVehicleForManagementEdit}
+                toast={toast}
+              />
 
-            <GlobalOverlays
-              showManagement={showManagement}
-              setShowManagement={setShowManagement}
-              activeModule={activeModule}
-              setPersonnelRefreshKey={setPersonnelRefreshKey}
-              showSettings={showSettings}
-              setShowSettings={setShowSettings}
-              setActiveModule={setActiveModule}
-              selectedVehicleForMaintenance={selectedVehicleForMaintenance}
-              setSelectedVehicleForMaintenance={setSelectedVehicleForMaintenance}
-              maintenanceToEdit={maintenanceToEdit}
-              setMaintenanceToEdit={setMaintenanceToEdit}
-              maintenanceActionType={maintenanceActionType}
-              setMaintenanceActionType={setMaintenanceActionType}
-              vehicleForDialog={vehicleForDialog}
-              setVehicleForDialog={setVehicleForDialog}
-              vehicleForManagementEdit={vehicleForManagementEdit}
-              setVehicleForManagementEdit={setVehicleForManagementEdit}
-              selectedVehicleForKilometrageControl={selectedVehicleForKilometrageControl}
-              setSelectedVehicleForKilometrageControl={setSelectedVehicleForKilometrageControl}
-              showMessaging={showMessaging}
-              setShowMessaging={setShowMessaging}
-              showMailing={showMailing}
-              setShowMailing={setShowMailing}
-              showPreferences={showPreferences}
-              setShowPreferences={setShowPreferences}
-              palette={palette}
-              setPalette={setPalette}
-              isDark={isDark}
-              toggleTheme={toggleTheme}
-              updatePreferences={updatePreferences}
-              showHelp={showHelp}
-              setShowHelp={setShowHelp}
-              globalAffaireDialog={globalAffaireDialog}
-              setGlobalAffaireDialog={setGlobalAffaireDialog}
-              data={data}
-              currentUser={currentUser}
-              handleRequestMaintenance={handleRequestMaintenance}
-              handleReportBreakdown={handleReportBreakdown}
-              handleScheduleMaintenance={handleScheduleMaintenance}
-              toast={toast}
-              handleNavigateToEntity={handleNavigateToEntity}
-              toastRef={toastRef}
-            />
-          </main>
+              <Suspense fallback={null}>
+                <GlobalOverlays
+                  showManagement={showManagement}
+                  setShowManagement={setShowManagement}
+                  activeModule={activeModule}
+                  setPersonnelRefreshKey={setPersonnelRefreshKey}
+                  showSettings={showSettings}
+                  setShowSettings={setShowSettings}
+                  setActiveModule={setActiveModule}
+                  selectedVehicleForMaintenance={selectedVehicleForMaintenance}
+                  setSelectedVehicleForMaintenance={setSelectedVehicleForMaintenance}
+                  maintenanceToEdit={maintenanceToEdit}
+                  setMaintenanceToEdit={setMaintenanceToEdit}
+                  maintenanceActionType={maintenanceActionType}
+                  setMaintenanceActionType={setMaintenanceActionType}
+                  vehicleForDialog={vehicleForDialog}
+                  setVehicleForDialog={setVehicleForDialog}
+                  vehicleForManagementEdit={vehicleForManagementEdit}
+                  setVehicleForManagementEdit={setVehicleForManagementEdit}
+                  selectedVehicleForKilometrageControl={selectedVehicleForKilometrageControl}
+                  setSelectedVehicleForKilometrageControl={setSelectedVehicleForKilometrageControl}
+                  showMessaging={showMessaging}
+                  setShowMessaging={setShowMessaging}
+                  showMailing={showMailing}
+                  setShowMailing={setShowMailing}
+                  showPreferences={showPreferences}
+                  setShowPreferences={setShowPreferences}
+                  palette={palette}
+                  setPalette={setPalette}
+                  isDark={isDark}
+                  toggleTheme={toggleTheme}
+                  updatePreferences={updatePreferences}
+                  showHelp={showHelp}
+                  setShowHelp={setShowHelp}
+                  globalAffaireDialog={globalAffaireDialog}
+                  setGlobalAffaireDialog={setGlobalAffaireDialog}
+                  data={data}
+                  currentUser={currentUser}
+                  handleRequestMaintenance={handleRequestMaintenance}
+                  handleReportBreakdown={handleReportBreakdown}
+                  handleScheduleMaintenance={handleScheduleMaintenance}
+                  toast={toast}
+                  handleNavigateToEntity={handleNavigateToEntity}
+                  toastRef={toastRef}
+                />
+              </Suspense>
+            </main>
 
-          {/* Status bar VS Code */}
-          {isVSCode && <AppStatusBar activeModule={activeModule} />}
-        </AppChrome>
+            {/* Status bar VS Code */}
+            {isVSCode && (
+              <Suspense fallback={null}>
+                <AppStatusBar activeModule={activeModule} />
+              </Suspense>
+            )}
+          </AppChrome>
+        </Suspense>
       </ToastProvider>
     </ErrorBoundary>
   );

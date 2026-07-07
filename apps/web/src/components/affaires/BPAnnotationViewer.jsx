@@ -15,7 +15,6 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/design-system';
@@ -23,8 +22,19 @@ import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/d
 import { AVATAR_COLORS } from '../../constants/colors';
 import { FAMILY_COLORS } from '../../utils/bpAnnotationEngine';
 
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+let pdfjsLibRef = null;
+let pdfjsLibPromise = null;
+
+async function getPdfJs() {
+  if (pdfjsLibRef) return pdfjsLibRef;
+  if (!pdfjsLibPromise) {
+    pdfjsLibPromise = import('pdfjs-dist').then((mod) => {
+      mod.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+      pdfjsLibRef = mod;
+      return mod;
+    });
+  }
+  return pdfjsLibPromise;
 }
 
 const SCALE_MIN = 0.5;
@@ -44,7 +54,9 @@ function groupTextIntoLines(textItems, viewport) {
 
   const positioned = textItems
     .map((item) => {
-      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      const tx = pdfjsLibRef?.Util?.transform
+        ? pdfjsLibRef.Util.transform(viewport.transform, item.transform)
+        : item.transform;
       const isMainFont = (item.fontName || '') === mainFont;
       const rawT = item.transform;
       const hasShear = Math.abs(rawT[1]) > 0.01 || Math.abs(rawT[2]) > 0.01;
@@ -481,6 +493,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
     setLoading(true);
     (async () => {
       try {
+        const pdfjsLib = await getPdfJs();
         const resp = await fetch(pdfUrl);
         const buf = await resp.arrayBuffer();
         const doc = await pdfjsLib.getDocument({ data: buf }).promise;

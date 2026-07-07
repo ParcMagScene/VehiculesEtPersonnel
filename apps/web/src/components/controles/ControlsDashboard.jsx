@@ -33,6 +33,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useListResource } from '../../hooks/useListResource';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
+import { toThumbUrl } from '../equipment/equipmentUtils';
 import ControlEditorModal from './ControlEditorModal';
 import ControlHistoryModal from './ControlHistoryModal';
 import './ControlsDashboard.css';
@@ -447,9 +448,10 @@ export default function ControlsDashboard({ user }) {
                   // pas de miniature, on retombe sur le placeholder.
                   let photoUrl = null;
                   if (c.entity_photo && !c.entity_photo.startsWith('generic:')) {
-                    photoUrl = isVehicle
+                    const rawPhotoUrl = isVehicle
                       ? `/Photos/${c.entity_photo}`
                       : `/Photos/Matériel/${c.entity_photo}`;
+                    photoUrl = toThumbUrl(rawPhotoUrl, 80);
                   }
                   return (
                     <tr key={c.id}>

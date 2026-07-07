@@ -52,7 +52,12 @@ import {
   SAV_STATUS,
   SAV_TYPES,
 } from './equipmentConstants';
-import { getCategoryHierarchy, matchLogoToBrand, matchPhotoToEquipment } from './equipmentUtils';
+import {
+  getCategoryHierarchy,
+  matchLogoToBrand,
+  matchPhotoToEquipment,
+  toThumbUrl,
+} from './equipmentUtils';
 
 // ───────────────────────────────────────────────────────────────
 // Section "Contrôles périodiques" affichée dans le détail équipement.
@@ -151,14 +156,15 @@ const EquipmentDetailContent = ({
   const isWatch = watchIds?.has(eq.id);
   const hierarchy = getCategoryHierarchy(eq, catList || []);
   const genericImg = !photo ? resolveGenericImage(eq, hierarchy) : null;
+  const detailPhotoSrc = photo ? toThumbUrl(photo, compact ? 160 : 240) : genericImg;
 
   return (
     <div className="eq-detail-body">
       {/* Hero: Photo + Identité */}
       <div className="eq-detail-hero">
-        {(photo || genericImg) && (
+        {detailPhotoSrc && (
           <div className={`eq-detail-photo${!photo && genericImg ? ' eq-generic' : ''}`}>
-            <img src={photo || genericImg} alt={cleanName(eq.name)} loading="lazy" />
+            <img src={detailPhotoSrc} alt={cleanName(eq.name)} loading="lazy" />
           </div>
         )}
         <div className="eq-detail-identity">

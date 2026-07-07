@@ -4,6 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import './SuiviPanel.css';
+import '../../styles/person-sidebar.css';
 
 import {
   AlertTriangle,

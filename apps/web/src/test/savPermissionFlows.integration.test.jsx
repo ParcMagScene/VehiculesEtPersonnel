@@ -273,7 +273,7 @@ describe('SAV permissions integration flows', () => {
 
     render(<EquipmentPanel currentUser={{}} initialTab="sav" isMobile />);
 
-    await user.click(screen.getByRole('button', { name: /submit-mobile-sav-request/i }));
+    await user.click(await screen.findByRole('button', { name: /submit-mobile-sav-request/i }));
 
     await waitFor(() => expect(apiMock.createSavRequest).toHaveBeenCalledTimes(1));
     expect(apiMock.createSavTicket).not.toHaveBeenCalled();
@@ -290,7 +290,7 @@ describe('SAV permissions integration flows', () => {
 
     render(<EquipmentPanel currentUser={{}} initialTab="sav" isMobile />);
 
-    await user.click(screen.getByRole('button', { name: /submit-mobile-sav-request/i }));
+    await user.click(await screen.findByRole('button', { name: /submit-mobile-sav-request/i }));
 
     await waitFor(() => expect(apiMock.createSavTicket).toHaveBeenCalledTimes(1));
     expect(apiMock.createSavRequest).not.toHaveBeenCalled();

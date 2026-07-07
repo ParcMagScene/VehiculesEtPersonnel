@@ -1,4 +1,5 @@
 import './PersonnelPanel.css';
+import '../../styles/person-sidebar.css';
 import '../equipment/EquipmentPanel.css';
 import '../vehicles/Calendar.css';
 
@@ -22,7 +23,16 @@ import {
   User,
   Users,
 } from 'lucide-react';
-import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  Suspense,
+  forwardRef,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 
 import {
@@ -52,7 +62,6 @@ import { computeGridColumnsCss } from '../../utils/planningGridColumns';
 import { refreshBus } from '../../utils/refresh-bus';
 import LeaveRequestForm from '../leaves/LeaveRequestForm';
 import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
-import LeavesTab from '../leaves/LeavesTab';
 import LeaveValidationPanel from '../leaves/LeaveValidationPanel';
 import MonthSelector from '../MonthSelector';
 import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
@@ -60,10 +69,14 @@ import PeriodCalendarModal from '../planning/PeriodCalendarModal';
 import WeekSelector from '../WeekSelector';
 import YearSelector from '../YearSelector';
 import AssignmentDialog from './AssignmentDialog';
-import { PlanningTab } from './PersonnelPlanningView';
-import { PersonsTab } from './PersonnelListView';
-import PersonnelAgenda from './PersonnelAgenda';
-import PersonnelPlanningEditModal from './PersonnelPlanningEditModal';
+const PlanningTab = lazy(() =>
+  import('./PersonnelPlanningView').then((m) => ({ default: m.PlanningTab })),
+);
+const PersonsTab = lazy(() =>
+  import('./PersonnelListView').then((m) => ({ default: m.PersonsTab })),
+);
+const PersonnelAgenda = lazy(() => import('./PersonnelAgenda'));
+const PersonnelPlanningEditModal = lazy(() => import('./PersonnelPlanningEditModal'));
 import {
   CONTRACT_TYPES,
   getCategoryColor,
@@ -77,8 +90,9 @@ import PersonnelContextMenu from './PersonnelContextMenu';
 import { PersonnelSlidePanel } from './PersonnelDetailPanel';
 import PersonnelFormModal from './PersonnelFormModal';
 import PersonnelImportModal from './PersonnelImportModal';
-import PositionsTab from './PositionsTab';
-import SkillsTab from './SkillsTab';
+const PositionsTab = lazy(() => import('./PositionsTab'));
+const SkillsTab = lazy(() => import('./SkillsTab'));
+const LeavesTab = lazy(() => import('../leaves/LeavesTab'));
 
 // ═══════════════════════════════════════
 // Composant principal
@@ -197,39 +211,47 @@ const PersonnelPanel = ({
             {error}
           </InlineAlert>
         )}
-        <PlanningTab
-          persons={persons}
-          skills={skills}
-          positions={positions}
-          view={view}
-          setView={setView}
-          currentDate={currentDate}
-          setCurrentDate={setCurrentDate}
-          googleEvents={googleEvents}
-          onPersonEdit={openEditDirect}
-          onPersonCreate={openCreateDirect}
-          navigateToPersonId={navigateToPersonId}
-          onNavigateToPersonHandled={onNavigateToPersonHandled}
-          quickAssignmentSlot={quickAssignmentSlot}
-          onQuickAssignmentHandled={onQuickAssignmentHandled}
-          currentUser={currentUser}
-          onOpenSuivi={onOpenSuivi}
-          googleBanner={googleBanner}
-        />
-        <PersonnelPlanningEditModal
-          open={editFormVisible}
-          onClose={resetEditForm}
-          person={editingPersonDirect}
-          skills={skills}
-          positions={positions}
-          onSuccess={() => {
-            loadData();
-            resetEditForm();
-          }}
-          onError={(err) => {
-            toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
-          }}
-        />
+        <Suspense
+          fallback={
+            <div className="personnel-loading">
+              <Spinner size="lg" />
+            </div>
+          }
+        >
+          <PlanningTab
+            persons={persons}
+            skills={skills}
+            positions={positions}
+            view={view}
+            setView={setView}
+            currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
+            googleEvents={googleEvents}
+            onPersonEdit={openEditDirect}
+            onPersonCreate={openCreateDirect}
+            navigateToPersonId={navigateToPersonId}
+            onNavigateToPersonHandled={onNavigateToPersonHandled}
+            quickAssignmentSlot={quickAssignmentSlot}
+            onQuickAssignmentHandled={onQuickAssignmentHandled}
+            currentUser={currentUser}
+            onOpenSuivi={onOpenSuivi}
+            googleBanner={googleBanner}
+          />
+          <PersonnelPlanningEditModal
+            open={editFormVisible}
+            onClose={resetEditForm}
+            person={editingPersonDirect}
+            skills={skills}
+            positions={positions}
+            onSuccess={() => {
+              loadData();
+              resetEditForm();
+            }}
+            onError={(err) => {
+              toast.error('Erreur : ' + (err.message || 'Impossible de sauvegarder'));
+            }}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -269,56 +291,106 @@ const PersonnelPanel = ({
       {/* Contenu */}
       <div className="personnel-content">
         {subTab === 'persons' && (
-          <PersonsTab
-            persons={persons}
-            setPersons={setPersons}
-            skills={skills}
-            positions={positions}
-            users={users}
-            currentUser={currentUser}
-            personToEdit={personToEdit}
-            onPersonToEditConsumed={() => setPersonToEdit(null)}
-          />
+          <Suspense
+            fallback={
+              <div className="personnel-loading">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            <PersonsTab
+              persons={persons}
+              setPersons={setPersons}
+              skills={skills}
+              positions={positions}
+              users={users}
+              currentUser={currentUser}
+              personToEdit={personToEdit}
+              onPersonToEditConsumed={() => setPersonToEdit(null)}
+            />
+          </Suspense>
         )}
         {subTab === 'skills' && (
-          <SkillsTab skills={skills} setSkills={setSkills} currentUser={currentUser} />
+          <Suspense
+            fallback={
+              <div className="personnel-loading">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            <SkillsTab skills={skills} setSkills={setSkills} currentUser={currentUser} />
+          </Suspense>
         )}
         {subTab === 'positions' && (
-          <PositionsTab
-            positions={positions}
-            setPositions={setPositions}
-            currentUser={currentUser}
-          />
+          <Suspense
+            fallback={
+              <div className="personnel-loading">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            <PositionsTab
+              positions={positions}
+              setPositions={setPositions}
+              currentUser={currentUser}
+            />
+          </Suspense>
         )}
         {subTab === 'planning' && (
-          <PlanningTab
-            persons={persons}
-            skills={skills}
-            positions={positions}
-            view={view}
-            setView={setView}
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-            googleEvents={googleEvents}
-            onPersonEdit={(person) => {
-              setPersonToEdit(person);
-              setSubTab('persons');
-            }}
-            navigateToPersonId={navigateToPersonId}
-            onNavigateToPersonHandled={onNavigateToPersonHandled}
-            quickAssignmentSlot={quickAssignmentSlot}
-            onQuickAssignmentHandled={onQuickAssignmentHandled}
-            currentUser={currentUser}
-          />
+          <Suspense
+            fallback={
+              <div className="personnel-loading">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            <PlanningTab
+              persons={persons}
+              skills={skills}
+              positions={positions}
+              view={view}
+              setView={setView}
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
+              googleEvents={googleEvents}
+              onPersonEdit={(person) => {
+                setPersonToEdit(person);
+                setSubTab('persons');
+              }}
+              navigateToPersonId={navigateToPersonId}
+              onNavigateToPersonHandled={onNavigateToPersonHandled}
+              quickAssignmentSlot={quickAssignmentSlot}
+              onQuickAssignmentHandled={onQuickAssignmentHandled}
+              currentUser={currentUser}
+            />
+          </Suspense>
         )}
         {subTab === 'agenda' && (
-          <PersonnelAgenda
-            persons={persons}
-            currentUser={currentUser}
-            googleEvents={googleEvents}
-          />
+          <Suspense
+            fallback={
+              <div className="personnel-loading">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            <PersonnelAgenda
+              persons={persons}
+              currentUser={currentUser}
+              googleEvents={googleEvents}
+            />
+          </Suspense>
         )}
-        {subTab === 'leaves' && <LeavesTab persons={persons} currentUser={currentUser} />}
+        {subTab === 'leaves' && (
+          <Suspense
+            fallback={
+              <div className="personnel-loading">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            <LeavesTab persons={persons} currentUser={currentUser} />
+          </Suspense>
+        )}
       </div>
     </div>
   );

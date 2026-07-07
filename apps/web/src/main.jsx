@@ -1,12 +1,7 @@
 import './theme.css';
 import './design/tokens.css';
 import './design/utilities.css';
-import './theme-palettes.css';
-import './theme-vscode.css';
-import './theme-density.css';
-import './theme-tv.css';
 import './index.css';
-import './styles/person-sidebar.css';
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -14,6 +9,34 @@ import { BrowserRouter } from 'react-router-dom';
 
 import App from './App.jsx';
 import { ScrollToTopOnModuleChange } from './router/RouterCompat.jsx';
+
+const startOptionalThemeLoaders = () => {
+  const root = document.documentElement;
+  const hasThemeAttributes =
+    !!root.getAttribute('data-palette') || !!root.getAttribute('data-density');
+
+  const run = () => {
+    import('./theme/loadOptionalPaletteStyles.js')
+      .then(({ setupOptionalPaletteStyleLoader }) => {
+        setupOptionalPaletteStyleLoader();
+      })
+      .catch((error) => {
+        console.error('[theme-loader]', error);
+      });
+  };
+
+  if (hasThemeAttributes) {
+    run();
+    return;
+  }
+
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(run);
+    return;
+  }
+
+  window.setTimeout(run, 0);
+};
 
 // A11y: Allow keyboard activation (Enter/Space) on elements with role="button"
 document.addEventListener('keydown', (e) => {
@@ -27,6 +50,8 @@ document.addEventListener('keydown', (e) => {
 window.addEventListener('unhandledrejection', (event) => {
   console.error('[unhandledrejection]', event.reason);
 });
+
+startOptionalThemeLoaders();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

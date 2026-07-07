@@ -75,8 +75,16 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Supprimer console.log et debugger en production
-    minify: 'esbuild',
-    target: 'es2020',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        passes: 2,
+      },
+      format: {
+        comments: false,
+      },
+    },
+    target: 'es2022',
     chunkSizeWarningLimit: 600,
     // Source maps pour le debugging production
     sourcemap: false, // [AUDIT FIX] Désactivé en production pour ne pas exposer le code source
@@ -151,9 +159,6 @@ export default defineConfig(({ mode }) => ({
         secure: false
       }
     }
-  },
-  optimizeDeps: {
-    include: ['pdfjs-dist']
   },
   resolve: {
     alias: {

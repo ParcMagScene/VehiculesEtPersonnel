@@ -20,7 +20,7 @@ import {
   Upload,
   Wrench,
 } from 'lucide-react';
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 
 import {
   Button,
@@ -40,28 +40,40 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { usePrintPreview } from '../ui/PrintPreviewProvider';
-import DepotMap from '../vehicles/DepotMap';
-import MaintenanceReportModal from '../vehicles/MaintenanceReportModal';
+import { MobileSavRequestForm } from './EquipmentSAV';
 import CategoryCascadeFilter from './CategoryCascadeFilter';
-import EquipmentBatchLabels from './EquipmentBatchLabels';
-import EquipmentCategoriesTree from './EquipmentCategoriesTree';
 import { SAV_STATUS } from './equipmentConstants';
-import { EquipmentDetailDialog, EquipmentSlidePanel } from './EquipmentDetail';
-import EquipmentFlightCaseLabels from './EquipmentFlightCaseLabels';
-import EquipmentFormModal from './EquipmentFormModal';
 import EquipmentGrid from './EquipmentGrid';
-import EquipmentLabelPrint from './EquipmentLabelPrint';
-import EquipmentMediaManager from './EquipmentMediaManager';
-import {
-  MobileSavRequestForm,
-  SavDetailDialog,
-  SavSlidePanel,
-  SavTicketFormModal,
-  SavTicketsList,
-} from './EquipmentSAV';
 import { buildEquipmentSheetHtml } from './EquipmentSheetPrint';
-import LocmatImportModal from './import/LocmatImportModal';
 import { useEquipment } from './useEquipment';
+
+const DepotMap = lazy(() => import('../vehicles/DepotMap'));
+const MaintenanceReportModal = lazy(() => import('../vehicles/MaintenanceReportModal'));
+const EquipmentBatchLabels = lazy(() => import('./EquipmentBatchLabels'));
+const EquipmentCategoriesTree = lazy(() => import('./EquipmentCategoriesTree'));
+const EquipmentDetailDialog = lazy(() =>
+  import('./EquipmentDetail').then((m) => ({ default: m.EquipmentDetailDialog })),
+);
+const EquipmentSlidePanel = lazy(() =>
+  import('./EquipmentDetail').then((m) => ({ default: m.EquipmentSlidePanel })),
+);
+const EquipmentFlightCaseLabels = lazy(() => import('./EquipmentFlightCaseLabels'));
+const EquipmentFormModal = lazy(() => import('./EquipmentFormModal'));
+const EquipmentLabelPrint = lazy(() => import('./EquipmentLabelPrint'));
+const EquipmentMediaManager = lazy(() => import('./EquipmentMediaManager'));
+const SavDetailDialog = lazy(() =>
+  import('./EquipmentSAV').then((m) => ({ default: m.SavDetailDialog })),
+);
+const SavSlidePanel = lazy(() =>
+  import('./EquipmentSAV').then((m) => ({ default: m.SavSlidePanel })),
+);
+const SavTicketFormModal = lazy(() =>
+  import('./EquipmentSAV').then((m) => ({ default: m.SavTicketFormModal })),
+);
+const SavTicketsList = lazy(() =>
+  import('./EquipmentSAV').then((m) => ({ default: m.SavTicketsList })),
+);
+const LocmatImportModal = lazy(() => import('./import/LocmatImportModal'));
 
 // ═══ COMPOSANT PRINCIPAL ═══
 const EquipmentPanel = ({
@@ -499,14 +511,16 @@ const EquipmentPanel = ({
           {/* Plan du dépôt */}
           {showDepotMap && depotZones && subTab === 'inventory' && (
             <div className="eq-depot-map-wrapper">
-              <DepotMap
-                zones={depotZones}
-                stats={locationStats}
-                selectedZone={filterZone && filterZone !== '_none' ? filterZone : null}
-                onZoneSelect={(zoneId) => setFilterZone(filterZone === zoneId ? '' : zoneId)}
-                onZoneFilter={(zoneId) => setFilterZone(zoneId || '')}
-                onZonesUpdated={loadData}
-              />
+              <Suspense fallback={<Spinner size="md" />}>
+                <DepotMap
+                  zones={depotZones}
+                  stats={locationStats}
+                  selectedZone={filterZone && filterZone !== '_none' ? filterZone : null}
+                  onZoneSelect={(zoneId) => setFilterZone(filterZone === zoneId ? '' : zoneId)}
+                  onZoneFilter={(zoneId) => setFilterZone(zoneId || '')}
+                  onZonesUpdated={loadData}
+                />
+              </Suspense>
             </div>
           )}
           <div className="eq-content">
@@ -560,254 +574,281 @@ const EquipmentPanel = ({
             )}
 
             {subTab === 'sav' && (
-              <SavTicketsList
-                tickets={filteredTickets}
-                equipment={equipment}
-                persons={persons}
-                selectedId={selectedTicket?.id}
-                onSelect={(t) => {
-                  clearTimeout(ticketClickTimerRef.current);
-                  if (isMobile) {
+              <Suspense fallback={<Spinner size="md" />}>
+                <SavTicketsList
+                  tickets={filteredTickets}
+                  equipment={equipment}
+                  persons={persons}
+                  selectedId={selectedTicket?.id}
+                  onSelect={(t) => {
+                    clearTimeout(ticketClickTimerRef.current);
+                    if (isMobile) {
+                      setDialogTicket(t);
+                    } else {
+                      ticketClickTimerRef.current = setTimeout(() => {
+                        setSelectedTicket(selectedTicket?.id === t.id ? null : t);
+                      }, 200);
+                    }
+                  }}
+                  onDoubleClick={(t) => {
+                    clearTimeout(ticketClickTimerRef.current);
+                    setSelectedTicket(null);
                     setDialogTicket(t);
-                  } else {
-                    ticketClickTimerRef.current = setTimeout(() => {
-                      setSelectedTicket(selectedTicket?.id === t.id ? null : t);
-                    }, 200);
-                  }
-                }}
-                onDoubleClick={(t) => {
-                  clearTimeout(ticketClickTimerRef.current);
-                  setSelectedTicket(null);
-                  setDialogTicket(t);
-                }}
-                onEdit={(t) => {
-                  setEditingSavTicket(t);
-                  setShowSavModal(true);
-                }}
-                onDelete={(id) => {
-                  confirm({
-                    title: 'Supprimer le ticket',
-                    message: 'Supprimer ce ticket ?',
-                    variant: 'danger',
-                    confirmLabel: 'Supprimer',
-                    onConfirm: async () => {
-                      try {
-                        await api.deleteSavTicket(id);
-                        loadData();
-                      } catch (err) {
-                        toast.error('Erreur: ' + err.message);
-                      }
-                    },
-                  });
-                }}
-              />
+                  }}
+                  onEdit={(t) => {
+                    setEditingSavTicket(t);
+                    setShowSavModal(true);
+                  }}
+                  onDelete={(id) => {
+                    confirm({
+                      title: 'Supprimer le ticket',
+                      message: 'Supprimer ce ticket ?',
+                      variant: 'danger',
+                      confirmLabel: 'Supprimer',
+                      onConfirm: async () => {
+                        try {
+                          await api.deleteSavTicket(id);
+                          loadData();
+                        } catch (err) {
+                          toast.error('Erreur: ' + err.message);
+                        }
+                      },
+                    });
+                  }}
+                />
+              </Suspense>
             )}
           </div>
         </div>
 
         {/* Volet de détail rapide – Matériel (clic simple) */}
         {subTab === 'inventory' && !dialogEquipment && (
-          <EquipmentSlidePanel
-            equipment={selectedEquipment}
-            categories={categories}
-            persons={persons}
-            photosList={photosList}
-            logosList={logosList}
-            favoriteIds={favoriteIds}
-            watchIds={watchIds}
-            onToggleList={toggleList}
-            onClose={() => setSelectedEquipment(null)}
-            onOpenDialog={(eq) => {
-              setSelectedEquipment(null);
-              setDialogEquipment(eq);
-            }}
-            onEdit={(eq) => {
-              setEditingEquipment(eq);
-              setShowEquipmentModal(true);
-            }}
-            onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
-            onPrintSheet={handlePrintSheet}
-            isAdmin={isAdmin}
-            onOpenDepotMap={(zoneId, eqName) =>
-              setDepotMapModalZone({ zoneId, equipmentName: eqName })
-            }
-          />
+          <Suspense fallback={null}>
+            <EquipmentSlidePanel
+              equipment={selectedEquipment}
+              categories={categories}
+              persons={persons}
+              photosList={photosList}
+              logosList={logosList}
+              favoriteIds={favoriteIds}
+              watchIds={watchIds}
+              onToggleList={toggleList}
+              onClose={() => setSelectedEquipment(null)}
+              onOpenDialog={(eq) => {
+                setSelectedEquipment(null);
+                setDialogEquipment(eq);
+              }}
+              onEdit={(eq) => {
+                setEditingEquipment(eq);
+                setShowEquipmentModal(true);
+              }}
+              onPrintLabel={(eq) => setLabelPrintEquipment(eq)}
+              onPrintSheet={handlePrintSheet}
+              isAdmin={isAdmin}
+              onOpenDepotMap={(zoneId, eqName) =>
+                setDepotMapModalZone({ zoneId, equipmentName: eqName })
+              }
+            />
+          </Suspense>
         )}
 
         {/* Volet de détail rapide – SAV (clic simple) */}
         {subTab === 'sav' && !dialogTicket && !dialogEquipment && (
-          <SavSlidePanel
-            ticket={selectedTicket}
-            equipment={equipment}
-            persons={persons}
-            onClose={() => setSelectedTicket(null)}
-            onEdit={(t) => {
-              setEditingSavTicket(t);
-              setShowSavModal(true);
-            }}
-            onDelete={(id) => {
-              confirm({
-                title: 'Supprimer le ticket',
-                message: 'Supprimer ce ticket ?',
-                variant: 'danger',
-                confirmLabel: 'Supprimer',
-                onConfirm: async () => {
-                  try {
-                    await api.deleteSavTicket(id);
-                    setSelectedTicket(null);
-                    loadData();
-                  } catch (err) {
-                    toast.error('Erreur: ' + err.message);
-                  }
-                },
-              });
-            }}
-            onOpenDialog={(t) => {
-              setSelectedTicket(null);
-              setDialogTicket(t);
-            }}
-            onOpenEquipmentDialog={(eq) => {
-              setSelectedTicket(null);
-              setDialogEquipment(eq);
-            }}
-          />
+          <Suspense fallback={null}>
+            <SavSlidePanel
+              ticket={selectedTicket}
+              equipment={equipment}
+              persons={persons}
+              onClose={() => setSelectedTicket(null)}
+              onEdit={(t) => {
+                setEditingSavTicket(t);
+                setShowSavModal(true);
+              }}
+              onDelete={(id) => {
+                confirm({
+                  title: 'Supprimer le ticket',
+                  message: 'Supprimer ce ticket ?',
+                  variant: 'danger',
+                  confirmLabel: 'Supprimer',
+                  onConfirm: async () => {
+                    try {
+                      await api.deleteSavTicket(id);
+                      setSelectedTicket(null);
+                      loadData();
+                    } catch (err) {
+                      toast.error('Erreur: ' + err.message);
+                    }
+                  },
+                });
+              }}
+              onOpenDialog={(t) => {
+                setSelectedTicket(null);
+                setDialogTicket(t);
+              }}
+              onOpenEquipmentDialog={(eq) => {
+                setSelectedTicket(null);
+                setDialogEquipment(eq);
+              }}
+            />
+          </Suspense>
         )}
       </div>
 
       {/* Dialog détail complet (double-clic) */}
-      <EquipmentDetailDialog
-        equipment={dialogEquipment}
-        categories={categories}
-        persons={persons}
-        photosList={photosList}
-        logosList={logosList}
-        favoriteIds={favoriteIds}
-        watchIds={watchIds}
-        onToggleList={toggleList}
-        isAdmin={isAdmin}
-        onClose={() => setDialogEquipment(null)}
-        onEdit={(eq) => {
-          setEditingEquipment(eq);
-          setShowEquipmentModal(true);
-        }}
-        onDelete={handleDeleteEquipment}
-        onCreateTicket={(eq) => {
-          setSavTicketEquipment(eq);
-          setEditingSavTicket(null);
-          setShowSavModal(true);
-        }}
-        onRefresh={loadData}
-        onOpenTicketDialog={(t) => {
-          setDialogEquipment(null);
-          setDialogTicket(t);
-        }}
-        onPrintLabel={isMobile ? undefined : (eq) => setLabelPrintEquipment(eq)}
-        onPrintSheet={isMobile ? undefined : handlePrintSheet}
-        onSerialize={handleSerializeEquipment}
-        onOpenDepotMap={(zoneId, eqName) => setDepotMapModalZone({ zoneId, equipmentName: eqName })}
-      />
+      <Suspense fallback={null}>
+        <EquipmentDetailDialog
+          equipment={dialogEquipment}
+          categories={categories}
+          persons={persons}
+          photosList={photosList}
+          logosList={logosList}
+          favoriteIds={favoriteIds}
+          watchIds={watchIds}
+          onToggleList={toggleList}
+          isAdmin={isAdmin}
+          onClose={() => setDialogEquipment(null)}
+          onEdit={(eq) => {
+            setEditingEquipment(eq);
+            setShowEquipmentModal(true);
+          }}
+          onDelete={handleDeleteEquipment}
+          onCreateTicket={(eq) => {
+            setSavTicketEquipment(eq);
+            setEditingSavTicket(null);
+            setShowSavModal(true);
+          }}
+          onRefresh={loadData}
+          onOpenTicketDialog={(t) => {
+            setDialogEquipment(null);
+            setDialogTicket(t);
+          }}
+          onPrintLabel={isMobile ? undefined : (eq) => setLabelPrintEquipment(eq)}
+          onPrintSheet={isMobile ? undefined : handlePrintSheet}
+          onSerialize={handleSerializeEquipment}
+          onOpenDepotMap={(zoneId, eqName) =>
+            setDepotMapModalZone({ zoneId, equipmentName: eqName })
+          }
+        />
+      </Suspense>
 
       {/* Dialog SAV (double-clic) */}
-      <SavDetailDialog
-        ticket={dialogTicket}
-        equipment={equipment}
-        persons={persons}
-        isAdmin={isAdmin}
-        onClose={() => setDialogTicket(null)}
-        onEdit={(t) => {
-          setEditingSavTicket(t);
-          setShowSavModal(true);
-        }}
-        onDelete={(id) => {
-          confirm({
-            title: 'Supprimer le ticket',
-            message: 'Supprimer ce ticket ?',
-            variant: 'danger',
-            confirmLabel: 'Supprimer',
-            onConfirm: async () => {
-              try {
-                await api.deleteSavTicket(id);
-                setDialogTicket(null);
-                loadData();
-              } catch (err) {
-                toast.error('Erreur: ' + err.message);
-              }
-            },
-          });
-        }}
-        onOpenEquipmentDialog={(eq) => {
-          setDialogTicket(null);
-          setDialogEquipment(eq);
-        }}
-      />
+      <Suspense fallback={null}>
+        <SavDetailDialog
+          ticket={dialogTicket}
+          equipment={equipment}
+          persons={persons}
+          isAdmin={isAdmin}
+          onClose={() => setDialogTicket(null)}
+          onEdit={(t) => {
+            setEditingSavTicket(t);
+            setShowSavModal(true);
+          }}
+          onDelete={(id) => {
+            confirm({
+              title: 'Supprimer le ticket',
+              message: 'Supprimer ce ticket ?',
+              variant: 'danger',
+              confirmLabel: 'Supprimer',
+              onConfirm: async () => {
+                try {
+                  await api.deleteSavTicket(id);
+                  setDialogTicket(null);
+                  loadData();
+                } catch (err) {
+                  toast.error('Erreur: ' + err.message);
+                }
+              },
+            });
+          }}
+          onOpenEquipmentDialog={(eq) => {
+            setDialogTicket(null);
+            setDialogEquipment(eq);
+          }}
+        />
+      </Suspense>
 
       {/* Modals */}
       {showEquipmentModal && (
-        <EquipmentFormModal
-          equipment={editingEquipment}
-          categories={categories}
-          brandsList={brandsList}
-          depotZones={depotZones}
-          allDepotZones={allDepotZones}
-          photosList={photosList}
-          onSave={handleSaveEquipment}
-          onClose={() => {
-            setShowEquipmentModal(false);
-            setEditingEquipment(null);
-          }}
-        />
+        <Suspense fallback={<Spinner size="md" />}>
+          <EquipmentFormModal
+            equipment={editingEquipment}
+            categories={categories}
+            brandsList={brandsList}
+            depotZones={depotZones}
+            allDepotZones={allDepotZones}
+            photosList={photosList}
+            onSave={handleSaveEquipment}
+            onClose={() => {
+              setShowEquipmentModal(false);
+              setEditingEquipment(null);
+            }}
+          />
+        </Suspense>
       )}
 
       {showSavModal && (
-        <SavTicketFormModal
-          ticket={editingSavTicket}
-          equipment={equipment}
-          categories={categories}
-          persons={persons}
-          preselectedEquipment={savTicketEquipment || selectedEquipment}
-          onSave={handleSaveSavTicket}
-          onClose={() => {
-            setShowSavModal(false);
-            setEditingSavTicket(null);
-            setSavTicketEquipment(null);
-          }}
-        />
+        <Suspense fallback={<Spinner size="md" />}>
+          <SavTicketFormModal
+            ticket={editingSavTicket}
+            equipment={equipment}
+            categories={categories}
+            persons={persons}
+            preselectedEquipment={savTicketEquipment || selectedEquipment}
+            onSave={handleSaveSavTicket}
+            onClose={() => {
+              setShowSavModal(false);
+              setEditingSavTicket(null);
+              setSavTicketEquipment(null);
+            }}
+          />
+        </Suspense>
       )}
 
       {showMobileSavRequest && (
-        <MobileSavRequestForm
-          equipment={equipment}
-          onSubmit={async (data) => {
-            if (canManageEquipmentMaintenance) {
-              await api.createSavTicket(data);
-            } else {
-              await api.createSavRequest(data);
-            }
-            setShowMobileSavRequest(false);
-            loadData();
-          }}
-          onClose={() => setShowMobileSavRequest(false)}
-        />
+        <Suspense fallback={<Spinner size="md" />}>
+          <MobileSavRequestForm
+            equipment={equipment}
+            onSubmit={async (data) => {
+              if (canManageEquipmentMaintenance) {
+                await api.createSavTicket(data);
+              } else {
+                await api.createSavRequest(data);
+              }
+              setShowMobileSavRequest(false);
+              loadData();
+            }}
+            onClose={() => setShowMobileSavRequest(false)}
+          />
+        </Suspense>
       )}
 
       {showImportModal && (
-        <LocmatImportModal
-          onClose={() => setShowImportModal(false)}
-          onDone={() => {
-            setShowImportModal(false);
-            loadData();
-          }}
-        />
+        <Suspense fallback={<Spinner size="md" />}>
+          <LocmatImportModal
+            onClose={() => setShowImportModal(false)}
+            onDone={() => {
+              setShowImportModal(false);
+              loadData();
+            }}
+          />
+        </Suspense>
       )}
 
       {labelPrintEquipment && (
-        <EquipmentLabelPrint
-          equipment={labelPrintEquipment}
-          onClose={() => setLabelPrintEquipment(null)}
-        />
+        <Suspense fallback={<Spinner size="md" />}>
+          <EquipmentLabelPrint
+            equipment={labelPrintEquipment}
+            onClose={() => setLabelPrintEquipment(null)}
+          />
+        </Suspense>
       )}
 
-      <MaintenanceReportModal isOpen={showReportModal} onClose={() => setShowReportModal(false)} />
+      <Suspense fallback={null}>
+        <MaintenanceReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+        />
+      </Suspense>
 
       {/* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */}
       {showManagement && (
@@ -920,31 +961,37 @@ const EquipmentPanel = ({
                   <h3>
                     <Tag size={18} /> Familles et catégories ({categories.length})
                   </h3>
-                  <EquipmentCategoriesTree
-                    families={families}
-                    subfamilies={subfamilies}
-                    leafCategories={leafCategories}
-                    categories={categories}
-                    equipment={equipment}
-                    onRefresh={loadData}
-                  />
+                  <Suspense fallback={<Spinner size="md" />}>
+                    <EquipmentCategoriesTree
+                      families={families}
+                      subfamilies={subfamilies}
+                      leafCategories={leafCategories}
+                      categories={categories}
+                      equipment={equipment}
+                      onRefresh={loadData}
+                    />
+                  </Suspense>
                 </div>
               )}
 
               {/* Onglet Étiquettes */}
               {mgmtTab === 'labels' && (
                 <div className="eq-management-section eq-mgmt-labels-section">
-                  <EquipmentBatchLabels
-                    equipment={equipment}
-                    onPrintSingle={(eq) => setLabelPrintEquipment(eq)}
-                  />
+                  <Suspense fallback={<Spinner size="md" />}>
+                    <EquipmentBatchLabels
+                      equipment={equipment}
+                      onPrintSingle={(eq) => setLabelPrintEquipment(eq)}
+                    />
+                  </Suspense>
                 </div>
               )}
 
               {/* Onglet Plaques flight-case */}
               {mgmtTab === 'flightcase' && (
                 <div className="eq-management-section eq-mgmt-labels-section">
-                  <EquipmentFlightCaseLabels equipment={equipment} />
+                  <Suspense fallback={<Spinner size="md" />}>
+                    <EquipmentFlightCaseLabels equipment={equipment} />
+                  </Suspense>
                 </div>
               )}
 
@@ -985,12 +1032,14 @@ const EquipmentPanel = ({
 
               {/* Onglet Médias */}
               {mgmtTab === 'media' && (
-                <EquipmentMediaManager
-                  photosList={photosList}
-                  logosList={logosList}
-                  equipment={equipment}
-                  onRefresh={loadData}
-                />
+                <Suspense fallback={<Spinner size="md" />}>
+                  <EquipmentMediaManager
+                    photosList={photosList}
+                    logosList={logosList}
+                    equipment={equipment}
+                    onRefresh={loadData}
+                  />
+                </Suspense>
               )}
             </div>
           </ModalBody>
@@ -1013,21 +1062,23 @@ const EquipmentPanel = ({
           className="eq-depot-map-modal"
         >
           <div className="eq-depot-map-modal-body">
-            <DepotMap
-              zones={modalDepotData}
-              stats={locationStats}
-              selectedZone={depotMapModalZone.zoneId}
-              focusZoneId={depotMapModalZone.zoneId}
-              focusEquipmentName={depotMapModalZone.equipmentName}
-              onZoneSelect={(_zoneId) => {}}
-              onZoneFilter={() => {}}
-              compact={true}
-            />
+            <Suspense fallback={<Spinner size="md" />}>
+              <DepotMap
+                zones={modalDepotData}
+                stats={locationStats}
+                selectedZone={depotMapModalZone.zoneId}
+                focusZoneId={depotMapModalZone.zoneId}
+                focusEquipmentName={depotMapModalZone.equipmentName}
+                onZoneSelect={(_zoneId) => {}}
+                onZoneFilter={() => {}}
+                compact={true}
+              />
+            </Suspense>
           </div>
         </ModalLayout>
       )}
 
-      {ConfirmDialogRenderer}
+      <ConfirmDialogRenderer />
     </div>
   );
 };

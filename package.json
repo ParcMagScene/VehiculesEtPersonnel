@@ -36,6 +36,8 @@
     "db:migrate": "node scripts/migrate.mjs",
     "db:migrate:status": "node scripts/migrate.mjs --status",
     "audit:routes": "node scripts/audit-routes.mjs",
+    "audit:bundle": "node scripts/check-bundle-budget.mjs",
+    "audit:bundle:strict": "node scripts/check-bundle-budget.mjs --strict",
     "docs:check": "node scripts/check-doc-coherence.mjs",
     "docs:fix": "node scripts/check-doc-coherence.mjs --fix || true",
     "test:web:fast": "npm test --workspace=apps/web --silent",

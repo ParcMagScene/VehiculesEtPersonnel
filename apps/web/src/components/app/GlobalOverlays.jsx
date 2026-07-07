@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { LoadingOverlay } from '../../design-system';
 import api from '../../utils/api';
 import OverlayHost from './OverlayHost';
+import '../../styles/draggable-modals.css';
 
 const ToastContainer = lazy(() => import('../ToastContainer'));
 const ManagementPanel = lazy(() => import('../management/ManagementPanel'));

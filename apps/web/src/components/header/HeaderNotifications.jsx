@@ -24,6 +24,7 @@ import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
 import { getModalRoot } from '../../utils/modalManager';
+import { userHasPermission } from '../../utils/permissions';
 
 // ─── Shared internal card for reservation requests (used in both popups) ───
 // [PERF Phase 4.G] Memo : la card est rendue par .map() x N (jusqu'à ~20
@@ -237,6 +238,7 @@ const HeaderNotifications = ({
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [popoverStyle, setPopoverStyle] = useState({});
+  const canManageVehicleMaintenance = userHasPermission(currentUser, 'canManageVehicleMaintenance');
 
   const isAnyPopupOpen = showNotificationsPopup || showRequestsPopup;
 
@@ -726,71 +728,83 @@ const HeaderNotifications = ({
                               )}
                               {isExpanded && (
                                 <div className="notification-actions reported-actions">
-                                  <Button
-                                    variant="ghost"
-                                    className="notif-action-btn create-intervention"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      setShowNotificationsPopup(false);
-                                      setExpandedReportedId(null);
-                                      if (onScheduleMaintenance && vehicle) {
-                                        onScheduleMaintenance(vehicle);
-                                      } else if (onOpenMaintenance && vehicle && maintenanceId) {
-                                        onOpenMaintenance(vehicle, maintenanceId);
-                                      } else if (!maintenanceId) {
-                                        toast.error("Identifiant d'intervention introuvable");
-                                      }
-                                    }}
-                                  >
-                                    <Wrench size={14} />
-                                    Planifier une intervention
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    className="notif-action-btn delete-intervention"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      confirm({
-                                        title: 'Supprimer le signalement',
-                                        message: 'Supprimer ce signalement de panne ?',
-                                        confirmLabel: 'Supprimer',
-                                        variant: 'danger',
-                                        onConfirm: async () => {
-                                          try {
-                                            if (onDeleteSignalement) {
-                                              await onDeleteSignalement({
-                                                ...maintenance,
-                                                id: maintenanceId,
-                                              });
-                                            }
-                                            setExpandedReportedId(null);
-                                            setShowNotificationsPopup(false);
-                                          } catch {
-                                            // toast déjà géré par le handler parent
+                                  {canManageVehicleMaintenance ? (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        className="notif-action-btn create-intervention"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          setShowNotificationsPopup(false);
+                                          setExpandedReportedId(null);
+                                          if (onScheduleMaintenance && vehicle) {
+                                            onScheduleMaintenance(vehicle);
+                                          } else if (
+                                            onOpenMaintenance &&
+                                            vehicle &&
+                                            maintenanceId
+                                          ) {
+                                            onOpenMaintenance(vehicle, maintenanceId);
+                                          } else if (!maintenanceId) {
+                                            toast.error("Identifiant d'intervention introuvable");
                                           }
-                                        },
-                                      });
-                                    }}
-                                  >
-                                    <XCircle size={14} />
-                                    Supprimer
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    className="notif-action-btn close-signalement"
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      if (!maintenanceId) {
-                                        toast.error("Identifiant d'intervention introuvable");
-                                        return;
-                                      }
-                                      setClosingReportedId(isClosing ? null : maintenanceId);
-                                      setClosureDescription('');
-                                    }}
-                                  >
-                                    <Clock size={14} />
-                                    Clôturer le signalement
-                                  </Button>
+                                        }}
+                                      >
+                                        <Wrench size={14} />
+                                        Planifier une intervention
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        className="notif-action-btn delete-intervention"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          confirm({
+                                            title: 'Supprimer le signalement',
+                                            message: 'Supprimer ce signalement de panne ?',
+                                            confirmLabel: 'Supprimer',
+                                            variant: 'danger',
+                                            onConfirm: async () => {
+                                              try {
+                                                if (onDeleteSignalement) {
+                                                  await onDeleteSignalement({
+                                                    ...maintenance,
+                                                    id: maintenanceId,
+                                                  });
+                                                }
+                                                setExpandedReportedId(null);
+                                                setShowNotificationsPopup(false);
+                                              } catch {
+                                                // toast déjà géré par le handler parent
+                                              }
+                                            },
+                                          });
+                                        }}
+                                      >
+                                        <XCircle size={14} />
+                                        Supprimer
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        className="notif-action-btn close-signalement"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          if (!maintenanceId) {
+                                            toast.error("Identifiant d'intervention introuvable");
+                                            return;
+                                          }
+                                          setClosingReportedId(isClosing ? null : maintenanceId);
+                                          setClosureDescription('');
+                                        }}
+                                      >
+                                        <Clock size={14} />
+                                        Clôturer le signalement
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <span className="notification-hint">
+                                      Droits requis pour planifier ou clôturer un signalement.
+                                    </span>
+                                  )}
                                 </div>
                               )}
                               {isClosing && (

@@ -283,7 +283,7 @@ const Header = ({
 
   const handleCloseSignalement = async (intervention, description) => {
     try {
-      await onUpdateMaintenance(intervention.id, {
+      await onUpdateMaintenance({
         ...intervention,
         status: STATUS.COMPLETED,
         notes: (intervention.notes ? `${intervention.notes}\n\n` : '') + `[Clôturé] ${description}`,

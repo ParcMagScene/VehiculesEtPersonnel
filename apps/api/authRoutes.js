@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 
 import { AUDIT_ACTIONS, auditLog } from './auditLog.js';
 import { authCache } from './cache.js';
-import { isCaptchaEnabled, verifyCaptcha } from './captcha.js';
 import db from './database.js';
 import { getTransporter } from './emailService.js';
 import logger from './logger.js';

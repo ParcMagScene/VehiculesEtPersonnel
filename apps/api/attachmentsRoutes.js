@@ -100,6 +100,33 @@ const uploadAttachment = multer({
   },
 });
 
+const ATTACHMENT_MAGIC_MIMES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/bmp',
+  'image/tiff',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/zip',
+  'application/x-rar-compressed',
+  'application/x-7z-compressed',
+  'video/mp4',
+  'video/quicktime',
+  'video/x-msvideo',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/vnd.wave',
+  'audio/wave',
+  'audio/x-wav',
+];
+
 export function setupAttachmentsRoutes(app, authenticateToken, requireAdmin) {
   // Créer un dossier (sécurisé)
   app.post('/api/create-folder', authenticateToken, validate(createFolderSchema), (req, res) => {
@@ -164,41 +191,45 @@ export function setupAttachmentsRoutes(app, authenticateToken, requireAdmin) {
       if (err) {
         return res.status(400).json({ success: false, error: err.message });
       }
-      try {
-        if (!req.file) {
-          return res.status(400).json({ success: false, error: 'Aucun fichier fourni' });
+      validateFileType(ATTACHMENT_MAGIC_MIMES)(req, res, () => {
+        try {
+          if (!req.file) {
+            return res.status(400).json({ success: false, error: 'Aucun fichier fourni' });
+          }
+          if (!req.body.affaireId) {
+            return res.status(400).json({ success: false, error: 'affaireId requis' });
+          }
+          if (!isValidAffaireId(req.body.affaireId)) {
+            return res
+              .status(400)
+              .json({ success: false, error: "Identifiant d'affaire invalide" });
+          }
+          const affaireDir = sanitizePath(attachmentsPath, req.body.affaireId);
+          if (!affaireDir) {
+            return res.status(403).json({ success: false, error: 'Chemin non autorisé' });
+          }
+          if (!fs.existsSync(affaireDir)) {
+            fs.mkdirSync(affaireDir, { recursive: true });
+          }
+          const originalName = sanitizeFilename(req.file.originalname.replace(/^\d+-/, ''));
+          if (!originalName) {
+            fs.unlinkSync(req.file.path);
+            return res.status(400).json({ success: false, error: 'Nom de fichier invalide' });
+          }
+          const finalPath = path.join(affaireDir, originalName);
+          fs.renameSync(req.file.path, finalPath);
+          const relativePath = path.join('attachments', req.body.affaireId, originalName);
+          res.json({
+            success: true,
+            path: relativePath,
+            filename: originalName,
+            url: `/attachments/${req.body.affaireId}/${originalName}`,
+          });
+        } catch (error) {
+          logger.error(error);
+          res.status(500).json({ success: false, error: 'Erreur serveur interne' });
         }
-        if (!req.body.affaireId) {
-          return res.status(400).json({ success: false, error: 'affaireId requis' });
-        }
-        if (!isValidAffaireId(req.body.affaireId)) {
-          return res.status(400).json({ success: false, error: "Identifiant d'affaire invalide" });
-        }
-        const affaireDir = sanitizePath(attachmentsPath, req.body.affaireId);
-        if (!affaireDir) {
-          return res.status(403).json({ success: false, error: 'Chemin non autorisé' });
-        }
-        if (!fs.existsSync(affaireDir)) {
-          fs.mkdirSync(affaireDir, { recursive: true });
-        }
-        const originalName = sanitizeFilename(req.file.originalname.replace(/^\d+-/, ''));
-        if (!originalName) {
-          fs.unlinkSync(req.file.path);
-          return res.status(400).json({ success: false, error: 'Nom de fichier invalide' });
-        }
-        const finalPath = path.join(affaireDir, originalName);
-        fs.renameSync(req.file.path, finalPath);
-        const relativePath = path.join('attachments', req.body.affaireId, originalName);
-        res.json({
-          success: true,
-          path: relativePath,
-          filename: originalName,
-          url: `/attachments/${req.body.affaireId}/${originalName}`,
-        });
-      } catch (error) {
-        logger.error(error);
-        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-      }
+      });
     });
   });
 

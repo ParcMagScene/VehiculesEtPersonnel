@@ -29,6 +29,7 @@ import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
 import logger from './logger.js';
 import { setCacheControl } from './middleware/cacheControl.js';
+import { validateFileTypes } from './middleware/validateFileType.js';
 import { equipmentSchema } from './schemas/crud.js';
 import { validate } from './schemas/imports.js';
 import { getNextUid } from './services/uidCounter.js';
@@ -1847,6 +1848,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     '/api/equipment-photos/upload',
     authenticateToken,
     uploadPhoto.array('photos', 20),
+    validateFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']),
     (req, res) => {
       try {
         if (!req.files || req.files.length === 0) {

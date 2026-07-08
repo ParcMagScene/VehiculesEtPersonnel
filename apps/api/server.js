@@ -268,9 +268,10 @@ app.use('/api/suivi/personal-auth', authLimiter);
 // Auth éphémère (compte Equipe → actions personnelles)
 app.use('/api/personal-actions', personalActionsLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
-// [CWE-640 MITIGATION] Le reset-password accepte un flow direct (email+newPassword
-// sans OTP) — acceptation de risque utilisateur. On compense par un rate-limit
-// agressif (3 tentatives / 15 min / IP) pour ralentir une attaque par énumération.
+// [CWE-640 MITIGATION] Le reset direct a été retiré : self-reset-password ne fait
+// plus que demander un OTP (flow par code obligatoire côté API).
+// On conserve un rate-limit agressif (3 tentatives / 15 min / IP) sur l'amorçage
+// de réinitialisation pour réduire l'énumération et l'abus de déclenchements OTP.
 app.use('/api/auth/self-reset-password', authLimiter);
 // NOTE: les autres endpoints de réinitialisation (verify-reset-otp, set-new-password)
 // restent sans rate-limit dédié — protégés par OTP 6 chiffres + expiration 15 min.

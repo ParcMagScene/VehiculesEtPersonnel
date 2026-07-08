@@ -15,7 +15,7 @@ export default {
         NODE_ENV: 'production',
         ALLOWED_ORIGINS:
           'http://localhost:4173,http://127.0.0.1:4173,http://localhost:4273,http://127.0.0.1:4273,http://magsav.duckdns.org:4173,https://magsav.duckdns.org:4173,https://magsav.duckdns.org:3443,http://magsav.duckdns.org:3002,https://magsav.duckdns.org',
-        COOKIE_SECURE: 'false',
+        COOKIE_SECURE: 'true',
       },
       // Logs structurés
       error_file: './apps/api/logs/backend-error.log',

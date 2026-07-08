@@ -211,7 +211,7 @@ function logAction(screenId, action, details, userId) {
 }
 
 import { setupDisplayLegacyTvRoutes } from './display/legacyTvRoutes.js';
-import { optionalTvToken } from './middleware/tvAuth.js';
+import { optionalTvToken, verifyTvToken } from './middleware/tvAuth.js';
 import { getSonosNowPlaying } from './sonosRoutes.js';
 
 // ════════════════════════════════════════════════════════════════
@@ -2274,7 +2274,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/display/tv/complete-event — Marquer une tâche comme terminée
   app.post(
     '/api/display/tv/complete-event',
-    optionalTvToken,
+    verifyTvToken,
     tvWriteLimiter,
     validate(eventIdSchema),
     (req, res) => {
@@ -2296,7 +2296,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // POST /api/display/tv/uncomplete-event — Démarquer une tâche
   app.post(
     '/api/display/tv/uncomplete-event',
-    optionalTvToken,
+    verifyTvToken,
     tvWriteLimiter,
     validate(eventIdSchema),
     (req, res) => {
@@ -2318,6 +2318,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
   // [S2-1] Routes /api/... legacy TV extraites dans display/legacyTvRoutes.js
   setupDisplayLegacyTvRoutes(app, {
     optionalTvToken,
+    verifyTvToken,
     tvWriteLimiter,
     displayDataDir,
     sneakyDir,

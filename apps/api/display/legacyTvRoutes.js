@@ -16,6 +16,7 @@ import logger from '../logger.js';
  * @param {import('express').Application} app
  * @param {{
  *   optionalTvToken: import('express').RequestHandler,
+ *   verifyTvToken: import('express').RequestHandler,
  *   tvWriteLimiter: import('express').RequestHandler,
  *   displayDataDir: string,
  *   sneakyDir: string,
@@ -27,6 +28,7 @@ import logger from '../logger.js';
 export function setupDisplayLegacyTvRoutes(app, deps) {
   const {
     optionalTvToken,
+    verifyTvToken,
     tvWriteLimiter,
     displayDataDir,
     sneakyDir,
@@ -269,7 +271,7 @@ export function setupDisplayLegacyTvRoutes(app, deps) {
   });
 
   // /api/complete-event → marquer terminé
-  app.post('/api/complete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
+  app.post('/api/complete-event', verifyTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId)))
@@ -286,7 +288,7 @@ export function setupDisplayLegacyTvRoutes(app, deps) {
   });
 
   // /api/uncomplete-event → démarquer
-  app.post('/api/uncomplete-event', optionalTvToken, tvWriteLimiter, (req, res) => {
+  app.post('/api/uncomplete-event', verifyTvToken, tvWriteLimiter, (req, res) => {
     try {
       const { eventId } = req.body;
       if (!eventId || !isValidEventId(String(eventId)))

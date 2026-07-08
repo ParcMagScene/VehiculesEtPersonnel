@@ -5,6 +5,40 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.5.0] — 2026-07-08
+
+### Added — Planning v2 UI (lecture) — T-P0-05
+
+- **`apps/web/src/utils/api/v2/planning.js`** : registrar `registerPlanningV2Methods`
+  qui expose sur `ApiClient.prototype` les méthodes `listV2Tasks`, `getV2Task`,
+  `createV2Task`, `updateV2Task`, `deleteV2Task`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement de `PlanningV2Methods`
+  après tous les registrars v1.
+- **`apps/web/src/router/featureFlags.js`** : détection client des flags v2 :
+  - Query string `?v=2` sur le module correspondant.
+  - `localStorage.emag_flag_<name>` = `"1"`.
+  - Hook React `useFeatureFlag(name)` réactif (popstate + storage event).
+- **`apps/web/src/hooks/v2/usePlanningTasksV2.js`** : hook cursor-based
+  (`loadMore`, `refresh`, `hasMore`, `featureDisabled`, `error`). Détecte
+  automatiquement le 404 `FEATURE_DISABLED` côté serveur.
+- **`apps/web/src/components/planning-v2/TasksPanelV2.jsx`** + `.css` :
+  composant lecture minimal (table Design System, Loader, InlineAlert),
+  dégradation gracieuse si feature flag off.
+- Aucune intégration à `ModuleHost` / `App.jsx` à ce stade : la bascule
+  est réservée à T-P0-06 après `P0-DECISION-1`.
+
+### Tests
+
+- `apps/web/src/test/planning-v2/featureFlags.test.jsx` : 6 assertions
+  (URL, localStorage, hook réactif).
+- `apps/web/src/test/planning-v2/TasksPanelV2.smoke.test.jsx` : 3 scénarios
+  (FEATURE_DISABLED, succès + rangs, has_more + bouton "Charger plus").
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05.
+
+---
+
 ## [2.4.0] — 2026-06-XX
 
 ### Added

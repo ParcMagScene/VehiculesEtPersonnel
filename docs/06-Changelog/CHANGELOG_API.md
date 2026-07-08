@@ -5,6 +5,47 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.4.0] — 2026-07-08
+
+### Added — Planning v2 API lecture (T-P0-03)
+
+- **Nouveau namespace** `/api/v2/*` (coexistence stricte avec `/api/*` v1).
+- **Nouvel endpoint** `GET /api/v2/planning/tasks` :
+  - Pagination **cursor-based** (opaque base64url, keyset sur `(date, id)`).
+  - Ordre `date DESC, id DESC`. Limite : défaut 100, max 200.
+  - Filtres serveur : `person_id`, `section`, `date_from`, `date_to`,
+    `status`, `visible`, `affaire_num`. Validation stricte serveur.
+  - Format réponse v2 unifié : `{ success, data, meta }` avec
+    `meta.protocol_version`, `meta.pagination.{cursor,next_cursor,limit,has_more}`,
+    `meta.count`.
+- **Feature flag serveur** `FEATURE_V2_PLANNING` (env, off par défaut).
+  Route renvoie **404 `FEATURE_DISABLED`** si le flag est off — l'existence
+  de la route n'est pas divulguée derrière le flag. Voir
+  `apps/api/middleware/featureFlag.js`.
+- **Nouveaux utilitaires backend** :
+  - `apps/api/utils/cursor.js` — encode/decode cursor opaque.
+  - `apps/api/utils/apiV2Response.js` — helpers `sendV2Success`,
+    `sendV2Error`, `buildV2Pagination`, `API_V2_PROTOCOL_VERSION`.
+  - `apps/api/middleware/featureFlag.js` — guard générique env-driven.
+- **Nouveau routeur** `apps/api/v2/planningRoutes.js` monté après
+  `setupPlanningRoutes` v1 dans `server.js` (jamais avant, pour préserver
+  l'ordre de chargement v1).
+- **Service** `listTasks` implémenté dans `apps/api/services/planning/tasks.js`
+  (fonction pure, `db` injecté, validation via `PlanningV2ValidationError`).
+
+### Coexistence
+
+- Aucune route v1 modifiée ou supprimée.
+- Aucun champ v1 renommé.
+- La v2 est totalement inerte tant que `FEATURE_V2_PLANNING` n'est pas
+  explicitement activé côté environnement.
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[../05-Specs/PLANNING_V2.md](../05-Specs/PLANNING_V2.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-03.
+
+---
+
 ## [1.3.0] — 2026-06-XX
 
 ### Added

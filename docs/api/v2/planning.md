@@ -54,14 +54,82 @@ adossées à des tables `_ref` créées par T-P0-02 pour cohérence DB ↔ code.
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/api/v2/planning/tasks` | Liste (filtres serveur, pagination cursor-based) |
-| GET | `/api/v2/planning/tasks/:id` | Détail |
-| POST | `/api/v2/planning/tasks` | Création |
-| PUT | `/api/v2/planning/tasks/:id` | Mise à jour |
-| DELETE | `/api/v2/planning/tasks/:id` | Suppression |
-| POST | `/api/v2/planning/tasks/batch` | Création en lot |
-| POST | `/api/v2/planning/tasks/clear-completed` | Archive tâches terminées |
-| POST | `/api/v2/planning/tasks/rollover` | Rollover minuit |
+| GET | `/api/v2/planning/tasks` | ✅ **Implémenté (T-P0-03)**. Liste cursor-based, filtres serveur. |
+| GET | `/api/v2/planning/tasks/:id` | Détail (T-P0-04) |
+| POST | `/api/v2/planning/tasks` | Création (T-P0-04) |
+| PUT | `/api/v2/planning/tasks/:id` | Mise à jour (T-P0-04) |
+| DELETE | `/api/v2/planning/tasks/:id` | Suppression (T-P0-04) |
+| POST | `/api/v2/planning/tasks/batch` | Création en lot (T-P0-04) |
+| POST | `/api/v2/planning/tasks/clear-completed` | Archive tâches terminées (T-P0-04) |
+| POST | `/api/v2/planning/tasks/rollover` | Rollover minuit (T-P0-04) |
+
+#### `GET /api/v2/planning/tasks`
+
+**Auth** : JWT cookie httpOnly (comme v1).
+**Feature flag** : `FEATURE_V2_PLANNING` (env). 404 `FEATURE_DISABLED` si off.
+
+**Query params** :
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `cursor` | string opaque | Curseur de la page précédente (`meta.pagination.next_cursor`). Absent = première page. |
+| `limit` | int | Nombre max d'items (défaut 100, max 200). |
+| `person_id` | int > 0 | Filtre par personnel assigné. |
+| `section` | enum | Une des 20 valeurs de `TASK_SECTIONS`. |
+| `date_from` | `YYYY-MM-DD` | Borne inclusive. |
+| `date_to` | `YYYY-MM-DD` | Borne inclusive. |
+| `status` | string | Statut de la tâche (`pending`, `in_progress`, `done`, `cancelled`, ...). |
+| `visible` | bool flexible | `1/0`, `true/false`, `yes/no`, `on/off`. |
+| `affaire_num` | string | Filtre par numéro d'affaire. |
+
+**Ordre garanti** : `date DESC, id DESC`. Le curseur est un keyset opaque encapsulant `{ date, id }` du dernier item retourné.
+
+**Réponse succès (200)** :
+
+```
+{
+  "success": true,
+  "data": [
+    { "id": 1234, "date": "2026-07-08", "section": "manual", ... },
+    ...
+  ],
+  "meta": {
+    "protocol_version": 1,
+    "pagination": {
+      "cursor": null,
+      "next_cursor": "eyJkIjoiMjAyNi0wNy0wMSIsImkiOjEyMDB9",
+      "limit": 100,
+      "has_more": true
+    },
+    "count": 100
+  }
+}
+```
+
+**Réponse erreur validation (400)** :
+
+```
+{
+  "success": false,
+  "error": "section invalide (valeurs autorisées : rdv, ...)",
+  "code": "PLANNING_V2_VALIDATION",
+  "meta": {
+    "protocol_version": 1,
+    "field": "section"
+  }
+}
+```
+
+**Réponse feature flag off (404)** :
+
+```
+{
+  "success": false,
+  "error": "Endpoint non disponible",
+  "code": "FEATURE_DISABLED",
+  "meta": { "flag": "FEATURE_V2_PLANNING" }
+}
+```
 
 ### Events
 

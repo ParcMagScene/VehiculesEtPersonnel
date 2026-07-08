@@ -40,6 +40,13 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { usePrintPreview } from '../ui/PrintPreviewProvider';
+import {
+  MobileSavRequestForm,
+  SavDetailDialog,
+  SavSlidePanel,
+  SavTicketFormModal,
+  SavTicketsList,
+} from './EquipmentSAV';
 import CategoryCascadeFilter from './CategoryCascadeFilter';
 import { SAV_STATUS } from './equipmentConstants';
 import EquipmentGrid from './EquipmentGrid';
@@ -60,21 +67,6 @@ const EquipmentFlightCaseLabels = lazy(() => import('./EquipmentFlightCaseLabels
 const EquipmentFormModal = lazy(() => import('./EquipmentFormModal'));
 const EquipmentLabelPrint = lazy(() => import('./EquipmentLabelPrint'));
 const EquipmentMediaManager = lazy(() => import('./EquipmentMediaManager'));
-const MobileSavRequestForm = lazy(() =>
-  import('./EquipmentSAV').then((m) => ({ default: m.MobileSavRequestForm })),
-);
-const SavDetailDialog = lazy(() =>
-  import('./EquipmentSAV').then((m) => ({ default: m.SavDetailDialog })),
-);
-const SavSlidePanel = lazy(() =>
-  import('./EquipmentSAV').then((m) => ({ default: m.SavSlidePanel })),
-);
-const SavTicketFormModal = lazy(() =>
-  import('./EquipmentSAV').then((m) => ({ default: m.SavTicketFormModal })),
-);
-const SavTicketsList = lazy(() =>
-  import('./EquipmentSAV').then((m) => ({ default: m.SavTicketsList })),
-);
 const LocmatImportModal = lazy(() => import('./import/LocmatImportModal'));
 
 // ═══ COMPOSANT PRINCIPAL ═══

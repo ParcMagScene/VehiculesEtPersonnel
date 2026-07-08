@@ -18,6 +18,7 @@ import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
 import { runPersonalActionsLogV1Migration } from './migrations/personal-actions-log-v1.js';
+import { runPlanningV2SchemaMigration } from './migrations/planning-v2-schema-v1.js';
 import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
@@ -1292,6 +1293,12 @@ export function runPostInitMigrations(db) {
     }
   }
   logger.info(`✅ Perf Equipment Index: ${perfEqOk}/${perfEquipmentIndexes.length} créés/vérifiés`);
+
+  // ═══ Planning v2 — DB v2 (T-P0-02) ═══
+  // Additive : ajoute task_sections_ref (seed 16 sections) + index composites
+  // cursor-based sur task_assignments. Aucune altération v1.
+  // Placé avant ANALYZE pour bénéficier de la refresh des stats.
+  runPlanningV2SchemaMigration(db);
 
   // ANALYZE après ajout d'index pour rafraîchir les stats du planner.
   try {

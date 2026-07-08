@@ -57,11 +57,15 @@ describe('Planning v2 — cadrage (T-P0-01)', () => {
     }
   });
 
-  it('TASK_SECTIONS contient les 15 sections métier + "manual"', () => {
-    assert.equal(TASK_SECTIONS.length, 16);
+  it('TASK_SECTIONS aligne v2 sur le CHECK v1 (20 sections)', () => {
+    assert.equal(TASK_SECTIONS.length, 20);
     assert.ok(TASK_SECTIONS.includes('rdv'));
     assert.ok(TASK_SECTIONS.includes('manual'));
     assert.ok(TASK_SECTIONS.includes('taches_prioritaires'));
+    assert.ok(TASK_SECTIONS.includes('montage'));
+    assert.ok(TASK_SECTIONS.includes('demontage'));
+    assert.ok(TASK_SECTIONS.includes('intervention'));
+    assert.ok(TASK_SECTIONS.includes('prep_tournees'));
   });
 
   it('TASK_STATUSES canonique', () => {

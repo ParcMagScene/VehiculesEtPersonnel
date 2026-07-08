@@ -16,7 +16,7 @@ Le PlanningService v2 décompose l'actuel `planningRoutes.js` (routeur monolithi
 
 | Sous-domaine | Rôle métier | Ticket d'implémentation |
 |--------------|-------------|-------------------------|
-| `tasks`      | Tâches opérationnelles réparties en 15 sections | T-P0-03 / T-P0-04 |
+| `tasks`      | Tâches opérationnelles réparties en 20 sections (alignées sur le CHECK v1) | T-P0-03 / T-P0-04 |
 | `events`     | Événements d'affichage dynamique (dynamic_display_events) | T-P0-03 / T-P0-04 |
 | `affaires`   | Cycle statut affaires côté planning + compteurs consolidés | T-P0-03 / T-P0-04 |
 | `imports`    | BL / BP (import PDF, matching inventaire, batch) | T-P0-04 |
@@ -35,7 +35,7 @@ réservé aux tickets T-P0-02 (DB v2), T-P0-03 (routes lecture) et T-P0-04
 Les constantes suivantes deviennent la source de vérité v2. Elles seront
 adossées à des tables `_ref` créées par T-P0-02 pour cohérence DB ↔ code.
 
-- `TASK_SECTIONS` (16 valeurs, voir `services/planning/tasks.js`).
+- `TASK_SECTIONS` (20 valeurs alignées sur le CHECK v1 : `rdv`, `prep_locations`, `prep_prestations`, `prep_ventes`, `prep_installations`, `prep_tournees`, `chargement`, `depart`, `enlevement`, `retour`, `recuperation`, `installation`, `montage`, `demontage`, `intervention`, `evenements`, `taches_prioritaires`, `taches_secondaires`, `courses`, `manual`, voir `services/planning/tasks.js`).
 - `TASK_STATUSES` : `pending`, `in_progress`, `done`, `cancelled`.
 - `EVENT_TYPES` : `preparation`, `enlevement`, `livraison`, `depart`, `retour`, `recuperation`.
 - `EVENT_CATEGORIES` : `vente`, `location`, `prestation`, `installation`.

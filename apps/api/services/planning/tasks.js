@@ -19,9 +19,11 @@
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Sections valides pour une tâche v2 (miroir du CHECK legacy).
- * Cette constante devient la source de vérité côté v2 et pilote
- * la future table `task_sections_ref` créée par T-P0-02.
+ * Sections valides pour une tâche v2. Aligné sur le CHECK réel côté v1
+ * (incluant `montage`, `demontage`, `intervention`) et sur les sections
+ * observées dans `task_assignments` (`prep_tournees` legacy).
+ * Cette constante devient la source de vérité côté v2 et pilote la
+ * future table `task_sections_ref` créée par T-P0-02.
  *
  * @type {ReadonlyArray<string>}
  */
@@ -31,12 +33,16 @@ export const TASK_SECTIONS = Object.freeze([
   'prep_prestations',
   'prep_ventes',
   'prep_installations',
+  'prep_tournees',
   'chargement',
   'depart',
   'enlevement',
   'retour',
   'recuperation',
   'installation',
+  'montage',
+  'demontage',
+  'intervention',
   'evenements',
   'taches_prioritaires',
   'taches_secondaires',

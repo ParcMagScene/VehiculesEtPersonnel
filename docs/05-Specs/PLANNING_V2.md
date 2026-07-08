@@ -65,7 +65,7 @@ Les 6 sous-domaines sont exposés comme modules ESM sous `apps/api/services/plan
 
 ## 4. Schéma DB v2 (aperçu — détaillé dans T-P0-02)
 
-- `task_sections_ref (code TEXT PRIMARY KEY, label TEXT NOT NULL, sort_order INTEGER NOT NULL)` seedée avec les 15 sections métier + `manual`.
+- `task_sections_ref (code TEXT PRIMARY KEY, label TEXT NOT NULL, sort_order INTEGER NOT NULL)` seedée avec 20 sections (alignées sur `TASK_SECTIONS`).
 - Nouveaux index composites orientés cursor-based sur `task_assignments` :
   - `(date, id)` pour listing par date paginé.
   - `(person_id, date, id)` pour vue par personne.

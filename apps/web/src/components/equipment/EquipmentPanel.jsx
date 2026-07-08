@@ -40,7 +40,6 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { usePrintPreview } from '../ui/PrintPreviewProvider';
-import { MobileSavRequestForm } from './EquipmentSAV';
 import CategoryCascadeFilter from './CategoryCascadeFilter';
 import { SAV_STATUS } from './equipmentConstants';
 import EquipmentGrid from './EquipmentGrid';
@@ -61,6 +60,9 @@ const EquipmentFlightCaseLabels = lazy(() => import('./EquipmentFlightCaseLabels
 const EquipmentFormModal = lazy(() => import('./EquipmentFormModal'));
 const EquipmentLabelPrint = lazy(() => import('./EquipmentLabelPrint'));
 const EquipmentMediaManager = lazy(() => import('./EquipmentMediaManager'));
+const MobileSavRequestForm = lazy(() =>
+  import('./EquipmentSAV').then((m) => ({ default: m.MobileSavRequestForm })),
+);
 const SavDetailDialog = lazy(() =>
   import('./EquipmentSAV').then((m) => ({ default: m.SavDetailDialog })),
 );

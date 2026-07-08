@@ -16,6 +16,7 @@ module.exports = {
         ALLOWED_ORIGINS:
           "http://localhost:4173,http://127.0.0.1:4173,http://localhost:4273,http://127.0.0.1:4273,http://magsav.duckdns.org:4173,https://magsav.duckdns.org:4173,https://magsav.duckdns.org:3443,http://magsav.duckdns.org:3002,https://magsav.duckdns.org",
         COOKIE_SECURE: "true",
+        HSTS_ENABLED: "false",
       },
       error_file: "./apps/api/logs/backend-error.log",
       out_file: "./apps/api/logs/backend-out.log",

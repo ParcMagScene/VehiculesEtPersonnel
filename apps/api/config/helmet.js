@@ -10,6 +10,16 @@ const MAP_TILE_SOURCES = [
 ];
 const MAP_API_SOURCES = ['https://nominatim.openstreetmap.org', 'https://router.project-osrm.org'];
 
+const hstsEnabled = process.env.HSTS_ENABLED === 'true';
+const hstsMaxAge = Number.parseInt(process.env.HSTS_MAX_AGE || '15552000', 10);
+const hstsOptions = hstsEnabled
+  ? {
+      maxAge: Number.isFinite(hstsMaxAge) && hstsMaxAge > 0 ? hstsMaxAge : 15552000,
+      includeSubDomains: process.env.HSTS_INCLUDE_SUBDOMAINS !== 'false',
+      preload: process.env.HSTS_PRELOAD === 'true',
+    }
+  : false;
+
 /**
  * Configuration Helmet — headers de sécurité HTTP
  */
@@ -37,8 +47,9 @@ export const helmetMiddleware = helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
-  // HSTS désactivé — le frontend est HTTP (Vite preview), HTTPS uniquement sur l'API directe
-  hsts: false,
+  // HSTS est piloté par env pour éviter de casser les accès tant que le frontend
+  // ou le proxy amont ne sont pas servis intégralement en HTTPS.
+  hsts: hstsOptions,
 });
 
 /**
@@ -65,7 +76,7 @@ const tvHelmetMiddleware = helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
-  hsts: false,
+  hsts: hstsOptions,
 });
 
 /**

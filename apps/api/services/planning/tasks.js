@@ -61,6 +61,43 @@ export const TASK_SECTIONS = Object.freeze([
 export const TASK_STATUSES = Object.freeze(['pending', 'in_progress', 'done', 'cancelled']);
 
 /**
+ * Transitions autorisées du statut d'une tâche.
+ * Clé = statut courant. Valeur = ensemble des statuts cibles autorisés.
+ *
+ * @type {Readonly<Record<string, ReadonlyArray<string>>>}
+ */
+export const TASK_STATUS_TRANSITIONS = Object.freeze({
+  pending: Object.freeze(['in_progress', 'done', 'cancelled']),
+  in_progress: Object.freeze(['pending', 'done', 'cancelled']),
+  done: Object.freeze(['in_progress', 'pending']),
+  cancelled: Object.freeze(['pending', 'in_progress']),
+});
+
+/**
+ * Colonnes de `task_assignments` que le service v2 autorise à écrire
+ * (create/update). L'`id` et les colonnes d'audit gérées côté serveur
+ * (`created_at`, `modified_at`) ne figurent JAMAIS ici.
+ *
+ * @type {ReadonlyArray<string>}
+ */
+const WRITABLE_TASK_COLUMNS = Object.freeze([
+  'display_event_id',
+  'person_id',
+  'date',
+  'period',
+  'time',
+  'end_time',
+  'section',
+  'title',
+  'notes',
+  'source_type',
+  'source_id',
+  'affaire_num',
+  'status',
+  'visible',
+]);
+
+/**
  * Bornes de pagination v2 pour les tâches.
  */
 export const TASKS_LIMIT_DEFAULT = 100;
@@ -282,45 +319,198 @@ export function listTasks({ db, filters = {}, cursor = null, limit } = {}) {
 }
 
 /**
- * Contrat cible : lire une tâche par identifiant.
- * Non implémenté au stade T-P0-03 (voir T-P0-04).
+ * Lit une tâche par identifiant.
  *
- * @param {object} _params
- * @returns {Promise<never>}
+ * @param {object} params
+ * @param {import('better-sqlite3').Database} params.db
+ * @param {string} params.id identifiant TEXT (UUID hex) — auto-généré à la création.
+ * @returns {Record<string, unknown> | null}
  */
-export async function getTaskById(_params) {
-  throw new PlanningV2NotImplementedError('getTaskById');
+export function getTaskById({ db, id } = {}) {
+  if (!db || typeof db.prepare !== 'function') {
+    throw new PlanningV2ValidationError('db requis (better-sqlite3)', 'db');
+  }
+  if (typeof id !== 'string' || id.length === 0) {
+    throw new PlanningV2ValidationError('id requis (string)', 'id');
+  }
+  const row = db.prepare('SELECT * FROM task_assignments WHERE id = ?').get(id);
+  return row || null;
 }
 
 /**
- * Contrat cible : créer une tâche (mutation).
- * Non implémenté au stade T-P0-01 (voir T-P0-04).
+ * Convertit `visible` (boolean/0/1) en INTEGER 0/1 attendu par SQLite.
  *
- * @param {object} _params
- * @returns {Promise<never>}
+ * @param {unknown} value
+ * @returns {0 | 1 | undefined}
  */
-export async function createTask(_params) {
-  throw new PlanningV2NotImplementedError('createTask');
+function visibleToInt(value) {
+  if (value === undefined) return undefined;
+  if (value === true || value === 1) return 1;
+  if (value === false || value === 0) return 0;
+  return undefined;
 }
 
 /**
- * Contrat cible : mettre à jour une tâche (mutation).
+ * Prépare un payload validé pour SQLite : filtre les colonnes
+ * autorisées, coerce `visible`. Ne fabrique pas de valeurs par
+ * défaut — les defaults SQLite s'appliquent aux colonnes omises.
  *
- * @param {object} _params
- * @returns {Promise<never>}
+ * @param {Record<string, unknown>} input
+ * @returns {Record<string, unknown>}
  */
-export async function updateTask(_params) {
-  throw new PlanningV2NotImplementedError('updateTask');
+function pickWritableTaskFields(input) {
+  const out = {};
+  for (const col of WRITABLE_TASK_COLUMNS) {
+    if (!(col in input)) continue;
+    if (col === 'visible') {
+      const coerced = visibleToInt(input[col]);
+      if (coerced !== undefined) out[col] = coerced;
+      continue;
+    }
+    out[col] = input[col];
+  }
+  return out;
 }
 
 /**
- * Contrat cible : supprimer une tâche (mutation).
+ * Crée une tâche v2. L'`id` est auto-généré côté SQLite
+ * (`lower(hex(randomblob(16)))`) et retourné dans le résultat.
+ * Les colonnes omises prennent leurs defaults SQLite.
  *
- * @param {object} _params
- * @returns {Promise<never>}
+ * @param {object} params
+ * @param {import('better-sqlite3').Database} params.db
+ * @param {Record<string, unknown>} params.data payload déjà validé Zod.
+ * @param {number|null} [params.createdBy] user.id à écrire dans `created_by`.
+ * @returns {Record<string, unknown>} la tâche complète telle que persistée.
  */
-export async function deleteTask(_params) {
-  throw new PlanningV2NotImplementedError('deleteTask');
+export function createTask({ db, data, createdBy = null } = {}) {
+  if (!db || typeof db.prepare !== 'function') {
+    throw new PlanningV2ValidationError('db requis (better-sqlite3)', 'db');
+  }
+  if (!data || typeof data !== 'object') {
+    throw new PlanningV2ValidationError('data requis (object)', 'data');
+  }
+  if (!data.date) {
+    throw new PlanningV2ValidationError('date requis à la création', 'date');
+  }
+  if (data.section !== undefined && !TASK_SECTIONS.includes(data.section)) {
+    throw new PlanningV2ValidationError('section invalide', 'section');
+  }
+  if (data.status !== undefined && !TASK_STATUSES.includes(data.status)) {
+    throw new PlanningV2ValidationError('status invalide', 'status');
+  }
+
+  const fields = pickWritableTaskFields(data);
+  if (createdBy !== null && Number.isInteger(createdBy)) {
+    fields.created_by = createdBy;
+  }
+
+  const columns = Object.keys(fields);
+  const placeholders = columns.map(() => '?').join(', ');
+  const values = columns.map((c) => fields[c]);
+  const sql = `INSERT INTO task_assignments (${columns.join(', ')}) VALUES (${placeholders})`;
+
+  const insertTxn = db.transaction((row) => {
+    const info = db.prepare(sql).run(...row);
+    // lastInsertRowid ne fonctionne pas pour PK TEXT ; on relit via ROWID.
+    return db.prepare('SELECT * FROM task_assignments WHERE ROWID = ?').get(info.lastInsertRowid);
+  });
+
+  const inserted = insertTxn(values);
+  if (!inserted) {
+    throw new Error('Planning v2: création tâche : row introuvable après INSERT');
+  }
+  return inserted;
+}
+
+/**
+ * Met à jour une tâche v2. Refuse toute transition de statut non
+ * déclarée dans `TASK_STATUS_TRANSITIONS`.
+ *
+ * @param {object} params
+ * @param {import('better-sqlite3').Database} params.db
+ * @param {string} params.id identifiant TEXT.
+ * @param {Record<string, unknown>} params.data payload validé Zod (partial).
+ * @param {number|null} [params.modifiedBy]
+ * @returns {Record<string, unknown> | null} la tâche mise à jour, ou null si absente.
+ */
+export function updateTask({ db, id, data, modifiedBy = null } = {}) {
+  if (!db || typeof db.prepare !== 'function') {
+    throw new PlanningV2ValidationError('db requis (better-sqlite3)', 'db');
+  }
+  if (typeof id !== 'string' || id.length === 0) {
+    throw new PlanningV2ValidationError('id requis (string)', 'id');
+  }
+  if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
+    throw new PlanningV2ValidationError('data requis (au moins un champ)', 'data');
+  }
+
+  if (data.section !== undefined && !TASK_SECTIONS.includes(data.section)) {
+    throw new PlanningV2ValidationError('section invalide', 'section');
+  }
+  if (data.status !== undefined && !TASK_STATUSES.includes(data.status)) {
+    throw new PlanningV2ValidationError('status invalide', 'status');
+  }
+
+  const existing = db.prepare('SELECT * FROM task_assignments WHERE id = ?').get(id);
+  if (!existing) return null;
+
+  if (data.status !== undefined && data.status !== existing.status) {
+    const currentStatus = existing.status || 'pending';
+    const allowed = TASK_STATUS_TRANSITIONS[currentStatus];
+    if (!allowed || !allowed.includes(data.status)) {
+      throw new PlanningV2ValidationError(
+        `transition de statut invalide : ${currentStatus} → ${data.status}`,
+        'status',
+      );
+    }
+  }
+
+  const fields = pickWritableTaskFields(data);
+  if (Object.keys(fields).length === 0) {
+    throw new PlanningV2ValidationError('aucun champ persistable après filtrage', 'data');
+  }
+
+  const setSql = Object.keys(fields)
+    .map((c) => `${c} = ?`)
+    .join(', ');
+  const values = Object.keys(fields).map((c) => fields[c]);
+
+  // Colonnes d'audit gérées côté serveur, hors WRITABLE_TASK_COLUMNS.
+  const auditParts = ["modified_at = datetime('now')"];
+  const auditValues = [];
+  if (modifiedBy !== null && Number.isInteger(modifiedBy)) {
+    auditParts.push('modified_by = ?');
+    auditValues.push(modifiedBy);
+  }
+
+  const sql = `UPDATE task_assignments SET ${setSql}, ${auditParts.join(', ')} WHERE id = ?`;
+
+  const updateTxn = db.transaction(() => {
+    db.prepare(sql).run(...values, ...auditValues, id);
+    return db.prepare('SELECT * FROM task_assignments WHERE id = ?').get(id);
+  });
+
+  return updateTxn();
+}
+
+/**
+ * Supprime une tâche v2.
+ *
+ * @param {object} params
+ * @param {import('better-sqlite3').Database} params.db
+ * @param {string} params.id
+ * @returns {boolean} true si une ligne a été supprimée.
+ */
+export function deleteTask({ db, id } = {}) {
+  if (!db || typeof db.prepare !== 'function') {
+    throw new PlanningV2ValidationError('db requis (better-sqlite3)', 'db');
+  }
+  if (typeof id !== 'string' || id.length === 0) {
+    throw new PlanningV2ValidationError('id requis (string)', 'id');
+  }
+  const info = db.prepare('DELETE FROM task_assignments WHERE id = ?').run(id);
+  return info.changes > 0;
 }
 
 /**

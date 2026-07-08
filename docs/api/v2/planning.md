@@ -55,13 +55,13 @@ adossées à des tables `_ref` créées par T-P0-02 pour cohérence DB ↔ code.
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
 | GET | `/api/v2/planning/tasks` | ✅ **Implémenté (T-P0-03)**. Liste cursor-based, filtres serveur. |
-| GET | `/api/v2/planning/tasks/:id` | Détail (T-P0-04) |
-| POST | `/api/v2/planning/tasks` | Création (T-P0-04) |
-| PUT | `/api/v2/planning/tasks/:id` | Mise à jour (T-P0-04) |
-| DELETE | `/api/v2/planning/tasks/:id` | Suppression (T-P0-04) |
-| POST | `/api/v2/planning/tasks/batch` | Création en lot (T-P0-04) |
-| POST | `/api/v2/planning/tasks/clear-completed` | Archive tâches terminées (T-P0-04) |
-| POST | `/api/v2/planning/tasks/rollover` | Rollover minuit (T-P0-04) |
+| GET | `/api/v2/planning/tasks/:id` | ✅ **Implémenté (T-P0-04)**. Détail par id (UUID hex). |
+| POST | `/api/v2/planning/tasks` | ✅ **Implémenté (T-P0-04)**. Création (id auto-généré côté SQLite). |
+| PUT | `/api/v2/planning/tasks/:id` | ✅ **Implémenté (T-P0-04)**. Mise à jour partielle, transitions de statut validées. |
+| DELETE | `/api/v2/planning/tasks/:id` | ✅ **Implémenté (T-P0-04)**. Suppression. |
+| POST | `/api/v2/planning/tasks/batch` | Création en lot (T-P0-04 étendu — reporté) |
+| POST | `/api/v2/planning/tasks/clear-completed` | Archive tâches terminées (T-P0-04 étendu — reporté) |
+| POST | `/api/v2/planning/tasks/rollover` | Rollover minuit (T-P0-04 étendu — reporté) |
 
 #### `GET /api/v2/planning/tasks`
 

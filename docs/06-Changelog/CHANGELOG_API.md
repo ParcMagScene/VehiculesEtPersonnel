@@ -5,6 +5,40 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.5.0] — 2026-07-08
+
+### Added — Planning v2 API mutations tasks (T-P0-04)
+
+- **`POST /api/v2/planning/tasks`** : création. `id` auto-généré côté SQLite
+  (`lower(hex(randomblob(16)))`). `date` requis. `section` défault `manual`,
+  `status` défault `pending`, `visible` défault `1`. Renvoie 201 + payload
+  complet.
+- **`GET /api/v2/planning/tasks/:id`** : détail. 404 si absent.
+- **`PUT /api/v2/planning/tasks/:id`** : mise à jour partielle. Validation
+  Zod stricte (schemas/planningV2.js). Transitions de statut validées
+  serveur via `TASK_STATUS_TRANSITIONS` :
+  - `pending` → `in_progress`, `done`, `cancelled`
+  - `in_progress` → `pending`, `done`, `cancelled`
+  - `done` → `in_progress`, `pending`
+  - `cancelled` → `pending`, `in_progress`
+  Toute transition non déclarée renvoie 400 `PLANNING_V2_VALIDATION` +
+  `meta.field = "status"`. `modified_at` et `modified_by` mis à jour
+  automatiquement.
+- **`DELETE /api/v2/planning/tasks/:id`** : suppression. Idempotent (404
+  si déjà supprimée).
+
+### Coexistence
+
+Mêmes règles qu'en T-P0-03 : `FEATURE_V2_PLANNING` off = 404
+`FEATURE_DISABLED`. Table `task_assignments` partagée avec v1 (double-écriture
+naturelle, pas de duplication de table à ce stade). Les mutations v2 sont
+donc visibles en v1 immédiatement.
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-04.
+
+---
+
 ## [1.4.0] — 2026-07-08
 
 ### Added — Planning v2 API lecture (T-P0-03)

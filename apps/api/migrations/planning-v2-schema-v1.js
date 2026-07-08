@@ -118,7 +118,9 @@ export function runPlanningV2SchemaMigration(db) {
     });
     seedTxn(TASK_SECTIONS_SEED);
 
-    logger.info('  ✅ Planning v2: task_sections_ref prête (16 sections)');
+    logger.info(
+      `  ✅ Planning v2: task_sections_ref prête (${TASK_SECTIONS_SEED.length} sections)`,
+    );
   } catch (error) {
     logger.warn('Planning v2 migration task_sections_ref:', error.message);
   }

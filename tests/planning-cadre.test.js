@@ -32,7 +32,7 @@ import {
 } from '../apps/api/services/planning/index.js';
 import { RECURRENCE_FREQUENCIES } from '../apps/api/services/planning/recurrence.js';
 import {
-  createTask,
+  createTasksBatch,
   PlanningV2NotImplementedError,
   TASK_SECTIONS,
   TASK_STATUSES,
@@ -102,13 +102,13 @@ describe('Planning v2 — cadrage (T-P0-01)', () => {
     assert.equal(ICAL_MIME_TYPE, 'text/calendar; charset=utf-8');
   });
 
-  it('createTask (squelette) lève PlanningV2NotImplementedError', async () => {
+  it('createTasksBatch (squelette T-P0-04+) lève PlanningV2NotImplementedError', async () => {
     await assert.rejects(
-      () => createTask({}),
+      () => createTasksBatch({}),
       (err) => {
-        assert.ok(err instanceof PlanningV2NotImplementedError, "type d'erreur attendu");
+        assert.ok(err instanceof PlanningV2NotImplementedError, 'type d\'erreur attendu');
         assert.equal(err.code, 'PLANNING_V2_NOT_IMPLEMENTED');
-        assert.equal(err.fn, 'createTask');
+        assert.equal(err.fn, 'createTasksBatch');
         return true;
       },
     );

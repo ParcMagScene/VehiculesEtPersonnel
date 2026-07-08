@@ -20,7 +20,15 @@
 import db from '../database.js';
 import logger from '../logger.js';
 import { createFeatureFlagGuard } from '../middleware/featureFlag.js';
-import { listTasks, PlanningV2ValidationError } from '../services/planning/tasks.js';
+import { createTaskSchema, updateTaskSchema } from '../schemas/planningV2.js';
+import {
+  createTask,
+  deleteTask,
+  getTaskById,
+  listTasks,
+  PlanningV2ValidationError,
+  updateTask,
+} from '../services/planning/tasks.js';
 import { buildV2Pagination, sendV2Error, sendV2Success } from '../utils/apiV2Response.js';
 
 const PLANNING_V2_FLAG = 'FEATURE_V2_PLANNING';
@@ -94,6 +102,123 @@ export function setupPlanningV2Routes(app, authenticateToken) {
         count: result.items.length,
       },
     });
+  });
+
+  // ─── GET /api/v2/planning/tasks/:id ───
+  // Détail d'une tâche par identifiant (TEXT UUID hex).
+  app.get('/api/v2/planning/tasks/:id', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const task = getTaskById({ db, id: req.params.id });
+      if (!task) {
+        return sendV2Error(res, 'Tâche introuvable', { status: 404, code: 'NOT_FOUND' });
+      }
+      return sendV2Success(res, task);
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('GET /api/v2/planning/tasks/:id error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // ─── POST /api/v2/planning/tasks ───
+  // Création d'une tâche. L'id est généré côté SQLite (UUID hex).
+  app.post('/api/v2/planning/tasks', flagGuard, authenticateToken, (req, res) => {
+    const parsed = createTaskSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map((issue) => ({
+        field: issue.path.join('.') || 'root',
+        message: issue.message,
+      }));
+      return sendV2Error(res, 'Payload invalide', {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        meta: { issues },
+      });
+    }
+    try {
+      const created = createTask({
+        db,
+        data: parsed.data,
+        createdBy: req.user && Number.isInteger(req.user.id) ? req.user.id : null,
+      });
+      return sendV2Success(res, created, { status: 201 });
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('POST /api/v2/planning/tasks error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // ─── PUT /api/v2/planning/tasks/:id ───
+  // Mise à jour partielle. Rejette les transitions de statut invalides (400).
+  app.put('/api/v2/planning/tasks/:id', flagGuard, authenticateToken, (req, res) => {
+    const parsed = updateTaskSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map((issue) => ({
+        field: issue.path.join('.') || 'root',
+        message: issue.message,
+      }));
+      return sendV2Error(res, 'Payload invalide', {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        meta: { issues },
+      });
+    }
+    try {
+      const updated = updateTask({
+        db,
+        id: req.params.id,
+        data: parsed.data,
+        modifiedBy: req.user && Number.isInteger(req.user.id) ? req.user.id : null,
+      });
+      if (!updated) {
+        return sendV2Error(res, 'Tâche introuvable', { status: 404, code: 'NOT_FOUND' });
+      }
+      return sendV2Success(res, updated);
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('PUT /api/v2/planning/tasks/:id error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // ─── DELETE /api/v2/planning/tasks/:id ───
+  app.delete('/api/v2/planning/tasks/:id', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const deleted = deleteTask({ db, id: req.params.id });
+      if (!deleted) {
+        return sendV2Error(res, 'Tâche introuvable', { status: 404, code: 'NOT_FOUND' });
+      }
+      return sendV2Success(res, { id: req.params.id, deleted: true });
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('DELETE /api/v2/planning/tasks/:id error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
+    }
   });
 
   logger.info(

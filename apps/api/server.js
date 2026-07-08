@@ -262,7 +262,7 @@ app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 // [SEC PHASE 2] Bruteforce PIN : limite stricte (PIN = 4 chiffres, brute trivial sans rate-limit)
 app.use('/api/auth/login-pin', authLimiter);
-app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/forgot-password', sensitiveEndpointLimiter);
 // [SEC PHASE 2] Auth personnelle (PIN/password vérifié côté serveur) sur /suivi/personal-auth
 app.use('/api/suivi/personal-auth', authLimiter);
 // Auth éphémère (compte Equipe → actions personnelles)
@@ -270,11 +270,11 @@ app.use('/api/personal-actions', personalActionsLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
 // [CWE-640 MITIGATION] Le reset direct a été retiré : self-reset-password ne fait
 // plus que demander un OTP (flow par code obligatoire côté API).
-// On conserve un rate-limit agressif (3 tentatives / 15 min / IP) sur l'amorçage
+// On applique un rate-limit qui compte aussi les succès sur tout le flow public
 // de réinitialisation pour réduire l'énumération et l'abus de déclenchements OTP.
-app.use('/api/auth/self-reset-password', authLimiter);
-// NOTE: les autres endpoints de réinitialisation (verify-reset-otp, set-new-password)
-// restent sans rate-limit dédié — protégés par OTP 6 chiffres + expiration 15 min.
+app.use('/api/auth/self-reset-password', sensitiveEndpointLimiter);
+app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
+app.use('/api/auth/set-new-password', sensitiveEndpointLimiter);
 // Les GET /api/access-requests/* sont protégés par authenticateToken+requireAdmin
 app.post('/api/access-requests', sensitiveEndpointLimiter);
 app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);

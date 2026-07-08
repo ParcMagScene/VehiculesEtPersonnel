@@ -61,11 +61,11 @@ fi
 # 4. Redémarrer le frontend PM2
 echo ""
 echo "🔄 Redémarrage du serveur frontend..."
-pm2 restart vehicules 2>/dev/null && echo "   ✅ Frontend redémarré" || echo "   ⚠️  PM2 vehicules non trouvé"
+pm2 restart vehicules --update-env 2>/dev/null && echo "   ✅ Frontend redémarré" || echo "   ⚠️  PM2 vehicules non trouvé"
 
 # 5. Redémarrer le backend PM2
 echo "🔄 Redémarrage du serveur backend..."
-pm2 restart vehicules-backend 2>/dev/null && echo "   ✅ Backend redémarré" || echo "   ⚠️  PM2 vehicules-backend non trouvé"
+pm2 restart vehicules-backend --update-env 2>/dev/null && echo "   ✅ Backend redémarré" || echo "   ⚠️  PM2 vehicules-backend non trouvé"
 
 # 6. Smoke test — vérifier que l'API répond
 echo ""

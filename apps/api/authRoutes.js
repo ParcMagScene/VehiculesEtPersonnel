@@ -156,20 +156,9 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
 
   // Réinitialisation du mot de passe (self-service)
   //
-  // ⚠️ ACCEPTATION DE RISQUE EXPLICITE (CWE-640 / OWASP A07)
-  // Sur demande utilisateur, ce endpoint accepte un reset DIRECT email + newPassword
-  // sans facteur de vérification (pas d'OTP, pas de magic link). Toute personne
-  // connaissant l'email d'un compte peut réinitialiser son mot de passe.
-  // Mitigations en place :
-  //   - rate-limit strict (3 tentatives / 15 min / IP) configuré dans server.js
-  //   - CAPTCHA Cloudflare Turnstile si TURNSTILE_SECRET_KEY défini (mandat sécurité)
-  //   - validation password policy (validatePassword)
-  //   - audit log systématique (PASSWORD_RESET_REQUEST + PASSWORD_RESET_COMPLETE
-  //     + PASSWORD_RESET_NOTIFICATION + CAPTCHA_FAILED)
-  //   - email de notification automatique au compte cible après reset réussi
-  //   - invalidation de toutes les sessions actives de l'utilisateur cible
-  //   - hash bcrypt du nouveau mot de passe
-  // Si `newPassword` est absent du payload → fallback sur le flow OTP historique.
+  // Le flow direct email + newPassword a été retiré: cette route ne sert plus qu'à
+  // déclencher l'envoi d'un OTP par email avant de définir un nouveau mot de passe.
+  // Le nouveau mot de passe se saisit ensuite via le flow OTP historique.
   app.post('/api/auth/self-reset-password', validate(selfResetPasswordSchema), async (req, res) => {
     try {
       const { email, newPassword } = req.body;
@@ -188,122 +177,21 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         });
       }
 
-      // ── BRANCHE A : reset DIRECT (newPassword fourni) ────────────────────
+      // Si un ancien client envoie encore un nouveau mot de passe, forcer le flow OTP.
       if (typeof newPassword === 'string' && newPassword.length > 0) {
-        // [SECURITY] CAPTCHA obligatoire si activé via env
-        if (isCaptchaEnabled()) {
-          const captchaRes = await verifyCaptcha(req.body?.captchaToken, req.ip);
-          if (!captchaRes.ok) {
-            auditLog({
-              actorId: user.id,
-              actorEmail: user.email,
-              action: AUDIT_ACTIONS.CAPTCHA_FAILED,
-              targetType: 'user',
-              targetId: user.id,
-              details: { route: 'self-reset-password', reason: captchaRes.reason },
-              req,
-            });
-            return res.status(400).json({
-              success: false,
-              error: 'Vérification anti-robot échouée. Réessayez.',
-            });
-          }
-        }
-
-        const pwError = validatePassword(newPassword);
-        if (pwError) {
-          auditLog({
-            actorId: user.id,
-            actorEmail: user.email,
-            action: AUDIT_ACTIONS.PASSWORD_RESET_REQUEST,
-            targetType: 'user',
-            targetId: user.id,
-            details: { mode: 'direct', outcome: 'weak_password' },
-            req,
-          });
-          return res.status(400).json({ success: false, error: pwError });
-        }
-
-        const hashed = await bcrypt.hash(newPassword, 12);
-        db.prepare(
-          'UPDATE users SET password = ?, password_reset_required = 0, reset_token_hash = NULL, reset_token_expires = NULL WHERE id = ?',
-        ).run(hashed, user.id);
-        // Invalider toutes les sessions actives (force re-login partout)
-        db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
-        // Invalider le cache d'auth pour cet utilisateur
-        try {
-          authCache?.del?.(`user:${user.id}`);
-        } catch (_) {
-          // cache best-effort
-        }
-
-        auditLog({
-          actorId: user.id,
-          actorEmail: user.email,
-          action: AUDIT_ACTIONS.PASSWORD_RESET_COMPLETE,
-          targetType: 'user',
-          targetId: user.id,
-          details: {
-            mode: 'direct_no_otp',
-            sessions_invalidated: true,
-            captcha: isCaptchaEnabled() ? 'verified' : 'disabled',
-          },
-          req,
-        });
-
         logger.warn(
-          `🔓 [CWE-640 ACCEPTÉ] Reset direct sans OTP pour user ${user.id} (${user.email}) depuis IP ${req.ip}`,
+          `🔒 Reset direct refusé pour user ${user.id} (${user.email}) depuis IP ${req.ip}`,
         );
-
-        // [SECURITY] Notification email post-reset (best-effort, non-bloquant)
-        // Permet au légitime propriétaire du compte de détecter un reset abusif.
-        try {
-          const { transporter, emailConfig } = getTransporter();
-          if (transporter && emailConfig?.enabled) {
-            const ipDisplay = req.ip || 'inconnue';
-            const uaDisplay = String(req.get?.('user-agent') || 'inconnu').slice(0, 200);
-            const whenDisplay = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
-            await transporter.sendMail({
-              from: `"${emailConfig.from_name || 'eM@g'}" <${emailConfig.smtp_user}>`,
-              to: user.email,
-              subject: "[eM@g] ⚠️ Votre mot de passe vient d'être réinitialisé",
-              html: `
-              <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto;">
-                <h2 style="color: #dc2626;">⚠️ Réinitialisation de mot de passe</h2>
-                <p>Bonjour <strong>${user.name}</strong>,</p>
-                <p>Le mot de passe de votre compte <strong>${user.email}</strong> vient d'être réinitialisé.</p>
-                <table style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin: 16px 0; width: 100%;">
-                  <tr><td style="padding: 4px 8px;"><strong>Date</strong></td><td style="padding: 4px 8px;">${whenDisplay}</td></tr>
-                  <tr><td style="padding: 4px 8px;"><strong>Adresse IP</strong></td><td style="padding: 4px 8px;">${ipDisplay}</td></tr>
-                  <tr><td style="padding: 4px 8px;"><strong>Navigateur</strong></td><td style="padding: 4px 8px;">${uaDisplay}</td></tr>
-                </table>
-                <p style="margin-top: 16px;"><strong>Si vous êtes à l'origine de ce changement</strong>, aucune action n'est nécessaire.</p>
-                <p style="color: #b91c1c;"><strong>Si ce n'était pas vous</strong>, contactez immédiatement un administrateur — toutes vos sessions actives ont déjà été déconnectées.</p>
-                <p style="color: #666; font-size: 12px; margin-top: 24px;">Email automatique — ne pas répondre.</p>
-              </div>
-            `,
-            });
-            auditLog({
-              actorId: user.id,
-              actorEmail: user.email,
-              action: AUDIT_ACTIONS.PASSWORD_RESET_NOTIFICATION,
-              targetType: 'user',
-              targetId: user.id,
-              details: { sent: true },
-              req,
-            });
-          }
-        } catch (notifErr) {
-          logger.warn(`Notification post-reset non envoyée: ${notifErr.message}`);
-        }
-
-        return res.json({
-          success: true,
-          message: 'Mot de passe réinitialisé. Connectez-vous avec votre nouveau mot de passe.',
+        return res.status(410).json({
+          success: false,
+          error: 'FLUX_REINITIALISATION_MODIFIE',
+          message:
+            'La réinitialisation se fait désormais par code envoyé par email. Demandez un code puis définissez votre nouveau mot de passe.',
+          requireOtp: true,
         });
       }
 
-      // ── BRANCHE B : flow OTP historique (newPassword absent) ──────────────
+      // Flow OTP historique
       // [SECURITY] OTP obligatoire — générer et envoyer par email
       const otp = String(crypto.randomInt(100000, 999999));
       const otpHash = crypto.createHash('sha256').update(otp).digest('hex');

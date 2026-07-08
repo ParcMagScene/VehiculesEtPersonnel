@@ -68,6 +68,7 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
     if (!currentUser) return;
 
     requestNotificationPermission();
+    let cancelled = false;
 
     const connectSSE = () => {
       // Fermer une éventuelle connexion précédente
@@ -125,7 +126,26 @@ export function useMessagingSSE({ currentUser, onNewMessage, isMessagingOpen }) 
 
     connectSSE();
 
+    const bootstrap = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        if (cancelled) return;
+        handleUnreadUpdate(data.unread || 0);
+      } catch {
+        if (!cancelled) {
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+          }
+          startPolling();
+        }
+      }
+    };
+
+    bootstrap();
+
     return () => {
+      cancelled = true;
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;

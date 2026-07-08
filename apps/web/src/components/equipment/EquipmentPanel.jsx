@@ -1078,7 +1078,7 @@ const EquipmentPanel = ({
         </ModalLayout>
       )}
 
-      <ConfirmDialogRenderer />
+      {ConfirmDialogRenderer}
     </div>
   );
 };

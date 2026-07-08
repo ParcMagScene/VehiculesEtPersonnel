@@ -6,11 +6,7 @@ import { LoadingOverlay } from '../../design-system';
 import ErrorBoundary from '../ErrorBoundary';
 import { PlanningModalProvider } from '../planning/PlanningModalContext';
 
-const VehicleSlidePanel = lazy(() =>
-  import('../vehicles/VehicleDetailPanel').then((m) => ({
-    default: m.VehicleSlidePanel,
-  })),
-);
+const VehicleSlidePanel = lazy(() => import('../vehicles/VehicleDetailPanel'));
 const PlanningView = lazy(() => import('../vehicles/PlanningView'));
 const Calendar = lazy(() => import('../vehicles/Calendar'));
 const AffairesPanel = lazy(() => import('../affaires/AffairesPanel'));

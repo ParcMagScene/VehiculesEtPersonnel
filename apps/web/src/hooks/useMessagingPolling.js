@@ -77,6 +77,7 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
     if (!currentUser) return;
 
     requestNotificationPermission();
+    let cancelled = false;
 
     const connectSSE = () => {
       if (eventSourceRef.current) {
@@ -115,7 +116,26 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
 
     connectSSE();
 
+    const bootstrap = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        if (cancelled) return;
+        handleUnreadUpdate(data.unread || 0);
+      } catch {
+        if (!cancelled) {
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+          }
+          startPolling();
+        }
+      }
+    };
+
+    bootstrap();
+
     return () => {
+      cancelled = true;
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;

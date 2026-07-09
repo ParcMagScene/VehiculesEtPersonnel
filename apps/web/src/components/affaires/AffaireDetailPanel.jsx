@@ -2859,6 +2859,11 @@ const AffaireSlidePanel = ({
   onOpenDialog,
   onNavigateToEntity,
   onRefresh,
+  // onDataChanged (optionnel) : reçoit updatedAffaire après save et permet
+  // au parent de mettre à jour selectedAffaire (sinon le volet garde l'ancienne
+  // valeur en mémoire, bug type d'affaire non reflété). Fallback sur onRefresh
+  // pour la compat des autres actions (add tâche, add mission, etc.).
+  onDataChanged,
   currentUser,
 }) => {
   const [missions, setMissions] = useState([]);
@@ -2963,7 +2968,7 @@ const AffaireSlidePanel = ({
         missions={missions}
         googleEventIds={googleEventIds}
         editable={true}
-        onDataChanged={onRefresh}
+        onDataChanged={onDataChanged || onRefresh}
         onNavigateToEntity={onNavigateToEntity}
         currentUser={currentUser}
       />

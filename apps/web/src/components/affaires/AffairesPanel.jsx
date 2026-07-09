@@ -1488,6 +1488,15 @@ const AffairesPanel = ({ reservations = [], onNavigateToEntity, currentUser }) =
           }}
           onNavigateToEntity={onNavigateToEntity}
           onRefresh={handleRefresh}
+          onDataChanged={(updatedAffaire) => {
+            // Aligne le comportement du SlidePanel sur celui du DetailModal :
+            // met à jour l'affaire sélectionnée avec la version renvoyée par le
+            // save (sinon le volet garde l'ancien type/nom/etc. en mémoire),
+            // puis rafraîchit la liste et les tâches.
+            if (updatedAffaire) setSelectedAffaire(updatedAffaire);
+            loadDbAffaires();
+            loadAllTasks();
+          }}
           currentUser={currentUser}
         />
       </div>

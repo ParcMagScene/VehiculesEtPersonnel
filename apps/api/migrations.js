@@ -16,6 +16,7 @@ import { runEquipmentSerialsUidMigration } from './migrations/equipment-serials-
 import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serials-uid-v2.js';
 import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
+import { runLocationsV2SchemaMigration } from './migrations/locations-v2-schema-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
 import { runPersonalActionsLogV1Migration } from './migrations/personal-actions-log-v1.js';
 import { runPlanningV2SchemaMigration } from './migrations/planning-v2-schema-v1.js';
@@ -889,6 +890,12 @@ export function runPostInitMigrations(db) {
 
   // ═══ Module Surveillance Vidéo ═══
   runVideoMigrations(db);
+
+  // ═══ [T-P0-10] Localisation v2 — depot_svg_maps + equipment_location_history
+  //     Non-destructif : coexiste avec les JSON statiques public/depot*-zones.json
+  //     et les colonnes equipment.location_zone/code/floor/depot. Voir
+  //     docs/05-Specs/LOCATIONS_V2.md.
+  runLocationsV2SchemaMigration(db);
 
   // ═══ Suivi/Incidents v2 (multi-tickets + date) ═══
   runIncidentTicketsV2Migration(db);

@@ -5,6 +5,25 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.6.0] — 2026-07-09
+
+### Changed — Planning v2 : bascule Phase B (dogfooding dev)
+
+- `docs/05-Specs/PLANNING_V2_SUNSET_PLAN.md` (version 0.2.0) :
+  - En-tête : statut `Préparation — non appliqué` → `Phase B — dogfooding
+    dev en cours (depuis 2026-07-09)`.
+  - §2 État actuel : ajout des lignes `FEATURE_V2_PLANNING dev = 1` et
+    `FEATURE_V2_PLANNING prod = OFF (P0-DECISION-1 non validée)`.
+  - Mention de la ré-exécution du parity-check (19/19 OK) sur la DB dev
+    fusionnée après le merge des 11 branches `emag30/p0/*` dans `dev`.
+
+Aucun changement de contenu métier ou de protocole. La Phase C (activation
+prod) reste conditionnée à `P0-DECISION-1` explicite.
+
+Voir aussi : [../05-Specs/PLANNING_V2_SUNSET_PLAN.md](../05-Specs/PLANNING_V2_SUNSET_PLAN.md).
+
+---
+
 ## [1.5.0] — 2026-07-09
 
 ### Added — Affaires v2 backfill dry-run (T-P0-07, non-destructif)

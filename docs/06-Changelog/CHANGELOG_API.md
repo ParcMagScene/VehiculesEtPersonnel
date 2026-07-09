@@ -5,6 +5,28 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.8.0] — 2026-07-09
+
+### Changed — Planning v2 : activation Phase B (dogfooding dev)
+
+- `FEATURE_V2_PLANNING=1` activé sur l'environnement de développement
+  (`apps/api/.env.development`, fichier gitignored). La production reste
+  sur v1 (`FEATURE_V2_PLANNING` non défini => OFF par défaut).
+- Toutes les routes `POST/GET/PUT/DELETE /api/v2/planning/tasks*` répondent
+  désormais en dev (auparavant 404 `FEATURE_DISABLED`).
+- `planningRoutes.js` v1 reste intact et actif sur toutes les routes
+  `/api/planning/*`.
+- Parity-check `scripts/planning-v2-parity-check.mjs` ré-exécuté sur la
+  base dev fusionnée : **19/19 scénarios en parité stricte**, 0 divergence
+  non expliquée, verdict `OK (parité attendue)`.
+
+### Reference
+
+- `docs/05-Specs/PLANNING_V2_SUNSET_PLAN.md` — protocole Phase A → D.
+- `EXECUTION_PLAN_EMAG_3_0.md` — T-P0-06 point de contrôle P0-DECISION-1.
+
+---
+
 ## [1.7.0] — 2026-07-09
 
 ### Added — Planning v2 events + affaires (lecture) — T-P0-05 étendu

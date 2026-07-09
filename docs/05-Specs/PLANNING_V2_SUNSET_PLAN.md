@@ -1,7 +1,7 @@
 # SPEC — Planning v2 Sunset & Cutover
 
-> **Version** : 0.1.0 (préparation T-P0-06)
-> **Statut** : `Préparation — non appliqué`
+> **Version** : 0.2.0 (Phase B activée)
+> **Statut** : `Phase B — dogfooding dev en cours (depuis 2026-07-09)`
 > **Prérequis stricts** :
 >
 > - **P0-DECISION-1** : validation utilisateur explicite pour activer `FEATURE_V2_PLANNING=1` en production.
@@ -19,13 +19,15 @@ Tous les tickets T-P0-01 à T-P0-05b sont livrés en coexistence stricte. Aucun 
 
 ---
 
-## 2. État actuel (au 2026-07-09)
+## 2. État actuel (au 2026-07-09, mise à jour Phase B)
 
 - **Backend v2** : GET (cursor-based), GET /:id, POST, PUT, DELETE sur `/api/v2/planning/tasks` — gardés par `FEATURE_V2_PLANNING`.
 - **Backend v1** : `planningRoutes.js` inchangé. Toutes les routes `/api/planning/*` actives.
 - **Frontend v2** : `TasksPanelV2` + `TaskFormDialog` disponibles, non montés dans `App.jsx`. Flag client `flags.v2Planning` détecté via `?v=2` ou `localStorage`.
 - **DB v2** : `task_sections_ref` seedée (20), 3 index cursor-based sur `task_assignments`. `task_assignments` partagée v1/v2.
-- **Contraintes préservées** : aucune régression v1 sur toutes les branches (contrôlée à chaque commit).
+- **`FEATURE_V2_PLANNING` dev** : `=1` depuis 2026-07-09 (Phase B activée).
+- **`FEATURE_V2_PLANNING` prod** : non défini (OFF), v1 exclusive. Phase C non déclenchée (`P0-DECISION-1` non encore validée pour la prod).
+- **Contraintes préservées** : aucune régression v1 sur toutes les branches (contrôlée à chaque commit). Parity-check ré-exécuté 2026-07-09 sur DB dev fusionnée : 19/19 OK, verdict `OK (parité attendue)`.
 
 ---
 

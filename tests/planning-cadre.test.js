@@ -21,6 +21,7 @@ import {
   BP_ITEM_MATCH_STATUSES,
 } from '../apps/api/services/planning/imports.js';
 import {
+  createEvent,
   EVENT_CATEGORIES,
   EVENT_STATUSES,
   EVENT_TYPES,
@@ -32,7 +33,6 @@ import {
 } from '../apps/api/services/planning/index.js';
 import { RECURRENCE_FREQUENCIES } from '../apps/api/services/planning/recurrence.js';
 import {
-  createTasksBatch,
   PlanningV2NotImplementedError,
   TASK_SECTIONS,
   TASK_STATUSES,
@@ -102,13 +102,13 @@ describe('Planning v2 — cadrage (T-P0-01)', () => {
     assert.equal(ICAL_MIME_TYPE, 'text/calendar; charset=utf-8');
   });
 
-  it('createTasksBatch (squelette T-P0-04+) lève PlanningV2NotImplementedError', async () => {
+  it('createEvent (squelette — service events non implémenté) lève PlanningV2NotImplementedError', async () => {
     await assert.rejects(
-      () => createTasksBatch({}),
+      () => createEvent({}),
       (err) => {
-        assert.ok(err instanceof PlanningV2NotImplementedError, 'type d\'erreur attendu');
+        assert.ok(err instanceof PlanningV2NotImplementedError, "type d'erreur attendu");
         assert.equal(err.code, 'PLANNING_V2_NOT_IMPLEMENTED');
-        assert.equal(err.fn, 'createTasksBatch');
+        assert.equal(err.fn, 'createEvent');
         return true;
       },
     );

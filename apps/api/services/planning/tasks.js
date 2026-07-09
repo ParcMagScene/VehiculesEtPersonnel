@@ -20,6 +20,7 @@
 // ────────────────────────────────────────────────────────────
 
 import { decodeCursor, encodeCursor } from '../../utils/cursor.js';
+import { addOneDayToDateStr } from '../planningRolloverHelpers.js';
 
 /**
  * Sections valides pour une tâche v2. Aligné sur le CHECK réel côté v1
@@ -514,32 +515,172 @@ export function deleteTask({ db, id } = {}) {
 }
 
 /**
- * Contrat cible : créer un lot de tâches (batch mutation).
- *
- * @param {object} _params
- * @returns {Promise<never>}
+ * Bornes du batch de création. Aligné sur les batchs BL existants
+ * (max 50) et laissé à 100 pour les tâches où la charge unitaire est
+ * moindre. Passer au-delà relève d'une intégration d'import dédié.
  */
-export async function createTasksBatch(_params) {
-  throw new PlanningV2NotImplementedError('createTasksBatch');
+export const CREATE_TASKS_BATCH_MAX = 100;
+
+/**
+ * Crée un lot de tâches dans une seule transaction. Refuse et rollback
+ * si un item invalide est rencontré (tout ou rien).
+ *
+ * @param {object} params
+ * @param {import('better-sqlite3').Database} params.db
+ * @param {Array<Record<string, unknown>>} params.items payloads déjà
+ *   validés (chaque item respecte le contrat de createTaskSchema).
+ * @param {number|null} [params.createdBy]
+ * @returns {{ created: number, ids: string[] }}
+ */
+export function createTasksBatch({ db, items, createdBy = null } = {}) {
+  if (!db || typeof db.prepare !== 'function') {
+    throw new PlanningV2ValidationError('db requis (better-sqlite3)', 'db');
+  }
+  if (!Array.isArray(items)) {
+    throw new PlanningV2ValidationError('items doit être un tableau', 'items');
+  }
+  if (items.length === 0) {
+    throw new PlanningV2ValidationError('items ne peut pas être vide', 'items');
+  }
+  if (items.length > CREATE_TASKS_BATCH_MAX) {
+    throw new PlanningV2ValidationError(
+      `items limité à ${CREATE_TASKS_BATCH_MAX} par batch`,
+      'items',
+    );
+  }
+  for (let i = 0; i < items.length; i += 1) {
+    const item = items[i];
+    if (!item || typeof item !== 'object') {
+      throw new PlanningV2ValidationError(`items[${i}] invalide (object requis)`, 'items');
+    }
+    if (!item.date) {
+      throw new PlanningV2ValidationError(`items[${i}].date requis`, 'items');
+    }
+    if (item.section !== undefined && !TASK_SECTIONS.includes(item.section)) {
+      throw new PlanningV2ValidationError(`items[${i}].section invalide`, 'items');
+    }
+    if (item.status !== undefined && !TASK_STATUSES.includes(item.status)) {
+      throw new PlanningV2ValidationError(`items[${i}].status invalide`, 'items');
+    }
+  }
+
+  const runBatch = db.transaction((rows) => {
+    const insertedIds = [];
+    for (const row of rows) {
+      const created = createTask({ db, data: row, createdBy });
+      insertedIds.push(created.id);
+    }
+    return insertedIds;
+  });
+
+  const ids = runBatch(items);
+  return { created: ids.length, ids };
 }
 
 /**
- * Contrat cible : archiver / nettoyer les tâches terminées.
+ * Archive (supprime) les tâches terminées. Filtres optionnels par date
+ * et par section. Toujours en transaction atomique.
  *
- * @param {object} _params
- * @returns {Promise<never>}
+ * @param {object} params
+ * @param {import('better-sqlite3').Database} params.db
+ * @param {string} [params.date] YYYY-MM-DD (borne exacte, optionnelle)
+ * @param {string} [params.dateBefore] YYYY-MM-DD (borne haute exclusive)
+ * @param {string} [params.section]
+ * @returns {{ deleted: number }}
  */
-export async function clearCompletedTasks(_params) {
-  throw new PlanningV2NotImplementedError('clearCompletedTasks');
+export function clearCompletedTasks({ db, date, dateBefore, section } = {}) {
+  if (!db || typeof db.prepare !== 'function') {
+    throw new PlanningV2ValidationError('db requis (better-sqlite3)', 'db');
+  }
+  const wheres = ["status = 'done'"];
+  const bindings = [];
+  if (date !== undefined && date !== null && date !== '') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+      throw new PlanningV2ValidationError('date doit être au format YYYY-MM-DD', 'date');
+    }
+    wheres.push('date = ?');
+    bindings.push(String(date));
+  }
+  if (dateBefore !== undefined && dateBefore !== null && dateBefore !== '') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateBefore))) {
+      throw new PlanningV2ValidationError(
+        'dateBefore doit être au format YYYY-MM-DD',
+        'dateBefore',
+      );
+    }
+    wheres.push('date < ?');
+    bindings.push(String(dateBefore));
+  }
+  if (section !== undefined && section !== null && section !== '') {
+    if (!TASK_SECTIONS.includes(String(section))) {
+      throw new PlanningV2ValidationError('section invalide', 'section');
+    }
+    wheres.push('section = ?');
+    bindings.push(String(section));
+  }
+  const sql = `DELETE FROM task_assignments WHERE ${wheres.join(' AND ')}`;
+  const runClear = db.transaction(() => db.prepare(sql).run(...bindings));
+  const info = runClear();
+  return { deleted: info.changes };
 }
 
 /**
- * Contrat cible : rollover minuit des tâches incomplètes.
- * S'appuiera sur les helpers purs de `planningRolloverHelpers.js`.
+ * Rollover : déplace les tâches non-terminées d'une date source vers
+ * une date cible. Réutilise `addOneDayToDateStr` pour le calcul par
+ * défaut (jour suivant). Toujours en transaction atomique.
+ * Toutes les tâches déplacées voient leur `modified_at` mis à jour.
  *
- * @param {object} _params
- * @returns {Promise<never>}
+ * @param {object} params
+ * @param {import('better-sqlite3').Database} params.db
+ * @param {string} params.fromDate YYYY-MM-DD (source).
+ * @param {string} [params.toDate] YYYY-MM-DD (destination). Défaut = J+1.
+ * @param {number|null} [params.modifiedBy]
+ * @param {ReadonlyArray<string>} [params.eligibleStatuses] statuts éligibles
+ *   au rollover (défaut : `['pending', 'in_progress']`).
+ * @returns {{ moved: number, from: string, to: string }}
  */
-export async function rolloverIncompleteTasks(_params) {
-  throw new PlanningV2NotImplementedError('rolloverIncompleteTasks');
+export function rolloverIncompleteTasks({
+  db,
+  fromDate,
+  toDate,
+  modifiedBy = null,
+  eligibleStatuses = ['pending', 'in_progress'],
+} = {}) {
+  if (!db || typeof db.prepare !== 'function') {
+    throw new PlanningV2ValidationError('db requis (better-sqlite3)', 'db');
+  }
+  if (typeof fromDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(fromDate)) {
+    throw new PlanningV2ValidationError('fromDate requis (YYYY-MM-DD)', 'fromDate');
+  }
+  let target = toDate;
+  if (target === undefined || target === null || target === '') {
+    target = addOneDayToDateStr(fromDate);
+  } else if (typeof target !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(target)) {
+    throw new PlanningV2ValidationError('toDate doit être au format YYYY-MM-DD', 'toDate');
+  }
+  if (!Array.isArray(eligibleStatuses) || eligibleStatuses.length === 0) {
+    throw new PlanningV2ValidationError(
+      'eligibleStatuses doit être un tableau non vide',
+      'eligibleStatuses',
+    );
+  }
+  for (const s of eligibleStatuses) {
+    if (!TASK_STATUSES.includes(s)) {
+      throw new PlanningV2ValidationError(`status éligible invalide: ${s}`, 'eligibleStatuses');
+    }
+  }
+
+  const placeholders = eligibleStatuses.map(() => '?').join(', ');
+  const setParts = ['date = ?', "modified_at = datetime('now')"];
+  const bindings = [target];
+  if (modifiedBy !== null && Number.isInteger(modifiedBy)) {
+    setParts.push('modified_by = ?');
+    bindings.push(modifiedBy);
+  }
+  const sql = `UPDATE task_assignments SET ${setParts.join(', ')} WHERE date = ? AND status IN (${placeholders})`;
+  const runRollover = db.transaction(() =>
+    db.prepare(sql).run(...bindings, fromDate, ...eligibleStatuses),
+  );
+  const info = runRollover();
+  return { moved: info.changes, from: fromDate, to: target };
 }

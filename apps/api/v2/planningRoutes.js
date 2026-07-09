@@ -20,13 +20,22 @@
 import db from '../database.js';
 import logger from '../logger.js';
 import { createFeatureFlagGuard } from '../middleware/featureFlag.js';
-import { createTaskSchema, updateTaskSchema } from '../schemas/planningV2.js';
 import {
+  clearCompletedTasksSchema,
+  createTasksBatchSchema,
+  createTaskSchema,
+  rolloverTasksSchema,
+  updateTaskSchema,
+} from '../schemas/planningV2.js';
+import {
+  clearCompletedTasks,
   createTask,
+  createTasksBatch,
   deleteTask,
   getTaskById,
   listTasks,
   PlanningV2ValidationError,
+  rolloverIncompleteTasks,
   updateTask,
 } from '../services/planning/tasks.js';
 import { buildV2Pagination, sendV2Error, sendV2Success } from '../utils/apiV2Response.js';
@@ -217,6 +226,119 @@ export function setupPlanningV2Routes(app, authenticateToken) {
         });
       }
       logger.error('DELETE /api/v2/planning/tasks/:id error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // ─── POST /api/v2/planning/tasks/batch ───
+  // Création en lot (1..100 items). Transaction atomique : rollback si un
+  // item invalide est détecté par le service.
+  app.post('/api/v2/planning/tasks/batch', flagGuard, authenticateToken, (req, res) => {
+    const parsed = createTasksBatchSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map((issue) => ({
+        field: issue.path.join('.') || 'root',
+        message: issue.message,
+      }));
+      return sendV2Error(res, 'Payload invalide', {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        meta: { issues },
+      });
+    }
+    try {
+      const result = createTasksBatch({
+        db,
+        items: parsed.data.items,
+        createdBy: req.user && Number.isInteger(req.user.id) ? req.user.id : null,
+      });
+      return sendV2Success(res, result, { status: 201 });
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('POST /api/v2/planning/tasks/batch error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // ─── POST /api/v2/planning/tasks/clear-completed ───
+  // Archive/supprime les tâches terminées (status='done'). Filtres
+  // optionnels (date, date_before, section). Sans filtre = purge globale
+  // des tâches done (opération d'administration).
+  app.post('/api/v2/planning/tasks/clear-completed', flagGuard, authenticateToken, (req, res) => {
+    const parsed = clearCompletedTasksSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map((issue) => ({
+        field: issue.path.join('.') || 'root',
+        message: issue.message,
+      }));
+      return sendV2Error(res, 'Payload invalide', {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        meta: { issues },
+      });
+    }
+    try {
+      const result = clearCompletedTasks({
+        db,
+        date: parsed.data.date,
+        dateBefore: parsed.data.date_before,
+        section: parsed.data.section,
+      });
+      return sendV2Success(res, result);
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('POST /api/v2/planning/tasks/clear-completed error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // ─── POST /api/v2/planning/tasks/rollover ───
+  // Rollover : déplace les tâches non-terminées (pending, in_progress)
+  // d'une date source vers J+1 (ou une date cible explicite). Réutilise
+  // addOneDayToDateStr (services/planningRolloverHelpers.js) via le service.
+  app.post('/api/v2/planning/tasks/rollover', flagGuard, authenticateToken, (req, res) => {
+    const parsed = rolloverTasksSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map((issue) => ({
+        field: issue.path.join('.') || 'root',
+        message: issue.message,
+      }));
+      return sendV2Error(res, 'Payload invalide', {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        meta: { issues },
+      });
+    }
+    try {
+      const result = rolloverIncompleteTasks({
+        db,
+        fromDate: parsed.data.from_date,
+        toDate: parsed.data.to_date,
+        eligibleStatuses: parsed.data.eligible_statuses,
+        modifiedBy: req.user && Number.isInteger(req.user.id) ? req.user.id : null,
+      });
+      return sendV2Success(res, result);
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('POST /api/v2/planning/tasks/rollover error:', error);
       return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
     }
   });

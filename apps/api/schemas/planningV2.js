@@ -89,3 +89,43 @@ export const updateTaskSchema = z
   .refine((obj) => Object.keys(obj).length > 0, {
     message: 'au moins un champ requis',
   });
+
+/**
+ * Schéma de création d'un lot de tâches. Chaque item respecte
+ * `createTaskSchema` ; le lot est limité à 100 items (aligné sur
+ * `CREATE_TASKS_BATCH_MAX` côté service).
+ */
+export const createTasksBatchSchema = z
+  .object({
+    items: z.array(createTaskSchema).min(1).max(100),
+  })
+  .strict();
+
+/**
+ * Schéma pour archiver / supprimer les tâches terminées.
+ * Tous les champs sont facultatifs. Sans filtre → supprime
+ * l'ensemble des tâches `done` (utilisé pour un maintenance manuel).
+ */
+export const clearCompletedTasksSchema = z
+  .object({
+    date: isoDate.optional(),
+    date_before: isoDate.optional(),
+    section,
+  })
+  .strict();
+
+/**
+ * Schéma pour le rollover d'une date source vers une date cible.
+ * `to_date` optionnel : défaut = J+1 côté service.
+ */
+export const rolloverTasksSchema = z
+  .object({
+    from_date: isoDate,
+    to_date: isoDate.optional(),
+    eligible_statuses: z
+      .array(z.enum(['pending', 'in_progress']))
+      .min(1)
+      .max(2)
+      .optional(),
+  })
+  .strict();

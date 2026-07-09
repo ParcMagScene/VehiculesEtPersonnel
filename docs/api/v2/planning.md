@@ -59,9 +59,9 @@ adossées à des tables `_ref` créées par T-P0-02 pour cohérence DB ↔ code.
 | POST | `/api/v2/planning/tasks` | ✅ **Implémenté (T-P0-04)**. Création (id auto-généré côté SQLite). |
 | PUT | `/api/v2/planning/tasks/:id` | ✅ **Implémenté (T-P0-04)**. Mise à jour partielle, transitions de statut validées. |
 | DELETE | `/api/v2/planning/tasks/:id` | ✅ **Implémenté (T-P0-04)**. Suppression. |
-| POST | `/api/v2/planning/tasks/batch` | Création en lot (T-P0-04 étendu — reporté) |
-| POST | `/api/v2/planning/tasks/clear-completed` | Archive tâches terminées (T-P0-04 étendu — reporté) |
-| POST | `/api/v2/planning/tasks/rollover` | Rollover minuit (T-P0-04 étendu — reporté) |
+| POST | `/api/v2/planning/tasks/batch` | ✅ **Implémenté (T-P0-04 étendu)**. Batch atomique 1..100 items. |
+| POST | `/api/v2/planning/tasks/clear-completed` | ✅ **Implémenté (T-P0-04 étendu)**. Filtres date / date_before / section. |
+| POST | `/api/v2/planning/tasks/rollover` | ✅ **Implémenté (T-P0-04 étendu)**. from_date, to_date optionnel = J+1. |
 
 #### `GET /api/v2/planning/tasks`
 

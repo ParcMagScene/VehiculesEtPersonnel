@@ -5,6 +5,36 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.6.0] — 2026-07-09
+
+### Added — Planning v2 batch / clear-completed / rollover (T-P0-04 étendu)
+
+- **`POST /api/v2/planning/tasks/batch`** : création atomique d'un lot de
+  tâches (1..100 items). Rollback complet si un item est invalide.
+  Zod `createTasksBatchSchema`. Service `createTasksBatch({ db, items, createdBy })`.
+- **`POST /api/v2/planning/tasks/clear-completed`** : suppression des tâches
+  `status='done'`. Filtres optionnels `date` (borne exacte), `date_before`
+  (borne haute exclusive), `section`. Sans filtre = purge globale des
+  tâches done (admin uniquement). Zod `clearCompletedTasksSchema`.
+  Service `clearCompletedTasks({ db, date, dateBefore, section })`.
+- **`POST /api/v2/planning/tasks/rollover`** : déplace les tâches
+  non-terminées d'une date source vers une date cible (défaut = J+1 via
+  `addOneDayToDateStr` de `services/planningRolloverHelpers.js`).
+  Statuts éligibles par défaut : `pending`, `in_progress`. Zod
+  `rolloverTasksSchema`. Service `rolloverIncompleteTasks({ db, fromDate, toDate, eligibleStatuses, modifiedBy })`.
+- Constante `CREATE_TASKS_BATCH_MAX = 100` exportée.
+- Toutes les mutations en transaction atomique (`db.transaction`).
+
+### Coexistence
+
+Mêmes règles qu'en T-P0-04 : `FEATURE_V2_PLANNING` off = 404 pour les 3
+endpoints. `task_assignments` partagée v1/v2.
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-04.
+
+---
+
 ## [1.5.0] — 2026-07-08
 
 ### Added — Planning v2 API mutations tasks (T-P0-04)

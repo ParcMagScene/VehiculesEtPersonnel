@@ -5,6 +5,41 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.11.0] — 2026-07-09
+
+### Added — Display v2 SSE stream + TV-client v2 (T-P0-16)
+
+- **`GET /api/v2/display/signals/stream?screen_id=<id>`** :
+  Server-Sent Events push. Snapshot initial immédiat, puis :
+  - `event: snapshot` toutes les 10 s (payload identique à
+    `/api/v2/display/signals`).
+  - `event: ping` toutes les 15 s (keep-alive TCP).
+  - Validation `screen_id` avant ouverture du flux → 400
+    `VALIDATION_ERROR` si invalide (client reçoit JSON standard, pas
+    un stream).
+  - En-têtes : `Content-Type: text/event-stream`, `Cache-Control:
+    no-cache, no-transform`, `X-Accel-Buffering: no` (désactive le
+    buffering Nginx/Caddy).
+  - Cleanup automatique des timers via `req.on('close')` (aucun leak
+    sur rupture réseau ou fermeture client).
+  - Constantes exportées `SSE_HEARTBEAT_INTERVAL_MS = 15000` et
+    `SSE_SNAPSHOT_INTERVAL_MS = 10000`.
+
+### Changed — Display v2 : nouvelle capability
+
+- `DISPLAY_V2_CAPABILITIES` ajoute `screen-signals-stream-v1` (5e
+  capability). Le TV-client v2 dégrade sur polling `/signals` si le
+  stream n'est pas annoncé.
+
+### Reference
+
+- `docs/api/v2/display.md` — nouvelle section SSE avec contrat +
+  exemple de client `EventSource`.
+- `apps/tv-client/v2/` — client de référence (voir CHANGELOG_UI.md).
+- `EXECUTION_PLAN_EMAG_3_0.md` — T-P0-16 · TV-client v2.
+
+---
+
 ## [1.10.0] — 2026-07-09
 
 ### Changed — Display v2 : `/config` `/content` `/signals` implémentés (T-P0-15)

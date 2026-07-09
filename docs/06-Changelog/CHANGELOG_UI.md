@@ -5,6 +5,47 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.6.0] — 2026-07-09
+
+### Added — TV-client v2 (T-P0-16)
+
+- **`apps/tv-client/v2/index.html`** (nouveau) : HTML minimaliste,
+  styles inline autonomes (aucun import de `apps/tv-client/styles.css`
+  v1). Layout deux colonnes : playlist active + signaux (welcome
+  message + liste de messages).
+- **`apps/tv-client/v2/main.js`** (nouveau, ~260 lignes vanilla JS
+  sans dépendance) :
+  - Discovery `GET /api/v2/display/protocol` au boot.
+  - Bootstrap `GET /api/v2/display/config?screen_id=<id>`.
+  - Chargement conditionnel `GET /api/v2/display/content?playlist_id=
+    <id>` selon capability `playlist-content-v1`.
+  - **`EventSource`** sur `/api/v2/display/signals/stream` si
+    capability `screen-signals-stream-v1`, sinon fallback polling
+    `/signals` toutes les 10 s (capability `screen-signals-v1`).
+  - Auto-reconnexion SSE après 3 s en cas d'erreur.
+  - Application dynamique des couleurs `appearance.*` via CSS custom
+    properties (`--tvv2-accent`, `--tvv2-bg`, `--tvv2-fg`,
+    `--tvv2-font`).
+  - Rétro-compat TV-token : lu depuis URL (`?token=…`) ou
+    `localStorage['tv-token']`. En-tête `X-TV-Token` sur toutes les
+    requêtes API.
+  - Banner d'erreur rouge si feature flag off ou reconnexion en cours.
+- **Accès** : `/tv-client/v2/index.html?screen_id=<id>&token=<tv-token>`.
+  Lien retour vers v1 dans le footer.
+
+Le TV-client v1 (`apps/tv-client/index.html`, 735 lignes vanilla JS,
+55+ endpoints `/api/display/*`) reste actif et inchangé. Aucune
+redirection automatique n'est configurée : le TV-client v2 est
+strictement opt-in via URL.
+
+### Reference
+
+- `docs/05-Specs/DISPLAY_V2.md` §5 — spec TV-client v2.
+- `docs/api/v2/display.md` — SSE contrat + exemple `EventSource`.
+- `EXECUTION_PLAN_EMAG_3_0.md` — T-P0-16 · TV-client v2 (client nouveau).
+
+---
+
 ## [2.5.2] — 2026-07-09
 
 ### Added — Planning v2 client web (events + affaires) — T-P0-05 étendu

@@ -234,6 +234,70 @@ serveur→client (heartbeat + messages push).
 
 ---
 
+## `GET /api/v2/display/signals/stream?screen_id=<id>` (T-P0-16)
+
+**Authentification requise. Réponse Server-Sent Events (SSE).**
+
+Ouvre un flux SSE qui pousse un snapshot initial immédiat puis :
+
+- un **heartbeat** `event: ping` toutes les **15 s** (keep-alive TCP,
+  détection de rupture côté client).
+- un **snapshot** `event: snapshot` toutes les **10 s** (permet aux
+  nouveaux messages / changements de créneau d'atteindre le client
+  sans reload).
+
+### Contrat SSE
+
+- `Content-Type: text/event-stream` (+ `charset=utf-8` ajouté par
+  Express — le client doit matcher avec `startsWith` ou regex).
+- `Cache-Control: no-cache, no-transform`.
+- `X-Accel-Buffering: no` (Nginx/Caddy : désactive le buffering
+  reverse proxy qui empêcherait le flush immédiat).
+
+### Format des events
+
+```
+event: snapshot
+data: {"screen":{...},"messages":[...],"welcome_message":{...},"generated_at":"..."}
+
+event: ping
+data: {"at":"2026-07-09T10:15:30Z"}
+```
+
+Le payload `snapshot` est identique à celui de `GET /api/v2/display/
+signals` (partagé via le service `getSignalsForScreen`).
+
+### Client TV-client v2 (`/tv-client/v2/`)
+
+Le client de référence utilise `EventSource` :
+
+```js
+const es = new EventSource('/api/v2/display/signals/stream?screen_id=1');
+es.addEventListener('snapshot', (evt) => renderSignals(JSON.parse(evt.data)));
+es.addEventListener('ping', () => { /* keep-alive noop */ });
+es.onerror = () => { es.close(); setTimeout(reconnect, 3000); };
+```
+
+Voir [../../../apps/tv-client/v2/main.js](../../../apps/tv-client/v2/main.js).
+
+### Réponses d'erreur
+
+- **400 VALIDATION_ERROR** : `screen_id` manquant ou invalide (répondu
+  AVANT l'ouverture du flux SSE — le client reçoit JSON standard, pas
+  un stream).
+- **404 NOT_FOUND** : écran inexistant.
+- **Fermeture réseau** : le serveur libère les timers via `req.on
+  ('close')`. Aucun leak.
+
+### Capability
+
+`screen-signals-stream-v1` doit être présent dans
+`GET /api/v2/display/protocol` → `data.capabilities`. Le client
+dégrade sur polling `/signals` (capability `screen-signals-v1`) si
+le stream n'est pas annoncé.
+
+---
+
 ## Enrichissement `display_logs`
 
 T-P0-14 ajoute 5 colonnes additives à la table `display_logs` (audit

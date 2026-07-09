@@ -55,7 +55,23 @@ export const DISPLAY_V2_CAPABILITIES = Object.freeze([
   'screen-config-v1', // GET /config?screen_id retourne screen + playlist + appearance
   'playlist-content-v1', // GET /content?playlist_id retourne items ordonnes avec item_name
   'screen-signals-v1', // GET /signals?screen_id retourne messages actifs + welcome + heartbeat
+  'screen-signals-stream-v1', // GET /signals/stream?screen_id Server-Sent Events push
 ]);
+
+/**
+ * Intervalle heartbeat SSE en millisecondes. 15s : compromis entre
+ * pression reseau et detection rapide de rupture cote client.
+ * @type {number}
+ */
+export const SSE_HEARTBEAT_INTERVAL_MS = 15_000;
+
+/**
+ * Intervalle de rafraichissement snapshot pour SSE. 10s : permet aux
+ * changements (nouveaux messages, welcome message qui bascule creneau)
+ * d'atteindre le TV-client sans reload.
+ * @type {number}
+ */
+export const SSE_SNAPSHOT_INTERVAL_MS = 10_000;
 
 /**
  * Traduit une erreur typee du service Display en reponse HTTP v2.
@@ -148,5 +164,77 @@ export function setupDisplayV2Routes(app, authenticateToken) {
     } catch (err) {
       handleServiceError(res, err);
     }
+  });
+
+  // ─── GET /api/v2/display/signals/stream?screen_id=<id> ───
+  // T-P0-16 : Server-Sent Events push des signaux. Pousse un snapshot
+  // initial, puis un heartbeat toutes les 15s + un snapshot toutes les
+  // 10s (permet aux nouveaux messages / changements de creneau
+  // d'atteindre le client sans polling explicite).
+  //
+  // Format SSE : `event: <type>\ndata: <json>\n\n`.
+  // Types : `snapshot` (payload signaux), `ping` (keep-alive).
+  //
+  // Le client ferme la connexion via `EventSource.close()`. Le serveur
+  // libere les timers automatiquement quand `req.on('close')` fire.
+  app.get('/api/v2/display/signals/stream', flagGuard, authenticateToken, (req, res) => {
+    // Validation prealable : pas d'ouverture SSE si screen_id invalide.
+    try {
+      getSignalsForScreen({ db, screenId: req.query.screen_id });
+    } catch (err) {
+      return handleServiceError(res, err);
+    }
+
+    // En-tetes SSE. `X-Accel-Buffering: no` desactive le buffering
+    // eventuel d'un reverse proxy (Nginx/Caddy) qui empecherait le
+    // flush immediat des events.
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    res.flushHeaders();
+
+    const screenId = req.query.screen_id;
+
+    /**
+     * Ecrit un event SSE dans la reponse. Encode le payload en JSON
+     * sur une seule ligne (les CR sont interdits dans `data:`).
+     * @param {string} eventName
+     * @param {*} payload
+     */
+    function writeEvent(eventName, payload) {
+      const json = JSON.stringify(payload);
+      res.write(`event: ${eventName}\ndata: ${json}\n\n`);
+    }
+
+    /**
+     * Snapshot courant des signaux. Erreur non fatale : on log et on
+     * continue le stream (le client recevra les prochains snapshots).
+     */
+    function pushSnapshot() {
+      try {
+        const snapshot = getSignalsForScreen({ db, screenId });
+        writeEvent('snapshot', snapshot);
+      } catch (err) {
+        logger.warn('SSE signals/stream snapshot error:', err.message);
+      }
+    }
+
+    // Snapshot initial immediat.
+    pushSnapshot();
+
+    const snapshotTimer = setInterval(pushSnapshot, SSE_SNAPSHOT_INTERVAL_MS);
+    const heartbeatTimer = setInterval(() => {
+      writeEvent('ping', { at: new Date().toISOString() });
+    }, SSE_HEARTBEAT_INTERVAL_MS);
+
+    // Cleanup a la fermeture (client close, reseau perdu, kill process).
+    req.on('close', () => {
+      clearInterval(snapshotTimer);
+      clearInterval(heartbeatTimer);
+      // Pas de res.end() : socket deja ferme.
+    });
   });
 }

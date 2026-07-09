@@ -5,6 +5,25 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.11.0] — 2026-07-09
+
+### Changed — Display v2 : `DISPLAY_V2.md` v0.3.0 + section SSE + TV-client v2 (T-P0-16)
+
+- **`docs/05-Specs/DISPLAY_V2.md`** passe à v0.3.0 :
+  - Statut ajusté (mention TV-client v2 opt-in `/tv-client/v2/`).
+  - §2.1 ajoute la ligne `signals/stream` (SSE, T-P0-16 ✅).
+  - §5 renommée "Ce que T-P0-16 a livré" (SSE + TV-client v2
+    architecturé).
+  - §6 nouvelle "Sunset TV-client v1" (conditionné P0-DECISION-2).
+- **`docs/api/v2/display.md`** : nouvelle section
+  `GET /api/v2/display/signals/stream?screen_id=<id>` (T-P0-16) —
+  contrat SSE complet, format events, exemple `EventSource`, capability,
+  réponses d'erreur.
+- **`docs/api/v2/README.md`** : Display passe 🟢 avec mention SSE +
+  TV-client v2.
+
+---
+
 ## [1.10.0] — 2026-07-09
 
 ### Changed — Display v2 : `DISPLAY_V2.md` v0.2.0 + `display.md` complet (T-P0-15)

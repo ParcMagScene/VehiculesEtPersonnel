@@ -5,6 +5,52 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.5.0] — 2026-07-09
+
+### Added — Affaires v2 backfill dry-run (T-P0-07, non-destructif)
+
+- `docs/05-Specs/AFFAIRES_V2.md` : design doc du plan Affaires v2
+  (backfill dry-run T-P0-07 → matérialisation T-P0-08 → sunset TEXT T-P0-09).
+  Sources d'implicites recensées : `reservations.affaire`, `missions.affaire`,
+  `orders.affaire_id`, `bl_imports.affaire_id`,
+  `dynamic_display_events.affaire_id`, `equipment_assignments.affaire_id`.
+- `scripts/affaires-v2-backfill.mjs` : script read-only qui recense les
+  affaires implicites (référencées ailleurs, absentes de `affaires`) et
+  propose un payload de matérialisation minimal (client, dates min/max,
+  prestation). Rapport JSON. Exit 1 si implicites détectées.
+  Le flag `--apply` est refusé volontairement — la matérialisation
+  transactionnelle relève du ticket T-P0-08.
+
+Exécution dev : 12 affaires implicites détectées, payloads cohérents.
+Aucune modification code exécutable prod. Aucun INSERT.
+
+Voir aussi : [../05-Specs/AFFAIRES_V2.md](../05-Specs/AFFAIRES_V2.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-07.
+
+---
+
+## [1.4.0] — 2026-07-09
+
+### Added — Planning v2 Sunset Plan (T-P0-06, préparation non-destructive)
+
+- `docs/05-Specs/PLANNING_V2_SUNSET_PLAN.md` : protocole de bascule
+  progressive v1 → v2 en 4 phases (parity-check, dogfooding, activation
+  prod, sunset v1). Documente les prérequis `P0-DECISION-1` et
+  `P0-DECISION-2`, les critères de sortie de chaque phase, la
+  checklist pré-cutover, la checklist pré-sunset et le rollback plan.
+- `scripts/planning-v2-parity-check.mjs` : script dry-run de
+  vérification de parité de lecture v1 ↔ v2 sur la DB courante.
+  Aucune écriture. Exit 1 si divergences non expliquées.
+
+Aucune modification code exécutable de production.
+`FEATURE_V2_PLANNING` reste OFF par défaut. `planningRoutes.js` v1 intact.
+
+Voir aussi : [../05-Specs/PLANNING_V2.md](../05-Specs/PLANNING_V2.md),
+[../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-06.
+
+---
+
 ## [1.3.0] — 2026-06-XX
 
 ### Added

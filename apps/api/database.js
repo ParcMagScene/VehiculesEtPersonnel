@@ -2581,19 +2581,29 @@ function initializeDatabase() {
       logger.warn('Migration section installation:', migErr4.message);
     }
 
-    // Migration : ajout section 'intervention' dans task_assignments
+    // Migration : ajout section 'intervention' dans task_assignments.
+    // [HYGIÈNE 2026-07] La détection se fait via lecture du SQL de
+    // définition (sqlite_master.sql) au lieu d'un INSERT-test qui
+    // laissait fuir des warnings "CHECK constraint failed" au boot
+    // même quand la migration était en réalité un no-op.
     try {
-      // Vérifie si 'intervention' est déjà dans le CHECK via tentative d'insert
-      const testId = '__check_intervention__';
-      try {
-        db.prepare(
-          `INSERT INTO task_assignments (id, date, section) VALUES (?, '2000-01-01', 'intervention')`,
-        ).run(testId);
-        db.prepare('DELETE FROM task_assignments WHERE id = ?').run(testId);
-        logger.info('✅ Section intervention déjà supportée');
-      } catch {
-        // CHECK constraint rejecte 'intervention' → recréer la table
+      const tableDef = db
+        .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'")
+        .get();
+      const alreadySupported =
+        tableDef && typeof tableDef.sql === 'string' && /'intervention'/.test(tableDef.sql);
+
+      if (alreadySupported) {
+        // no-op silencieux, aucun test INSERT (évite bruit logs boot).
+      } else {
+        // CHECK réel ne contient pas 'intervention' → recréer la table
         db.exec('BEGIN TRANSACTION');
+        // La vue v_db_audit_task_assignments_reservation_orphans (créée par
+        // migrations/versioned/0009_add_db_audit_views.sql) référence
+        // task_assignments et bloque le DROP TABLE. On la supprime le
+        // temps de la migration ; elle sera recréée par 0009 au prochain
+        // boot (CREATE VIEW IF NOT EXISTS).
+        db.exec('DROP VIEW IF EXISTS v_db_audit_task_assignments_reservation_orphans');
         db.exec(`
           CREATE TABLE task_assignments_new (
             id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -2605,6 +2615,7 @@ function initializeDatabase() {
             end_time TEXT,
             section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
               'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+              'prep_tournees',
               'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
               'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual',
               'montage', 'demontage', 'intervention'
@@ -2641,6 +2652,14 @@ function initializeDatabase() {
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+        // Recréation de la vue d'audit désactivée le temps du RENAME.
+        db.exec(`
+          CREATE VIEW IF NOT EXISTS v_db_audit_task_assignments_reservation_orphans AS
+          SELECT ta.*
+          FROM task_assignments ta
+          WHERE ta.reservation_id IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM reservations r WHERE r.id = ta.reservation_id)
+        `);
         db.exec('COMMIT');
         logger.info('✅ Section intervention ajoutée à task_assignments');
       }

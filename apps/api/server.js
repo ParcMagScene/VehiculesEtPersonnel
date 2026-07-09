@@ -130,6 +130,7 @@ import {
 import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
+import { setupPlanningV2Routes } from './v2/planningRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
 
@@ -465,6 +466,10 @@ setupStockStatsRoutes(app, authenticateToken);
 
 // Routes Module Planning (Affichage dynamique + Planification + Import BL)
 setupPlanningRoutes(app, authenticateToken, requireAdmin);
+
+// [Planning v2 — T-P0-03] Namespace API v2 lecture. Protégé par
+// FEATURE_V2_PLANNING (404 si off). Coexistence stricte v1/v2.
+setupPlanningV2Routes(app, authenticateToken);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

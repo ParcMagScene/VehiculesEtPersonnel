@@ -5,6 +5,108 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.5.2] — 2026-07-09
+
+### Added — Planning v2 client web (events + affaires) — T-P0-05 étendu
+
+- **`apps/web/src/utils/api/v2/planning.js`** : ajout des méthodes
+  `listV2Events`, `listV2PlanningAffaires`, `createV2TasksBatch`,
+  `clearV2CompletedTasks`, `rolloverV2Tasks` sur `ApiClient.prototype`.
+- **`apps/web/src/hooks/v2/usePlanningEventsV2.js`** : hook cursor-based
+  miroir de `usePlanningTasksV2` (loadMore, refresh, hasMore,
+  featureDisabled).
+- **`apps/web/src/hooks/v2/usePlanningAffairesV2.js`** : hook
+  offset-based (`total`, `hasMore`, incrément offset). Support
+  `includeHidden`.
+- Aucun composant UI livré à ce stade — dialogs et panels events
+  seront traités par un ticket ultérieur.
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05
+(étendu).
+
+---
+
+## [2.5.1] — 2026-07-09
+
+### Added — Planning v2 UI mutations — T-P0-05b
+
+- **`apps/web/src/components/planning-v2/planningV2Constants.js`** :
+  constantes miroir côté client (`TASK_SECTIONS`, `TASK_STATUSES`, labels FR).
+- **`apps/web/src/components/planning-v2/TaskFormDialog.jsx`** : modale
+  create/edit unifiée sur Design System (`Modal`, `FormField`, `Input`,
+  `Select`, `Textarea`, `Button`). Champs : date (requise),
+  period (AM/PM), section (20 valeurs), title, notes, status,
+  affaire_num, person_id, visible. Validation locale minimale
+  (date required) — la validation Zod backend reste la source de vérité.
+  Payload nettoyé (trim, coerce int, `null` explicite pour vider un
+  champ en mode edit).
+- **`apps/web/src/components/planning-v2/TasksPanelV2.jsx`** :
+  - Bouton « Nouvelle tâche » dans le header.
+  - Colonne « Actions » avec boutons « Modifier » / « Supprimer » par
+    ligne (aria-labels détaillés).
+  - `Dialog` de confirmation destructive pour DELETE.
+  - Extraction propre des erreurs API v2 (`meta.issues[]`, `error`,
+    `message`) via `extractApiError()`.
+  - Refresh automatique après chaque mutation réussie.
+- **`apps/web/src/components/planning-v2/TasksPanelV2.css`** : styles
+  `__row-actions` et `__checkbox` (tokens DS).
+
+### Tests Vitest — 10 assertions additionnelles
+
+- `apps/web/src/test/planning-v2/TaskFormDialog.test.jsx` :
+  rendu create / edit, validation locale, payload propre, affichage
+  erreur backend.
+- `apps/web/src/test/planning-v2/TasksPanelV2.mutations.test.jsx` :
+  intégration Create → refresh, Edit → refresh, Delete → refresh,
+  gestion erreur backend.
+
+### Coexistence
+
+- Aucune intégration à `ModuleHost` / `App.jsx` (réservé T-P0-06).
+- `FEATURE_V2_PLANNING` off côté serveur ⇒ bannière info dégradation
+  gracieuse.
+- Aucune modification v1 (`planningRoutes.js`, `TaskPlanningPanel.jsx`).
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05b.
+
+---
+
+## [2.5.0] — 2026-07-08
+
+### Added — Planning v2 UI (lecture) — T-P0-05
+
+- **`apps/web/src/utils/api/v2/planning.js`** : registrar `registerPlanningV2Methods`
+  qui expose sur `ApiClient.prototype` les méthodes `listV2Tasks`, `getV2Task`,
+  `createV2Task`, `updateV2Task`, `deleteV2Task`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement de `PlanningV2Methods`
+  après tous les registrars v1.
+- **`apps/web/src/router/featureFlags.js`** : détection client des flags v2 :
+  - Query string `?v=2` sur le module correspondant.
+  - `localStorage.emag_flag_<name>` = `"1"`.
+  - Hook React `useFeatureFlag(name)` réactif (popstate + storage event).
+- **`apps/web/src/hooks/v2/usePlanningTasksV2.js`** : hook cursor-based
+  (`loadMore`, `refresh`, `hasMore`, `featureDisabled`, `error`). Détecte
+  automatiquement le 404 `FEATURE_DISABLED` côté serveur.
+- **`apps/web/src/components/planning-v2/TasksPanelV2.jsx`** + `.css` :
+  composant lecture minimal (table Design System, Loader, InlineAlert),
+  dégradation gracieuse si feature flag off.
+- Aucune intégration à `ModuleHost` / `App.jsx` à ce stade : la bascule
+  est réservée à T-P0-06 après `P0-DECISION-1`.
+
+### Tests
+
+- `apps/web/src/test/planning-v2/featureFlags.test.jsx` : 6 assertions
+  (URL, localStorage, hook réactif).
+- `apps/web/src/test/planning-v2/TasksPanelV2.smoke.test.jsx` : 3 scénarios
+  (FEATURE_DISABLED, succès + rangs, has_more + bouton "Charger plus").
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05.
+
+---
+
 ## [2.4.0] — 2026-06-XX
 
 ### Added

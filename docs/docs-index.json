@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-07-07",
+  "generated": "2026-07-08",
   "sections": {
     "api": {
       "path": "docs/api/",
@@ -27,7 +27,9 @@
         "docs/api/inventory.md",
         "docs/api/mailing.md",
         "docs/api/google.md",
-        "docs/api/totp.md"
+        "docs/api/totp.md",
+        "docs/api/v2/README.md",
+        "docs/api/v2/planning.md"
       ]
     },
     "architecture": {
@@ -59,7 +61,7 @@
       ]
     }
   },
-  "totalFiles": 126,
+  "totalFiles": 131,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

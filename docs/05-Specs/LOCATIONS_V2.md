@@ -1,6 +1,6 @@
 # SPEC — Localisation v2 (dépôts, zones, rangement équipements)
 
-> **Version** : 0.1.0 (T-P0-10 : scaffold minimal)
+> **Version** : 0.2.0 (T-P0-10 scaffold + T-P0-11 backfill diagnostic)
 > **Statut** : `Coexistence — non-destructif`
 > **Ticket source** : [`EXECUTION_PLAN_EMAG_3_0.md`](../../EXECUTION_PLAN_EMAG_3_0.md) — T-P0-10 → T-P0-13.
 
@@ -123,6 +123,87 @@ Zéro risque de régression : ce sont exclusivement des créations idempotentes.
 - **T-P0-13 (Sunset legacy)** : suppression des colonnes libres
   `equipment.location_*` remplacées par une FK vers un pivot dédié
   — **conditionné à `P0-DECISION-2`**.
+
+---
+
+## 5. T-P0-11 — Backfill / diagnostic équipements (livré)
+
+### 5.1 Script `scripts/locations-v2-backfill.mjs`
+
+Script **dry-run non-destructif** qui produit un rapport JSON de
+cohérence des localisations. Aucune écriture DB (le flag `--apply`
+est refusé et laisse le script en dry-run — la matérialisation
+transactionnelle relève d'un ticket ultérieur).
+
+**Contrôles effectués** :
+
+1. **Totaux** : nombre d'équipements avec/sans `location_depot`,
+   `location_zone`, `location_code`, aucune location.
+2. **Locations partielles** : équipement avec `location_zone` ou
+   `location_code` mais **sans** `location_depot` → orphelin du
+   référentiel spatial.
+3. **Zones inconnues** : valeurs de `equipment.location_zone` qui
+   ne correspondent à aucune entrée `zones[].id` / `zones[].code` /
+   `zones[].name` de `depot_svg_maps.zones_json` pour le dépôt
+   attendu. Raisons possibles :
+   - `no_depot_svg_maps_seeded` (aucun dépôt dans la table).
+   - `unknown_depot` (dépôt inexistant).
+   - `zone_not_in_svg` (dépôt OK, zone absente du SVG).
+4. **Zones SVG orphelines** : entrées du référentiel qui ne sont
+   utilisées par aucun équipement — utile pour nettoyer les JSON.
+5. **Doublons de code** : plusieurs équipements avec le même
+   `(location_depot, location_floor, location_zone, location_code)`.
+
+**Sortie stdout** : JSON structuré avec section par contrôle + un
+`verdict` global (`OK (aucun ecart detecte)` ou
+`ECARTS_DETECTES (voir details)`).
+
+**Exit codes** :
+
+- `0` : aucun écart détecté.
+- `1` : écarts détectés (décision utilisateur requise).
+- `2` : environnement invalide (tables manquantes).
+
+**Usage** :
+
+```bash
+# DB dev par defaut
+DB_PATH=vehicules-dev.db node scripts/locations-v2-backfill.mjs
+
+# DB de test personnalise
+DB_PATH=/absolute/path/to/copy.db node scripts/locations-v2-backfill.mjs
+```
+
+Note : `apps/api/database.js` résout `DB_PATH` relativement à
+`apps/api/`, donc utiliser un nom de fichier relatif à ce dossier
+(ex. `vehicules-dev.db`) ou déposer une copie dans `apps/api/` avant
+d'exécuter.
+
+### 5.2 Rapport dev (2026-07-09)
+
+Exécution sur `apps/api/vehicules-dev.db` (DB fraîche, 0 équipements) :
+
+```
+verdict: OK (aucun ecart detecte)
+totals: {total: 0, with_depot: null, with_zone: null, ...}
+depots seedes: 2 (depot_id '1' et '2')
+partial: 0, unknown zones: 0, duplicate codes: 0
+orphan zones: 66 (toutes les zones du SVG, aucune n'est utilisee)
+```
+
+**Interprétation** : la DB dev n'a pas de données équipements réelles ;
+la valeur significative viendra du run sur la DB prod (à faire dans
+un ticket dédié ou lors du T-P0-12).
+
+### 5.3 Ce que T-P0-11 NE fait PAS
+
+- Aucune insertion dans `equipment_location_history`. Le seed initial
+  (une ligne "état courant" par équipement avec `previous_* = NULL`
+  et `new_* = equipment.location_*`) sera fait en T-P0-12 lors du
+  premier `PATCH /api/v2/equipment/:id/location`, ou dans un ticket
+  dédié `T-P0-11b` si l'audit trail historique est souhaité en bloc.
+- Aucune correction automatique des zones inconnues ou doublons —
+  ce sont des remontées humaines à traiter dans l'UI.
 
 ---
 

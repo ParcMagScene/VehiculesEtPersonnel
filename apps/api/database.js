@@ -2220,7 +2220,11 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_reservation ON task_assignments(reservation_id)');
+    // NB : idx_ta_reservation deplace apres le bloc ALTER TABLE ADD COLUMN
+    // reservation_id plus bas — sur une DB fresh (CI), la colonne n'existe
+    // pas encore a ce stade et CREATE INDEX throw "no such column", ce qui
+    // interrompt tout le bloc try{...} et empeche la creation des tables
+    // planning_hidden_affaires / planning_affaire_status / etc.
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_source ON task_assignments(source_type, source_id)');
 
     // Table planning_hidden_affaires: affaires masquées de la planification
@@ -2294,6 +2298,9 @@ function initializeDatabase() {
       );
       logger.info('  + task_assignments.reservation_id');
     }
+    // idx_ta_reservation cree ici apres l'ADD COLUMN, garantissant que la
+    // colonne existe (a la fois sur DB fresh CI et sur DB deja migree).
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_reservation ON task_assignments(reservation_id)');
     if (!taColNames.includes('location_address')) {
       db.exec('ALTER TABLE task_assignments ADD COLUMN location_address TEXT');
       logger.info('  + task_assignments.location_address');

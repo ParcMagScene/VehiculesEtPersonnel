@@ -5,6 +5,25 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.9.0] — 2026-07-09
+
+### Added — Display v2 : `DISPLAY_V2.md` + `docs/api/v2/display.md` (T-P0-14)
+
+- **`docs/05-Specs/DISPLAY_V2.md`** (nouveau) : spec complète du
+  namespace `/api/v2/display/*` — modèle actuel v1 (55+ endpoints),
+  modèle cible (discovery + config/content/signals), enrichissement
+  `display_logs`, roadmap T-P0-14 → T-P0-16 (T-P0-15 DisplayService,
+  T-P0-16 TV-client v2 + SSE), rollback documenté.
+- **`docs/api/v2/display.md`** (nouveau) : référence des 4 endpoints
+  livrés en T-P0-14 avec exemples de réponses 200 / 404 / 501.
+- **`docs/api/v2/README.md`** : ajout du module Display dans l'index.
+
+Coexistence stricte : le module v1 (`/api/display/*`, 2333 lignes)
+reste actif et intact. Les endpoints v2 skeleton renvoient 501 avec
+un pointeur `meta.legacy_endpoints` vers les équivalents v1.
+
+---
+
 ## [1.8.0] — 2026-07-09
 
 ### Added — Localisation v2 : `LOCATIONS_V2.md` (T-P0-10 scaffold)

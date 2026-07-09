@@ -2933,6 +2933,37 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_dlog_screen ON display_logs(screen_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_dlog_date ON display_logs(created_at)');
 
+    // [T-P0-14] Enrichissement display_logs : colonnes contextuelles pour
+    // audit trail TV-client v2 (client_ip, user_agent, protocol_version,
+    // request_id, response_status). Idempotent via pragma table_info.
+    // Voir docs/05-Specs/DISPLAY_V2.md §5.
+    try {
+      const dlogCols = db.pragma('table_info(display_logs)');
+      const dlogNames = dlogCols.map((c) => c.name);
+      if (!dlogNames.includes('client_ip')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN client_ip TEXT');
+        logger.info('  + display_logs.client_ip');
+      }
+      if (!dlogNames.includes('client_user_agent')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN client_user_agent TEXT');
+        logger.info('  + display_logs.client_user_agent');
+      }
+      if (!dlogNames.includes('protocol_version')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN protocol_version TEXT');
+        logger.info('  + display_logs.protocol_version');
+      }
+      if (!dlogNames.includes('request_id')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN request_id TEXT');
+        logger.info('  + display_logs.request_id');
+      }
+      if (!dlogNames.includes('response_status')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN response_status INTEGER');
+        logger.info('  + display_logs.response_status');
+      }
+    } catch (dlogErr) {
+      logger.warn('Migration display_logs (T-P0-14):', dlogErr.message);
+    }
+
     logger.info('  ✅ Module Dashboard (écrans, playlists, médias, messages, templates, logs)');
   } catch (error) {
     logger.warn('⚠️ Migration Dashboard:', error.message);

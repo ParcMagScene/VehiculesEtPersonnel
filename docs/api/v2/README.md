@@ -14,6 +14,7 @@
 | Module | Statut | Doc |
 |--------|--------|-----|
 | Planning | 🟡 Cadrage (T-P0-01) — squelette services publié | [planning.md](planning.md) |
+| Display | 🟡 T-P0-14 — discovery + skeletons `/config` `/content` `/signals` | [display.md](display.md) |
 
 ---
 

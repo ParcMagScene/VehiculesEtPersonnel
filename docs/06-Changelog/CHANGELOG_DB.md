@@ -5,6 +5,27 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.5.0] — 2026-07-09
+
+### Added — Display v2 : enrichissement `display_logs` (T-P0-14)
+
+Migration additive idempotente (via `pragma table_info` sur
+`display_logs`, dans `apps/api/database.js` section Module Dashboard) :
+
+- `client_ip` TEXT — IP source de la requête.
+- `client_user_agent` TEXT — User-Agent client (versionnage TV-client).
+- `protocol_version` TEXT — protocole négocié (ex. `2.0.0` v2, NULL v1).
+- `request_id` TEXT — UUID de corrélation cross-service.
+- `response_status` INTEGER — code HTTP de la réponse.
+
+Rétro-compat totale : les inserts existants dans `displayRoutes.js` v1
+n'écrivent pas dans ces colonnes → valeurs NULL. Le populate se fera
+au fur et à mesure des touches naturelles ou lors de T-P0-15.
+
+Voir aussi : [../05-Specs/DISPLAY_V2.md](../05-Specs/DISPLAY_V2.md) §3.
+
+---
+
 ## [1.4.0] — 2026-07-09
 
 ### Added — Localisation v2 (T-P0-10, additive & idempotente)

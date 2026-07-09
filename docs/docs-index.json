@@ -29,7 +29,8 @@
         "docs/api/google.md",
         "docs/api/totp.md",
         "docs/api/v2/README.md",
-        "docs/api/v2/planning.md"
+        "docs/api/v2/planning.md",
+        "docs/api/v2/display.md"
       ]
     },
     "architecture": {
@@ -61,7 +62,7 @@
       ]
     }
   },
-  "totalFiles": 133,
+  "totalFiles": 135,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

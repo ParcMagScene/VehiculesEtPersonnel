@@ -64,49 +64,173 @@ au démarrage pour négocier son comportement.
 
 ---
 
-## `GET /api/v2/display/config`
+## `GET /api/v2/display/config?screen_id=<id>`
 
 **Authentification requise.**
 
-Retournera la config d'un écran (theme, layout, playlist active) après
-refonte T-P0-15. Skeleton renvoyant 501 tant que non implémenté.
+Retourne la configuration complète d'un écran : row `display_screens`
++ playlist affectée + appearance mergée avec les defaults.
 
-### Réponse 501
+### Réponse 200
 
 ```json
 {
-  "success": false,
-  "error": "Not implemented — voir /api/display/screens/:id et /api/display/appearance",
-  "code": "NOT_IMPLEMENTED",
-  "meta": {
-    "protocol_version": 1,
-    "legacy_endpoints": ["/api/display/screens/:id", "/api/display/appearance"],
-    "ticket": "T-P0-15"
-  }
+  "success": true,
+  "data": {
+    "screen": {
+      "id": 1,
+      "name": "Ecran hall",
+      "location": "Hall entrée",
+      "resolution": "1920x1080",
+      "orientation": "landscape",
+      "status": "online",
+      "is_active": true,
+      "last_heartbeat": "2026-07-09T10:15:30Z",
+      "config": { "theme": "dark" }
+    },
+    "playlist": { "id": 3, "name": "Playlist par défaut" },
+    "appearance": {
+      "primaryColor": "#00e1ff",
+      "secondaryColor": "#000000",
+      "eventBgColor": "#000000",
+      "eventTextColor": "#ffffff",
+      "fontFamily": "Arial, sans-serif",
+      "showWeather": false,
+      "autoScroll": true,
+      "weatherApiKey": "",
+      "weatherCity": "Saint-Denis,RE,FR"
+    }
+  },
+  "meta": { "protocol_version": 1 }
 }
 ```
 
+- `screen.config` : JSON parsed depuis la colonne TEXT `display_screens.config`.
+- `playlist` : `null` si l'écran n'a pas de playlist affectée.
+- `appearance` : merge des overrides de `display_config` avec les
+  valeurs par défaut. Toujours complet (jamais partiel).
+
+### Réponses d'erreur
+
+- **400 VALIDATION_ERROR** : `screen_id` manquant ou invalide.
+- **404 NOT_FOUND** : écran inexistant.
+
 ---
 
-## `GET /api/v2/display/content`
+## `GET /api/v2/display/content?playlist_id=<id>`
 
 **Authentification requise.**
 
-Retournera le contenu de la playlist active pour un écran (media list,
-timings, transitions). Skeleton 501 — T-P0-15.
+Retourne le contenu ordonné d'une playlist avec métadonnées enrichies
+(`item_name` résolu par jointure conditionnelle sur `item_type`).
 
-`meta.legacy_endpoints` : `[/api/display/playlists, /api/display/playlists/:id]`.
+### Réponse 200
+
+```json
+{
+  "success": true,
+  "data": {
+    "playlist": {
+      "id": 3,
+      "name": "Playlist par défaut",
+      "description": "Rotation matinée",
+      "is_active": true
+    },
+    "items": [
+      {
+        "id": 42,
+        "playlist_id": 3,
+        "item_type": "media",
+        "item_id": 10,
+        "item_name": "video1.mp4",
+        "duration": 30,
+        "sort_order": 1,
+        "config": {}
+      },
+      {
+        "id": 43,
+        "playlist_id": 3,
+        "item_type": "message",
+        "item_id": 20,
+        "item_name": "Bienvenue",
+        "duration": 10,
+        "sort_order": 2,
+        "config": {}
+      }
+    ],
+    "total": 2
+  },
+  "meta": { "protocol_version": 1 }
+}
+```
+
+- `items` : trié par `sort_order` croissant.
+- `item_name` : `original_name` pour `media`, `title` pour `message`,
+  `name` pour `template`.
+
+### Réponses d'erreur
+
+- **400 VALIDATION_ERROR** : `playlist_id` manquant ou invalide.
+- **404 NOT_FOUND** : playlist inexistante.
 
 ---
 
-## `GET /api/v2/display/signals`
+## `GET /api/v2/display/signals?screen_id=<id>`
 
 **Authentification requise.**
 
-Signaux temps réel (heartbeat, messages, alertes) pour un écran.
-Skeleton 501 — T-P0-16 (migration SSE prévue).
+Retourne les signaux temps-réel pour un écran : messages actifs triés
+par priorité, welcome message du créneau courant, heartbeat de
+référence.
 
-`meta.legacy_endpoints` : `[/api/display/messages, /api/display/screens/:id/heartbeat, /api/display/welcome-messages]`.
+### Réponse 200
+
+```json
+{
+  "success": true,
+  "data": {
+    "screen": {
+      "id": 1,
+      "name": "Ecran hall",
+      "status": "online",
+      "last_heartbeat": "2026-07-09T10:15:30Z"
+    },
+    "messages": [
+      {
+        "id": 21,
+        "title": "Alerte incendie",
+        "body": "Évacuation en cours",
+        "priority": "urgent",
+        "date_start": null,
+        "date_end": null
+      }
+    ],
+    "welcome_message": {
+      "day": "lun",
+      "slot": "morning",
+      "message": "Bonjour lundi"
+    },
+    "generated_at": "2026-07-09T09:00:00.000Z"
+  },
+  "meta": { "protocol_version": 1 }
+}
+```
+
+- `messages` : filtre `is_active=1 AND (date_end IS NULL OR date_end >=
+  today)`. Trié `urgent > high > normal > low`.
+- `welcome_message` : `null` si pas de mapping `(day, slot)` défini.
+  `day` = nom court FR (`lun`, `mar`, ...), `slot` = `morning` /
+  `afternoon` / `evening` selon l'heure locale du serveur.
+- `generated_at` : timestamp ISO pour permettre au client de calculer
+  la fraîcheur.
+
+**Migration prévue T-P0-16** : SSE au lieu du polling pour push
+serveur→client (heartbeat + messages push).
+
+### Réponses d'erreur
+
+- **400 VALIDATION_ERROR** : `screen_id` manquant ou invalide.
+- **404 NOT_FOUND** : écran inexistant.
 
 ---
 

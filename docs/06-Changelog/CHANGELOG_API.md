@@ -5,6 +5,67 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.10.0] — 2026-07-09
+
+### Changed — Display v2 : `/config` `/content` `/signals` implémentés (T-P0-15)
+
+Les 3 endpoints livrés en 501 `NOT_IMPLEMENTED` par T-P0-14 sont
+maintenant implémentés via `apps/api/services/display/*` :
+
+- **`GET /api/v2/display/config?screen_id=<id>`** :
+  - Payload : `{ screen: {...}, playlist: {id, name}|null, appearance: {...} }`.
+  - Screen : row `display_screens` (id, name, location, resolution,
+    orientation, status, is_active, last_heartbeat, config JSON parsé).
+  - Playlist : `{id, name}` de la playlist affectée (`null` si aucune).
+  - Appearance : merge des overrides `display_config` avec les 9
+    defaults (primaryColor, secondaryColor, eventBgColor,
+    eventTextColor, fontFamily, showWeather, autoScroll, weatherApiKey,
+    weatherCity). Toujours complet.
+  - Erreurs : `400 VALIDATION_ERROR` si `screen_id` manquant/invalide,
+    `404 NOT_FOUND` si écran inexistant.
+
+- **`GET /api/v2/display/content?playlist_id=<id>`** :
+  - Payload : `{ playlist: {id, name, description, is_active}, items: [...], total }`.
+  - Items triés par `sort_order` avec `item_name` résolu par jointure
+    conditionnelle sur `item_type` (media → original_name, message →
+    title, template → name).
+  - Chaque item : `{ id, playlist_id, item_type, item_id, item_name,
+    duration, sort_order, config }`.
+  - Erreurs : `400 VALIDATION_ERROR`, `404 NOT_FOUND`.
+
+- **`GET /api/v2/display/signals?screen_id=<id>`** :
+  - Payload : `{ screen, messages, welcome_message, generated_at }`.
+  - Messages : filtre `is_active=1 AND (date_end IS NULL OR date_end >= today)`.
+    Tri `urgent > high > normal > low` puis `created_at DESC`.
+  - Welcome message : mapping `(day, slot)` de `display_welcome_messages`.
+    `day` = nom court FR (`lun`..`dim`), `slot` = `morning`
+    (<12h) / `afternoon` (<18h) / `evening` (≥18h). `null` si non défini.
+  - `generated_at` : timestamp ISO du serveur pour permettre au client
+    de calculer la fraîcheur (migration SSE prévue T-P0-16).
+  - Erreurs : `400 VALIDATION_ERROR`, `404 NOT_FOUND`.
+
+### Changed — Display v2 : capabilities renommées
+
+`DISPLAY_V2_CAPABILITIES` mis à jour dans le discovery endpoint :
+
+- `protocol-discovery` (inchangé)
+- ~~`config-skeleton`~~ → `screen-config-v1`
+- ~~`content-skeleton`~~ → `playlist-content-v1`
+- ~~`signals-skeleton`~~ → `screen-signals-v1`
+
+Le suffixe `-v1` indique la version stable du contrat (le préfixe `v2`
+du namespace suffit pour la version d'API). Les clients TV doivent
+matcher sur la capability exacte, pas sur un préfixe.
+
+### Reference
+
+- `apps/api/services/display/` (nouveau) — 4 fichiers services + errors + barrel.
+- `docs/05-Specs/DISPLAY_V2.md` — spec mise à jour (v0.2.0).
+- `docs/api/v2/display.md` — reference endpoints complète avec exemples 200/400/404.
+- `EXECUTION_PLAN_EMAG_3_0.md` — T-P0-15 · Display v2 — DisplayService interne.
+
+---
+
 ## [1.9.0] — 2026-07-09
 
 ### Added — Display v2 API namespace + discovery (T-P0-14)

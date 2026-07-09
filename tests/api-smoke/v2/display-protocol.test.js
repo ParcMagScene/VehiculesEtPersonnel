@@ -123,30 +123,29 @@ describe('v2/displayRoutes — flag on', () => {
     assert.equal(typeof body?.meta?.protocol_version, 'number');
   });
 
-  it('GET /api/v2/display/config → 501 NOT_IMPLEMENTED avec legacy_endpoints', async () => {
+  it('GET /api/v2/display/config sans screen_id → 400 VALIDATION_ERROR', async () => {
     const app = buildApp(true);
     const { status, body } = await get(app, '/api/v2/display/config');
-    assert.equal(status, 501);
+    assert.equal(status, 400);
     assert.equal(body?.success, false);
-    assert.equal(body?.code, 'NOT_IMPLEMENTED');
-    assert.ok(Array.isArray(body?.meta?.legacy_endpoints));
-    assert.equal(body?.meta?.ticket, 'T-P0-15');
+    assert.equal(body?.code, 'VALIDATION_ERROR');
+    assert.match(body?.error || '', /screenId/);
   });
 
-  it('GET /api/v2/display/content → 501 NOT_IMPLEMENTED', async () => {
+  it('GET /api/v2/display/content sans playlist_id → 400 VALIDATION_ERROR', async () => {
     const app = buildApp(true);
     const { status, body } = await get(app, '/api/v2/display/content');
-    assert.equal(status, 501);
-    assert.equal(body?.code, 'NOT_IMPLEMENTED');
-    assert.ok(body?.meta?.legacy_endpoints.includes('/api/display/playlists'));
+    assert.equal(status, 400);
+    assert.equal(body?.code, 'VALIDATION_ERROR');
+    assert.match(body?.error || '', /playlistId/);
   });
 
-  it('GET /api/v2/display/signals → 501 NOT_IMPLEMENTED (ticket T-P0-16)', async () => {
+  it('GET /api/v2/display/signals sans screen_id → 400 VALIDATION_ERROR', async () => {
     const app = buildApp(true);
     const { status, body } = await get(app, '/api/v2/display/signals');
-    assert.equal(status, 501);
-    assert.equal(body?.code, 'NOT_IMPLEMENTED');
-    assert.equal(body?.meta?.ticket, 'T-P0-16');
+    assert.equal(status, 400);
+    assert.equal(body?.code, 'VALIDATION_ERROR');
+    assert.match(body?.error || '', /screenId/);
   });
 });
 

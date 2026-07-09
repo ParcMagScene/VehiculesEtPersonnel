@@ -5,6 +5,35 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.4.0] — 2026-07-09
+
+### Added — Localisation v2 (T-P0-10, additive & idempotente)
+
+- **Table `depot_svg_maps`** (`id` INTEGER PK, `depot_id` TEXT UNIQUE,
+  `name`, `version`, `svg_width`, `svg_height`, `floors_json`,
+  `categories_json`, `zones_json`, `source_file`, `imported_at`,
+  `updated_at`). Source de vérité DB des définitions de dépôts
+  actuellement dans `public/depot-zones.json` / `depot2-zones.json`.
+  Index `idx_depot_svg_maps_depot` sur `depot_id`.
+- **Table `equipment_location_history`** (`id` INTEGER PK,
+  `equipment_id` FK CASCADE, `previous_*` / `new_*` (depot/floor/zone/
+  code), `moved_by` FK, `moved_at`, `notes`). Audit trail des
+  déplacements équipements. 2 index (`equipment_id`, `moved_at`).
+- **Import initial idempotent** : si la table `depot_svg_maps` est
+  vide et que les fichiers JSON existent, la migration importe
+  `public/depot-zones.json` → `depot_id='1'` et `depot2-zones.json`
+  → `depot_id='2'`. Skip gracieux si absent (dev fraîche).
+
+Coexistence totale : les endpoints inventaire existants continuent
+de servir les JSON statiques. La bascule des lectures est reportée à
+T-P0-12. Aucune modification des colonnes `equipment.location_*`
+existantes.
+
+Fichier : `apps/api/migrations/locations-v2-schema-v1.js`.
+Voir aussi : [../05-Specs/LOCATIONS_V2.md](../05-Specs/LOCATIONS_V2.md).
+
+---
+
 ## [1.2.0] — 2026-07-08
 
 ### Added — Planning v2 (T-P0-02, additive & idempotente)

@@ -5,6 +5,25 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.8.0] — 2026-07-09
+
+### Added — Localisation v2 : `LOCATIONS_V2.md` (T-P0-10 scaffold)
+
+- **`docs/05-Specs/LOCATIONS_V2.md`** (nouveau) : spec du modèle unique
+  de rangement équipements — table `depot_svg_maps` (source de vérité
+  DB pour les définitions dépôt/floors/categories/zones actuellement
+  éparpillées dans `public/depot*-zones.json`) et
+  `equipment_location_history` (audit trail des déplacements).
+  Roadmap T-P0-10 → T-P0-13, compatibilité totale coexistence,
+  rollback documenté.
+
+Coexistence stricte : les endpoints inventaire existants continuent
+de lire les JSON statiques. La migration DB est non-destructive et
+idempotente. La bascule des lectures vers la DB (endpoint `GET
+/api/v2/locations/depots`) est reportée à T-P0-12.
+
+---
+
 ## [1.7.0] — 2026-07-09
 
 ### Added — Sécurité Vidéo : `VIDEO_HARDENING.md` (T-P0-17 sous-tâche 1)

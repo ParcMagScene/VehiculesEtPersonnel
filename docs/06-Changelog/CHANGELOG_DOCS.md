@@ -5,6 +5,34 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.12.0] — 2026-07-09
+
+### Added — Localisation v2 : script backfill diagnostic (T-P0-11)
+
+- **`scripts/locations-v2-backfill.mjs`** (nouveau) : script dry-run
+  qui produit un rapport JSON de cohérence sur les localisations
+  équipements (totaux, locations partielles, zones inconnues dans
+  `depot_svg_maps`, zones SVG orphelines, doublons de codes). Le
+  flag `--apply` est refusé (dry-run uniquement). Exit codes
+  0/1/2 selon écarts.
+- **`docs/05-Specs/LOCATIONS_V2.md`** passe à v0.2.0 :
+  - Nouvelle section §5 documentant les 5 contrôles du script, le
+    format de sortie, l'usage et le rapport dev (DB fraîche : 0
+    équipements, 2 dépôts seedés, 66 zones orphelines).
+  - Précision sur ce que T-P0-11 NE fait PAS (pas de seed
+    `equipment_location_history` — reporté à T-P0-12).
+- **`tests/api-smoke/locations-v2-backfill.test.js`** (nouveau) :
+  3 tests d'invocation `child_process.spawnSync` du script sur des DB
+  SQLite dédiées (via `DB_PATH` relatif à `apps/api/`), cleanup
+  automatique des fichiers `_test-locations-backfill-*.db`.
+
+Aucun endpoint HTTP ajouté. Aucune modification du code exécutable
+en production. Le seul effet de bord de l'exécution du script est
+l'appel de `initializeDatabase()` qui crée les tables T-P0-10 si
+elles n'existent pas déjà (idempotent, additif).
+
+---
+
 ## [1.11.0] — 2026-07-09
 
 ### Changed — Display v2 : `DISPLAY_V2.md` v0.3.0 + section SSE + TV-client v2 (T-P0-16)

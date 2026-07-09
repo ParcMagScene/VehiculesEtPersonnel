@@ -5,6 +5,48 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.9.0] — 2026-07-09
+
+### Added — Display v2 API namespace + discovery (T-P0-14)
+
+- **`GET /api/v2/display/protocol`** : discovery endpoint public (pas
+  d'authentification). Retourne `data.protocol_version` (version
+  protocole Display TV, `2.0.0`), `data.capabilities` (kebab-case),
+  `data.legacy_namespace`, `data.docs`. Enveloppe `meta.protocol_version`
+  (wrapper API v2 = 1).
+- **`GET /api/v2/display/config`** : skeleton 501 `NOT_IMPLEMENTED`
+  (`meta.legacy_endpoints`, `meta.ticket=T-P0-15`).
+- **`GET /api/v2/display/content`** : skeleton 501 `NOT_IMPLEMENTED`
+  (`meta.legacy_endpoints`, `meta.ticket=T-P0-15`).
+- **`GET /api/v2/display/signals`** : skeleton 501 `NOT_IMPLEMENTED`
+  (`meta.legacy_endpoints`, `meta.ticket=T-P0-16`).
+
+Toutes les routes sont gate par `FEATURE_V2_DISPLAY` (off par défaut,
+404 `FEATURE_DISABLED` si off). `displayRoutes.js` v1 reste intact et
+actif sur `/api/display/*` (55+ endpoints inchangés).
+
+### Changed — `display_logs` enrichi (T-P0-14)
+
+Migration additive idempotente : ajout de 5 colonnes contextuelles
+pour l'audit trail TV-client v2.
+
+- `client_ip` TEXT
+- `client_user_agent` TEXT
+- `protocol_version` TEXT
+- `request_id` TEXT
+- `response_status` INTEGER
+
+Les inserts v1 existants n'écrivent pas dans ces colonnes (valeurs NULL,
+rétro-compat totale).
+
+### Reference
+
+- `docs/05-Specs/DISPLAY_V2.md` — spec complète modèle + roadmap.
+- `docs/api/v2/display.md` — reference endpoints.
+- `EXECUTION_PLAN_EMAG_3_0.md` — T-P0-14 → T-P0-16.
+
+---
+
 ## [1.8.0] — 2026-07-09
 
 ### Changed — Planning v2 : activation Phase B (dogfooding dev)

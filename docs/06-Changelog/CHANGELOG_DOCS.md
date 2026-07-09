@@ -5,6 +5,30 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.10.0] — 2026-07-09
+
+### Changed — Display v2 : `DISPLAY_V2.md` v0.2.0 + `display.md` complet (T-P0-15)
+
+- **`docs/05-Specs/DISPLAY_V2.md`** passe à v0.2.0 :
+  - Statut réajusté (`T-P0-14 discovery + T-P0-15 DisplayService interne`).
+  - Section §2.1 : les 3 endpoints `/config` `/content` `/signals` sont
+    marqués ✅ (implémentés en T-P0-15, plus des skeletons 501).
+  - Section §2.3 renommée en "Skeletons remplacés par les services en
+    T-P0-15" : explique la traduction erreurs typées → HTTP.
+  - Section §4 fusionnée T-P0-14 + T-P0-15 (livrés). Section §5 devient
+    "Ce que T-P0-16 fera".
+- **`docs/api/v2/display.md`** : ajout des exemples de payload 200
+  détaillés pour `/config`, `/content`, `/signals` (remplace les
+  descriptions 501). Documentation des réponses d'erreur 400/404 par
+  endpoint.
+- **`docs/api/v2/README.md`** : module Display passe de 🟡 à 🟢
+  (endpoints implémentés).
+
+Aucune modification des endpoints v1. La documentation reflète
+maintenant l'état réel des services v2.
+
+---
+
 ## [1.9.0] — 2026-07-09
 
 ### Added — Display v2 : `DISPLAY_V2.md` + `docs/api/v2/display.md` (T-P0-14)

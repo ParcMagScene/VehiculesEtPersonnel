@@ -1,27 +1,30 @@
 // apps/api/v2/displayRoutes.js
 //
 // Ticket : EXECUTION_PLAN_EMAG_3_0.md T-P0-14 (P0 Display v2 API versionnee).
+//          EXECUTION_PLAN_EMAG_3_0.md T-P0-15 (P0 DisplayService interne).
 //
-// Namespace `/api/v2/display/*` — scaffold minimal. Coexistence stricte
-// avec `displayRoutes.js` v1 (2333 lignes, 55+ endpoints) qui reste
-// inchange et actif sur `/api/display/*`.
+// Namespace `/api/v2/display/*` — endpoints livres :
+//   - GET /api/v2/display/protocol       (T-P0-14, public discovery)
+//   - GET /api/v2/display/config         (T-P0-15, auth, service `getScreenConfig`)
+//   - GET /api/v2/display/content        (T-P0-15, auth, service `getPlaylistContent`)
+//   - GET /api/v2/display/signals        (T-P0-15, auth, service `getSignalsForScreen`)
 //
-// Endpoints livres ici (T-P0-14, gates par FEATURE_V2_DISPLAY) :
-//   - GET /api/v2/display/protocol   (public : discovery, pas d'auth)
-//   - GET /api/v2/display/config     (auth : config par ecran)
-//   - GET /api/v2/display/content    (auth : contenu playlist courante)
-//   - GET /api/v2/display/signals    (auth : signaux temps reel screen)
-//
-// Les 3 endpoints config/content/signals sont livres en "read-only
-// skeleton" : ils repondent 501 NotImplemented avec un pointeur vers
-// les endpoints v1 correspondants tant que la refonte metier (T-P0-15
-// DisplayService) n'est pas faite. Cela permet aux consommateurs
-// (TV-client v2, T-P0-16) de decouvrir l'API et de tester le canal
-// v2 sans casser v1.
+// Coexistence stricte avec `displayRoutes.js` v1 : les endpoints v1
+// (`/api/display/*`) restent intacts et actifs. Le TV-client v1
+// continue de les consommer directement.
 //
 // Voir docs/05-Specs/DISPLAY_V2.md.
 
+import db from '../database.js';
+import logger from '../logger.js';
 import { createFeatureFlagGuard } from '../middleware/featureFlag.js';
+import {
+  DisplayV2NotFoundError,
+  DisplayV2ValidationError,
+  getPlaylistContent,
+  getScreenConfig,
+  getSignalsForScreen,
+} from '../services/display/index.js';
 import { sendV2Error, sendV2Success } from '../utils/apiV2Response.js';
 
 /**
@@ -49,10 +52,37 @@ export const DISPLAY_V2_FLAG = 'FEATURE_V2_DISPLAY';
  */
 export const DISPLAY_V2_CAPABILITIES = Object.freeze([
   'protocol-discovery', // GET /protocol repond
-  'config-skeleton', // GET /config accessible (501 tant que non implemente)
-  'content-skeleton', // GET /content accessible (501 tant que non implemente)
-  'signals-skeleton', // GET /signals accessible (501 tant que non implemente)
+  'screen-config-v1', // GET /config?screen_id retourne screen + playlist + appearance
+  'playlist-content-v1', // GET /content?playlist_id retourne items ordonnes avec item_name
+  'screen-signals-v1', // GET /signals?screen_id retourne messages actifs + welcome + heartbeat
 ]);
+
+/**
+ * Traduit une erreur typee du service Display en reponse HTTP v2.
+ * @param {import('express').Response} res
+ * @param {Error} err
+ */
+function handleServiceError(res, err) {
+  if (err instanceof DisplayV2ValidationError) {
+    return sendV2Error(res, err.message, {
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      meta: err.details ? { details: err.details } : undefined,
+    });
+  }
+  if (err instanceof DisplayV2NotFoundError) {
+    return sendV2Error(res, err.message, {
+      status: 404,
+      code: 'NOT_FOUND',
+      meta: err.details ? { details: err.details } : undefined,
+    });
+  }
+  logger.error('Display v2 service error:', err);
+  return sendV2Error(res, 'Erreur serveur interne', {
+    status: 500,
+    code: 'INTERNAL_ERROR',
+  });
+}
 
 /**
  * Enregistre les routes v2 Display sur l'application Express.
@@ -83,49 +113,40 @@ export function setupDisplayV2Routes(app, authenticateToken) {
     });
   });
 
-  // ─── GET /api/v2/display/config ───
-  // Skeleton — retournera la config d'un ecran (theme, layout, playlist)
-  // apres refonte T-P0-15. Pour l'instant renvoie 501 avec pointeur v1.
-  app.get('/api/v2/display/config', flagGuard, authenticateToken, (_req, res) => {
-    sendV2Error(res, 'Not implemented — voir /api/display/screens/:id et /api/display/appearance', {
-      status: 501,
-      code: 'NOT_IMPLEMENTED',
-      meta: {
-        legacy_endpoints: ['/api/display/screens/:id', '/api/display/appearance'],
-        ticket: 'T-P0-15',
-      },
-    });
+  // ─── GET /api/v2/display/config?screen_id=<id> ───
+  // T-P0-15 : retourne la config complete d'un ecran (screen + playlist
+  // affectee + appearance). Le TV-client v2 negocie son affichage a
+  // partir de cette reponse.
+  app.get('/api/v2/display/config', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const result = getScreenConfig({ db, screenId: req.query.screen_id });
+      sendV2Success(res, result);
+    } catch (err) {
+      handleServiceError(res, err);
+    }
   });
 
-  // ─── GET /api/v2/display/content ───
-  // Skeleton — retournera le contenu de la playlist active pour un
-  // ecran (media list, timings, transitions). T-P0-15.
-  app.get('/api/v2/display/content', flagGuard, authenticateToken, (_req, res) => {
-    sendV2Error(res, 'Not implemented — voir /api/display/playlists/:id', {
-      status: 501,
-      code: 'NOT_IMPLEMENTED',
-      meta: {
-        legacy_endpoints: ['/api/display/playlists', '/api/display/playlists/:id'],
-        ticket: 'T-P0-15',
-      },
-    });
+  // ─── GET /api/v2/display/content?playlist_id=<id> ───
+  // T-P0-15 : retourne le contenu ordonne d'une playlist (items +
+  // item_name resolu selon item_type).
+  app.get('/api/v2/display/content', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const result = getPlaylistContent({ db, playlistId: req.query.playlist_id });
+      sendV2Success(res, result);
+    } catch (err) {
+      handleServiceError(res, err);
+    }
   });
 
-  // ─── GET /api/v2/display/signals ───
-  // Skeleton — signaux temps reel (heartbeat, messages, alertes) pour
-  // un ecran. Migration vers SSE prevue en T-P0-16.
-  app.get('/api/v2/display/signals', flagGuard, authenticateToken, (_req, res) => {
-    sendV2Error(res, 'Not implemented — voir /api/display/messages et heartbeat legacy', {
-      status: 501,
-      code: 'NOT_IMPLEMENTED',
-      meta: {
-        legacy_endpoints: [
-          '/api/display/messages',
-          '/api/display/screens/:id/heartbeat',
-          '/api/display/welcome-messages',
-        ],
-        ticket: 'T-P0-16',
-      },
-    });
+  // ─── GET /api/v2/display/signals?screen_id=<id> ───
+  // T-P0-15 : retourne les signaux temps-reel (messages actifs, welcome
+  // message du creneau courant, heartbeat de reference).
+  app.get('/api/v2/display/signals', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const result = getSignalsForScreen({ db, screenId: req.query.screen_id });
+      sendV2Success(res, result);
+    } catch (err) {
+      handleServiceError(res, err);
+    }
   });
 }

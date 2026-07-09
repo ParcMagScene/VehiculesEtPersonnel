@@ -3,7 +3,21 @@
 export function registerAffairesMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
     async getAffaires() {
-      return this.request('/affaires');
+      // Depuis le passage à la pagination cursor-based (commit 8e77b2e5), la
+      // route GET /api/affaires renvoie systématiquement un objet
+      //   { data: [...], nextCursor, total, hasMore }
+      // alors que tous les callsites (AffairesPanel via fetchAffaires,
+      // MobileAffaires, ReportsPanel, EventDetailsModal, AssignmentDialog,
+      // AffaireDetailPanel, IncidentsSuiviPanel, useAffairesList) attendent
+      // un tableau brut. Sans cet unwrap, `dbAffaires` restait vide côté
+      // AffairesPanel et la liste n'affichait que les affaires détectées
+      // depuis Google Calendar (dont le type est deviné à partir du titre,
+      // défaut « Location »), ce qui masquait toute modification de type
+      // persistée en base après un save.
+      const raw = await this.request('/affaires');
+      if (Array.isArray(raw)) return raw;
+      if (Array.isArray(raw?.data)) return raw.data;
+      return [];
     },
     async getAffairesPersonnelCounts() {
       return this.request('/affaires/personnel-counts');

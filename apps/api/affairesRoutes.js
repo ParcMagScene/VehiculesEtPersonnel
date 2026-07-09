@@ -483,10 +483,14 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
             logger.info(
               `Affaire ${updated.numero_affaire}: type ${existing.type} -> ${updated.type}, ${changed} tâches de préparation resynchronisées`,
             );
-            invalidateEntity('affaires');
-            listCache.invalidatePattern(/^planning-affaires/);
           }
         }
+        // [FIX prod 2026-07] Invalidation systématique après UPDATE, hors du
+        // IF changement de type. Sans cela, une modification (type ou autre)
+        // n'était pas reflétée par les GET /api/affaires suivants pendant
+        // 30 s (TTL cache), donnant l'impression d'une mise à jour ignorée.
+        invalidateEntity('affaires');
+        listCache.invalidatePattern(/^planning-affaires/);
         res.json({ ...updated, id: updated.id });
       } else {
         // Création

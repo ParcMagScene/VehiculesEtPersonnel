@@ -23,7 +23,8 @@ const BLOCKED_RANGES = [
 ];
 // [SEC FIX] Bloque aussi IPv6 loopback et link-local
 const BLOCKED_IPV6 = ['::1', '::ffff:127.0.0.1', 'fe80::', 'fc00::', 'fd00::'];
-function isBlockedIP(ip) {
+// [T-P0-17] exportee pour les tests unitaires (validation SSRF).
+export function isBlockedIP(ip) {
   if (!ip) return true;
   // Bloquer IPv6 dangereuses
   if (ip.includes(':')) return BLOCKED_IPV6.some((prefix) => ip.startsWith(prefix));

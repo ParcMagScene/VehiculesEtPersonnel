@@ -5,6 +5,28 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.7.0] — 2026-07-09
+
+### Added — Sécurité Vidéo : `VIDEO_HARDENING.md` (T-P0-17 sous-tâche 1)
+
+- **`docs/02-Securite/VIDEO_HARDENING.md`** (nouveau) : spec sécurité du
+  module Vidéo (MediaMTX + proxy backend). Modèle de menaces (SSRF,
+  cred leak, publish arbitraire, fuite URI, abus de rate, traçabilité
+  insuffisante), contrôles en place, contrôles à ajouter, checklist
+  déploiement, plan de rollback.
+- **`mediamtx.yml.example`** durci : `apiAddress: 127.0.0.1:9997` et
+  `rtspAddress: 127.0.0.1:8554` (loopback only) au lieu de `:9997` /
+  `:8554` (toutes interfaces). Bloc `authInternalUsers` documenté en
+  commentaire pour le cas `publish` légitime.
+- **`apps/api/.env.example`** : ajout d'un rappel pointant vers
+  `VIDEO_HARDENING.md` sous la section MediaMTX.
+
+Aucun changement de code exécutable ni de config production. Les sous-
+tâches suivantes (enrichissement `video_access_logs`, rate limit,
+tests unitaires validation URI RTSP) feront l'objet de commits dédiés.
+
+---
+
 ## [1.6.0] — 2026-07-09
 
 ### Changed — Planning v2 : bascule Phase B (dogfooding dev)

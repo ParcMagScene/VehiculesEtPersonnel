@@ -1,23 +1,53 @@
 # MediaMTX — Configuration pour eM@g
 # ⚠️ Copiez ce fichier en mediamtx.yml et remplissez vos credentials
 #
-# API REST activée pour le proxy vidéo backend
+# ═══════════════════════════════════════════════════════════════
+# SÉCURITÉ — Voir docs/02-Securite/VIDEO_HARDENING.md
+#
+# Règles obligatoires production :
+#   1. Bind API et RTSP sur loopback (127.0.0.1) — jamais sur `:port`
+#      qui écoute sur toutes les interfaces réseau.
+#   2. Aucun port MediaMTX (9997, 8554, 8889) accessible depuis le WAN.
+#      Le reverse proxy TLS (Caddy) est le seul point d'entrée public.
+#   3. Ne PAS commiter ce fichier avec de vrais credentials
+#      (mediamtx.yml est gitignored).
+# ═══════════════════════════════════════════════════════════════
 
+# API REST activée pour le proxy vidéo backend.
+# Bind sur loopback : le backend eM@g tourne sur la même machine
+# (127.0.0.1). Un accès distant nécessite un tunnel SSH.
 api: yes
-apiAddress: :9997
+apiAddress: 127.0.0.1:9997
 
 # WebRTC (WHEP) — utilisé par le frontend
+# Peut rester bindé sur toutes les interfaces si le reverse proxy
+# (Caddy) est configuré pour proxifier /whep/*. Sinon, préférer 127.0.0.1.
 webrtc: yes
 webrtcAddress: :8889
 
-# RTSP — sources caméras
+# RTSP — dans notre configuration, les caméras sont tirées en mode `pull`
+# (source: rtsp://... dans les paths). Aucun client externe n'a besoin
+# de PUBLIER en RTSP → bind sur loopback pour bloquer toute publication
+# non autorisée depuis le LAN.
 rtsp: yes
-rtspAddress: :8554
+rtspAddress: 127.0.0.1:8554
 
 # Désactiver les protocoles non utilisés
 rtmp: no
 hls: no
 srt: no
+
+# ── Authentification interne (utilisée uniquement si un flux `push`
+#    légitime est ouvert plus tard) ──
+# authMethod: internal
+# authInternalUsers:
+#   - user: admin
+#     pass: CHANGEZ_CETTE_PASS
+#     ips: [127.0.0.1]
+#     permissions:
+#       - action: api
+#       - action: publish
+#       - action: read
 
 # ── Paths caméras ──
 # Le backend utilise le format cam-{id} (id = cameras.id en BDD)

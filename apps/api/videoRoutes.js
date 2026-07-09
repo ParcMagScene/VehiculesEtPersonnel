@@ -43,13 +43,15 @@ const streamRateMap = new Map();
 const STREAM_RATE_WINDOW = 60_000; // 1 min
 const STREAM_RATE_MAX = 120; // max 120 requêtes/min par user (grid 16 + rotation)
 
-// Purge auto des entrées périmées (toutes les 5 min)
+// Purge auto des entrées périmées (toutes les 5 min).
+// unref() : ne pas empêcher le processus (ex. `node --test`) de se terminer
+// quand tous les tests sont finis.
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of streamRateMap) {
     if (now - entry.windowStart > STREAM_RATE_WINDOW * 2) streamRateMap.delete(key);
   }
-}, 300_000);
+}, 300_000).unref();
 
 function checkStreamRate(userId) {
   const now = Date.now();
@@ -64,15 +66,53 @@ function checkStreamRate(userId) {
 }
 
 // Helper log d'accès vidéo
-function logVideoAccess(userId, userName, cameraId, cameraName, action, ipAddress, details = null) {
+function logVideoAccess(
+  userId,
+  userName,
+  cameraId,
+  cameraName,
+  action,
+  ipAddress,
+  details = null,
+  extras = {},
+) {
   try {
+    const {
+      userAgent = null,
+      requestId = null,
+      resourceUri = null,
+      responseStatus = null,
+    } = extras;
     db.prepare(
-      `INSERT INTO video_access_logs (user_id, user_name, camera_id, camera_name, action, ip_address, details)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).run(userId, userName, cameraId, cameraName, action, ipAddress, details);
+      `INSERT INTO video_access_logs (
+        user_id, user_name, camera_id, camera_name, action, ip_address, details,
+        user_agent, request_id, resource_uri, response_status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      userId,
+      userName,
+      cameraId,
+      cameraName,
+      action,
+      ipAddress,
+      details,
+      userAgent,
+      requestId,
+      resourceUri,
+      responseStatus,
+    );
   } catch (e) {
     logger.warn('Log vidéo:', e.message);
   }
+}
+
+// [T-P0-17] Masque les credentials dans une URI RTSP avant persistance/log.
+// `rtsp://user:pass@host:port/path` -> `rtsp://***@host:port/path`.
+// Voir docs/02-Securite/VIDEO_HARDENING.md §5.
+export function maskRtspUri(uri) {
+  if (!uri || typeof uri !== 'string') return null;
+  // Match `scheme://user:pass@` ou `scheme://user@`
+  return uri.replace(/^(rtsp|rtsps|http|https):\/\/[^@/]+@/i, (_m, scheme) => `${scheme}://***@`);
 }
 
 export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
@@ -378,7 +418,11 @@ export function setupVideoRoutes(app, authenticateToken, requireAdmin) {
           `UPDATE cameras SET status = 'online', last_seen = datetime('now') WHERE id = ?`,
         ).run(id);
 
-        logVideoAccess(req.user.id, req.user.name, id, camera.name, 'start_stream', req.ip);
+        logVideoAccess(req.user.id, req.user.name, id, camera.name, 'start_stream', req.ip, null, {
+          userAgent: req.get('user-agent') || null,
+          resourceUri: maskRtspUri(rtspUrl),
+          responseStatus: 200,
+        });
 
         res.json({ answerSdp: result.answerSdp, sessionToken: token });
       } catch (error) {

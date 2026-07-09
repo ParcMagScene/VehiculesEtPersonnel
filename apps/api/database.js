@@ -3618,12 +3618,14 @@ export function closeDatabase() {
   }
 }
 
-// Checkpoint automatique toutes les 5 minutes
+// Checkpoint automatique toutes les 5 minutes.
+// unref() : ne bloque pas la sortie du process (ex. `node --test`) une fois
+// que tous les tests sont finis.
 const checkpointTimer = setInterval(
   () => {
     checkpointDatabase();
   },
   5 * 60 * 1000,
-);
+).unref();
 
 export default db;

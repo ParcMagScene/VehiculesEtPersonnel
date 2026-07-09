@@ -22,6 +22,30 @@ function maintenanceImpactsVehicle(maintenance) {
   return false;
 }
 
+// Reservation utilise historiquement deux representations du lien affaire :
+//   - `affaire` (string scalaire) — colonne SQL et champ ecrit par le backend
+//   - `affaires` (array de strings) — utilise par le UI (ReservationModal, multi-affaire)
+// Le formulaire ReservationModal ne remplit que `affaires`, jamais `affaire`.
+// Sans cette normalisation, PUT /api/reservations recevait `affaire: undefined`
+// et le fallback backend `reservation.affaire || ''` ecrivait une chaine vide,
+// donnant l'impression que la modification du numero d'affaire etait ignoree.
+function normalizeReservationAffaireFields(reservation) {
+  const firstAffaire =
+    reservation?.affaire ||
+    (Array.isArray(reservation?.affaires) && reservation.affaires.length > 0
+      ? reservation.affaires[0]
+      : '');
+  return {
+    ...reservation,
+    affaire: firstAffaire || '',
+    affaires: Array.isArray(reservation?.affaires)
+      ? reservation.affaires
+      : firstAffaire
+        ? [firstAffaire]
+        : [],
+  };
+}
+
 /**
  * Hook centralisant les données métier (véhicules, réservations, maintenances, etc.)
  * et les opérations CRUD associées. Extrait d'App.jsx.
@@ -214,6 +238,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
 
       for (const data of reservationsToAdd) {
         const { vehicleId, date, period, endDate, endPeriod, ...otherData } = data;
+        const normalizedOtherData = normalizeReservationAffaireFields(otherData);
 
         const conflicts = checkOverlap(vehicleId, date, period, endDate, endPeriod);
         if (conflicts.length > 0) {
@@ -234,7 +259,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
               startPeriod: period,
               endDate,
               endPeriod,
-              ...otherData,
+              ...normalizedOtherData,
             });
             toast.success('Demande de réservation envoyée aux administrateurs pour validation.');
             return true;
@@ -253,7 +278,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
             startPeriod: period,
             endDate,
             endPeriod,
-            ...otherData,
+            ...normalizedOtherData,
           });
           newReservations.push(createdReservation);
         } catch (error) {
@@ -312,7 +337,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
       }
 
       try {
-        const finalReservation = {
+        const finalReservation = normalizeReservationAffaireFields({
           ...updatedReservation,
           id,
           // Le backend valide start_date/end_date : on normalise depuis date/period du calendrier.
@@ -320,7 +345,7 @@ export function useAppData({ isAuthenticated, isAuthLoading, currentUser, toast,
           startPeriod: updatedReservation.startPeriod ?? updatedReservation.period,
           endDate: updatedReservation.endDate,
           endPeriod: updatedReservation.endPeriod,
-        };
+        });
         logger.log('✅ Envoi API - Objet final:', finalReservation);
         await api.updateReservation(id, finalReservation);
         setReservations((prev) => prev.map((r) => (r.id === id ? finalReservation : r)));

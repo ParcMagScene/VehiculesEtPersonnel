@@ -81,5 +81,67 @@ export function registerPlanningV2Methods(ApiClient) {
         method: 'DELETE',
       });
     },
+
+    // ─── T-P0-05 étendu : events + planning affaires (lecture) ───
+
+    /**
+     * GET /api/v2/planning/events — liste cursor-based.
+     * @param {object} [params]
+     */
+    async listV2Events(params = {}) {
+      const clean = {};
+      for (const [key, value] of Object.entries(params)) {
+        if (value === undefined || value === null || value === '') continue;
+        clean[key] = String(value);
+      }
+      const qs = new URLSearchParams(clean).toString();
+      return this.request(`/v2/planning/events${qs ? `?${qs}` : ''}`);
+    },
+
+    /**
+     * GET /api/v2/planning/affaires — liste offset-based.
+     * @param {object} [params]
+     */
+    async listV2PlanningAffaires(params = {}) {
+      const clean = {};
+      for (const [key, value] of Object.entries(params)) {
+        if (value === undefined || value === null || value === '') continue;
+        clean[key] = String(value);
+      }
+      const qs = new URLSearchParams(clean).toString();
+      return this.request(`/v2/planning/affaires${qs ? `?${qs}` : ''}`);
+    },
+
+    // ─── T-P0-04 étendu : batch / clear-completed / rollover ───
+
+    /**
+     * POST /api/v2/planning/tasks/batch — création atomique de lot.
+     */
+    async createV2TasksBatch(items) {
+      return this.request('/v2/planning/tasks/batch', {
+        method: 'POST',
+        body: JSON.stringify({ items }),
+      });
+    },
+
+    /**
+     * POST /api/v2/planning/tasks/clear-completed — suppression tâches done.
+     */
+    async clearV2CompletedTasks(payload = {}) {
+      return this.request('/v2/planning/tasks/clear-completed', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+
+    /**
+     * POST /api/v2/planning/tasks/rollover — rollover tâches non-terminées.
+     */
+    async rolloverV2Tasks(payload) {
+      return this.request('/v2/planning/tasks/rollover', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
   });
 }

@@ -5,6 +5,37 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.7.0] — 2026-07-09
+
+### Added — Planning v2 events + affaires (lecture) — T-P0-05 étendu
+
+- **`GET /api/v2/planning/events`** : lecture cursor-based des événements
+  d'affichage dynamique (`dynamic_display_events`). Filtres serveur :
+  `type`, `category`, `status`, `affaire_id`, `visible`, `date_from`,
+  `date_to`. Ordre `date DESC, id DESC`. Limite défaut 100, max 200.
+  Service `listEvents({ db, filters, cursor, limit })`. Exclut les
+  événements sans date (cohérent avec le contrat cursor-based tasks).
+- **`GET /api/v2/planning/affaires`** : liste offset-based des affaires
+  côté planning avec statut cycle (`planning_affaire_status.status`) et
+  indicateur de visibilité (`is_hidden`). Filtres : `date_from`,
+  `date_to` (chevauchement), `include_hidden`. Limite défaut 200,
+  max 1000. Service `listPlanningAffaires({ db, dateFrom, dateTo, includeHidden, limit, offset })`.
+  Ne calcule pas les compteurs consolidés (réservations, personnel,
+  matériel, BL, commandes) — à venir dans un ticket ultérieur.
+- Constantes exportées : `EVENTS_LIMIT_DEFAULT`, `EVENTS_LIMIT_MAX`,
+  `PLANNING_AFFAIRES_LIMIT_DEFAULT`, `PLANNING_AFFAIRES_LIMIT_MAX`.
+
+### Coexistence
+
+Mêmes règles qu'en T-P0-03 : `FEATURE_V2_PLANNING` off = 404. Tables v1
+partagées (aucune duplication).
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05
+(étendu).
+
+---
+
 ## [1.6.0] — 2026-07-09
 
 ### Added — Planning v2 batch / clear-completed / rollover (T-P0-04 étendu)

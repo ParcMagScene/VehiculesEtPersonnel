@@ -135,18 +135,18 @@ adossées à des tables `_ref` créées par T-P0-02 pour cohérence DB ↔ code.
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/api/v2/planning/events` | Liste |
-| POST | `/api/v2/planning/events` | Création |
-| PUT | `/api/v2/planning/events/:id` | Mise à jour |
-| DELETE | `/api/v2/planning/events/:id` | Suppression |
+| GET | `/api/v2/planning/events` | ✅ **Implémenté (T-P0-05 étendu)**. Liste cursor-based, filtres serveur. |
+| POST | `/api/v2/planning/events` | Création (à venir) |
+| PUT | `/api/v2/planning/events/:id` | Mise à jour (à venir) |
+| DELETE | `/api/v2/planning/events/:id` | Suppression (à venir) |
 
 ### Affaires (planning)
 
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| GET | `/api/v2/planning/affaires` | Liste affaires + compteurs consolidés |
-| PATCH | `/api/v2/planning/affaires/:num/cycle-status` | Progression du cycle statut |
-| PATCH | `/api/v2/planning/affaires/:num/visibility` | Toggle visibilité planning |
+| GET | `/api/v2/planning/affaires` | ✅ **Implémenté (T-P0-05 étendu)**. Liste offset-based + statut cycle + `is_hidden`. |
+| PATCH | `/api/v2/planning/affaires/:num/cycle-status` | Progression du cycle statut (à venir) |
+| PATCH | `/api/v2/planning/affaires/:num/visibility` | Toggle visibilité planning (à venir) |
 
 ### Imports (BL / BP)
 

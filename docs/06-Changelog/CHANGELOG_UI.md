@@ -5,6 +5,28 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.5.2] — 2026-07-09
+
+### Added — Planning v2 client web (events + affaires) — T-P0-05 étendu
+
+- **`apps/web/src/utils/api/v2/planning.js`** : ajout des méthodes
+  `listV2Events`, `listV2PlanningAffaires`, `createV2TasksBatch`,
+  `clearV2CompletedTasks`, `rolloverV2Tasks` sur `ApiClient.prototype`.
+- **`apps/web/src/hooks/v2/usePlanningEventsV2.js`** : hook cursor-based
+  miroir de `usePlanningTasksV2` (loadMore, refresh, hasMore,
+  featureDisabled).
+- **`apps/web/src/hooks/v2/usePlanningAffairesV2.js`** : hook
+  offset-based (`total`, `hasMore`, incrément offset). Support
+  `includeHidden`.
+- Aucun composant UI livré à ce stade — dialogs et panels events
+  seront traités par un ticket ultérieur.
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05
+(étendu).
+
+---
+
 ## [2.5.1] — 2026-07-09
 
 ### Added — Planning v2 UI mutations — T-P0-05b

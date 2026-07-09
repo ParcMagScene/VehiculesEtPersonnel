@@ -27,6 +27,8 @@ import {
   rolloverTasksSchema,
   updateTaskSchema,
 } from '../schemas/planningV2.js';
+import { listPlanningAffaires } from '../services/planning/affaires.js';
+import { listEvents } from '../services/planning/events.js';
 import {
   clearCompletedTasks,
   createTask,
@@ -340,6 +342,100 @@ export function setupPlanningV2Routes(app, authenticateToken) {
       }
       logger.error('POST /api/v2/planning/tasks/rollover error:', error);
       return sendV2Error(res, 'Erreur serveur interne', { status: 500, code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // ─── GET /api/v2/planning/events ───
+  // Lecture cursor-based des événements d'affichage dynamique
+  // (dynamic_display_events). Filtres serveur type/category/status/
+  // affaire_id/visible/date_from/date_to.
+  app.get('/api/v2/planning/events', flagGuard, authenticateToken, (req, res) => {
+    const cursorParam =
+      typeof req.query.cursor === 'string' && req.query.cursor.length > 0 ? req.query.cursor : null;
+    let result;
+    try {
+      result = listEvents({
+        db,
+        filters: {
+          type: req.query.type,
+          category: req.query.category,
+          status: req.query.status,
+          affaire_id: req.query.affaire_id,
+          visible: req.query.visible,
+          date_from: req.query.date_from,
+          date_to: req.query.date_to,
+        },
+        cursor: cursorParam,
+        limit: req.query.limit,
+      });
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('GET /api/v2/planning/events error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', {
+        status: 500,
+        code: 'INTERNAL_ERROR',
+      });
+    }
+    return sendV2Success(res, result.items, {
+      meta: {
+        ...buildV2Pagination({
+          cursor: cursorParam,
+          nextCursor: result.next_cursor,
+          limit: result.limit,
+          hasMore: result.has_more,
+        }),
+        count: result.items.length,
+      },
+    });
+  });
+
+  // ─── GET /api/v2/planning/affaires ───
+  // Liste offset-based des affaires côté planning avec statut cycle et
+  // indicateur de visibilité. Ne calcule pas les compteurs consolidés
+  // (à venir dans un ticket dédié).
+  app.get('/api/v2/planning/affaires', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const includeHidden =
+        req.query.include_hidden !== undefined &&
+        ['1', 'true', 'yes', 'on'].includes(String(req.query.include_hidden).toLowerCase());
+      const result = listPlanningAffaires({
+        db,
+        dateFrom: req.query.date_from,
+        dateTo: req.query.date_to,
+        includeHidden,
+        limit: req.query.limit,
+        offset: req.query.offset,
+      });
+      return sendV2Success(res, result.items, {
+        meta: {
+          pagination: {
+            offset: result.offset,
+            limit: result.limit,
+            total: result.total,
+            has_more: result.offset + result.items.length < result.total,
+          },
+          count: result.items.length,
+        },
+      });
+    } catch (error) {
+      if (error instanceof PlanningV2ValidationError) {
+        return sendV2Error(res, error.message, {
+          status: 400,
+          code: error.code,
+          meta: { field: error.field },
+        });
+      }
+      logger.error('GET /api/v2/planning/affaires error:', error);
+      return sendV2Error(res, 'Erreur serveur interne', {
+        status: 500,
+        code: 'INTERNAL_ERROR',
+      });
     }
   });
 

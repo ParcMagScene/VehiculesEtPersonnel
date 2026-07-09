@@ -5,6 +5,52 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.5.1] — 2026-07-09
+
+### Added — Planning v2 UI mutations — T-P0-05b
+
+- **`apps/web/src/components/planning-v2/planningV2Constants.js`** :
+  constantes miroir côté client (`TASK_SECTIONS`, `TASK_STATUSES`, labels FR).
+- **`apps/web/src/components/planning-v2/TaskFormDialog.jsx`** : modale
+  create/edit unifiée sur Design System (`Modal`, `FormField`, `Input`,
+  `Select`, `Textarea`, `Button`). Champs : date (requise),
+  period (AM/PM), section (20 valeurs), title, notes, status,
+  affaire_num, person_id, visible. Validation locale minimale
+  (date required) — la validation Zod backend reste la source de vérité.
+  Payload nettoyé (trim, coerce int, `null` explicite pour vider un
+  champ en mode edit).
+- **`apps/web/src/components/planning-v2/TasksPanelV2.jsx`** :
+  - Bouton « Nouvelle tâche » dans le header.
+  - Colonne « Actions » avec boutons « Modifier » / « Supprimer » par
+    ligne (aria-labels détaillés).
+  - `Dialog` de confirmation destructive pour DELETE.
+  - Extraction propre des erreurs API v2 (`meta.issues[]`, `error`,
+    `message`) via `extractApiError()`.
+  - Refresh automatique après chaque mutation réussie.
+- **`apps/web/src/components/planning-v2/TasksPanelV2.css`** : styles
+  `__row-actions` et `__checkbox` (tokens DS).
+
+### Tests Vitest — 10 assertions additionnelles
+
+- `apps/web/src/test/planning-v2/TaskFormDialog.test.jsx` :
+  rendu create / edit, validation locale, payload propre, affichage
+  erreur backend.
+- `apps/web/src/test/planning-v2/TasksPanelV2.mutations.test.jsx` :
+  intégration Create → refresh, Edit → refresh, Delete → refresh,
+  gestion erreur backend.
+
+### Coexistence
+
+- Aucune intégration à `ModuleHost` / `App.jsx` (réservé T-P0-06).
+- `FEATURE_V2_PLANNING` off côté serveur ⇒ bannière info dégradation
+  gracieuse.
+- Aucune modification v1 (`planningRoutes.js`, `TaskPlanningPanel.jsx`).
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05b.
+
+---
+
 ## [2.5.0] — 2026-07-08
 
 ### Added — Planning v2 UI (lecture) — T-P0-05

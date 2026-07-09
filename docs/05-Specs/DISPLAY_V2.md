@@ -1,7 +1,7 @@
 # SPEC — Display v2 (TV-client + API versionnée)
 
-> **Version** : 0.2.0 (T-P0-14 discovery + T-P0-15 DisplayService interne)
-> **Statut** : `Coexistence — namespace v2 gate par FEATURE_V2_DISPLAY`
+> **Version** : 0.3.0 (T-P0-14 discovery + T-P0-15 services + T-P0-16 TV-client v2 & SSE)
+> **Statut** : `Coexistence — namespace v2 gate par FEATURE_V2_DISPLAY, TV-client v2 opt-in via /tv-client/v2/`
 > **Ticket source** : [`EXECUTION_PLAN_EMAG_3_0.md`](../../EXECUTION_PLAN_EMAG_3_0.md) — T-P0-14 → T-P0-16.
 
 ---
@@ -43,7 +43,8 @@ stricte avec v1. Endpoints livrés :
 | `GET /api/v2/display/protocol` | non | **Discovery** : version protocole + capabilities | **T-P0-14** |
 | `GET /api/v2/display/config?screen_id=<id>` | oui | Config par écran (screen + playlist + appearance) | **T-P0-15** ✅ |
 | `GET /api/v2/display/content?playlist_id=<id>` | oui | Contenu playlist ordonné (items + `item_name` résolu) | **T-P0-15** ✅ |
-| `GET /api/v2/display/signals?screen_id=<id>` | oui | Signaux temps réel (messages actifs + welcome + heartbeat) | **T-P0-15** ✅ (SSE en T-P0-16) |
+| `GET /api/v2/display/signals?screen_id=<id>` | oui | Signaux temps réel (snapshot ponctuel) | **T-P0-15** ✅ |
+| `GET /api/v2/display/signals/stream?screen_id=<id>` | oui | **SSE** — snapshot initial + ping 15s + snapshot 10s | **T-P0-16** ✅ |
 
 ### 2.2 Discovery endpoint
 
@@ -155,13 +156,38 @@ Aucune modification du code v1 ni de la TV-client existante.
 
 ---
 
-## 5. Ce que T-P0-16 fera (suivant)
+## 5. Ce que T-P0-16 a livré
 
-- **TV-client v2** : client nouveau qui parse `protocol_version` et
-  dégrade gracieusement selon `capabilities`.
-- **SSE `/api/v2/display/signals`** : au lieu du polling, event stream
-  serveur→client (heartbeat + messages push).
-- Sunset TV-client v1 conditionné à `P0-DECISION-2`.
+- **SSE endpoint** `GET /api/v2/display/signals/stream?screen_id=<id>` :
+  snapshot initial immédiat + heartbeat `event: ping` toutes les 15 s
+  + snapshot périodique `event: snapshot` toutes les 10 s. Cleanup
+  automatique des timers à `req.on('close')`. Validation
+  `screen_id` **avant** ouverture du flux (400 VALIDATION_ERROR si
+  invalide). Nouvelle capability `screen-signals-stream-v1`.
+- **TV-client v2** dans `apps/tv-client/v2/` (nouveau) :
+  - `index.html` — HTML minimaliste, styles inline autonomes, aucun
+    import de `styles.css` v1.
+  - `main.js` — vanilla JS sans dépendance :
+    - Discovery `GET /protocol` au boot.
+    - Bootstrap `GET /config?screen_id=<id>`.
+    - Chargement `GET /content?playlist_id=<id>` si playlist affectée.
+    - `EventSource` sur `/signals/stream` si capability
+      `screen-signals-stream-v1`, sinon fallback polling `/signals`
+      toutes les 10 s si `screen-signals-v1` disponible.
+    - Auto-reconnexion SSE après 3 s en cas d'erreur.
+    - Application des couleurs `appearance.*` via CSS custom properties.
+  - Accès : `/tv-client/v2/index.html?screen_id=<id>&token=<tv-token>`.
+  - Rétro-compat TV-token : lu depuis URL ou `localStorage['tv-token']`.
+- Le TV-client v1 (`/tv-client/index.html`, 735 lignes vanilla JS)
+  reste actif et inchangé.
+
+## 6. Sunset TV-client v1 (à venir)
+
+- Conditionné à `P0-DECISION-2`.
+- Migration progressive : rediriger `/tv` vers `/tv-client/v2/index.html`
+  après dogfooding suffisant en dev.
+- Retrait de `apps/tv-client/main.js` v1 (735 lignes) et `styles.css`
+  v1 (665 lignes) une fois v2 stable en prod.
 
 ---
 

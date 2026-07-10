@@ -35,6 +35,11 @@ import {
   DISPLAY_V2_CAPABILITIES,
   DISPLAY_V2_FLAG,
 } from './displayRoutes.js';
+import {
+  EQUIPMENT_UID_PROTOCOL_VERSION,
+  EQUIPMENT_UID_V2_CAPABILITIES,
+  EQUIPMENT_UID_V2_FLAG,
+} from './equipmentUidRoutes.js';
 import { LEAVES_PROTOCOL_VERSION, LEAVES_V2_CAPABILITIES, LEAVES_V2_FLAG } from './leavesRoutes.js';
 import {
   LOCATIONS_PROTOCOL_VERSION,
@@ -91,6 +96,14 @@ export const V2_NAMESPACES = Object.freeze([
     capabilities: DISPLAY_V2_CAPABILITIES,
     flag: DISPLAY_V2_FLAG,
     docs: '/docs/api/v2/display.md',
+  }),
+  Object.freeze({
+    name: 'equipment-uid',
+    base_path: '/api/v2/equipment-uid',
+    protocol_version: EQUIPMENT_UID_PROTOCOL_VERSION,
+    capabilities: EQUIPMENT_UID_V2_CAPABILITIES,
+    flag: EQUIPMENT_UID_V2_FLAG,
+    docs: '/docs/api/v2/equipment-uid.md',
   }),
   Object.freeze({
     name: 'leaves',

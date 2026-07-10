@@ -43,6 +43,7 @@ const V2_FLAGS = [
   'FEATURE_V2_AFFAIRES',
   'FEATURE_V2_LEAVES',
   'FEATURE_V2_CONFLICTS',
+  'FEATURE_V2_EQUIPMENT_UID',
 ];
 const flagBackup = {};
 
@@ -68,12 +69,13 @@ describe('v2/metaRoutes — V2_NAMESPACES registre (T-P1-01)', () => {
     }
   });
 
-  it('contient exactement les 6 namespaces (affaires/conflicts/display/leaves/locations/planning)', () => {
+  it('contient exactement les 7 namespaces (affaires/conflicts/display/equipment-uid/leaves/locations/planning)', () => {
     const names = V2_NAMESPACES.map((n) => n.name);
     assert.deepEqual(names, [
       'affaires',
       'conflicts',
       'display',
+      'equipment-uid',
       'leaves',
       'locations',
       'planning',
@@ -83,7 +85,7 @@ describe('v2/metaRoutes — V2_NAMESPACES registre (T-P1-01)', () => {
   it('chaque namespace expose les champs requis', () => {
     for (const ns of V2_NAMESPACES) {
       assert.match(ns.protocol_version, /^\d+\.\d+\.\d+$/, `${ns.name} semver`);
-      assert.match(ns.flag, /^FEATURE_V2_[A-Z]+$/, `${ns.name} flag`);
+      assert.match(ns.flag, /^FEATURE_V2_[A-Z][A-Z_]*$/, `${ns.name} flag`);
       assert.ok(ns.base_path.startsWith('/api/v2/'), `${ns.name} base_path`);
       assert.ok(ns.docs.startsWith('/docs/api/v2/'), `${ns.name} docs`);
       assert.ok(Array.isArray(ns.capabilities), `${ns.name} capabilities`);
@@ -115,12 +117,12 @@ describe('v2/metaRoutes — buildMetaPayload', () => {
     assert.equal(payload.meta_protocol_version, META_PROTOCOL_VERSION);
     assert.equal(typeof payload.response_protocol_version, 'number');
     assert.equal(payload.generated_at, '2026-07-10T00:00:00Z');
-    assert.equal(payload.total_namespaces, 6);
+    assert.equal(payload.total_namespaces, 7);
     assert.equal(payload.enabled_count, 0);
     for (const ns of payload.namespaces) assert.equal(ns.enabled, false);
   });
 
-  it('all flags on -> enabled_count=6', () => {
+  it('all flags on -> enabled_count=7', () => {
     const env = {
       FEATURE_V2_PLANNING: '1',
       FEATURE_V2_DISPLAY: '1',
@@ -128,9 +130,10 @@ describe('v2/metaRoutes — buildMetaPayload', () => {
       FEATURE_V2_AFFAIRES: '1',
       FEATURE_V2_LEAVES: '1',
       FEATURE_V2_CONFLICTS: '1',
+      FEATURE_V2_EQUIPMENT_UID: '1',
     };
     const payload = buildMetaPayload(env);
-    assert.equal(payload.enabled_count, 6);
+    assert.equal(payload.enabled_count, 7);
     for (const ns of payload.namespaces) assert.equal(ns.enabled, true);
   });
 
@@ -166,7 +169,7 @@ describe('v2/metaRoutes — GET /api/v2/meta', () => {
     assert.equal(res.status, 200);
     assert.equal(res.body.success, true);
     assert.equal(res.body.data.meta_protocol_version, META_PROTOCOL_VERSION);
-    assert.equal(res.body.data.total_namespaces, 6);
+    assert.equal(res.body.data.total_namespaces, 7);
     assert.equal(res.body.data.enabled_count, 0);
     assert.ok(Array.isArray(res.body.data.namespaces));
     const names = res.body.data.namespaces.map((n) => n.name);
@@ -174,6 +177,7 @@ describe('v2/metaRoutes — GET /api/v2/meta', () => {
       'affaires',
       'conflicts',
       'display',
+      'equipment-uid',
       'leaves',
       'locations',
       'planning',

@@ -5,6 +5,54 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.18.0] — 2026-07-10
+
+### Added — Équipements v2 : UID/serials contrôlés (T-P1-06)
+
+- **`GET /api/v2/equipment-uid/protocol`** : discovery public.
+- **`GET /api/v2/equipment-uid/audit`** : audit read-only admin.
+  Retourne compteurs (total, avec/sans UID, avec serial) +
+  détection doublons `serial_number` et `uid` (`{serial_number,
+  count, ids[]}`) + verdict prêt-à-sunset UNIQUE.
+- **`POST /api/v2/equipment/:id/regenerate-uid`** : régénération
+  admin. Utilise `getNextUid` (anti-collision robuste, incrément
+  atomique `uid_counter`). Body optionnel : `reason`. Audit trace
+  inline dans `equipment.notes` (approche minimalement invasive).
+  Response : `{equipment_id, previous_uid, new_uid, regenerated_by,
+  regenerated_at}`.
+
+Gate par `FEATURE_V2_EQUIPMENT_UID` (off par défaut). Coexistence
+stricte avec `/api/equipment*` v1. **Aucun renforcement UNIQUE**
+appliqué (reporté T-P1-06b après audit à 0 doublon).
+
+### Changed — `GET /api/v2/meta` : ajout du namespace `equipment-uid`
+
+Le registre `V2_NAMESPACES` compte désormais **7 namespaces** :
+`affaires`, `conflicts`, `display`, **`equipment-uid`**, `leaves`,
+`locations`, `planning`. Le pattern de flag accepte désormais
+l'underscore (`FEATURE_V2_EQUIPMENT_UID`).
+
+### Reference
+
+- `apps/api/services/equipment-uid/regenerate.js` (nouveau) :
+  `regenerateEquipmentUid` (utilise `services/uidCounter.js`
+  existant).
+- `apps/api/services/equipment-uid/audit.js` (nouveau) :
+  `auditUidState` (doublons + sans UID).
+- `apps/api/services/equipment-uid/errors.js` (nouveau).
+- `apps/api/v2/equipmentUidRoutes.js` (nouveau) : namespace + gate.
+- `docs/api/v2/equipment-uid.md` (nouveau) : référence complète.
+
+### Non couvert (T-P1-06b futur)
+
+- Renforcement contrainte UNIQUE sur `serial_number` (migration
+  destructive, nécessite audit prod à 0 doublon).
+- Table `uid_regeneration_history` dédiée (inline dans notes suffit
+  pour le v1).
+- Régénération batch.
+
+---
+
 ## [1.17.0] — 2026-07-10
 
 ### Added — Personnel v2 : conflicts detector (T-P1-05)

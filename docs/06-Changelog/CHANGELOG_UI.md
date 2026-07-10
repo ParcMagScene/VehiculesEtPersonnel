@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.14.0] — 2026-07-10
+
+### Added — Equipment UID v2 client API (T-P1-06)
+
+- **`apps/web/src/utils/api/v2/equipmentUid.js`** (nouveau) : 3
+  méthodes `v2EquipmentUidProtocol`, `v2EquipmentUidAudit`,
+  `v2RegenerateEquipmentUid(equipmentId, {reason?})`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement client
+  Equipment UID sur le singleton (après Conflicts).
+
+---
+
 ## [2.13.0] — 2026-07-10
 
 ### Added — Conflicts v2 client API (T-P1-05)

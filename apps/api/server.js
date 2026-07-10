@@ -133,6 +133,7 @@ import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupAffairesV2Routes } from './v2/affairesRoutes.js';
 import { setupConflictsV2Routes } from './v2/conflictsRoutes.js';
 import { setupDisplayV2Routes } from './v2/displayRoutes.js';
+import { setupEquipmentUidV2Routes } from './v2/equipmentUidRoutes.js';
 import { setupLeavesV2Routes } from './v2/leavesRoutes.js';
 import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
 import { setupV2MetaRoutes } from './v2/metaRoutes.js';
@@ -507,6 +508,11 @@ setupLeavesV2Routes(app, authenticateToken, requireAdmin);
 // (404 si off). Aucune ecriture, aucun bloquage sur les mutations
 // v1 (availabilities, mission_assignments, task_assignments).
 setupConflictsV2Routes(app, authenticateToken);
+
+// [Equipment UID v2 — T-P1-06] Namespace API v2 (audit + regenerate
+// UID). Protégé par FEATURE_V2_EQUIPMENT_UID (404 si off).
+// Coexistence stricte avec /api/equipment* v1.
+setupEquipmentUidV2Routes(app, authenticateToken, requireAdmin);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

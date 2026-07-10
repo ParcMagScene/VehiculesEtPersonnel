@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.20.0] — 2026-07-10
+
+### Added — Equipment UID v2 : `docs/api/v2/equipment-uid.md` (T-P1-06)
+
+- **`docs/api/v2/equipment-uid.md`** (nouveau) : référence complète
+  du namespace `/api/v2/equipment-uid/*` (audit + regenerate).
+- **`docs/api/v2/README.md`** : ajout ligne **Equipment UID** 🟢.
+- **`apps/api/.env.example`** : documente
+  `FEATURE_V2_EQUIPMENT_UID`.
+
+---
+
 ## [1.19.0] — 2026-07-10
 
 ### Added — Conflicts v2 : `docs/api/v2/conflicts.md` (T-P1-05)

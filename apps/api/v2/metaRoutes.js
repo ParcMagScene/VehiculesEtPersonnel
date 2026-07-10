@@ -26,6 +26,11 @@ import {
   AFFAIRES_V2_FLAG,
 } from './affairesRoutes.js';
 import {
+  CONFLICTS_PROTOCOL_VERSION,
+  CONFLICTS_V2_CAPABILITIES,
+  CONFLICTS_V2_FLAG,
+} from './conflictsRoutes.js';
+import {
   DISPLAY_PROTOCOL_VERSION,
   DISPLAY_V2_CAPABILITIES,
   DISPLAY_V2_FLAG,
@@ -70,6 +75,14 @@ export const V2_NAMESPACES = Object.freeze([
     capabilities: AFFAIRES_V2_CAPABILITIES,
     flag: AFFAIRES_V2_FLAG,
     docs: '/docs/api/v2/affaires.md',
+  }),
+  Object.freeze({
+    name: 'conflicts',
+    base_path: '/api/v2/conflicts',
+    protocol_version: CONFLICTS_PROTOCOL_VERSION,
+    capabilities: CONFLICTS_V2_CAPABILITIES,
+    flag: CONFLICTS_V2_FLAG,
+    docs: '/docs/api/v2/conflicts.md',
   }),
   Object.freeze({
     name: 'display',

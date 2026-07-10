@@ -20,6 +20,7 @@
 | Locations | 🟢 T-P0-12 — discovery + `/depots` + `/depots/:id` + `PATCH /equipment/:id/location` | [locations.md](locations.md) |
 | Affaires | 🟢 T-P0-09 — discovery + `GET /affaires` (cursor) + `GET /affaires/:num` + `/history` + `PATCH` audité | [affaires.md](affaires.md) |
 | Leaves | 🟢 T-P1-04 — discovery + `POST /calculate` (miroir v1) + `GET /balance/mine` + `GET /balance/:person_id` (admin) | [leaves.md](leaves.md) |
+| Conflicts | 🟢 T-P1-05 — discovery + `POST /check` (détection agenda `availabilities` + `missions` + `task_assignments`) | [conflicts.md](conflicts.md) |
 
 ---
 

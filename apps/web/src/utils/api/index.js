@@ -22,6 +22,7 @@ import { registerStockMethods } from './stock.js';
 import { registerSuiviMethods } from './suivi.js';
 import { registerPlanningV2Methods } from './v2/planning.js';
 import { registerV2AffairesMethods } from './v2/affaires.js';
+import { registerV2ConflictsMethods } from './v2/conflicts.js';
 import { registerV2LeavesMethods } from './v2/leaves.js';
 import { registerV2LocationsMethods } from './v2/locations.js';
 import { registerV2MetaMethods } from './v2/meta.js';
@@ -58,6 +59,7 @@ registerPlanningV2Methods(ApiClient);
 registerV2LocationsMethods(ApiClient);
 registerV2AffairesMethods(ApiClient);
 registerV2LeavesMethods(ApiClient);
+registerV2ConflictsMethods(ApiClient);
 registerV2MetaMethods(ApiClient);
 
 // Singleton

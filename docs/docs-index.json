@@ -35,7 +35,8 @@
         "docs/api/v2/display.md",
         "docs/api/v2/locations.md",
         "docs/api/v2/affaires.md",
-        "docs/api/v2/leaves.md"
+        "docs/api/v2/leaves.md",
+        "docs/api/v2/conflicts.md"
       ]
     },
     "architecture": {
@@ -67,7 +68,7 @@
       ]
     }
   },
-  "totalFiles": 140,
+  "totalFiles": 141,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

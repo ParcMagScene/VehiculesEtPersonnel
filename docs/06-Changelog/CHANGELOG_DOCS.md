@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.19.0] — 2026-07-10
+
+### Added — Conflicts v2 : `docs/api/v2/conflicts.md` (T-P1-05)
+
+- **`docs/api/v2/conflicts.md`** (nouveau) : référence complète du
+  namespace `/api/v2/conflicts/*` (2 endpoints + sources scannées +
+  exclude self-check + exemples).
+- **`docs/api/v2/README.md`** : ajout ligne **Conflicts** 🟢.
+- **`apps/api/.env.example`** : documente `FEATURE_V2_CONFLICTS`.
+
+---
+
 ## [1.18.0] — 2026-07-10
 
 ### Added — Leaves v2 : `docs/api/v2/leaves.md` (T-P1-04)

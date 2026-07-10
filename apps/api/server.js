@@ -131,6 +131,7 @@ import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupAffairesV2Routes } from './v2/affairesRoutes.js';
+import { setupConflictsV2Routes } from './v2/conflictsRoutes.js';
 import { setupDisplayV2Routes } from './v2/displayRoutes.js';
 import { setupLeavesV2Routes } from './v2/leavesRoutes.js';
 import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
@@ -500,6 +501,12 @@ setupV2MetaRoutes(app);
 // balance admin). Protégé par FEATURE_V2_LEAVES (404 si off).
 // Coexistence stricte avec /api/leaves v1.
 setupLeavesV2Routes(app, authenticateToken, requireAdmin);
+
+// [Conflicts v2 — T-P1-05] Namespace API v2 (check des conflits
+// agenda pour une personne). Protégé par FEATURE_V2_CONFLICTS
+// (404 si off). Aucune ecriture, aucun bloquage sur les mutations
+// v1 (availabilities, mission_assignments, task_assignments).
+setupConflictsV2Routes(app, authenticateToken);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

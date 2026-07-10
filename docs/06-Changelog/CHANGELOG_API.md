@@ -5,6 +5,52 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.17.0] — 2026-07-10
+
+### Added — Personnel v2 : conflicts detector (T-P1-05)
+
+- **`GET /api/v2/conflicts/protocol`** : discovery public.
+- **`POST /api/v2/conflicts/check`** : détection de conflits agenda
+  pour une personne sur une période. Sources scannées :
+  - `availabilities` avec `status='approved'`,
+  - `missions` + `mission_assignments` avec `status IN
+    ('proposed', 'confirmed', 'accepted')`,
+  - `task_assignments` avec `status != 'cancelled'`.
+- Support `exclude` (self-check lors d'un update, types :
+  `availability`, `mission`, `task_assignment`).
+- Réponse typée : `{conflicts: [], has_conflict, count}` avec
+  `source`/`entity_type`/`entity_id`/`start_date`/`end_date`/`period`
+  /`description`/`meta` par entrée.
+
+Gate par `FEATURE_V2_CONFLICTS` (off par défaut). **Aucune écriture,
+aucun bloquage** sur les endpoints v1 (POST availabilities /
+mission_assignments / task_assignments continuent d'accepter les
+entrées même en cas de conflit). Le v2 est un pré-check optionnel
+pour l'UI.
+
+### Changed — `GET /api/v2/meta` : ajout du namespace `conflicts`
+
+Le registre `V2_NAMESPACES` compte désormais **6 namespaces** :
+`affaires`, **`conflicts`**, `display`, `leaves`, `locations`,
+`planning` (ordre alphabétique). `total_namespaces=6`.
+
+### Reference
+
+- `apps/api/services/conflicts/detector.js` (nouveau) :
+  `detectPersonConflicts`.
+- `apps/api/services/conflicts/errors.js` (nouveau) :
+  `ConflictsV2ValidationError`.
+- `apps/api/v2/conflictsRoutes.js` (nouveau) : namespace + gate.
+- `docs/api/v2/conflicts.md` (nouveau) : référence complète.
+
+### Non couvert
+
+- Blocage serveur des mutations v1 en cas de conflit (le v2 est
+  strictement lecture, pas d'interception).
+- Notification temps réel via WebSocket : hors scope.
+
+---
+
 ## [1.16.0] — 2026-07-10
 
 ### Added — Personnel v2 : leaves API namespace (T-P1-04)

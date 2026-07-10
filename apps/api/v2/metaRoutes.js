@@ -51,6 +51,7 @@ import {
   LOCATIONS_V2_CAPABILITIES,
   LOCATIONS_V2_FLAG,
 } from './locationsRoutes.js';
+import { ORDERS_PROTOCOL_VERSION, ORDERS_V2_CAPABILITIES, ORDERS_V2_FLAG } from './ordersRoutes.js';
 import {
   PLANNING_PROTOCOL_VERSION,
   PLANNING_V2_CAPABILITIES,
@@ -134,6 +135,14 @@ export const V2_NAMESPACES = Object.freeze([
     capabilities: LOCATIONS_V2_CAPABILITIES,
     flag: LOCATIONS_V2_FLAG,
     docs: '/docs/api/v2/locations.md',
+  }),
+  Object.freeze({
+    name: 'orders',
+    base_path: '/api/v2/orders',
+    protocol_version: ORDERS_PROTOCOL_VERSION,
+    capabilities: ORDERS_V2_CAPABILITIES,
+    flag: ORDERS_V2_FLAG,
+    docs: '/docs/api/v2/orders.md',
   }),
   Object.freeze({
     name: 'planning',

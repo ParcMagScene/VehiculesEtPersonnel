@@ -5,6 +5,55 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.21.0] — 2026-07-10
+
+### Added — Commandes v2 : cycle achat (T-P1-09)
+
+Namespace `/api/v2/orders/*` + `/api/v2/quotes/*` :
+- **`GET /api/v2/orders/protocol`** : discovery public. Retourne
+  les matrices `order_transitions` + `quote_transitions`
+  sérialisées (à consommer par les UI pour proposer les
+  transitions disponibles).
+- **`POST /api/v2/orders/:id/transition`** : validation stricte
+  via `ORDER_TRANSITIONS` (draft → sent → confirmed → partial →
+  received, avec `cancelled` accessible à toute étape). Réutilise
+  `apps/api/orders/_helpers.js` (aucune duplication).
+- **`POST /api/v2/quotes/:id/transition`** : validation stricte
+  via `QUOTE_TRANSITIONS` (draft → sent → accepted|refused, avec
+  `cancelled` recyclable en `draft`).
+- Idempotence : `from === to` retourne `changed=false` sans
+  écrire.
+
+Gate par `FEATURE_V2_ORDERS` (off par défaut). Coexistence stricte
+avec `/api/orders/*` et `/api/quotes/*` v1 (le v1 applique déjà les
+mêmes matrices mais avec un contrat de réponse hétérogène).
+
+### Changed — `GET /api/v2/meta` : ajout du namespace `orders`
+
+Le registre `V2_NAMESPACES` compte désormais **10 namespaces**
+(ordre alphabétique : affaires, conflicts, display,
+equipment-assignments, equipment-uid, leaves, locations,
+**orders**, planning, sav).
+
+### Reference
+
+- `apps/api/services/orders/stateMachine.js` (nouveau) : wrapper
+  avec `assertTransition` + typed errors.
+- `apps/api/services/orders/transitions.js` (nouveau) :
+  `transitionOrder`, `transitionQuote`.
+- `apps/api/services/orders/errors.js` (nouveau).
+- `apps/api/v2/ordersRoutes.js` (nouveau) : namespace + gate.
+- `docs/api/v2/orders.md` (nouveau).
+
+### Non couvert
+
+- CRUD complet en v2 (create/list/update/delete) : le v1 reste
+  seul propriétaire.
+- Réception partielle enrichie + conversion devis → commande :
+  reportés T-P1-10.
+
+---
+
 ## [1.20.0] — 2026-07-10
 
 ### Added — Équipements v2 : assignations auditées (T-P1-08)

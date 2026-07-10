@@ -28,6 +28,7 @@ import { registerV2EquipmentUidMethods } from './v2/equipmentUid.js';
 import { registerV2LeavesMethods } from './v2/leaves.js';
 import { registerV2LocationsMethods } from './v2/locations.js';
 import { registerV2MetaMethods } from './v2/meta.js';
+import { registerV2OrdersMethods } from './v2/orders.js';
 import { registerV2SavMethods } from './v2/sav.js';
 import { registerVehicleMethods } from './vehicles.js';
 import { registerVideoMethods } from './video.js';
@@ -66,6 +67,7 @@ registerV2ConflictsMethods(ApiClient);
 registerV2EquipmentUidMethods(ApiClient);
 registerV2SavMethods(ApiClient);
 registerV2EquipmentAssignmentsMethods(ApiClient);
+registerV2OrdersMethods(ApiClient);
 registerV2MetaMethods(ApiClient);
 
 // Singleton

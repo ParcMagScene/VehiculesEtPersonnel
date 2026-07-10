@@ -46,6 +46,7 @@ const V2_FLAGS = [
   'FEATURE_V2_EQUIPMENT_UID',
   'FEATURE_V2_SAV',
   'FEATURE_V2_EQUIPMENT_ASSIGNMENTS',
+  'FEATURE_V2_ORDERS',
 ];
 const flagBackup = {};
 
@@ -71,7 +72,7 @@ describe('v2/metaRoutes — V2_NAMESPACES registre (T-P1-01)', () => {
     }
   });
 
-  it('contient exactement les 9 namespaces (avec equipment-assignments)', () => {
+  it('contient exactement les 10 namespaces (avec orders)', () => {
     const names = V2_NAMESPACES.map((n) => n.name);
     assert.deepEqual(names, [
       'affaires',
@@ -81,6 +82,7 @@ describe('v2/metaRoutes — V2_NAMESPACES registre (T-P1-01)', () => {
       'equipment-uid',
       'leaves',
       'locations',
+      'orders',
       'planning',
       'sav',
     ]);
@@ -121,12 +123,12 @@ describe('v2/metaRoutes — buildMetaPayload', () => {
     assert.equal(payload.meta_protocol_version, META_PROTOCOL_VERSION);
     assert.equal(typeof payload.response_protocol_version, 'number');
     assert.equal(payload.generated_at, '2026-07-10T00:00:00Z');
-    assert.equal(payload.total_namespaces, 9);
+    assert.equal(payload.total_namespaces, 10);
     assert.equal(payload.enabled_count, 0);
     for (const ns of payload.namespaces) assert.equal(ns.enabled, false);
   });
 
-  it('all flags on -> enabled_count=9', () => {
+  it('all flags on -> enabled_count=10', () => {
     const env = {
       FEATURE_V2_PLANNING: '1',
       FEATURE_V2_DISPLAY: '1',
@@ -137,9 +139,10 @@ describe('v2/metaRoutes — buildMetaPayload', () => {
       FEATURE_V2_EQUIPMENT_UID: '1',
       FEATURE_V2_SAV: '1',
       FEATURE_V2_EQUIPMENT_ASSIGNMENTS: '1',
+      FEATURE_V2_ORDERS: '1',
     };
     const payload = buildMetaPayload(env);
-    assert.equal(payload.enabled_count, 9);
+    assert.equal(payload.enabled_count, 10);
     for (const ns of payload.namespaces) assert.equal(ns.enabled, true);
   });
 
@@ -175,7 +178,7 @@ describe('v2/metaRoutes — GET /api/v2/meta', () => {
     assert.equal(res.status, 200);
     assert.equal(res.body.success, true);
     assert.equal(res.body.data.meta_protocol_version, META_PROTOCOL_VERSION);
-    assert.equal(res.body.data.total_namespaces, 9);
+    assert.equal(res.body.data.total_namespaces, 10);
     assert.equal(res.body.data.enabled_count, 0);
     assert.ok(Array.isArray(res.body.data.namespaces));
     const names = res.body.data.namespaces.map((n) => n.name);
@@ -187,6 +190,7 @@ describe('v2/metaRoutes — GET /api/v2/meta', () => {
       'equipment-uid',
       'leaves',
       'locations',
+      'orders',
       'planning',
       'sav',
     ]);

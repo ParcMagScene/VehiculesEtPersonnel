@@ -5,6 +5,49 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.8.0] — 2026-07-10
+
+### Added — EquipmentPanel : bascule v1/v2 via flag client (T-P0-12b)
+
+- **`apps/web/src/utils/locations/v2Adapters.js`** (nouveau) :
+  - `adaptDepotV2ToV1(depotV2)` : convertit un dépôt v2
+    (`{depot_id, svg_width, svg_height, ...}`) vers le shape v1
+    (`{depotId, svgWidth, svgHeight, ...}`) consommé par `DepotMap`.
+  - `adaptDepotsListV2ToV1(listV2)` : conversion de la liste
+    compacte.
+- **`apps/web/src/utils/locations/fetchDepotZones.js`** (nouveau) :
+  - `fetchDepotZones(api, {useV2, depotId})` : bascule
+    v1 (`api.getEquipmentDepotZones`) / v2
+    (`api.v2GetDepot` + adaptation). Fallback strict v1 en cas
+    d'erreur ou de 404 `FEATURE_DISABLED`.
+  - `fetchAllDepotZones(api, {useV2})` : combinateur
+    `v2ListDepots` + `v2GetDepot` (n appels parallèles) ou
+    `api.getAllDepotZones` v1. Fallback strict v1 si un détail
+    manque.
+  - `readLocationsV2ClientFlag(env?)` : lit
+    `VITE_FEATURE_V2_LOCATIONS` (1/true/on/yes) → bool.
+- **`apps/web/src/components/equipment/useEquipment.js`** :
+  `loadData` remplace les deux appels v1 par les nouveaux
+  helpers, en lisant le flag client à chaque exécution
+  (rechargement immédiat après bascule sans reload de page).
+
+Coexistence stricte : off par défaut, aucun changement fonctionnel.
+Aucun refactor de `DepotMap`, `EquipmentGrid` ou `InventoryPanel`
+(inventaire = table `locations` legacy, hors périmètre T-P0-10).
+Le PATCH `/api/v2/equipment/:id/location` reste consommé côté
+frontend uniquement via la méthode `api.v2PatchEquipmentLocation`
+livrée en T-P0-12 (aucun appelant UI dans ce commit).
+
+### Tests
+
+- `apps/web/src/utils/locations/v2Adapters.test.js` : 6 tests
+  (mapping, defaults, tableaux invalides).
+- `apps/web/src/utils/locations/fetchDepotZones.test.js` : 11 tests
+  (bascule v1/v2, fallback FEATURE_DISABLED, fallback erreur
+  arbitraire, defaults, flag parsing).
+
+---
+
 ## [2.7.0] — 2026-07-10
 
 ### Added — Locations v2 client API + hooks (T-P0-12 backend & client)

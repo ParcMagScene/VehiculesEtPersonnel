@@ -5,6 +5,7 @@ import {
   Cloud,
   Download,
   Edit2,
+  Fingerprint,
   Gauge,
   GripVertical,
   Lock,
@@ -23,10 +24,12 @@ import {
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 
 import api from '../../utils/api';
+import { readEquipmentUidV2ClientFlag } from '../../utils/equipmentUid/v2Adapters.js';
 import { loadFromIndexedDB, saveToIndexedDB, STORES } from '../../utils/indexedDB';
 import { getAvailablePhotos, getPhotosSync } from '../../utils/photoList';
 import { getVehicleAvatar } from '../../utils/vehicleAvatars';
 import { getExpiredTechnicalControls, hasExpiredTechnicalControl } from '../../utils/vehicleUtils';
+import AdminEquipmentUidPanel from '../admin/AdminEquipmentUidPanel.jsx';
 import ChangePassword from '../auth/ChangePassword';
 import MobileAccess from '../auth/MobileAccess';
 import LocationsMapPanel from '../locations/LocationsMapPanel';
@@ -270,6 +273,18 @@ const ManagementPanel = ({
                   icon: MapPin,
                   color: STATUS_COLORS.success,
                 },
+                // T-P1-06c : onglet conditionne au flag VITE_FEATURE_V2_EQUIPMENT_UID.
+                // Invisible en prod par defaut ; visible en dogfooding dev.
+                ...(readEquipmentUidV2ClientFlag()
+                  ? [
+                      {
+                        id: 'diagnostics-uid',
+                        label: 'Diagnostics UID',
+                        icon: Fingerprint,
+                        color: ACCENT_COLORS.orange,
+                      },
+                    ]
+                  : []),
               ]
             : []),
         ]
@@ -1368,6 +1383,9 @@ const ManagementPanel = ({
               )}
             </div>
           )}
+
+          {/* T-P1-06c : Diagnostics UID equipement (v2, dogfooding) */}
+          {activeTab === 'diagnostics-uid' && currentUser?.isAdmin && <AdminEquipmentUidPanel />}
 
           {/* Reporting Location (Admin uniquement) */}
           {activeTab === 'rental-reports' && currentUser?.isAdmin && <RentalReportingPanel />}

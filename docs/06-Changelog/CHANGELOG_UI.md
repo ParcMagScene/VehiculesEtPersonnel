@@ -5,6 +5,26 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.26.0] — 2026-07-10
+
+### Added — Equipment UID v2 panel admin (T-P1-06c)
+
+- **`apps/web/src/components/admin/AdminEquipmentUidPanel.jsx`** :
+  premier composant consommateur des fondations T-P1-06b. UI
+  admin avec verdict, 4 KPI, tableau doublons `serial_number` +
+  tableau doublons `uid` avec bouton **Régénérer UID** (prompt
+  raison pour audit trail). Toast inline + refresh auto. Signal
+  "Namespace v2 désactivé" si flag off / FEATURE_DISABLED.
+- **`apps/web/src/components/management/ManagementPanel.jsx`** :
+  onglet **Diagnostics UID** ajouté **conditionnel au flag**
+  `VITE_FEATURE_V2_EQUIPMENT_UID`. Invisible en prod par défaut,
+  visible en dogfooding dev. Aucun impact sur les autres onglets.
+- **7 tests unitaires** (`AdminEquipmentUidPanel.test.jsx` :
+  loading, verdict OK, doublons, regenerate + confirm,
+  FEATURE_DISABLED, erreur réseau, bouton refresh).
+
+---
+
 ## [2.25.0] — 2026-07-10
 
 ### Added — Orders v2 fondations UI (T-P1-09b / T-P1-10b)

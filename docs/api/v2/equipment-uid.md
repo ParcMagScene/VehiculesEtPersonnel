@@ -145,3 +145,36 @@ Tests de non-régression :
 - `apps/web/src/utils/equipmentUid/v2Adapters.test.js` (10 cas).
 - `apps/web/src/utils/equipmentUid/fetchEquipmentUidAudit.test.js`
   (11 cas).
+
+---
+
+## Dogfooding UI — Panel admin (T-P1-06c — 2026-07-10)
+
+Premier composant consommateur des fondations T-P1-06b livré :
+onglet **Diagnostics UID** dans le panel Administration.
+
+- `apps/web/src/components/admin/AdminEquipmentUidPanel.jsx` :
+  panel React admin consommant `fetchEquipmentUidAuditUnified` +
+  `regenerateEquipmentUidUnified`. UI :
+  - Bandeau **verdict** (OK vert / issues rouge) + 4 KPI (total,
+    avec UID, sans UID, avec serial).
+  - Tableau des doublons `serial_number` (IDs affectés).
+  - Tableau des doublons `uid` avec bouton **Régénérer UID**
+    par équipement (prompt "raison" pour audit trail dans
+    `equipment.notes`).
+  - Toast succès/erreur inline + refresh auto après regenerate.
+  - Signal "Namespace v2 désactivé" si `readEquipmentUidV2ClientFlag()`
+    off ou serveur `FEATURE_DISABLED`.
+- `apps/web/src/components/admin/AdminEquipmentUidPanel.test.jsx` :
+  7 cas (état vide, verdict OK, doublons affichés, click regenerate
+  avec confirm, gestion FEATURE_DISABLED, erreur réseau, refresh
+  bouton).
+- `apps/web/src/components/management/ManagementPanel.jsx` : ajout
+  **conditionnel au flag** d'un onglet `diagnostics-uid` dans le
+  bloc admin. Invisible en prod par défaut, visible dès
+  `VITE_FEATURE_V2_EQUIPMENT_UID=1`. Aucun impact sur les autres
+  onglets.
+
+Périmètre strict : aucune modification des routes v1, aucun
+changement du schéma DB (le renforcement `UNIQUE` reste distinct,
+report ouvert dans T-P1-06b DB).

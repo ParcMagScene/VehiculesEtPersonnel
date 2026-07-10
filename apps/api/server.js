@@ -133,6 +133,7 @@ import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupAffairesV2Routes } from './v2/affairesRoutes.js';
 import { setupDisplayV2Routes } from './v2/displayRoutes.js';
 import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
+import { setupV2MetaRoutes } from './v2/metaRoutes.js';
 import { setupPlanningV2Routes } from './v2/planningRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
@@ -487,6 +488,11 @@ setupLocationsV2Routes(app, authenticateToken, requireAdmin);
 // + PATCH audite via affaire_history). Protégé par FEATURE_V2_AFFAIRES
 // (404 si off). Coexistence stricte avec /api/affaires v1.
 setupAffairesV2Routes(app, authenticateToken);
+
+// [API v2 core — T-P1-01] Discovery global GET /api/v2/meta. Public
+// (pas d'auth). Agrege les protocoles des 4 namespaces v2 avec l'etat
+// reel de chaque feature flag serveur.
+setupV2MetaRoutes(app);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

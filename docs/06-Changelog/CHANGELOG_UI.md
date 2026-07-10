@@ -5,6 +5,23 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.10.0] — 2026-07-10
+
+### Added — API v2 core : client `v2Meta()` (T-P1-01)
+
+- **`apps/web/src/utils/api/v2/meta.js`** (nouveau) :
+  `registerV2MetaMethods(ApiClient)` avec la méthode `v2Meta()`
+  (GET `/api/v2/meta` — public, `skipCamelCase: true`).
+- **`apps/web/src/utils/api/index.js`** : enregistrement de la
+  méthode meta sur le singleton (après Affaires v2).
+
+Aucun composant UI n'utilise encore `v2Meta()` — la méthode est mise
+à disposition pour un pilotage centralisé des flags client
+`flags.v2<Domaine>` en fonction de l'état réel du flag serveur (à
+implémenter dans un ticket UI dédié).
+
+---
+
 ## [2.9.0] — 2026-07-10
 
 ### Added — Affaires v2 client API (T-P0-09)

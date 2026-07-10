@@ -23,6 +23,7 @@ import { registerSuiviMethods } from './suivi.js';
 import { registerPlanningV2Methods } from './v2/planning.js';
 import { registerV2AffairesMethods } from './v2/affaires.js';
 import { registerV2LocationsMethods } from './v2/locations.js';
+import { registerV2MetaMethods } from './v2/meta.js';
 import { registerVehicleMethods } from './vehicles.js';
 import { registerVideoMethods } from './video.js';
 
@@ -55,6 +56,7 @@ registerPersonalActionsMethods(ApiClient);
 registerPlanningV2Methods(ApiClient);
 registerV2LocationsMethods(ApiClient);
 registerV2AffairesMethods(ApiClient);
+registerV2MetaMethods(ApiClient);
 
 // Singleton
 export const api = new ApiClient();

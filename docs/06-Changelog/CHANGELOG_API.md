@@ -5,6 +5,49 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.14.0] — 2026-07-10
+
+### Added — API v2 core : discovery global `/api/v2/meta` (T-P1-01)
+
+- **`GET /api/v2/meta`** : discovery **publique** (pas d'auth, pas
+  de feature flag). Agrège les 4 namespaces v2 (`affaires`,
+  `display`, `locations`, `planning`) avec pour chacun :
+  `protocol_version`, `capabilities`, `flag`, `enabled` (état réel
+  du flag serveur), `docs`, `base_path`.
+- Champs de discovery globale : `meta_protocol_version` (SemVer du
+  format meta lui-même, `1.0.0`), `response_protocol_version` (int
+  du wrapper `API_V2_PROTOCOL_VERSION`), `generated_at` (ISO),
+  `total_namespaces`, `enabled_count`.
+- Utile pour éviter les N appels `/api/v2/<domaine>/protocol` (qui
+  sont chacun gate par leur flag) : `/meta` donne un snapshot
+  complet en un seul aller-retour.
+
+### Changed — Planning v2 : constantes protocole exportées
+
+- **`apps/api/v2/planningRoutes.js`** : exporte désormais
+  `PLANNING_PROTOCOL_VERSION` (`2.0.0`), `PLANNING_V2_FLAG`
+  (`FEATURE_V2_PLANNING`) et `PLANNING_V2_CAPABILITIES` (6
+  kebab-case, frozen). Alignement avec Display / Locations /
+  Affaires. Ces constantes sont consommées par le registre statique
+  du meta et n'ajoutent aucun comportement runtime.
+
+### Reference
+
+- `apps/api/v2/metaRoutes.js` (nouveau) : `setupV2MetaRoutes`,
+  `V2_NAMESPACES` (registre frozen), `buildMetaPayload`,
+  `isFlagEnabled`, `META_PROTOCOL_VERSION`.
+- `docs/api/v2/core.md` (nouveau) : contrat commun payload +
+  pagination + feature flag + discovery, référence transverse.
+
+### Non couvert
+
+- **Export OpenAPI depuis les schémas Zod** : reporté en ticket
+  ultérieur T-P1-01b (chantier significatif nécessitant un audit
+  complet des routes v2 et l'introduction d'un pipeline
+  Zod → JSON Schema → OpenAPI).
+
+---
+
 ## [1.13.0] — 2026-07-10
 
 ### Added — Affaires v2 API namespace (T-P0-09)

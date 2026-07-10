@@ -114,3 +114,34 @@ Ligne ajoutée à `equipment.notes` :
   inline dans `equipment.notes` suffit pour le v1, à migrer si
   volume élevé).
 - **Régénération batch** : hors scope T-P1-06.
+
+---
+
+## Dogfooding UI — Fondations (T-P1-06b — 2026-07-10)
+
+⚠️ Le "T-P1-06b" contrainte UNIQUE mentionné ci-dessus (renforcement
+DB) reste ouvert et distinct. Ce paragraphe documente les
+**fondations UI** livrées en parallèle sous le même identifiant.
+
+Chemin technique livré :
+
+- `apps/web/src/utils/equipmentUid/v2Adapters.js` :
+  `adaptDuplicateEntryV2ToV1`, `adaptV2AuditResponse` (rapport
+  complet camelCase), `adaptV2RegenerateResponse`,
+  `readEquipmentUidV2ClientFlag(env)`.
+- `apps/web/src/utils/equipmentUid/fetchEquipmentUidAudit.js` :
+  `fetchEquipmentUidAuditUnified(api, { useV2 })` et
+  `regenerateEquipmentUidUnified(api, id, { reason, useV2 })`.
+  Retour `null` quand indisponible (flag off, FEATURE_DISABLED,
+  méthode absente, id invalide, erreur réseau).
+
+Aucun composant existant n'est modifié dans ce ticket. Un panel
+admin dédié (`AdminEquipmentUidPanel`) consommera ces helpers
+dans un T-P1-06c à venir (badge "N doublons détectés" + bouton
+"Régénérer UID" par ligne).
+
+Tests de non-régression :
+
+- `apps/web/src/utils/equipmentUid/v2Adapters.test.js` (10 cas).
+- `apps/web/src/utils/equipmentUid/fetchEquipmentUidAudit.test.js`
+  (11 cas).

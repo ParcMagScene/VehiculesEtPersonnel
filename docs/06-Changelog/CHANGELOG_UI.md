@@ -5,6 +5,26 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.22.0] — 2026-07-10
+
+### Added — Equipment UID v2 fondations UI admin (T-P1-06b)
+
+- **`apps/web/src/utils/equipmentUid/v2Adapters.js`** :
+  `adaptDuplicateEntryV2ToV1`, `adaptV2AuditResponse` (audit
+  complet camelCase : totals, doublons serial/uid, verdict),
+  `adaptV2RegenerateResponse`, `readEquipmentUidV2ClientFlag`.
+- **`apps/web/src/utils/equipmentUid/fetchEquipmentUidAudit.js`** :
+  `fetchEquipmentUidAuditUnified(api, { useV2 })` +
+  `regenerateEquipmentUidUnified(api, id, { reason, useV2 })`.
+  Retour `null` quand indisponible (v1 sans endpoint standalone
+  equivalent).
+- **21 tests unitaires** (10 adapters + 11 helpers).
+
+Aucun composant existant modifié. Panel admin dédié prévu en
+T-P1-06c. Distinct de "T-P1-06b renforcement UNIQUE" DB (reporté).
+
+---
+
 ## [2.21.0] — 2026-07-10
 
 ### Added — Conflicts v2 fondations UI pre-check (T-P1-05b)

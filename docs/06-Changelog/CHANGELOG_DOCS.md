@@ -5,6 +5,17 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.21.0] — 2026-07-10
+
+### Added — SAV v2 : `docs/api/v2/sav.md` (T-P1-07)
+
+- **`docs/api/v2/sav.md`** (nouveau) : machine d'état + pièces
+  détachées + exemples 200/201/400/404/409.
+- **`docs/api/v2/README.md`** : ajout ligne **SAV** 🟢.
+- **`apps/api/.env.example`** : documente `FEATURE_V2_SAV`.
+
+---
+
 ## [1.20.0] — 2026-07-10
 
 ### Added — Equipment UID v2 : `docs/api/v2/equipment-uid.md` (T-P1-06)

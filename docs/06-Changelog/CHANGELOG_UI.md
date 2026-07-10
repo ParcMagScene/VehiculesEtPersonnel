@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.15.0] — 2026-07-10
+
+### Added — SAV v2 client API (T-P1-07)
+
+- **`apps/web/src/utils/api/v2/sav.js`** (nouveau) : 5 méthodes
+  `v2SavProtocol`, `v2ListSavParts`, `v2AddSavPart`,
+  `v2UpdateSavPartStatus`, `v2TransitionSavTicket`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement client
+  SAV sur le singleton (après Equipment UID).
+
+---
+
 ## [2.14.0] — 2026-07-10
 
 ### Added — Equipment UID v2 client API (T-P1-06)

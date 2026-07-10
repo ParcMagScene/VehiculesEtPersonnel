@@ -22,6 +22,7 @@
 | Leaves | 🟢 T-P1-04 — discovery + `POST /calculate` (miroir v1) + `GET /balance/mine` + `GET /balance/:person_id` (admin) | [leaves.md](leaves.md) |
 | Conflicts | 🟢 T-P1-05 — discovery + `POST /check` (détection agenda `availabilities` + `missions` + `task_assignments`) | [conflicts.md](conflicts.md) |
 | Equipment UID | 🟢 T-P1-06 — discovery + `GET /audit` (doublons serials/uid) + `POST /equipment/:id/regenerate-uid` (admin, audit dans `equipment.notes`) | [equipment-uid.md](equipment-uid.md) |
+| SAV | 🟢 T-P1-07 — discovery + machine d'état (`POST /tickets/:id/transition`) + pièces détachées (`GET`/`POST /tickets/:id/parts` + `PATCH /parts/:id/status`) | [sav.md](sav.md) |
 
 ---
 

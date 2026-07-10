@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.22.0] — 2026-07-10
+
+### Added — Equipment Assignments v2 : `docs/api/v2/equipment-assignments.md` (T-P1-08)
+
+- **`docs/api/v2/equipment-assignments.md`** (nouveau) : contrat
+  double-assign bloquée + audit trail + exemples 201/400/404/409.
+- **`docs/api/v2/README.md`** : ajout ligne **Equipment
+  Assignments** 🟢.
+- **`apps/api/.env.example`** : documente
+  `FEATURE_V2_EQUIPMENT_ASSIGNMENTS`.
+
+---
+
 ## [1.21.0] — 2026-07-10
 
 ### Added — SAV v2 : `docs/api/v2/sav.md` (T-P1-07)

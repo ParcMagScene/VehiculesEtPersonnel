@@ -36,6 +36,11 @@ import {
   DISPLAY_V2_FLAG,
 } from './displayRoutes.js';
 import {
+  EQ_ASSIGN_PROTOCOL_VERSION,
+  EQ_ASSIGN_V2_CAPABILITIES,
+  EQ_ASSIGN_V2_FLAG,
+} from './equipmentAssignmentsRoutes.js';
+import {
   EQUIPMENT_UID_PROTOCOL_VERSION,
   EQUIPMENT_UID_V2_CAPABILITIES,
   EQUIPMENT_UID_V2_FLAG,
@@ -97,6 +102,14 @@ export const V2_NAMESPACES = Object.freeze([
     capabilities: DISPLAY_V2_CAPABILITIES,
     flag: DISPLAY_V2_FLAG,
     docs: '/docs/api/v2/display.md',
+  }),
+  Object.freeze({
+    name: 'equipment-assignments',
+    base_path: '/api/v2/equipment-assignments',
+    protocol_version: EQ_ASSIGN_PROTOCOL_VERSION,
+    capabilities: EQ_ASSIGN_V2_CAPABILITIES,
+    flag: EQ_ASSIGN_V2_FLAG,
+    docs: '/docs/api/v2/equipment-assignments.md',
   }),
   Object.freeze({
     name: 'equipment-uid',

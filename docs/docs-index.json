@@ -38,6 +38,7 @@
         "docs/api/v2/leaves.md",
         "docs/api/v2/conflicts.md",
         "docs/api/v2/equipment-uid.md",
+        "docs/api/v2/equipment-assignments.md",
         "docs/api/v2/sav.md"
       ]
     },
@@ -70,7 +71,7 @@
       ]
     }
   },
-  "totalFiles": 143,
+  "totalFiles": 144,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

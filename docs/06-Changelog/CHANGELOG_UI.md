@@ -5,6 +5,20 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.16.0] — 2026-07-10
+
+### Added — Equipment Assignments v2 client API (T-P1-08)
+
+- **`apps/web/src/utils/api/v2/equipmentAssignments.js`** (nouveau) :
+  4 méthodes `v2EquipmentAssignmentsProtocol`,
+  `v2CreateEquipmentAssignment(equipmentId, data)`,
+  `v2ReleaseEquipmentAssignment(assignmentId, data?)`,
+  `v2GetEquipmentAssignmentsHistory(equipmentId, {limit?})`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement client
+  Equipment Assignments sur le singleton (après SAV).
+
+---
+
 ## [2.15.0] — 2026-07-10
 
 ### Added — SAV v2 client API (T-P1-07)

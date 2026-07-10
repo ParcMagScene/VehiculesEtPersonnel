@@ -5,6 +5,66 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.20.0] — 2026-07-10
+
+### Added — Équipements v2 : assignations auditées (T-P1-08)
+
+Namespace `/api/v2/equipment-assignments/*` + endpoints associés
+sur la ressource equipment. Deux garanties clés :
+
+**Double-assignation strictement bloquée** :
+- `findConflictingActiveAssignments({db, equipmentId, startDate,
+  endDate, excludeAssignmentId})` scanne les assignations ACTIVE
+  qui chevauchent la plage cible. `end_date=NULL` traité comme
+  "ouverte" (bloque tout futur).
+- **`POST /api/v2/equipment/:id/assignments`** rejette avec
+  `409 CONFLICT` (`meta.details.conflicts` = liste IDs) si un
+  chevauchement est détecté.
+
+**Audit trail systématique** :
+- Nouvelle table `equipment_assignment_history` (migration
+  `equipment-assignment-history-v1`, additive).
+- Chaque mutation (create, release) génère une ligne avec diff
+  avant/après (status, assigned_to, start_date, end_date), notes,
+  changed_by, changed_at.
+- Types d'événements : `created`, `updated`, `released`,
+  `transferred` (dernier réservé T-P1-08b).
+
+**Endpoints** :
+- `GET  /api/v2/equipment-assignments/protocol` (public).
+- `POST /api/v2/equipment/:id/assignments` (create safe).
+- `POST /api/v2/equipment-assignments/:aid/release`.
+- `GET  /api/v2/equipment/:id/assignments/history`.
+- `GET  /api/v2/equipment-assignments/:aid/history`.
+
+Gate par `FEATURE_V2_EQUIPMENT_ASSIGNMENTS` (off par défaut).
+Coexistence stricte avec `/api/equipment-assignments/*` v1
+(accepte toujours les double-assignations, comportement
+historique conservé).
+
+### Changed — `GET /api/v2/meta` : ajout du namespace `equipment-assignments`
+
+Le registre `V2_NAMESPACES` compte désormais **9 namespaces**
+(ordre alphabétique : affaires, conflicts, display,
+**equipment-assignments**, equipment-uid, leaves, locations,
+planning, sav).
+
+### Reference
+
+- `apps/api/migrations/equipment-assignment-history-v1.js` (nouveau).
+- `apps/api/services/equipment-assignments/assignments.js` (nouveau).
+- `apps/api/services/equipment-assignments/errors.js` (nouveau).
+- `apps/api/v2/equipmentAssignmentsRoutes.js` (nouveau).
+- `docs/api/v2/equipment-assignments.md` (nouveau).
+
+### Non couvert (T-P1-08 futur)
+
+- Interception du POST v1 pour appliquer le check double-assign.
+- Type d'événement `transferred` (permutation directe).
+- UI consommant les endpoints.
+
+---
+
 ## [1.19.0] — 2026-07-10
 
 ### Added — Équipements v2 : SAV enrichi (T-P1-07)

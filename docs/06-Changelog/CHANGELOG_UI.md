@@ -5,6 +5,31 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.25.0] — 2026-07-10
+
+### Added — Orders v2 fondations UI (T-P1-09b / T-P1-10b)
+
+- **`apps/web/src/utils/orders/v2Adapters.js`** :
+  - Matrices `ORDER_TRANSITIONS` (6 statuts) / `QUOTE_TRANSITIONS`
+    (5 statuts) dupliquées du backend pour validation UI côté
+    client.
+  - Helpers `getAllowedNext` / `isTransitionAllowed` pour
+    feedback immediat avant appel serveur.
+  - Adapters transition / reception (T-P1-10) / summary /
+    conversion.
+  - `isTransitionConflict` (détection 409),
+    `readOrdersV2ClientFlag`.
+- **`apps/web/src/utils/orders/fetchOrdersV2.js`** :
+  4 helpers unified (transition, reception, summary, convert)
+  avec contrat étendu `{ ok, data | conflict, error }` sur les
+  mutations pour distinguer le 409 CONFLICT.
+- **35 tests unitaires** (20 adapters + 15 helpers).
+
+Aucun composant modifié (`OrdersPanel`, `OrderDetailModal`,
+`QuoteForm` restent v1). Refactor UI reporté en T-P1-09c/10c.
+
+---
+
 ## [2.24.0] — 2026-07-10
 
 ### Added — Equipment Assignments v2 fondations UI (T-P1-08b)

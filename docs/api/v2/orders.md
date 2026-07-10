@@ -233,3 +233,50 @@ service pur avec transaction.
 - Annulation d'une réception (delete row `order_receptions`) : hors
   scope.
 - UI : ticket T-P1-10b.
+
+---
+
+## Dogfooding UI — Fondations (T-P1-09b / T-P1-10b — 2026-07-10)
+
+Fondations livrées pour la consommation UI des 5 endpoints v2 :
+
+- **transitions** (`transitionOrder` / `transitionQuote`) :
+  contrat étendu `{ ok, data | conflict, error }` pour distinguer
+  le 409 CONFLICT (transition interdite) des erreurs techniques.
+- **réceptions T-P1-10** (`recordOrderReception`,
+  `fetchOrderReceptionsSummary`) : gestion réception partielle
+  avec cumul serveur.
+- **conversion devis → commande T-P1-10** (`convertQuoteToOrder`) :
+  contrat étendu similaire aux transitions.
+
+Chemin technique livré :
+
+- `apps/web/src/utils/orders/v2Adapters.js` :
+  - Matrices `ORDER_TRANSITIONS` / `QUOTE_TRANSITIONS` (miroir
+    serveur, dupliquées pour éviter tout import backend).
+  - Constantes `ORDER_STATUSES` (6) / `QUOTE_STATUSES` (5).
+  - Helpers `getAllowedNext(from, kind)` /
+    `isTransitionAllowed(from, to, kind)` pour valider côté UI
+    avant appel serveur (feedback immédiat).
+  - Adapters : `adaptV2TransitionResponse` (passthrough),
+    `adaptV2ReceptionResponse` (snake → camel sur reception,
+    passthrough sur `order_items` / `order`),
+    `adaptV2ReceptionsSummary`, `adaptV2ConvertResponse`.
+  - `isTransitionConflict(err)` (détection 409),
+    `readOrdersV2ClientFlag(env)`.
+- `apps/web/src/utils/orders/fetchOrdersV2.js` :
+  `transitionOrderOrQuoteUnified(api, id, status, { kind, useV2 })`,
+  `recordOrderReceptionUnified(api, orderId, data, { useV2 })`,
+  `fetchOrderReceptionsSummaryUnified(api, orderId, { useV2 })`,
+  `convertQuoteToOrderUnified(api, quoteId, { useV2 })`.
+
+Aucun composant existant modifié (`OrdersPanel`, `OrderDetailModal`,
+`QuoteForm` restent sur les endpoints v1). Un refactor UI
+consommateur est prévu en T-P1-09c / T-P1-10c à venir
+(indicateur transitions autorisées + réception partielle par ligne
++ bouton "Convertir en commande" sur les devis acceptés).
+
+Tests de non-régression :
+
+- `apps/web/src/utils/orders/v2Adapters.test.js` (20 cas).
+- `apps/web/src/utils/orders/fetchOrdersV2.test.js` (15 cas).

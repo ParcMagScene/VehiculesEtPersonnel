@@ -78,6 +78,21 @@ function setupSchema(database) {
       start_date TEXT NOT NULL,
       affaire_id TEXT
     );
+    -- Table affaire_history au schema legacy L6 (event-based), preexistante.
+    -- La migration T-P0-08 ne cree PAS cette table (hotfix 2026-07-10).
+    CREATE TABLE IF NOT EXISTS affaire_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      affaire_id INTEGER NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
+      event_type TEXT NOT NULL,
+      source TEXT,
+      source_ref TEXT,
+      field_name TEXT,
+      old_value TEXT,
+      new_value TEXT,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 }
 
@@ -253,27 +268,29 @@ describe('migrations/affaires-v2-schema-v1 (T-P0-08)', () => {
     }
   });
 
-  it('table affaire_history a le schema attendu', () => {
+  it('table affaire_history preexistante (schema legacy L6) reste presente', () => {
+    // Hotfix 2026-07-10 : la migration T-P0-08 ne cree PAS la table
+    // affaire_history (elle existe deja via la migration L6 event-based
+    // depuis mai 2026). Le service v2 reutilise le schema legacy via
+    // event_type='field_change' + source='v2_api'.
     runAffairesV2SchemaMigration(db);
     const cols = db.pragma('table_info(affaire_history)').map((c) => c.name);
     for (const expected of [
       'id',
       'affaire_id',
+      'event_type', // schema legacy L6 (NOT NULL)
       'field_name',
       'old_value',
       'new_value',
-      'changed_by',
-      'changed_at',
+      'user_id', // mappe -> changed_by via alias SELECT
+      'created_at', // mappe -> changed_at via alias SELECT
       'notes',
     ]) {
-      assert.ok(cols.includes(expected), `colonne ${expected} presente`);
+      assert.ok(cols.includes(expected), `colonne legacy ${expected} presente`);
     }
-    const indexes = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='affaire_history'")
-      .all()
-      .map((r) => r.name);
-    assert.ok(indexes.includes('idx_affaire_history_affaire'));
-    assert.ok(indexes.includes('idx_affaire_history_changed_at'));
+    // La migration T-P0-08 ne cree PAS d'index dedies : les index
+    // sont pilotes par la migration L6 + perfIndexesL10
+    // (idx_ah_affaire, idx_ah_created, idx_ah_event_type, ...).
   });
 
   it("n'ecrase pas une affaire existante (INSERT OR IGNORE)", () => {

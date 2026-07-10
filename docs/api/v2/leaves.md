@@ -156,3 +156,42 @@ person_id doit être un entier > 0 sinon `400 VALIDATION_ERROR`.
 - **Historique** des balances (audit trail) : hors scope.
 - **Refactor UI** consommant les hooks v2 : ticket T-P1-04b
   (dogfooding via `FEATURE_V2_LEAVES=1` en dev requis d'abord).
+
+---
+
+## Dogfooding UI (T-P1-04b — 2026-07-10)
+
+Le composant `apps/web/src/components/leaves/LeaveRequestForm.jsx`
+bascule sur `POST /api/v2/leaves/calculate` lorsque le flag Vite
+`VITE_FEATURE_V2_LEAVES` est activé (`=1` / `true` / `on` / `yes`,
+case-insensitive). Fallback silencieux v1 sur `FEATURE_DISABLED`
+(404) ou erreur réseau.
+
+Chemin technique côté client :
+
+- `apps/web/src/utils/leaves/v2Adapters.js` :
+  `readLeavesV2ClientFlag(env)` + `adaptV2CalculationToV1` (identity
+  passthrough — le service v2 retourne déjà camelCase).
+- `apps/web/src/utils/leaves/fetchLeaveCalculation.js` :
+  `fetchLeaveCalculationUnified(api, data, { useV2 })` avec
+  fallback strict v1 en cas d'échec v2.
+- `LeaveRequestForm.jsx` : appel unique passé de
+  `api.calculateLeaveWorkingDays(...)` à
+  `fetchLeaveCalculationUnified(api, ..., { useV2: readLeavesV2ClientFlag() })`.
+
+Périmètre :
+
+- **Uniquement le calcul jours ouvrables** (`POST /calculate`) est
+  dogfoodé. Les soldes (`GET /balance/mine`, `GET /balance/:id`)
+  restent sur v1 : les composants tolèrent déjà les deux shapes
+  (`balance.daysEntitled ?? balance.days_entitled`,
+  `balance.carryOver ?? balance.carry_over`), et l'affichage
+  fonctionne sans changement. Un T-P1-04c ultérieur pourra
+  dogfooder les balances explicitement.
+- Aucune modification du flow POST (création de demande), qui
+  reste sur `api.createLeaveRequest` v1.
+
+Tests de non-régression :
+
+- `apps/web/src/utils/leaves/v2Adapters.test.js` (6 cas).
+- `apps/web/src/utils/leaves/fetchLeaveCalculation.test.js` (6 cas).

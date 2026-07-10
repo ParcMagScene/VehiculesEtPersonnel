@@ -38,6 +38,8 @@ import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonalActionGuard from '../../hooks/usePersonalActionGuard';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import api from '../../utils/api';
+import { fetchLeaveCalculationUnified } from '../../utils/leaves/fetchLeaveCalculation.js';
+import { readLeavesV2ClientFlag } from '../../utils/leaves/v2Adapters.js';
 import { refreshBus } from '../../utils/refresh-bus';
 import PersonalActionDialog from '../auth/PersonalActionDialog';
 
@@ -253,14 +255,20 @@ const LeaveRequestForm = ({
     let cancelled = false;
     const calculate = async () => {
       try {
-        const result = await api.calculateLeaveWorkingDays({
-          startDate,
-          endDate,
-          startPeriod,
-          endPeriod,
-          leaveType,
-          exceptionalType: leaveType === 'exceptionnel' ? exceptionalType : undefined,
-        });
+        // T-P1-04b : bascule v2 quand VITE_FEATURE_V2_LEAVES=1, avec
+        // fallback silencieux v1. Shape retourne identique (camelCase).
+        const result = await fetchLeaveCalculationUnified(
+          api,
+          {
+            startDate,
+            endDate,
+            startPeriod,
+            endPeriod,
+            leaveType,
+            exceptionalType: leaveType === 'exceptionnel' ? exceptionalType : undefined,
+          },
+          { useV2: readLeavesV2ClientFlag() },
+        );
         if (!cancelled) {
           setCalculation(result);
           setWarnings(result.warnings || []);

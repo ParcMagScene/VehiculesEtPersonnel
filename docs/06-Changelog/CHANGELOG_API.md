@@ -5,6 +5,61 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.13.0] — 2026-07-10
+
+### Added — Affaires v2 API namespace (T-P0-09)
+
+- **`GET /api/v2/affaires/protocol`** : discovery public.
+  Retourne `protocol_version=2.0.0`, `capabilities` (5 kebab-case),
+  `legacy_endpoints`, `patch_fields`, `docs`.
+- **`GET /api/v2/affaires`** : liste paginée cursor-based (ordre
+  `created_at DESC, id DESC`). Query : `cursor`, `limit` (1–200,
+  défaut 50), `type`, `client` (LIKE). Réponse enrichie de
+  `meta.pagination`.
+- **`GET /api/v2/affaires/:numero_affaire`** : détail par clé métier
+  (unique).
+- **`GET /api/v2/affaires/:numero_affaire/history`** : lecture de
+  `affaire_history` (audit trail T-P0-08) en ordre chronologique
+  décroissant. Query : `limit` (1–500, défaut 100).
+- **`PATCH /api/v2/affaires/:numero_affaire`** : patch partiel.
+  Champs patchables : `nom`, `type`, `client`, `interlocuteur`,
+  `tel`, `fax`, `date_debut`, `date_fin`, `devis`,
+  `adresse_livraison`, `titre`, `description`, `google_event_id`,
+  `event_name`. Champs non patchables (`id`, `numero_affaire`,
+  `created_*`, `modified_*`) ignorés silencieusement.
+  - **Audit systématique** : chaque champ effectivement modifié
+    génère une ligne `affaire_history` (`field_name`, `old_value`,
+    `new_value`, `changed_by`, `notes`).
+  - **Détection no-op** : patch identique aux valeurs actuelles
+    → `changed=false`, `history_ids=[]`, aucune ligne d'audit.
+  - **Normalisation** : chaîne trimée, `''` → `null`.
+
+Toutes les routes sont gate par `FEATURE_V2_AFFAIRES` (off par
+défaut, 404 `FEATURE_DISABLED`). Coexistence stricte avec
+`/api/affaires/*` v1 (enrichissement dynamique legacy inchangé,
+sunset TEXT reporté à un ticket ultérieur après validation
+zéro-consommateur).
+
+Erreurs typées :
+- **400 VALIDATION_ERROR** (patch vide, id invalide, `numeroAffaire`
+  manquant).
+- **404 NOT_FOUND** (`numero_affaire` inconnu).
+- **409 CONFLICT** (violation UNIQUE).
+- **500 INTERNAL_ERROR** (erreur non-typée).
+
+### Reference
+
+- `apps/api/services/affaires/` (nouveau) : `errors.js`,
+  `affaires.js` (listAffaires, getAffaireByNumero, getAffaireById,
+  patchAffaire), `history.js` (getAffaireHistory,
+  appendHistoryEntry), `index.js`.
+- `apps/api/v2/affairesRoutes.js` (nouveau) : 5 endpoints + gate.
+- `docs/api/v2/affaires.md` (nouveau) : référence complète avec
+  exemples 200/400/404/409.
+- `EXECUTION_PLAN_EMAG_3_0.md` — T-P0-09 · Affaires v2 API v2.
+
+---
+
 ## [1.12.0] — 2026-07-10
 
 ### Added — Locations v2 API namespace (T-P0-12)

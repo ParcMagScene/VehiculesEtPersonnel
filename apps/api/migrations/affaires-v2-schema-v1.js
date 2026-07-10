@@ -187,26 +187,25 @@ function materializeImplicitAffaires(db) {
 }
 
 /**
- * Cree la table `affaire_history` (audit trail des modifications sur
- * `affaires`). Idempotent : `CREATE TABLE IF NOT EXISTS`.
+ * Verifie que la table `affaire_history` existe (creee par la
+ * migration L6 anterieure, cf `services/affaireHistory.js`). Le
+ * service v2 (`services/affaires/history.js`) reutilise cette table
+ * en discriminant les entrees v2 via `event_type='field_change'` +
+ * `source='v2_api'`. Aucune modification de schema n'est necessaire.
+ *
+ * [HOTFIX 2026-07-10] : la version initiale de T-P0-08 tentait de
+ * creer une table concurrente au schema field-based, ce qui produisait
+ * un warning `no such column: changed_at` sur les bases existantes.
+ * Corrige : detection simple sans creation ni ALTER.
  *
  * @param {import('better-sqlite3').Database} db
+ * @returns {boolean} `true` si la table est presente et exploitable.
  */
 function ensureAffaireHistoryTable(db) {
-  db.exec(`CREATE TABLE IF NOT EXISTS affaire_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    affaire_id INTEGER NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
-    field_name TEXT NOT NULL,
-    old_value TEXT,
-    new_value TEXT,
-    changed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    changed_at DATETIME NOT NULL DEFAULT (datetime('now')),
-    notes TEXT
-  )`);
-  db.exec('CREATE INDEX IF NOT EXISTS idx_affaire_history_affaire ON affaire_history(affaire_id)');
-  db.exec(
-    'CREATE INDEX IF NOT EXISTS idx_affaire_history_changed_at ON affaire_history(changed_at)',
-  );
+  const row = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='affaire_history'")
+    .get();
+  return Boolean(row);
 }
 
 /**
@@ -270,11 +269,19 @@ export function runAffairesV2SchemaMigration(db) {
     logger.info(`  ✅ Affaires v2: backfill affaire_ref_id — ${backfillTotals.join(', ')}`);
   }
 
-  // 4. Table `affaire_history`
+  // 4. Table `affaire_history` : existe deja depuis L6 (event-based).
+  //    Le service v2 (`services/affaires/history.js`) reutilise cette
+  //    table via `event_type='field_change'` + `source='v2_api'`.
   try {
-    ensureAffaireHistoryTable(db);
-    logger.info('  ✅ Affaires v2: table affaire_history OK');
+    const exists = ensureAffaireHistoryTable(db);
+    if (exists) {
+      logger.info('  ✅ Affaires v2: table affaire_history OK (schema legacy L6 reutilise)');
+    } else {
+      logger.warn(
+        "  ⚠️ Affaires v2: table affaire_history absente — le PATCH v2 audite ne pourra pas ecrire tant que la migration L6 n'aura pas cree la table",
+      );
+    }
   } catch (err) {
-    logger.warn(`  ⚠️ Affaires v2: table affaire_history — ${err.message}`);
+    logger.warn(`  ⚠️ Affaires v2: verification affaire_history — ${err.message}`);
   }
 }

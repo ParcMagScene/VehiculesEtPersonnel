@@ -5,6 +5,22 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.13.0] — 2026-07-10
+
+### Added — Conflicts v2 client API (T-P1-05)
+
+- **`apps/web/src/utils/api/v2/conflicts.js`** (nouveau) : 2
+  méthodes `v2ConflictsProtocol()`, `v2CheckConflicts(body)`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement du client
+  Conflicts sur le singleton (après Leaves).
+
+Aucun composant UI refactoré. La méthode `v2CheckConflicts` sera
+consommée en pré-check par les formulaires v2 de création
+d'availability / mission / task après dogfooding
+(`FEATURE_V2_CONFLICTS=1`).
+
+---
+
 ## [2.12.0] — 2026-07-10
 
 ### Added — Leaves v2 client API (T-P1-04)

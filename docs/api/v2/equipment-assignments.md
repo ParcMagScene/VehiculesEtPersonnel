@@ -162,3 +162,35 @@ Authentifié. Historique d'une assignation précise.
   ticket ultérieur (permutation d'assignation active vers un autre
   affaire/date sans release intermédiaire).
 - **UI** consommant ces endpoints : ticket T-P1-08b.
+
+---
+
+## Dogfooding UI — Fondations (T-P1-08b — 2026-07-10)
+
+Fondations livrées pour la consommation UI des 3 endpoints v2
+assignations équipement, avec **distinction du conflit métier
+409 CONFLICT (double-assign)** pour permettre à l'UI de bloquer
+proprement et afficher un message dédié.
+
+- `apps/web/src/utils/equipmentAssignments/v2Adapters.js` :
+  constantes `ASSIGNMENT_STATUSES` (3) / `ASSIGNMENT_EVENT_TYPES` (4),
+  adapters `adaptAssignmentV2ToV1`,
+  `adaptAssignmentHistoryEntryV2ToV1`,
+  `adaptV2AssignmentsHistoryList`,
+  `adaptV2AssignmentMutationResponse`, `isDoubleAssignConflict`,
+  `readEquipmentAssignmentsV2ClientFlag`.
+- `apps/web/src/utils/equipmentAssignments/fetchEquipmentAssignments.js` :
+  - `createEquipmentAssignmentUnified(api, id, data, { useV2 })` —
+    contrat étendu `{ ok, assignment?, historyId?, conflict?, error? }`
+    ou `null` si v2 indisponible.
+  - `releaseEquipmentAssignmentUnified(api, id, data, { useV2 })`.
+  - `fetchAssignmentsHistoryUnified(api, id, { limit, useV2 })`.
+
+Aucun composant existant modifié. Un panel/hook consommera ces
+helpers dans un T-P1-08c à venir (badge conflit sur double-assign
++ history timeline).
+
+Tests de non-régression :
+
+- `apps/web/src/utils/equipmentAssignments/v2Adapters.test.js` (13 cas).
+- `apps/web/src/utils/equipmentAssignments/fetchEquipmentAssignments.test.js` (11 cas).

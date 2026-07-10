@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.30.0] — 2026-07-10
+
+### Added — Equipment Assignments v2 : section Dogfooding UI (T-P1-08b)
+
+- **`docs/api/v2/equipment-assignments.md`** : ajout section
+  **Dogfooding UI Fondations (T-P1-08b)** documentant le contrat
+  étendu `{ ok, assignment?, conflict?, error? }` sur le create
+  helper, la distinction du double-assign 409, et l'inventaire
+  des 24 tests.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.24.0.
+
+---
+
 ## [1.29.0] — 2026-07-10
 
 ### Added — SAV v2 : section Dogfooding UI Fondations (T-P1-07b)

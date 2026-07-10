@@ -5,6 +5,27 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.24.0] — 2026-07-10
+
+### Added — Equipment Assignments v2 fondations UI (T-P1-08b)
+
+- **`apps/web/src/utils/equipmentAssignments/v2Adapters.js`** :
+  constantes `ASSIGNMENT_STATUSES` (3) / `ASSIGNMENT_EVENT_TYPES` (4),
+  adapters (assignment + history entry + mutation + list),
+  `isDoubleAssignConflict`, `readEquipmentAssignmentsV2ClientFlag`.
+- **`apps/web/src/utils/equipmentAssignments/fetchEquipmentAssignments.js`** :
+  `createEquipmentAssignmentUnified` (contrat étendu
+  `{ ok, assignment?, historyId?, conflict?, error? }` pour
+  distinguer double-assign 409 des autres erreurs),
+  `releaseEquipmentAssignmentUnified`,
+  `fetchAssignmentsHistoryUnified`.
+- **24 tests unitaires** (13 adapters + 11 helpers).
+
+Aucun composant modifié. Panel/hook consommateur reporté en
+T-P1-08c.
+
+---
+
 ## [2.23.0] — 2026-07-10
 
 ### Added — SAV v2 fondations UI (T-P1-07b)

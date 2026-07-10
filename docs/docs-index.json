@@ -30,6 +30,7 @@
         "docs/api/totp.md",
         "docs/api/v2/README.md",
         "docs/api/v2/core.md",
+        "docs/api/v2/websocket.md",
         "docs/api/v2/planning.md",
         "docs/api/v2/display.md",
         "docs/api/v2/locations.md",
@@ -65,7 +66,7 @@
       ]
     }
   },
-  "totalFiles": 138,
+  "totalFiles": 139,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

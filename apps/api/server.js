@@ -137,6 +137,7 @@ import { setupV2MetaRoutes } from './v2/metaRoutes.js';
 import { setupPlanningV2Routes } from './v2/planningRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
+import { attachWebSocketServer } from './ws/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -646,6 +647,11 @@ if (hasSSL) {
   const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
   const httpsServer = https.createServer(sslOptions, app);
 
+  // [WebSocket core — T-P1-02] Attache le serveur WS sur l'upgrade
+  // HTTP du serveur HTTPS principal. Gate par FEATURE_V2_WEBSOCKET
+  // (aucun upgrade traite si off).
+  attachWebSocketServer(httpsServer, { jwtSecret: JWT_SECRET, db });
+
   // S1-02 — Démarrage HTTPS résilient : retry sur EADDRINUSE puis fallback HTTP-only
   const MAX_HTTPS_ATTEMPTS = Number(process.env.HTTPS_MAX_RETRIES) || 3;
   let httpsAttempts = 0;
@@ -713,6 +719,9 @@ if (hasSSL) {
     logger.info(`📡 Accessible depuis le réseau sur http://${SERVER_HOST}:${PORT}`);
     bootBackgroundJobs();
   });
+  // [WebSocket core — T-P1-02] Attache le serveur WS sur l'upgrade HTTP.
+  // Gate par FEATURE_V2_WEBSOCKET (aucun upgrade traite si off).
+  attachWebSocketServer(httpServer, { jwtSecret: JWT_SECRET, db });
   httpServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       logger.error(`❌ Port HTTP :${PORT} occupé — abandon (process exit 1)`);

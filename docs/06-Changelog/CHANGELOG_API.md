@@ -5,6 +5,64 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.15.0] — 2026-07-10
+
+### Added — WebSocket core (T-P1-02)
+
+Introduction du **sous-système WebSocket** sur `/api/v2/ws/*`. Gate
+par `FEATURE_V2_WEBSOCKET` (off par défaut, upgrade refusé avec
+`404` sinon).
+
+- **`WebSocketServer` (bibliothèque `ws@^8.21.0`)** attaché à
+  l'événement `upgrade` du serveur HTTP/HTTPS principal.
+  Coexistence stricte avec les routes REST et le TV-client v2
+  (SSE) livrés en P0.
+- **Auth handshake** : priorité `?token=<jwt>` (URL) > header
+  `Authorization: Bearer` > cookie httpOnly `auth_token`. JWT
+  HS256 vérifié + session `active_sessions` non expirée
+  (alignement strict avec `middleware/authenticate.js`).
+- **URL contract** : `ws(s)://host/api/v2/ws/<namespace>`.
+- **Namespaces livrés** :
+  - `meta` — heartbeat serveur (30 s par défaut, désactivable),
+    ping/pong applicatif, whoami, broadcast via topic
+    `ws:meta:announce`.
+- **Namespaces déclarés (T-P1-02b)** : `messaging`, `display` —
+  acceptent l'upgrade mais renvoient
+  `{ type:'error', code:'NAMESPACE_NOT_READY' }` puis close 1013.
+- **Bus interne** `apps/api/services/eventBus.js` : singleton
+  EventEmitter typé (`publish`/`subscribe`/`topics`/
+  `listenerCount`/`removeAllListeners`), `MAX_LISTENERS_PER_TOPIC=100`,
+  utilisable par tout module métier pour signaler un événement au
+  socle WS.
+- **Constantes exportées** : `WEBSOCKET_PROTOCOL_VERSION='1.0.0'`,
+  `WEBSOCKET_V2_FLAG='FEATURE_V2_WEBSOCKET'`,
+  `WEBSOCKET_KNOWN_NAMESPACES` (frozen),
+  `WEBSOCKET_URL_PREFIX='/api/v2/ws/'`.
+
+### Non couvert
+
+- Namespaces métier `messaging` + `display` (T-P1-02b, nécessite
+  refactor du domaine messaging + intégration avec le pipeline SSE
+  Display existant).
+- Persistence des messages non délivrés (approche "state-heavy" :
+  le client re-lit l'état complet à la reconnexion).
+- Broker distribué (Redis / NATS) — hors scope P1, viser P4.
+
+### Reference
+
+- `apps/api/ws/index.js` (nouveau) : `attachWebSocketServer`,
+  `parseWebSocketUrl`, `safeSendJson`.
+- `apps/api/ws/auth.js` (nouveau) : `verifyWebSocketRequest`,
+  `extractTokenFromRequest`, `parseCookieHeader`.
+- `apps/api/ws/namespaces/meta.js` (nouveau) : `handleMetaMessage`,
+  `buildHeartbeatPayload`.
+- `apps/api/services/eventBus.js` (nouveau) : bus in-process.
+- `apps/api/server.js` : `attachWebSocketServer(httpsServer, {…})`
+  (SSL) et `attachWebSocketServer(httpServer, {…})` (HTTP fallback).
+- `docs/api/v2/websocket.md` (nouveau) : reference complète.
+
+---
+
 ## [1.14.0] — 2026-07-10
 
 ### Added — API v2 core : discovery global `/api/v2/meta` (T-P1-01)

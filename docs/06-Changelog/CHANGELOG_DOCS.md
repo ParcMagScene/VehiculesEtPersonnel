@@ -5,6 +5,20 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.16.0] — 2026-07-10
+
+### Added — WebSocket core : `docs/api/v2/websocket.md` (T-P1-02)
+
+- **`docs/api/v2/websocket.md`** (nouveau) : référence complète du
+  sous-système WebSocket eM@g (contrat URL, auth, cycle de vie,
+  namespace `meta`, bus interne `eventBus`, client
+  `ReconnectingWebSocket`, non couvert).
+- **`docs/api/v2/README.md`** : ajout ligne **WebSocket** 🟢.
+- **`apps/api/.env.example`** : documente `FEATURE_V2_WEBSOCKET`
+  (off par défaut).
+
+---
+
 ## [1.15.0] — 2026-07-10
 
 ### Added — API v2 core : `docs/api/v2/core.md` (T-P1-01)

@@ -5,6 +5,27 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.11.0] — 2026-07-10
+
+### Added — Client `ReconnectingWebSocket` (T-P1-02)
+
+- **`apps/web/src/utils/ws/reconnectingWebSocket.js`** (nouveau) :
+  client WebSocket avec reconnexion exponentielle bornée
+  (`initialRetryMs=500`, `backoffFactor=2`, `maxRetryMs=30_000`,
+  `jitterRatio=0.2`), queue de messages (`maxQueueSize=100`),
+  événements `open`/`message`/`close`/`error`/`reconnect`.
+  Zéro dépendance externe. Injection possible du constructor
+  WebSocket via `webSocketFactory` (tests unitaires).
+- **`apps/web/src/utils/ws/reconnectingWebSocket.test.js`** (nouveau)
+  : 12 tests unitaires (jitter, backoff, queue, reconnexion,
+  close volontaire, off).
+
+Aucun composant UI n'utilise encore la classe. Elle sera consommée
+par le refactor `MessagingPanel` et par un futur `DisplayLiveStatus`
+en T-P1-02b.
+
+---
+
 ## [2.10.0] — 2026-07-10
 
 ### Added — API v2 core : client `v2Meta()` (T-P1-01)

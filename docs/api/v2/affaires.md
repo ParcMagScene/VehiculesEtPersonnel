@@ -257,3 +257,46 @@ d'audit :
   validation zéro-consommateur v1 sur ≥ 7 jours.
 - **Audit** : la table `affaire_history` est **exclusivement**
   alimentée par le PATCH v2 dans ce ticket. Aucun trigger DB.
+
+---
+
+## Dogfooding UI (T-P0-09b — 2026-07-10)
+
+Le loader front `apps/web/src/utils/affairesLoader.js` bascule
+sur le namespace v2 lorsque le flag Vite `VITE_FEATURE_V2_AFFAIRES`
+est activé (`=1` / `true` / `on` / `yes`, case-insensitive).
+
+Chemin technique côté client :
+
+- `apps/web/src/utils/affaires/v2Adapters.js` : mapping shape v2
+  snake_case → v1 camelCase (`adaptAffaireV2ToV1`,
+  `adaptAffairesListV2ToV1`, `adaptHistoryEntryV2ToV1`,
+  `adaptHistoryListV2ToV1`) et lecture du flag
+  (`readAffairesV2ClientFlag`).
+- `apps/web/src/utils/affaires/fetchAffairesV2.js` : itère les
+  pages `cursor` du `v2ListAffaires` jusqu'à `has_more=false`
+  (garde-fou `MAX_PAGES=100`, `limit=200` par défaut).
+- `apps/web/src/utils/affairesLoader.js` : appel v2 en amont, en
+  cas de `FEATURE_DISABLED` (404) ou d'erreur réseau, fallback
+  silencieux sur `api.getAffaires()` v1. Le shape retourné à
+  `AffairesPanel`, `useAffairesList`, `MobileAffaires`,
+  `ReportsPanel` et `DashboardTasksSidebar` reste **identique**
+  (camelCase).
+
+Différence de comportement à connaître :
+
+- La v2 ne renvoie que les affaires **matérialisées** en base
+  (post T-P0-08). Les affaires auto-détectées à la volée
+  (`source='auto'`, `id=null`) que le v1 ajoutait dynamiquement
+  à partir des réservations Google Calendar **n'apparaissent pas**
+  dans le chemin v2. C'est un objectif du dogfooding : après
+  matérialisation complète, il ne doit rester aucune
+  auto-détectée à combler.
+
+Tests de non-régression :
+
+- `apps/web/src/utils/affaires/v2Adapters.test.js` (13 cas).
+- `apps/web/src/utils/affaires/fetchAffairesV2.test.js` (6 cas).
+- `apps/web/src/utils/affairesLoader.test.js` (6 cas — v1 seul,
+  v2 seul, fallback FEATURE_DISABLED sans warn, fallback erreur
+  avec warn, fallback si méthode client absente).

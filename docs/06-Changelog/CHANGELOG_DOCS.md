@@ -5,6 +5,20 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.25.0] — 2026-07-10
+
+### Added — Affaires v2 : section Dogfooding UI (T-P0-09b)
+
+- **`docs/api/v2/affaires.md`** : ajout section **Dogfooding UI
+  (T-P0-09b)** documentant le chemin `affairesLoader` →
+  `fetchAffairesListV2` → adapters, le fallback silencieux v1,
+  la différence de comportement sur les affaires auto-détectées
+  (`source='auto'`, `id=null`) et l'inventaire des 25 tests
+  unitaires ajoutés.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.19.0.
+
+---
+
 ## [1.24.0] — 2026-07-10
 
 ### Added — Orders v2 : sections T-P1-10 dans `docs/api/v2/orders.md`

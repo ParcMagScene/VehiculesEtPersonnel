@@ -39,6 +39,7 @@
         "docs/api/v2/conflicts.md",
         "docs/api/v2/equipment-uid.md",
         "docs/api/v2/equipment-assignments.md",
+        "docs/api/v2/orders.md",
         "docs/api/v2/sav.md"
       ]
     },
@@ -71,7 +72,7 @@
       ]
     }
   },
-  "totalFiles": 144,
+  "totalFiles": 145,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

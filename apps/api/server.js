@@ -138,6 +138,7 @@ import { setupEquipmentUidV2Routes } from './v2/equipmentUidRoutes.js';
 import { setupLeavesV2Routes } from './v2/leavesRoutes.js';
 import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
 import { setupV2MetaRoutes } from './v2/metaRoutes.js';
+import { setupOrdersV2Routes } from './v2/ordersRoutes.js';
 import { setupPlanningV2Routes } from './v2/planningRoutes.js';
 import { setupSavV2Routes } from './v2/savRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
@@ -526,6 +527,11 @@ setupSavV2Routes(app, authenticateToken);
 // Protégé par FEATURE_V2_EQUIPMENT_ASSIGNMENTS (404 si off).
 // Coexistence stricte avec /api/equipment-assignments v1.
 setupEquipmentAssignmentsV2Routes(app, authenticateToken);
+
+// [Orders v2 — T-P1-09] Namespace API v2 (transitions ordres +
+// devis avec matrices strictes). Protégé par FEATURE_V2_ORDERS
+// (404 si off). Coexistence stricte avec /api/orders /api/quotes v1.
+setupOrdersV2Routes(app, authenticateToken);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

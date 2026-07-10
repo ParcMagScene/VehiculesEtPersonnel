@@ -5,6 +5,17 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.23.0] — 2026-07-10
+
+### Added — Orders v2 : `docs/api/v2/orders.md` (T-P1-09)
+
+- **`docs/api/v2/orders.md`** (nouveau) : matrices order/quote +
+  exemples 200/400/404/409.
+- **`docs/api/v2/README.md`** : ajout ligne **Orders** 🟢.
+- **`apps/api/.env.example`** : documente `FEATURE_V2_ORDERS`.
+
+---
+
 ## [1.22.0] — 2026-07-10
 
 ### Added — Equipment Assignments v2 : `docs/api/v2/equipment-assignments.md` (T-P1-08)

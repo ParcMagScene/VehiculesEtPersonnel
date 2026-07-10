@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.17.0] — 2026-07-10
+
+### Added — Orders v2 client API (T-P1-09)
+
+- **`apps/web/src/utils/api/v2/orders.js`** (nouveau) : 3
+  méthodes `v2OrdersProtocol`, `v2TransitionOrder(orderId,
+  status)`, `v2TransitionQuote(quoteId, status)`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement client
+  Orders (après Equipment Assignments).
+
+---
+
 ## [2.16.0] — 2026-07-10
 
 ### Added — Equipment Assignments v2 client API (T-P1-08)

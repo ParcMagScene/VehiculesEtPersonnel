@@ -24,6 +24,7 @@
 | Equipment UID | 🟢 T-P1-06 — discovery + `GET /audit` (doublons serials/uid) + `POST /equipment/:id/regenerate-uid` (admin, audit dans `equipment.notes`) | [equipment-uid.md](equipment-uid.md) |
 | SAV | 🟢 T-P1-07 — discovery + machine d'état (`POST /tickets/:id/transition`) + pièces détachées (`GET`/`POST /tickets/:id/parts` + `PATCH /parts/:id/status`) | [sav.md](sav.md) |
 | Equipment Assignments | 🟢 T-P1-08 — discovery + `POST /equipment/:id/assignments` (double-assign bloquée) + `POST /:aid/release` + history | [equipment-assignments.md](equipment-assignments.md) |
+| Orders | 🟢 T-P1-09 — discovery + `POST /orders/:id/transition` + `POST /quotes/:id/transition` (matrices strictes réutilisées v1) | [orders.md](orders.md) |
 
 ---
 

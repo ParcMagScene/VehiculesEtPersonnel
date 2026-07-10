@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.26.0] — 2026-07-10
+
+### Added — Leaves v2 : section Dogfooding UI (T-P1-04b)
+
+- **`docs/api/v2/leaves.md`** : ajout section **Dogfooding UI
+  (T-P1-04b)** documentant `fetchLeaveCalculationUnified`, le
+  fallback silencieux v1, le périmètre restreint au calcul jours
+  ouvrables et l'inventaire des 12 tests unitaires ajoutés.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.20.0.
+
+---
+
 ## [1.25.0] — 2026-07-10
 
 ### Added — Affaires v2 : section Dogfooding UI (T-P0-09b)

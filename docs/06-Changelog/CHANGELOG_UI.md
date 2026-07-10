@@ -5,6 +5,29 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.20.0] — 2026-07-10
+
+### Added — Leaves v2 dogfooding UI calcul (T-P1-04b)
+
+- **`apps/web/src/utils/leaves/v2Adapters.js`** :
+  `readLeavesV2ClientFlag(env)` + `adaptV2CalculationToV1`
+  (identity passthrough, le service v2 retourne déjà camelCase).
+- **`apps/web/src/utils/leaves/fetchLeaveCalculation.js`** :
+  `fetchLeaveCalculationUnified(api, data, { useV2 })` avec
+  fallback silencieux v1 sur `FEATURE_DISABLED` ou erreur réseau.
+- **`apps/web/src/components/leaves/LeaveRequestForm.jsx`** :
+  bascule sur `v2CalculateLeaves` quand `VITE_FEATURE_V2_LEAVES=1`.
+  Shape retourné identique (camelCase `workingDays`, `warnings`,
+  `holidaysInPeriod`, `referencePeriod`).
+- **12 tests unitaires** (`v2Adapters.test.js` +
+  `fetchLeaveCalculation.test.js`).
+
+Périmètre strict : uniquement le calcul jours ouvrables est
+dogfoodé. Les soldes restent sur v1 (composants déjà tolerants).
+Aucune modification du flow POST demande.
+
+---
+
 ## [2.19.0] — 2026-07-10
 
 ### Added — Affaires v2 dogfooding UI lecture (T-P0-09b)

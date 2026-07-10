@@ -5,6 +5,20 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.14.0] — 2026-07-10
+
+### Added — Affaires v2 : `docs/api/v2/affaires.md` (T-P0-09)
+
+- **`docs/api/v2/affaires.md`** (nouveau) : référence complète des
+  5 endpoints du namespace `/api/v2/affaires/*` avec exemples
+  200/400/404/409. Section dédiée au rappel de l'audit trail
+  systématique via `affaire_history` et au comportement no-op.
+- **`docs/api/v2/README.md`** : Affaires passe 🟢 (T-P0-09 livré).
+- **`apps/api/.env.example`** : documente `FEATURE_V2_AFFAIRES`
+  (off par défaut).
+
+---
+
 ## [1.13.0] — 2026-07-10
 
 ### Added — Locations v2 : `docs/api/v2/locations.md` (T-P0-12)

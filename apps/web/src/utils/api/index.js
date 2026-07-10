@@ -21,6 +21,7 @@ import { registerSonosMethods } from './sonos.js';
 import { registerStockMethods } from './stock.js';
 import { registerSuiviMethods } from './suivi.js';
 import { registerPlanningV2Methods } from './v2/planning.js';
+import { registerV2AffairesMethods } from './v2/affaires.js';
 import { registerV2LocationsMethods } from './v2/locations.js';
 import { registerVehicleMethods } from './vehicles.js';
 import { registerVideoMethods } from './video.js';
@@ -53,6 +54,7 @@ registerPersonalActionsMethods(ApiClient);
 // FEATURE_V2_<DOMAINE> n'est pas activé côté serveur.
 registerPlanningV2Methods(ApiClient);
 registerV2LocationsMethods(ApiClient);
+registerV2AffairesMethods(ApiClient);
 
 // Singleton
 export const api = new ApiClient();

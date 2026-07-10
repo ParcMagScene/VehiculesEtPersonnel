@@ -130,6 +130,7 @@ import {
 import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
+import { setupAffairesV2Routes } from './v2/affairesRoutes.js';
 import { setupDisplayV2Routes } from './v2/displayRoutes.js';
 import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
 import { setupPlanningV2Routes } from './v2/planningRoutes.js';
@@ -481,6 +482,11 @@ setupDisplayV2Routes(app, authenticateToken);
 // location). Protégé par FEATURE_V2_LOCATIONS (404 si off). Coexistence
 // stricte avec les endpoints inventaire v1.
 setupLocationsV2Routes(app, authenticateToken, requireAdmin);
+
+// [Affaires v2 — T-P0-09] Namespace API v2 (list cursor + detail + history
+// + PATCH audite via affaire_history). Protégé par FEATURE_V2_AFFAIRES
+// (404 si off). Coexistence stricte avec /api/affaires v1.
+setupAffairesV2Routes(app, authenticateToken);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

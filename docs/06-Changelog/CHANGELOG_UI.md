@@ -5,6 +5,29 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.9.0] — 2026-07-10
+
+### Added — Affaires v2 client API (T-P0-09)
+
+- **`apps/web/src/utils/api/v2/affaires.js`** (nouveau) :
+  enregistrement sur `ApiClient.prototype` de 5 méthodes v2 :
+  `v2AffairesProtocol()`, `v2ListAffaires({cursor, limit, type,
+  client})`, `v2GetAffaire(numeroAffaire)`,
+  `v2GetAffaireHistory(numeroAffaire, {limit})`,
+  `v2PatchAffaire(numeroAffaire, patch)`. Toutes avec
+  `skipCamelCase: true`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement des
+  méthodes v2 Affaires sur le singleton ApiClient (après Locations
+  v2).
+
+Aucun composant UI refactoré dans ce commit. Le refactor
+`AffairesPanel` / `AffaireDetailDrawer` pour consommer les hooks
+v2 (au lieu de `/api/affaires/*` v1) est reporté à un ticket dédié
+T-P0-09b après validation qualitative du contrat v2 (dogfooding via
+`FEATURE_V2_AFFAIRES=1` en dev).
+
+---
+
 ## [2.8.0] — 2026-07-10
 
 ### Added — EquipmentPanel : bascule v1/v2 via flag client (T-P0-12b)

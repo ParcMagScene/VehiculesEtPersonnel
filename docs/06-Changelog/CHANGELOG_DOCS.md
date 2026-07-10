@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.27.0] — 2026-07-10
+
+### Added — Conflicts v2 : section Dogfooding UI (T-P1-05b)
+
+- **`docs/api/v2/conflicts.md`** : ajout section **Dogfooding UI
+  (T-P1-05b)** documentant les fondations (helpers +
+  `useConflictsPrecheck`), la stratégie `available=false` pour
+  signaler l'indisponibilité du pré-check, et l'inventaire des
+  21 tests unitaires.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.21.0.
+
+---
+
 ## [1.26.0] — 2026-07-10
 
 ### Added — Leaves v2 : section Dogfooding UI (T-P1-04b)

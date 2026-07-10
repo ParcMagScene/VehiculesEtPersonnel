@@ -155,3 +155,50 @@ Types d'entités supportés dans `exclude` :
   affaire/display_event/task) : pas encore inclus dans les sources
   scannées (redondant avec `task_assignments` pour la plupart des
   cas), à ajouter si besoin métier.
+
+---
+
+## Dogfooding UI (T-P1-05b — 2026-07-10)
+
+Fondations UI livrées pour l'intégration future d'un pré-check
+conflits dans les formulaires d'affectation. Aucune modification
+d'`AssignmentDialog`, `LeaveRequestForm` ou `MissionForm` dans ce
+ticket : les composants existants restent sur le comportement
+post-check via `api.createAssignment(...).warnings.conflicts` v1.
+
+Chemin technique livré :
+
+- `apps/web/src/utils/conflicts/v2Adapters.js` :
+  `adaptConflictV2ToV1` (snake → camel),
+  `adaptV2ConflictsResponse` (normalisation `{ conflicts,
+  hasConflict, count }`), `readConflictsV2ClientFlag(env)`.
+- `apps/web/src/utils/conflicts/checkPersonConflicts.js` :
+  `checkPersonConflictsUnified(api, params, { useV2 })` — retourne
+  `null` quand le pré-check n'est pas disponible (flag off,
+  FEATURE_DISABLED, méthode client absente, erreur réseau). C'est
+  un signal au composant amont : "on garde le comportement
+  legacy". Sérialisation `exclude` camelCase → snake_case
+  automatique.
+- `apps/web/src/hooks/useConflictsPrecheck.js` : hook React
+  autonome avec debounce (300ms par défaut). Retourne
+  `{ conflicts, hasConflict, count, loading, available }`.
+  `available=false` signale "pré-check indisponible".
+
+Note : le v1 n'a **pas** d'endpoint standalone équivalent — le v2
+comble un vrai gap (`additive` strict). Le fallback n'est donc pas
+"v1 endpoint" mais "aucun pré-check, laisser le POST créer et
+lire `warnings.conflicts`".
+
+Tests de non-régression :
+
+- `apps/web/src/utils/conflicts/v2Adapters.test.js` (7 cas).
+- `apps/web/src/utils/conflicts/checkPersonConflicts.test.js`
+  (9 cas).
+- `apps/web/src/hooks/useConflictsPrecheck.test.jsx` (5 cas).
+
+Consommation UI prévue (T-P1-05c à venir) :
+
+- `AssignmentDialog` : afficher un badge "N conflit(s) détecté(s)"
+  au-dessus du bouton Créer.
+- `LeaveRequestForm` : optionnel — les conflits congés vs missions
+  sont déjà remontés par `getLeaveConflicts` v1.

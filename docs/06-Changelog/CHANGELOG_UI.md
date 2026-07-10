@@ -5,6 +5,27 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.21.0] — 2026-07-10
+
+### Added — Conflicts v2 fondations UI pre-check (T-P1-05b)
+
+- **`apps/web/src/utils/conflicts/v2Adapters.js`** :
+  `adaptConflictV2ToV1`, `adaptV2ConflictsResponse`,
+  `readConflictsV2ClientFlag`.
+- **`apps/web/src/utils/conflicts/checkPersonConflicts.js`** :
+  `checkPersonConflictsUnified(api, params, { useV2 })`. Retourne
+  `null` si pré-check indisponible.
+- **`apps/web/src/hooks/useConflictsPrecheck.js`** : hook React
+  autonome (debounce 300ms) exposant `{ conflicts, hasConflict,
+  count, loading, available }`.
+- **21 tests unitaires** (7 adapters + 9 helper + 5 hook).
+
+Aucune modification des composants existants dans ce ticket. La
+consommation UI (badge conflits dans AssignmentDialog) est portée
+par T-P1-05c à venir.
+
+---
+
 ## [2.20.0] — 2026-07-10
 
 ### Added — Leaves v2 dogfooding UI calcul (T-P1-04b)

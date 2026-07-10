@@ -144,3 +144,32 @@ applique le nouveau statut.
   v2.
 - **UI** consommant `v2AddSavPart`/`v2TransitionSavTicket` : ticket
   T-P1-07b après dogfooding `FEATURE_V2_SAV=1`.
+
+---
+
+## Dogfooding UI — Fondations (T-P1-07b — 2026-07-10)
+
+Fondations livrées pour la consommation UI des 4 endpoints v2 SAV
+enrichis :
+
+- `apps/web/src/utils/sav/v2Adapters.js` :
+  `SAV_PART_STATUSES` (5 valeurs), `SAV_TICKET_STATUSES` (6 valeurs),
+  `adaptSavPartV2ToV1`, `adaptV2SavPartsList`,
+  `adaptV2TicketTransitionResponse` (passthrough), `readSavV2ClientFlag`.
+- `apps/web/src/utils/sav/fetchSavParts.js` :
+  `fetchSavPartsUnified(api, ticketId, { useV2 })`,
+  `addSavPartUnified(api, ticketId, data, { useV2 })`,
+  `updateSavPartStatusUnified(api, partId, status, { useV2 })`,
+  `transitionSavTicketUnified(api, ticketId, newStatus, { useV2 })`.
+  Retour `null` quand indisponible (flag off, FEATURE_DISABLED,
+  id/statut invalide, méthode client absente, erreur réseau).
+
+Aucun composant existant n'est modifié dans ce ticket
+(`EquipmentSAV.jsx` reste sur les endpoints v1 legacy). Un panel
+SAV enrichi consommera ces helpers dans un T-P1-07c à venir
+(liste pièces + transitions ticket avec matrice ALLOWED_TRANSITIONS).
+
+Tests de non-régression :
+
+- `apps/web/src/utils/sav/v2Adapters.test.js` (12 cas).
+- `apps/web/src/utils/sav/fetchSavParts.test.js` (12 cas).

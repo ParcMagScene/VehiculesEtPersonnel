@@ -5,6 +5,30 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.8.0] — 2026-07-10
+
+### Added — Equipment v2 : `equipment_assignment_history` (T-P1-08)
+
+- **Migration `equipment-assignment-history-v1`** (idempotente,
+  additive).
+- Colonnes : `id`, `assignment_id` (FK CASCADE
+  `equipment_assignments`), `equipment_id`, `event_type` (CHECK
+  IN `created`, `updated`, `released`, `transferred`),
+  `previous_*` / `new_*` (status, assigned_to, start_date,
+  end_date), `notes`, `changed_by`, `changed_at`.
+- Index : `idx_eq_ah_assignment`, `idx_eq_ah_equipment`,
+  `idx_eq_ah_changed_at`.
+- Aucune modification de `equipment_assignments` (coexistence
+  stricte).
+
+### Reference
+
+- `apps/api/migrations/equipment-assignment-history-v1.js` (nouveau).
+- `apps/api/migrations.js` : wire après T-P1-07.
+- `docs/api/v2/equipment-assignments.md` : usage complet.
+
+---
+
 ## [1.7.0] — 2026-07-10
 
 ### Added — SAV v2 : table `sav_parts` (T-P1-07)

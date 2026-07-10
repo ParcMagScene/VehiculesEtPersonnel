@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import logger from './logger.js';
 import { runAffairesV2SchemaMigration } from './migrations/affaires-v2-schema-v1.js';
 import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
+import { runEquipmentAssignmentHistoryMigration } from './migrations/equipment-assignment-history-v1.js';
 import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
 import { runEquipmentSerialsMagNumberMigration } from './migrations/equipment-serials-mag-number-v1.js';
 import { runEquipmentSerialsUidMigration } from './migrations/equipment-serials-uid-v1.js';
@@ -913,6 +914,12 @@ export function runPostInitMigrations(db) {
   //     Additive, idempotente. Coexiste avec sav_tickets. Voir
   //     docs/api/v2/sav.md.
   runSavPartsMigration(db);
+
+  // ═══ [T-P1-08] Equipment v2 — equipment_assignment_history
+  //     Additive, idempotente. Trace des mutations sur
+  //     equipment_assignments (audit trail). Voir docs/api/v2/
+  //     equipment-assignments.md.
+  runEquipmentAssignmentHistoryMigration(db);
 
   // ═══ Suivi/Incidents v2 (multi-tickets + date) ═══
   runIncidentTicketsV2Migration(db);

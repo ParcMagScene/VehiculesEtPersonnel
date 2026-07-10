@@ -5,6 +5,21 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.15.0] — 2026-07-10
+
+### Added — API v2 core : `docs/api/v2/core.md` (T-P1-01)
+
+- **`docs/api/v2/core.md`** (nouveau) : contrat commun transverse
+  aux 4 namespaces v2. Sections : payload commun (`success/data/meta/
+  error` + codes normalisés), pagination cursor-based (curseur
+  opaque), feature flag serveur, discovery par namespace
+  (`/protocol`) + discovery globale (`GET /api/v2/meta`),
+  référence, non couvert.
+- **`docs/api/v2/README.md`** : ajout ligne **Core** 🟢 en tête du
+  tableau des modules.
+
+---
+
 ## [1.14.0] — 2026-07-10
 
 ### Added — Affaires v2 : `docs/api/v2/affaires.md` (T-P0-09)

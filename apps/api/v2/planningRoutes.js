@@ -42,7 +42,31 @@ import {
 } from '../services/planning/tasks.js';
 import { buildV2Pagination, sendV2Error, sendV2Success } from '../utils/apiV2Response.js';
 
-const PLANNING_V2_FLAG = 'FEATURE_V2_PLANNING';
+/**
+ * Version du protocole Planning v2.
+ * @type {string}
+ */
+export const PLANNING_PROTOCOL_VERSION = '2.0.0';
+
+/**
+ * Nom canonique du feature flag serveur.
+ * @type {string}
+ */
+export const PLANNING_V2_FLAG = 'FEATURE_V2_PLANNING';
+
+/**
+ * Capacites annoncees. Kebab-case stables. Exposees par
+ * `GET /api/v2/meta` (T-P1-01).
+ * @type {ReadonlyArray<string>}
+ */
+export const PLANNING_V2_CAPABILITIES = Object.freeze([
+  'tasks-list-cursor-v1',
+  'tasks-mutations-v1',
+  'tasks-batch-v1',
+  'tasks-rollover-v1',
+  'events-list-cursor-v1',
+  'affaires-list-v1',
+]);
 
 /**
  * Monte les routes v2 lecture du Planning sur l'application Express.

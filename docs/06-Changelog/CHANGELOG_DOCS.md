@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.28.0] — 2026-07-10
+
+### Added — Equipment UID v2 : section Dogfooding UI (T-P1-06b)
+
+- **`docs/api/v2/equipment-uid.md`** : ajout section **Dogfooding
+  UI Fondations (T-P1-06b)** documentant helpers admin
+  (`fetchEquipmentUidAuditUnified`, `regenerateEquipmentUidUnified`)
+  et l'inventaire des 21 tests. Note explicite : distinct du
+  T-P1-06b renforcement UNIQUE DB.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.22.0.
+
+---
+
 ## [1.27.0] — 2026-07-10
 
 ### Added — Conflicts v2 : section Dogfooding UI (T-P1-05b)

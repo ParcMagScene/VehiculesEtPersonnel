@@ -5,6 +5,17 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.29.0] — 2026-07-10
+
+### Added — SAV v2 : section Dogfooding UI Fondations (T-P1-07b)
+
+- **`docs/api/v2/sav.md`** : ajout section **Dogfooding UI
+  Fondations (T-P1-07b)** documentant helpers list/add pieces +
+  transitions ticket et l'inventaire des 24 tests.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.23.0.
+
+---
+
 ## [1.28.0] — 2026-07-10
 
 ### Added — Equipment UID v2 : section Dogfooding UI (T-P1-06b)

@@ -5,6 +5,24 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.23.0] — 2026-07-10
+
+### Added — SAV v2 fondations UI (T-P1-07b)
+
+- **`apps/web/src/utils/sav/v2Adapters.js`** : constantes
+  `SAV_PART_STATUSES` / `SAV_TICKET_STATUSES`, adapters
+  `adaptSavPartV2ToV1`, `adaptV2SavPartsList`,
+  `adaptV2TicketTransitionResponse`, `readSavV2ClientFlag`.
+- **`apps/web/src/utils/sav/fetchSavParts.js`** : 4 helpers
+  unified pour list/add pièces + change statut + transition ticket.
+  Retour `null` quand indisponible.
+- **24 tests unitaires** (12 adapters + 12 helpers).
+
+Aucun composant modifié (`EquipmentSAV.jsx` reste sur v1). Panel
+enrichi reporté en T-P1-07c.
+
+---
+
 ## [2.22.0] — 2026-07-10
 
 ### Added — Equipment UID v2 fondations UI admin (T-P1-06b)

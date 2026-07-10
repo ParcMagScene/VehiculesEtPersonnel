@@ -5,6 +5,54 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.22.0] — 2026-07-10
+
+### Added — Commandes v2 : réception partielle + conversion devis (T-P1-10)
+
+**Réception partielle détaillée** (nouvelle table `order_receptions`):
+- **`POST /api/v2/orders/:id/receptions`** : insère une ligne
+  `order_receptions` + incrémente `order_items.received_qty`
+  cumulativement. Sur-réception refusée (409 CONFLICT si cumul
+  dépasse `order_items.quantity`).
+- **`GET /api/v2/orders/:id/receptions/summary`** : compteurs
+  aggrégés (items_fully_received, items_partial, items_pending,
+  all_received, any_received). Propose l'auto-transition
+  `→ received` en UI dès `all_received=true`.
+- Le statut `orders.status` n'est **pas** modifié automatiquement
+  (transition manuelle via `POST /orders/:id/transition`).
+
+**Conversion devis → commande** :
+- **`POST /api/v2/quotes/:id/convert-to-order`** : miroir strict
+  de la logique v1 (`POST /api/quotes/:id/convert`) en service
+  pur transactionnel. Refuse si devis pas `accepted`
+  (`409 CONFLICT`) ou déjà converti.
+
+**Migration DB** : `order-receptions-v1` (additive, idempotente,
+FK CASCADE, 3 index).
+
+**Meta v2 capabilities** : ajout `order-item-receive-v1`,
+`order-receptions-summary-v1`, `quote-convert-to-order-v1` sur le
+namespace `orders`.
+
+### Reference
+
+- `apps/api/migrations/order-receptions-v1.js` (nouveau).
+- `apps/api/services/orders/receptions.js` (nouveau) :
+  `recordItemReception`, `summarizeOrderReceptions`.
+- `apps/api/services/orders/conversion.js` (nouveau) :
+  `convertQuoteToOrder` (miroir v1).
+- `apps/api/v2/ordersRoutes.js` (étendu) : 3 nouveaux endpoints.
+- `docs/api/v2/orders.md` (étendu) : sections T-P1-10.
+
+### Non couvert
+
+- Auto-transition `orders.status` lors des réceptions (reste
+  manuelle).
+- Annulation d'une réception (delete row).
+- UI : ticket T-P1-10b.
+
+---
+
 ## [1.21.0] — 2026-07-10
 
 ### Added — Commandes v2 : cycle achat (T-P1-09)

@@ -20,6 +20,7 @@ import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocationsV2SchemaMigration } from './migrations/locations-v2-schema-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
+import { runOrderReceptionsMigration } from './migrations/order-receptions-v1.js';
 import { runPersonalActionsLogV1Migration } from './migrations/personal-actions-log-v1.js';
 import { runPlanningV2SchemaMigration } from './migrations/planning-v2-schema-v1.js';
 import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
@@ -920,6 +921,11 @@ export function runPostInitMigrations(db) {
   //     equipment_assignments (audit trail). Voir docs/api/v2/
   //     equipment-assignments.md.
   runEquipmentAssignmentHistoryMigration(db);
+
+  // ═══ [T-P1-10] Orders v2 — order_receptions (reception partielle)
+  //     Additive, idempotente. Ventilation par ligne + audit.
+  //     Voir docs/api/v2/orders.md.
+  runOrderReceptionsMigration(db);
 
   // ═══ Suivi/Incidents v2 (multi-tickets + date) ═══
   runIncidentTicketsV2Migration(db);

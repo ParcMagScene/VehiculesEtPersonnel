@@ -5,6 +5,70 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.19.0] — 2026-07-10
+
+### Added — Équipements v2 : SAV enrichi (T-P1-07)
+
+Namespace `/api/v2/sav/*` avec 2 compléments majeurs au domaine
+SAV existant :
+
+**Machine d'état explicite** :
+- `apps/api/services/sav/stateMachine.js` : `ALLOWED_TRANSITIONS`
+  (frozen dict de Sets), `assertTransition`,
+  `isTransitionAllowed`, `getAllowedNext`. Statuts source :
+  `services/savComparator.js#SAV_STATUS` (réutilisés).
+- **`POST /api/v2/sav/tickets/:id/transition`** valide la
+  transition avant UPDATE. Réponse `{ticket_id, previous_status,
+  new_status, changed}`. Erreur `409 CONFLICT` avec
+  `meta.details.allowed` (liste des statuts atteignables) si
+  transition interdite.
+- Le v1 (`savRoutes.js`) accepte toujours toute transition texte.
+  Migration future opt-in.
+
+**Pièces détachées `sav_parts`** :
+- Migration `sav-parts-v1` : nouvelle table `sav_parts` (id,
+  ticket_id FK CASCADE, part_name, part_reference, quantity,
+  unit_price, supplier, status, timestamps typés, notes,
+  created_by/at, modified_by/at). Additive, idempotente.
+- **`GET /api/v2/sav/tickets/:id/parts`** : liste `requested_at
+  DESC`.
+- **`POST /api/v2/sav/tickets/:id/parts`** : ajout (statut initial
+  `requested`).
+- **`PATCH /api/v2/sav/parts/:id/status`** : cycle `requested →
+  ordered → received → installed` (ou `cancelled` à toute étape).
+  Timestamp typé (`ordered_at`, `received_at`, etc.) renseigné
+  automatiquement.
+
+**Discovery** :
+- `GET /api/v2/sav/protocol` retourne `part_statuses`,
+  `allowed_ticket_transitions` (serialisé Set → array).
+
+Gate par `FEATURE_V2_SAV` (off par défaut).
+
+### Changed — `GET /api/v2/meta` : ajout du namespace `sav`
+
+Le registre `V2_NAMESPACES` compte désormais **8 namespaces** :
+`affaires`, `conflicts`, `display`, `equipment-uid`, `leaves`,
+`locations`, `planning`, **`sav`** (ordre alphabétique).
+
+### Reference
+
+- `apps/api/services/sav/stateMachine.js` (nouveau).
+- `apps/api/services/sav/parts.js` (nouveau).
+- `apps/api/services/sav/errors.js` (nouveau).
+- `apps/api/services/sav/index.js` (nouveau).
+- `apps/api/v2/savRoutes.js` (nouveau).
+- `apps/api/migrations/sav-parts-v1.js` (nouveau).
+- `docs/api/v2/sav.md` (nouveau).
+
+### Non couvert (T-P1-07 futur)
+
+- Sync LocMat auditée formalisée en v2 (le mécanisme actuel
+  `savRoutes` + `savComparator` fonctionne, formalisation reportée).
+- Migration du v1 vers `assertTransition`.
+
+---
+
 ## [1.18.0] — 2026-07-10
 
 ### Added — Équipements v2 : UID/serials contrôlés (T-P1-06)

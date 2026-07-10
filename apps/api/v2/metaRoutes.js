@@ -51,6 +51,7 @@ import {
   PLANNING_V2_CAPABILITIES,
   PLANNING_V2_FLAG,
 } from './planningRoutes.js';
+import { SAV_PROTOCOL_VERSION, SAV_V2_CAPABILITIES, SAV_V2_FLAG } from './savRoutes.js';
 
 /**
  * Version protocolaire du meta lui-meme. A incrementer si le format
@@ -128,6 +129,14 @@ export const V2_NAMESPACES = Object.freeze([
     capabilities: PLANNING_V2_CAPABILITIES,
     flag: PLANNING_V2_FLAG,
     docs: '/docs/api/v2/planning.md',
+  }),
+  Object.freeze({
+    name: 'sav',
+    base_path: '/api/v2/sav',
+    protocol_version: SAV_PROTOCOL_VERSION,
+    capabilities: SAV_V2_CAPABILITIES,
+    flag: SAV_V2_FLAG,
+    docs: '/docs/api/v2/sav.md',
   }),
 ]);
 

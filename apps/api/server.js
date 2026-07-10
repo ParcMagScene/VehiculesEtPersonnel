@@ -138,6 +138,7 @@ import { setupLeavesV2Routes } from './v2/leavesRoutes.js';
 import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
 import { setupV2MetaRoutes } from './v2/metaRoutes.js';
 import { setupPlanningV2Routes } from './v2/planningRoutes.js';
+import { setupSavV2Routes } from './v2/savRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
 import { attachWebSocketServer } from './ws/index.js';
@@ -513,6 +514,11 @@ setupConflictsV2Routes(app, authenticateToken);
 // UID). Protégé par FEATURE_V2_EQUIPMENT_UID (404 si off).
 // Coexistence stricte avec /api/equipment* v1.
 setupEquipmentUidV2Routes(app, authenticateToken, requireAdmin);
+
+// [SAV v2 — T-P1-07] Namespace API v2 (parts + machine d'etat).
+// Protégé par FEATURE_V2_SAV (404 si off). Coexistence stricte avec
+// /api/sav* v1.
+setupSavV2Routes(app, authenticateToken);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

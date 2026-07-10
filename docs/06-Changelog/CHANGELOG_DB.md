@@ -5,6 +5,30 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.7.0] — 2026-07-10
+
+### Added — SAV v2 : table `sav_parts` (T-P1-07)
+
+- **Migration `sav-parts-v1`** : nouvelle table `sav_parts`
+  (idempotente, additive).
+  - Colonnes : `id`, `ticket_id` (FK `sav_tickets(id)` ON DELETE
+    CASCADE), `part_name`, `part_reference`, `quantity`,
+    `unit_price`, `supplier`, `status` (CHECK IN `requested`,
+    `ordered`, `received`, `installed`, `cancelled`),
+    `requested_at`, `ordered_at`, `received_at`, `installed_at`,
+    `cancelled_at`, `notes`, `created_by`/`at`, `modified_by`/`at`.
+  - Index : `idx_sav_parts_ticket`, `idx_sav_parts_status`,
+    `idx_sav_parts_supplier`.
+- Aucune modification de `sav_tickets` (coexistence stricte).
+
+### Reference
+
+- `apps/api/migrations/sav-parts-v1.js` (nouveau).
+- `apps/api/migrations.js` : wire après T-P0-08.
+- `docs/api/v2/sav.md` : usage complet.
+
+---
+
 ## [1.6.0] — 2026-07-10
 
 ### Added — Affaires v2 : matérialisation + FK ref + audit trail (T-P0-08)

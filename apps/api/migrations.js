@@ -22,6 +22,7 @@ import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
 import { runPersonalActionsLogV1Migration } from './migrations/personal-actions-log-v1.js';
 import { runPlanningV2SchemaMigration } from './migrations/planning-v2-schema-v1.js';
 import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
+import { runSavPartsMigration } from './migrations/sav-parts-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
@@ -907,6 +908,11 @@ export function runPostInitMigrations(db) {
   //     phase de coexistence (sunset TEXT prevu en T-P0-09). Voir
   //     docs/05-Specs/AFFAIRES_V2.md.
   runAffairesV2SchemaMigration(db);
+
+  // ═══ [T-P1-07] SAV v2 — table sav_parts (pieces detachees)
+  //     Additive, idempotente. Coexiste avec sav_tickets. Voir
+  //     docs/api/v2/sav.md.
+  runSavPartsMigration(db);
 
   // ═══ Suivi/Incidents v2 (multi-tickets + date) ═══
   runIncidentTicketsV2Migration(db);

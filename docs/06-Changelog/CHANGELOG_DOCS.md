@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.31.0] — 2026-07-10
+
+### Added — Orders v2 : section Dogfooding UI (T-P1-09b/10b)
+
+- **`docs/api/v2/orders.md`** : ajout section **Dogfooding UI
+  Fondations (T-P1-09b / T-P1-10b)** documentant les matrices
+  ORDER_TRANSITIONS / QUOTE_TRANSITIONS côté client, les 4 helpers
+  unified, le contrat étendu `{ ok, data | conflict, error }` et
+  l'inventaire des 35 tests.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.25.0.
+
+---
+
 ## [1.30.0] — 2026-07-10
 
 ### Added — Equipment Assignments v2 : section Dogfooding UI (T-P1-08b)

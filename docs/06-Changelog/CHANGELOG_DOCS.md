@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.32.0] — 2026-07-10
+
+### Added — Equipment UID v2 : section Panel admin (T-P1-06c)
+
+- **`docs/api/v2/equipment-uid.md`** : ajout section **Dogfooding
+  UI Panel admin (T-P1-06c)** documentant l'onglet **Diagnostics
+  UID** (conditionnel au flag), l'UI (verdict + KPI + doublons +
+  regenerate), et l'inventaire des 7 tests unitaires.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.26.0.
+
+---
+
 ## [1.31.0] — 2026-07-10
 
 ### Added — Orders v2 : section Dogfooding UI (T-P1-09b/10b)

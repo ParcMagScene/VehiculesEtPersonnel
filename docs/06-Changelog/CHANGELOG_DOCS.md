@@ -5,6 +5,25 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.17.0] — 2026-07-10
+
+### Added — Personnel v2 : audit drivers ↔ persons (T-P1-03)
+
+- **`scripts/personnel-v2-drivers-audit.mjs`** (nouveau) : script
+  read-only dry-run recensant les drivers orphelins (aucune ligne
+  `persons.driver_id` associée) et les persons rattachées via
+  `driver_id`. Exit code 0 si sunset destructif safe, 1 si
+  décision requise.
+- **`tests/api-smoke/personnel-v2-drivers-audit.test.js`** (nouveau,
+  4 subtests) : couvre orphelins détectés, exclusion des drivers
+  liés, cas base vide.
+- **`docs/05-Specs/UNIFICATION_PERSONS_DRIVERS.md`** : mise à jour
+  statut v0.3.0. Audit prod 2026-07-10 : 0 driver, 0 orphelin, 0
+  person liée. Sunset destructif safe techniquement, en attente
+  décision utilisateur explicite (**T-P1-03b**).
+
+---
+
 ## [1.16.0] — 2026-07-10
 
 ### Added — WebSocket core : `docs/api/v2/websocket.md` (T-P1-02)

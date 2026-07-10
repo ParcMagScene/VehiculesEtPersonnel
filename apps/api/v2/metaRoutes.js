@@ -30,6 +30,7 @@ import {
   DISPLAY_V2_CAPABILITIES,
   DISPLAY_V2_FLAG,
 } from './displayRoutes.js';
+import { LEAVES_PROTOCOL_VERSION, LEAVES_V2_CAPABILITIES, LEAVES_V2_FLAG } from './leavesRoutes.js';
 import {
   LOCATIONS_PROTOCOL_VERSION,
   LOCATIONS_V2_CAPABILITIES,
@@ -77,6 +78,14 @@ export const V2_NAMESPACES = Object.freeze([
     capabilities: DISPLAY_V2_CAPABILITIES,
     flag: DISPLAY_V2_FLAG,
     docs: '/docs/api/v2/display.md',
+  }),
+  Object.freeze({
+    name: 'leaves',
+    base_path: '/api/v2/leaves',
+    protocol_version: LEAVES_PROTOCOL_VERSION,
+    capabilities: LEAVES_V2_CAPABILITIES,
+    flag: LEAVES_V2_FLAG,
+    docs: '/docs/api/v2/leaves.md',
   }),
   Object.freeze({
     name: 'locations',

@@ -19,6 +19,7 @@
 | Display | 🟢 T-P0-14 + T-P0-15 + T-P0-16 — discovery + `/config` `/content` `/signals` + SSE `/signals/stream` + TV-client v2 | [display.md](display.md) |
 | Locations | 🟢 T-P0-12 — discovery + `/depots` + `/depots/:id` + `PATCH /equipment/:id/location` | [locations.md](locations.md) |
 | Affaires | 🟢 T-P0-09 — discovery + `GET /affaires` (cursor) + `GET /affaires/:num` + `/history` + `PATCH` audité | [affaires.md](affaires.md) |
+| Leaves | 🟢 T-P1-04 — discovery + `POST /calculate` (miroir v1) + `GET /balance/mine` + `GET /balance/:person_id` (admin) | [leaves.md](leaves.md) |
 
 ---
 

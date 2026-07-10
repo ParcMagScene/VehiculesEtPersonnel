@@ -1,10 +1,10 @@
 # SPEC — Affaires v2 (design doc)
 
-> **Version** : 0.1.0 (cadrage T-P0-07 — script backfill dry-run)
-> **Statut** : `Cadrage — backfill dry-run livré ; matérialisation T-P0-08 non exécutée`
-> **Prérequis migration réelle** :
+> **Version** : 0.2.0 (T-P0-08 livré — matérialisation + FK ref + audit trail)
+> **Statut** : `T-P0-08 livré, T-P0-09 (sunset TEXT + FK stricte) en attente`
+> **Historique décisions** :
 >
-> - **P0-DECISION-2** avant tout INSERT dans `affaires` ou ajout de FK.
+> - **P0-DECISION-2** validée 2026-07-10 (Affaires uniquement, autres domaines refusés).
 
 ---
 
@@ -55,17 +55,41 @@ de `reservations`).
 - Rapport JSON exploitable pour préparer T-P0-08.
 - Exit code 1 si affaires implicites détectées (décision requise).
 
-### T-P0-08 (à venir) — Matérialisation transactionnelle
+### T-P0-08 (livré 2026-07-10) — Matérialisation + FK ref + audit trail
 
-- Migration `apps/api/migrations/affaires-v2-000-materialize.js`.
-- Transaction atomique : INSERT OR IGNORE pour chaque affaire implicite
-  recensée, avec le payload suggéré.
-- Ajout des colonnes `*_affaire_id` INTEGER en parallèle des TEXT existantes.
-- Backfill des `*_affaire_id` depuis les colonnes TEXT (lookup dans
-  `affaires`).
-- **Prérequis** : backup DB obligatoire, `P0-DECISION-2` explicite.
+- Migration effective : `apps/api/migrations/affaires-v2-schema-v1.js`
+  (nommée `schema` plutôt que `materialize` pour englober les 3
+  chantiers du ticket : matérialisation, colonnes `affaire_ref_id`,
+  table `affaire_history`).
+- **Matérialisation** : `INSERT OR IGNORE` dans `affaires`. Payload
+  déduit de `reservations` (client + date_debut/fin + prestation).
+  12 affaires implicites recensées par le dry-run T-P0-07 (source
+  prod).
+- **Coexistence stricte** : les colonnes TEXT existantes restent
+  intactes. La nouvelle colonne est nommée `affaire_ref_id` (et non
+  `*_affaire_id` comme prévu initialement) pour éviter toute
+  collision avec les colonnes `affaire_id` TEXT préexistantes
+  (`orders`, `bl_imports`, `dynamic_display_events`,
+  `equipment_assignments`, `quotes`).
+- **Portée** : 6 tables — `reservations` (col TEXT `affaire`),
+  `missions` (col TEXT `affaire`), `orders`, `bl_imports`,
+  `dynamic_display_events`, `equipment_assignments`. La table
+  `quotes` (col TEXT `affaire_id`) n'est pas incluse (hors périmètre
+  T-P0-08, à traiter en T-P0-09 si besoin).
+- **FK stricte différée** : SQLite ne permet pas d'ajouter une
+  contrainte `FOREIGN KEY` sur une colonne existante via
+  `ALTER TABLE`. La FK réelle sera introduite par recréation de
+  chaque table lors du sunset TEXT (T-P0-09), après validation
+  supplémentaire zéro-consommateur v1.
+- **Table `affaire_history`** : audit trail créé. Aucun trigger posé
+  dans ce ticket (l'écriture historique sera pilotée par le
+  namespace v2 en T-P0-09).
+- **Prérequis satisfaits** : `P0-DECISION-2` validée 2026-07-10 (cf
+  `EXECUTION_PLAN_EMAG_3_0.md §0.5`). Backup DB prod obligatoire
+  avant déploiement en prod (responsabilité du déploiement, hors
+  scope de ce ticket).
 
-### T-P0-09 (à venir) — Sunset TEXT + FK strict
+### T-P0-09 (à venir) — Sunset TEXT + FK strict + API v2
 
 - Retrait de l'enrichissement automatique côté API v1.
 - DROP des colonnes TEXT legacy après vérification zero-usage.

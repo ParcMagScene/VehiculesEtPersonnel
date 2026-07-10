@@ -5,6 +5,59 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.6.0] — 2026-07-10
+
+### Added — Affaires v2 : matérialisation + FK ref + audit trail (T-P0-08)
+
+**Autorisé par P0-DECISION-2 du 2026-07-10** (cf.
+`EXECUTION_PLAN_EMAG_3_0.md §0.5`). Strictement additif, idempotent,
+zéro modification des colonnes existantes.
+
+- Migration : `apps/api/migrations/affaires-v2-schema-v1.js`.
+  - **Matérialisation** : `INSERT OR IGNORE` dans `affaires` pour
+    chaque `numero_affaire` référencé par une table fille mais absent
+    de `affaires`. Payload enrichi depuis `reservations`
+    (client / date_debut min / date_fin max / prestation). En prod
+    au moment de la décision : 12 affaires implicites recensées par
+    le dry-run T-P0-07.
+  - **Ajout colonnes FK ref** : `affaire_ref_id INTEGER` nullable +
+    index `idx_<table>_affaire_ref_id` sur 6 tables :
+    - `reservations`
+    - `missions`
+    - `orders`
+    - `bl_imports`
+    - `dynamic_display_events`
+    - `equipment_assignments`
+  - **Backfill** : `UPDATE ... SET affaire_ref_id = (SELECT id FROM
+    affaires WHERE numero_affaire = <text_column>) WHERE
+    affaire_ref_id IS NULL AND <text_column> IS NOT NULL AND
+    <text_column> <> ''`.
+  - **Table `affaire_history`** : audit trail des modifications sur
+    `affaires` (`field_name`, `old_value`, `new_value`, `changed_by`
+    FK users, `changed_at`, `notes`). Index sur `affaire_id` et
+    `changed_at`.
+
+Cohabitation stricte : les colonnes TEXT existantes (`reservations.
+affaire`, `missions.affaire`, `orders.affaire_id`, `bl_imports.
+affaire_id`, `dynamic_display_events.affaire_id`, `equipment_
+assignments.affaire_id`) sont conservées intactes. Le sunset TEXT
+sera opéré par T-P0-09 (nécessite validation d'absence totale de
+consommateur v1).
+
+Aucune API modifiée dans ce ticket : le namespace `/api/v2/affaires`
+sera livré en T-P0-09.
+
+### Reference
+
+- `apps/api/migrations/affaires-v2-schema-v1.js` — migration.
+- `apps/api/migrations.js` — wiring.
+- `tests/db/affaires-v2-schema.test.js` — 7 tests idempotence +
+  backfill + INSERT OR IGNORE.
+- `docs/05-Specs/AFFAIRES_V2.md` — spec mise à jour §3 (T-P0-08 livré).
+- `EXECUTION_PLAN_EMAG_3_0.md §0.5` — registre P0-DECISION-2.
+
+---
+
 ## [1.5.0] — 2026-07-09
 
 ### Added — Display v2 : enrichissement `display_logs` (T-P0-14)

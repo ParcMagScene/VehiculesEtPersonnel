@@ -61,6 +61,14 @@ Un point d’arrêt = décision explicite utilisateur avant d’engager l’éta
 
 Aucun de ces points n’est franchi sans validation utilisateur.
 
+### 0.5 Registre des décisions prises
+
+| Décision | Date | Domaine | Verdict | Justification |
+|----------|------|---------|---------|---------------|
+| P0-DECISION-2 | 2026-07-10 | Planning v2 (T-P0-06) | ❌ Refusé | Phase C prod jamais activée, dogfooding dev de 1 jour seulement. Prérequis PLANNING_V2_SUNSET_PLAN §5 non satisfaits. Ré-évaluer après `P0-DECISION-1`. |
+| P0-DECISION-2 | 2026-07-10 | Affaires v2 (T-P0-08) | ✅ Autorisé | 12 affaires implicites détectées par le dry-run T-P0-07 sur DB prod. Migration transactionnelle + FK nullable + cohabitation TEXT stricte, backup DB prod obligatoire avant `--apply` prod. |
+| P0-DECISION-2 | 2026-07-10 | Locations v2 (T-P0-13) | ❌ Refusé | Flags `FEATURE_V2_LOCATIONS` (serveur) et `VITE_FEATURE_V2_LOCATIONS` (client) jamais activés. Aucun dogfooding. Endpoint stats v2 manquant, `DepotMap`/`LocmatImportModal` toujours v1. Ré-évaluer après activation + dogfooding. |
+
 ---
 
 ## 1. Ordre global d’exécution

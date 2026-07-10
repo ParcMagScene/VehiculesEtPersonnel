@@ -60,15 +60,20 @@ before(() => {
       FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
       FOREIGN KEY (modified_by) REFERENCES users(id) ON DELETE SET NULL
     );
+    -- Schema legacy L6 (event-based) reutilise par le service v2
+    -- via event_type='field_change' + source='v2_api' (hotfix 2026-07-10).
     CREATE TABLE affaire_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       affaire_id INTEGER NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
-      field_name TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      source TEXT,
+      source_ref TEXT,
+      field_name TEXT,
       old_value TEXT,
       new_value TEXT,
-      changed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-      changed_at DATETIME NOT NULL DEFAULT (datetime('now')),
-      notes TEXT
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      notes TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
@@ -215,7 +220,9 @@ describe('services/affaires — patchAffaire', () => {
 
     const hist = db
       .prepare(
-        "SELECT field_name, old_value, new_value, changed_by, notes FROM affaire_history WHERE affaire_id = (SELECT id FROM affaires WHERE numero_affaire = 'AF-001') ORDER BY field_name",
+        // Alias user_id -> changed_by (schema legacy L6 reutilise par
+        // le service v2 avec event_type='field_change').
+        "SELECT field_name, old_value, new_value, user_id AS changed_by, notes, event_type, source FROM affaire_history WHERE affaire_id = (SELECT id FROM affaires WHERE numero_affaire = 'AF-001') AND event_type = 'field_change' ORDER BY field_name",
       )
       .all();
     assert.equal(hist.length, 2);
@@ -224,12 +231,16 @@ describe('services/affaires — patchAffaire', () => {
     assert.equal(clientEntry.new_value, 'Client A - update');
     assert.equal(clientEntry.changed_by, 1);
     assert.equal(clientEntry.notes, 'test note');
+    assert.equal(clientEntry.event_type, 'field_change');
+    assert.equal(clientEntry.source, 'v2_api');
   });
 
   it('no-op : patch identique -> changed:false et aucune entree history', () => {
     const beforeCount = db
       .prepare(
-        "SELECT COUNT(*) AS n FROM affaire_history WHERE affaire_id = (SELECT id FROM affaires WHERE numero_affaire = 'AF-002')",
+        // Filtre event_type='field_change' pour ne compter que les
+        // entrees v2 (isole du legacy L6).
+        "SELECT COUNT(*) AS n FROM affaire_history WHERE affaire_id = (SELECT id FROM affaires WHERE numero_affaire = 'AF-002') AND event_type = 'field_change'",
       )
       .get().n;
     const result = patchAffaire({
@@ -242,7 +253,7 @@ describe('services/affaires — patchAffaire', () => {
     assert.deepEqual(result.history_ids, []);
     const afterCount = db
       .prepare(
-        "SELECT COUNT(*) AS n FROM affaire_history WHERE affaire_id = (SELECT id FROM affaires WHERE numero_affaire = 'AF-002')",
+        "SELECT COUNT(*) AS n FROM affaire_history WHERE affaire_id = (SELECT id FROM affaires WHERE numero_affaire = 'AF-002') AND event_type = 'field_change'",
       )
       .get().n;
     assert.equal(afterCount, beforeCount);

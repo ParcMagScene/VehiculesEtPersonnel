@@ -5,6 +5,22 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.13.0] — 2026-07-10
+
+### Added — Locations v2 : `docs/api/v2/locations.md` (T-P0-12)
+
+- **`docs/api/v2/locations.md`** (nouveau) : reference complète du
+  namespace `/api/v2/locations/*`. 4 endpoints documentés avec
+  exemples de payloads 200 + réponses d'erreur 400/404/409. Section
+  dédiée au rappel de l'enrichissement `equipment_location_history`
+  (T-P0-10).
+- **`docs/api/v2/README.md`** : Locations passe 🟢 (T-P0-12
+  livré).
+- **`apps/api/.env.example`** : documente `FEATURE_V2_LOCATIONS`
+  (off par défaut).
+
+---
+
 ## [1.12.0] — 2026-07-09
 
 ### Added — Localisation v2 : script backfill diagnostic (T-P0-11)

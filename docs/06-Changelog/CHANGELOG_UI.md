@@ -5,6 +5,33 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.7.0] — 2026-07-10
+
+### Added — Locations v2 client API + hooks (T-P0-12 backend & client)
+
+- **`apps/web/src/utils/api/v2/locations.js`** (nouveau) :
+  enregistrement sur `ApiClient.prototype` de 4 méthodes v2 :
+  `v2LocationsProtocol()`, `v2ListDepots()`, `v2GetDepot(depotId)`,
+  `v2PatchEquipmentLocation(equipmentId, patch)`. Toutes utilisent
+  `skipCamelCase: true` pour préserver la casse snake_case des
+  réponses v2.
+- **`apps/web/src/hooks/v2/useLocationsV2.js`** (nouveau) :
+  - `useV2DepotsList()` : liste compacte des dépôts, expose
+    `{ depots, loading, error, featureDisabled, refresh }`.
+  - `useV2DepotDetail(depotId)` : détail complet, no-op si
+    `depotId` falsy, distingue `featureDisabled` (404
+    FEATURE_DISABLED serveur) de `error` réseau/404 dépôt
+    inexistant.
+- **`apps/web/src/utils/api/index.js`** : enregistrement des méthodes
+  v2 Locations sur le singleton ApiClient (après Planning v2).
+
+Aucun composant UI refactoré dans ce commit. Le refactor de
+`EquipmentPanel.jsx` (1080 lignes) + `InventoryPanel.jsx` (946 lignes)
+pour consommer les hooks v2 (au lieu de charger `depot-zones.json`
+statique) est reporté à un ticket T-P0-12b dédié.
+
+---
+
 ## [2.6.0] — 2026-07-09
 
 ### Added — TV-client v2 (T-P0-16)

@@ -5,6 +5,53 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.12.0] — 2026-07-10
+
+### Added — Locations v2 API namespace (T-P0-12)
+
+- **`GET /api/v2/locations/protocol`** : discovery public. Retourne
+  `protocol_version=2.0.0`, `capabilities` (4 kebab-case),
+  `legacy_endpoints` (pointeurs vers v1), `docs`.
+- **`GET /api/v2/locations/depots`** : liste compacte des dépôts
+  depuis `depot_svg_maps` (metadonnées + counts).
+- **`GET /api/v2/locations/depots/:depot_id`** : détail d'un dépôt
+  (svg_width/height + floors + categories + zones parsés).
+- **`PATCH /api/v2/equipment/:id/location`** : mise à jour de la
+  localisation d'un équipement. Champs acceptés :
+  `location_depot`, `location_floor`, `location_zone`, `location_code`,
+  `notes`, `strict`.
+  - Transactionnel : UPDATE `equipment.location_*` + INSERT
+    `equipment_location_history` dans la même transaction.
+  - Détection **no-op** : si aucun champ ne change effectivement,
+    `changed=false` + `history_id=null`, aucune ligne dans l'audit
+    trail (évite le bruit).
+  - Mode `strict: true` : refuse si `location_zone` inconnue dans
+    `depot_svg_maps.zones_json` du dépôt cible → 409 CONFLICT.
+  - Réponse : `{ equipment_id, previous, next, history_id, changed }`.
+
+Toutes les routes sont gate par `FEATURE_V2_LOCATIONS` (off par défaut,
+404 `FEATURE_DISABLED`). Coexistence stricte avec les endpoints v1
+(`/api/equipment-depot-zones`, `/api/equipment-all-depot-zones`,
+`/api/catalog/equipment/zones`).
+
+Erreurs typées :
+- **400 VALIDATION_ERROR** (patch vide, id invalide, champs hors liste).
+- **404 NOT_FOUND** (dépôt/équipement inexistant).
+- **409 CONFLICT** (mode strict + zone inconnue).
+- **500 INTERNAL_ERROR** (erreur non-typée).
+
+### Reference
+
+- `apps/api/services/locations/` (nouveau) — 4 fichiers services +
+  errors + barrel : `listDepots`, `getDepotById`, `isZoneKnown`,
+  `updateEquipmentLocation` (avec `LOCATION_FIELDS` immutable).
+- `apps/api/v2/locationsRoutes.js` (nouveau) — 4 endpoints + gate.
+- `docs/api/v2/locations.md` — reference endpoints complète avec
+  exemples 200/400/404/409.
+- `EXECUTION_PLAN_EMAG_3_0.md` — T-P0-12 · Localisation v2 API + UI.
+
+---
+
 ## [1.11.0] — 2026-07-09
 
 ### Added — Display v2 SSE stream + TV-client v2 (T-P0-16)

@@ -131,6 +131,7 @@ import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupDisplayV2Routes } from './v2/displayRoutes.js';
+import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
 import { setupPlanningV2Routes } from './v2/planningRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
@@ -475,6 +476,11 @@ setupPlanningV2Routes(app, authenticateToken);
 // [Display v2 — T-P0-14] Namespace API v2 protocol + skeleton. Protégé
 // par FEATURE_V2_DISPLAY (404 si off). Coexistence stricte avec v1.
 setupDisplayV2Routes(app, authenticateToken);
+
+// [Locations v2 — T-P0-12] Namespace API v2 (depots + PATCH equipment
+// location). Protégé par FEATURE_V2_LOCATIONS (404 si off). Coexistence
+// stricte avec les endpoints inventaire v1.
+setupLocationsV2Routes(app, authenticateToken, requireAdmin);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

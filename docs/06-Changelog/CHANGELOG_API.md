@@ -5,6 +5,53 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.16.0] — 2026-07-10
+
+### Added — Personnel v2 : leaves API namespace (T-P1-04)
+
+- **`GET /api/v2/leaves/protocol`** : discovery public. `capabilities`
+  (4 kebab-case), `legacy_endpoints`, `docs`.
+- **`POST /api/v2/leaves/calculate`** : miroir strict du POST v1
+  `/api/leaves/calculate` avec payload standardisé `{success, data,
+  meta}`. Body : `startDate`, `endDate`, `startPeriod`/`endPeriod`
+  (AM/PM), `leaveType`, `exceptionalType`, `requestDate`. Réponse :
+  `workingDays`, `holidaysInPeriod`, `warnings` (deadline, fermeture
+  annuelle, règle 12 jours consécutifs), `referencePeriod`.
+- **`GET /api/v2/leaves/balance/mine`** : self-service (nouveau,
+  n'existe pas en v1). Résolution `req.user.id → persons.user_id`.
+  Query : `year`, `type`. Réponse : `days_entitled`, `days_taken`,
+  `days_remaining`, `exists`.
+- **`GET /api/v2/leaves/balance/:person_id`** : admin (via
+  `requireAdmin` optionnel). Même contrat que `/mine`.
+
+Toutes les routes gate par `FEATURE_V2_LEAVES` (off par défaut, 404
+`FEATURE_DISABLED`). Coexistence stricte avec `/api/leaves/*` v1
+(déjà côté serveur depuis Phase 2 — pas de calcul client à retirer).
+
+### Changed — `GET /api/v2/meta` : ajout du namespace `leaves`
+
+Le registre `V2_NAMESPACES` compte désormais **5 namespaces** :
+`affaires`, `display`, **`leaves`**, `locations`, `planning` (ordre
+alphabétique). `total_namespaces=5`.
+
+### Reference
+
+- `apps/api/services/leaves/` (nouveau) : `rules.js` (constantes +
+  helpers légaux dupliqués du v1 pour isolation), `calculate.js`
+  (orchestration), `balance.js` (lecture `leave_balances` +
+  résolution user→person), `errors.js`, `index.js`.
+- `apps/api/v2/leavesRoutes.js` (nouveau) : 4 endpoints + gate.
+- `docs/api/v2/leaves.md` (nouveau) : référence complète.
+
+### Non couvert
+
+- Écritures (POST demandes, PUT statut, calcul acquisition
+  automatique) : le v1 reste seul propriétaire. Migration écritures
+  reportée à un ticket ultérieur.
+- Historique des balances (audit trail) : hors scope.
+
+---
+
 ## [1.15.0] — 2026-07-10
 
 ### Added — WebSocket core (T-P1-02)

@@ -132,6 +132,7 @@ import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupAffairesV2Routes } from './v2/affairesRoutes.js';
 import { setupDisplayV2Routes } from './v2/displayRoutes.js';
+import { setupLeavesV2Routes } from './v2/leavesRoutes.js';
 import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
 import { setupV2MetaRoutes } from './v2/metaRoutes.js';
 import { setupPlanningV2Routes } from './v2/planningRoutes.js';
@@ -494,6 +495,11 @@ setupAffairesV2Routes(app, authenticateToken);
 // (pas d'auth). Agrege les protocoles des 4 namespaces v2 avec l'etat
 // reel de chaque feature flag serveur.
 setupV2MetaRoutes(app);
+
+// [Leaves v2 — T-P1-04] Namespace API v2 (calculate + balance mine +
+// balance admin). Protégé par FEATURE_V2_LEAVES (404 si off).
+// Coexistence stricte avec /api/leaves v1.
+setupLeavesV2Routes(app, authenticateToken, requireAdmin);
 
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);

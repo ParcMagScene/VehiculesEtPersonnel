@@ -5,6 +5,24 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.12.0] — 2026-07-10
+
+### Added — Leaves v2 client API (T-P1-04)
+
+- **`apps/web/src/utils/api/v2/leaves.js`** (nouveau) : 4 méthodes
+  `v2LeavesProtocol()`, `v2CalculateLeaves(data)`,
+  `v2GetMyLeaveBalance({year, type})`,
+  `v2GetLeaveBalance(personId, {year, type})`. Toutes avec
+  `skipCamelCase: true`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement des
+  méthodes v2 Leaves sur le singleton (après Affaires v2).
+
+Aucun composant UI refactoré. Le refactor `LeaveRequestForm` /
+`LeaveBalancesPanel` pour consommer les endpoints v2 est reporté à
+T-P1-04b après dogfooding via `FEATURE_V2_LEAVES=1`.
+
+---
+
 ## [2.11.0] — 2026-07-10
 
 ### Added — Client `ReconnectingWebSocket` (T-P1-02)

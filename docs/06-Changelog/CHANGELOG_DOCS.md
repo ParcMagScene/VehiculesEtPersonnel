@@ -5,6 +5,17 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.18.0] — 2026-07-10
+
+### Added — Leaves v2 : `docs/api/v2/leaves.md` (T-P1-04)
+
+- **`docs/api/v2/leaves.md`** (nouveau) : référence complète du
+  namespace `/api/v2/leaves/*` (4 endpoints + exemples).
+- **`docs/api/v2/README.md`** : ajout ligne **Leaves** 🟢.
+- **`apps/api/.env.example`** : documente `FEATURE_V2_LEAVES`.
+
+---
+
 ## [1.17.0] — 2026-07-10
 
 ### Added — Personnel v2 : audit drivers ↔ persons (T-P1-03)

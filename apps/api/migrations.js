@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
+import { runAffairesV2SchemaMigration } from './migrations/affaires-v2-schema-v1.js';
 import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
 import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
 import { runEquipmentSerialsMagNumberMigration } from './migrations/equipment-serials-mag-number-v1.js';
@@ -896,6 +897,16 @@ export function runPostInitMigrations(db) {
   //     et les colonnes equipment.location_zone/code/floor/depot. Voir
   //     docs/05-Specs/LOCATIONS_V2.md.
   runLocationsV2SchemaMigration(db);
+
+  // ═══ [T-P0-08] Affaires v2 — materialisation + FK ref (P0-DECISION-2 du 2026-07-10)
+  //     Strictement additif : ajout de colonnes affaire_ref_id INTEGER
+  //     nullable sur reservations/missions/orders/bl_imports/
+  //     dynamic_display_events/equipment_assignments + backfill depuis
+  //     colonnes TEXT existantes + table affaire_history. Les colonnes
+  //     TEXT `affaire` / `affaire_id` restent inchangees pendant la
+  //     phase de coexistence (sunset TEXT prevu en T-P0-09). Voir
+  //     docs/05-Specs/AFFAIRES_V2.md.
+  runAffairesV2SchemaMigration(db);
 
   // ═══ Suivi/Incidents v2 (multi-tickets + date) ═══
   runIncidentTicketsV2Migration(db);

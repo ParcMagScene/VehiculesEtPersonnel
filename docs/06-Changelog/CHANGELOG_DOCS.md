@@ -5,6 +5,18 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.24.0] — 2026-07-10
+
+### Added — Orders v2 : sections T-P1-10 dans `docs/api/v2/orders.md`
+
+- **`docs/api/v2/orders.md`** : ajout sections **T-P1-10 réception
+  partielle détaillée** + **conversion devis → commande** (avec
+  exemples 201/400/404/409 et section migration `order_receptions`).
+- **`docs/06-Changelog/CHANGELOG_API.md`** : entry 1.22.0.
+- **`docs/06-Changelog/CHANGELOG_DB.md`** : entry 1.9.0.
+
+---
+
 ## [1.23.0] — 2026-07-10
 
 ### Added — Orders v2 : `docs/api/v2/orders.md` (T-P1-09)

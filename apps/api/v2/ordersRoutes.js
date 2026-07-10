@@ -13,11 +13,14 @@ import db from '../database.js';
 import logger from '../logger.js';
 import { createFeatureFlagGuard } from '../middleware/featureFlag.js';
 import {
+  convertQuoteToOrder,
   ORDER_TRANSITIONS,
   OrdersV2ConflictError,
   OrdersV2NotFoundError,
   OrdersV2ValidationError,
   QUOTE_TRANSITIONS,
+  recordItemReception,
+  summarizeOrderReceptions,
   transitionOrder,
   transitionQuote,
 } from '../services/orders/index.js';
@@ -32,6 +35,9 @@ export const ORDERS_V2_CAPABILITIES = Object.freeze([
   'protocol-discovery',
   'order-transition-v1',
   'quote-transition-v1',
+  'order-item-receive-v1',
+  'order-receptions-summary-v1',
+  'quote-convert-to-order-v1',
 ]);
 
 function handleServiceError(res, err) {
@@ -114,6 +120,49 @@ export function setupOrdersV2Routes(app, authenticateToken) {
         newStatus: body.status,
       });
       sendV2Success(res, result);
+    } catch (err) {
+      handleServiceError(res, err);
+    }
+  });
+
+  // ─── POST /api/v2/orders/:id/receptions ───
+  // Body : { order_item_id, received_qty, notes? }
+  app.post('/api/v2/orders/:id/receptions', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const body = req.body || {};
+      const result = recordItemReception({
+        db,
+        orderId: Number(req.params.id),
+        orderItemId: Number(body.order_item_id),
+        receivedQty: Number(body.received_qty),
+        receivedBy: req.user?.id ?? null,
+        notes: typeof body.notes === 'string' && body.notes.trim() !== '' ? body.notes : null,
+      });
+      sendV2Success(res, result, { status: 201 });
+    } catch (err) {
+      handleServiceError(res, err);
+    }
+  });
+
+  // ─── GET /api/v2/orders/:id/receptions/summary ───
+  app.get('/api/v2/orders/:id/receptions/summary', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const result = summarizeOrderReceptions({ db, orderId: Number(req.params.id) });
+      sendV2Success(res, result);
+    } catch (err) {
+      handleServiceError(res, err);
+    }
+  });
+
+  // ─── POST /api/v2/quotes/:id/convert-to-order ───
+  app.post('/api/v2/quotes/:id/convert-to-order', flagGuard, authenticateToken, (req, res) => {
+    try {
+      const result = convertQuoteToOrder({
+        db,
+        quoteId: Number(req.params.id),
+        createdBy: req.user?.id ?? null,
+      });
+      sendV2Success(res, result, { status: 201 });
     } catch (err) {
       handleServiceError(res, err);
     }

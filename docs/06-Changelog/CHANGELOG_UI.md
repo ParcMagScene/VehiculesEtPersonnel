@@ -5,6 +5,17 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.18.0] — 2026-07-10
+
+### Added — Orders v2 client API : réception + conversion (T-P1-10)
+
+- **`apps/web/src/utils/api/v2/orders.js`** : ajout 3 méthodes
+  `v2RecordOrderReception(orderId, data)`,
+  `v2GetOrderReceptionsSummary(orderId)`,
+  `v2ConvertQuoteToOrder(quoteId)`.
+
+---
+
 ## [2.17.0] — 2026-07-10
 
 ### Added — Orders v2 client API (T-P1-09)

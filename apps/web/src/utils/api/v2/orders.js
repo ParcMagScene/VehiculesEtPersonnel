@@ -36,5 +36,40 @@ export function registerV2OrdersMethods(ApiClient) {
         skipCamelCase: true,
       });
     },
+
+    /**
+     * POST /api/v2/orders/:id/receptions (T-P1-10)
+     * @param {number} orderId
+     * @param {{ order_item_id: number, received_qty: number, notes?: string }} data
+     */
+    async v2RecordOrderReception(orderId, data) {
+      return this.request(`/v2/orders/${encodeURIComponent(orderId)}/receptions`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        skipCamelCase: true,
+      });
+    },
+
+    /**
+     * GET /api/v2/orders/:id/receptions/summary (T-P1-10)
+     * @param {number} orderId
+     */
+    async v2GetOrderReceptionsSummary(orderId) {
+      return this.request(`/v2/orders/${encodeURIComponent(orderId)}/receptions/summary`, {
+        skipCamelCase: true,
+      });
+    },
+
+    /**
+     * POST /api/v2/quotes/:id/convert-to-order (T-P1-10)
+     * @param {number} quoteId
+     */
+    async v2ConvertQuoteToOrder(quoteId) {
+      return this.request(`/v2/quotes/${encodeURIComponent(quoteId)}/convert-to-order`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+        skipCamelCase: true,
+      });
+    },
   });
 }

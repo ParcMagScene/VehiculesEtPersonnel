@@ -5,6 +5,28 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.9.0] — 2026-07-10
+
+### Added — Orders v2 : `order_receptions` (T-P1-10)
+
+- **Migration `order-receptions-v1`** (idempotente, additive).
+- Colonnes : `id`, `order_id` (FK CASCADE), `order_item_id` (FK
+  CASCADE), `received_qty`, `received_at`, `received_by` (FK
+  users SET NULL), `notes`, `created_at`.
+- Index : `idx_order_receptions_order`,
+  `idx_order_receptions_item`, `idx_order_receptions_received_at`.
+- Aucune modification de `orders` ou `order_items` (coexistence
+  stricte). `order_items.received_qty` continue d'agréger le
+  cumul (déjà présent dans le schéma d'origine).
+
+### Reference
+
+- `apps/api/migrations/order-receptions-v1.js` (nouveau).
+- `apps/api/migrations.js` : wire après T-P1-08.
+- `docs/api/v2/orders.md` : usage complet.
+
+---
+
 ## [1.8.0] — 2026-07-10
 
 ### Added — Equipment v2 : `equipment_assignment_history` (T-P1-08)

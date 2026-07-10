@@ -5,6 +5,33 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.19.0] — 2026-07-10
+
+### Added — Affaires v2 dogfooding UI lecture (T-P0-09b)
+
+- **`apps/web/src/utils/affaires/v2Adapters.js`** : nouveaux
+  adapters shape v2 snake_case → v1 camelCase
+  (`adaptAffaireV2ToV1`, `adaptAffairesListV2ToV1`,
+  `adaptHistoryEntryV2ToV1`, `adaptHistoryListV2ToV1`) et lecture
+  du flag client `readAffairesV2ClientFlag`.
+- **`apps/web/src/utils/affaires/fetchAffairesV2.js`** : fetcher
+  paginant qui itère les pages `cursor` du `v2ListAffaires`
+  jusqu'à `has_more=false` (garde-fou `MAX_PAGES=100`).
+- **`apps/web/src/utils/affairesLoader.js`** : appelle v2 en amont
+  quand `VITE_FEATURE_V2_AFFAIRES=1`, fallback silencieux v1
+  sur `FEATURE_DISABLED` (404) ou erreur réseau. Aucun changement
+  du shape retourné aux composants existants (`AffairesPanel`,
+  `useAffairesList`, `MobileAffaires`, `ReportsPanel`,
+  `DashboardTasksSidebar`).
+- **25 tests unitaires** (`v2Adapters.test.js` +
+  `fetchAffairesV2.test.js` + `affairesLoader.test.js`).
+
+Aucune modification des routes v1 ni du PATCH. Phase suivante
+(T-P0-09c) : dogfooder le PATCH audité via `v2PatchAffaire` depuis
+`AffaireDetailPanel`.
+
+---
+
 ## [2.18.0] — 2026-07-10
 
 ### Added — Orders v2 client API : réception + conversion (T-P1-10)

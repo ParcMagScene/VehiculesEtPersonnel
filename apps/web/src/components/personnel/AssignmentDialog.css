@@ -1053,3 +1053,63 @@
   overflow: hidden;
   min-width: 280px;
 }
+
+/* T-P1-05c: badge conflits agenda personnel */
+.asd-conflicts-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
+  color: var(--theme-text-secondary);
+  font-size: 0.875rem;
+}
+
+.asd-conflicts-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.asd-conflicts-warning {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.asd-conflicts-warning-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.asd-conflicts-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.asd-conflicts-list li {
+  margin-bottom: 0.15rem;
+}
+
+.asd-conflicts-source {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.asd-conflicts-dates {
+  color: var(--theme-text-secondary);
+  font-size: 0.8rem;
+}
+
+.asd-conflicts-more {
+  color: var(--theme-text-secondary);
+  font-style: italic;
+}
+
+.asd-conflicts-hint {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--theme-text-secondary);
+}

@@ -173,3 +173,70 @@ Tests de non-régression :
 
 - `apps/web/src/utils/sav/v2Adapters.test.js` (12 cas).
 - `apps/web/src/utils/sav/fetchSavParts.test.js` (12 cas).
+
+---
+
+## Dogfooding UI — Panel pièces ticket (T-P1-07c — 2026-07-13)
+
+Premier composant consommateur des fondations T-P1-07b livré :
+panel `SavTicketPartsPanel` inséré dans le drawer `SavSlidePanel`
+d'`EquipmentSAV.jsx` (visible en cliquant sur un ticket SAV depuis
+la liste). Conditionné au flag `VITE_FEATURE_V2_SAV` : si off ou
+serveur `FEATURE_DISABLED`, le panel affiche un message
+d'information et ne rend rien de bloquant (aucune régression pour
+les utilisateurs en prod).
+
+Nouveautés `v2Adapters.js` :
+
+- `SAV_TICKET_TRANSITIONS` : matrice des transitions autorisées
+  (miroir strict de `apps/api/services/sav/stateMachine.js#ALLOWED_TRANSITIONS`)
+  dupliquée côté client pour proposer uniquement les cibles valides
+  sans importer le backend.
+- `getSavAllowedNext(from)` : liste des cibles autorisées.
+- `isSavTransitionAllowed(from, to)` : validation client (auto-transition
+  toujours autorisée pour l'idempotence).
+
+Composant `SavTicketPartsPanel` :
+
+- `apps/web/src/components/equipment/SavTicketPartsPanel.jsx` (~330
+  lignes) + `SavTicketPartsPanel.css` (tokens `--space-*` / `--theme-*`).
+- Loader initial via `fetchSavPartsUnified`, affiche liste + total.
+- Formulaire d'ajout inline (`addSavPartUnified`) avec validation
+  cliente (`partName` requis, `quantity > 0`, `unitPrice` numérique).
+- Select de changement de statut par pièce (`updateSavPartStatusUnified`),
+  parcourt `SAV_PART_STATUSES`.
+- Bloc de transition ticket : affiché uniquement si `ticketStatus`
+  fourni ET qu'au moins une cible valide existe (exclut
+  l'auto-transition). Appelle `transitionSavTicketUnified` et
+  déclenche `onTicketTransitioned(result)` sur succès.
+- Toast inline succès/erreur, refresh auto après chaque mutation.
+
+Intégration `EquipmentSAV.jsx` :
+
+- Import ajouté en haut du fichier.
+- Rendu ajouté à la fin du corps du `SavSlidePanel` (juste avant
+  `</Drawer>`), sans modifier aucun autre comportement du drawer.
+- Passe `ticketId={t.id}` et `ticketStatus={t.status}`. Pas de
+  callback : le drawer se ferme normalement via son bouton dédié.
+
+Tests de non-régression :
+
+- `apps/web/src/utils/sav/v2Adapters.test.js` : +7 cas matrice
+  `SAV_TICKET_TRANSITIONS` (open→5 cibles, resolved→closed +
+  reprise, closed→réouverture, sortie_sav→finalisation, statut
+  inconnu→[], auto-transition, cibles interdites vs valides).
+- `apps/web/src/components/equipment/SavTicketPartsPanel.test.jsx`
+  (11 cas) : null si ticketId manquant, message v2 désactivé,
+  liste vide, affichage pièce, validation partName, appel
+  addSavPartUnified + refresh, erreur ajout, changement statut +
+  refresh, matrice de transition (options filtrées + application +
+  callback).
+
+Comportement en dogfooding :
+
+- Serveur `FEATURE_V2_SAV=1` + client `VITE_FEATURE_V2_SAV=1` :
+  UI complète, mutations effectives.
+- Serveur off (`FEATURE_DISABLED`) OU client off : panel affiche
+  `Namespace v2 SAV désactivé`, aucun appel v2 fait.
+- Le workflow v1 legacy (édition ticket, changement statut simple
+  via `SavTicketFormModal`) reste actif et non impacté.

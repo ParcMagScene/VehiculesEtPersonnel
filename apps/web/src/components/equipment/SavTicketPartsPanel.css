@@ -1,0 +1,135 @@
+/* apps/web/src/components/equipment/SavTicketPartsPanel.css
+ * T-P1-07c : styles discrets pour le panel pieces SAV v2. Utilise
+ * les tokens du design system (--space-*, --theme-*). Aucun style
+ * inline sur le composant.
+ */
+
+.sav-parts-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-top: 1px solid var(--theme-border-muted);
+  margin-top: var(--space-md);
+}
+
+.sav-parts-panel--disabled {
+  opacity: 0.9;
+}
+
+.sav-parts-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.9rem;
+  color: var(--theme-text-primary);
+}
+
+.sav-parts-panel__header strong {
+  font-weight: 600;
+  color: var(--theme-text-primary);
+}
+
+.sav-parts-panel__actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.sav-parts-panel__form {
+  background: var(--theme-bg-subtle);
+  border: 1px solid var(--theme-border-muted);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.sav-parts-panel__form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.sav-parts-panel__form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.sav-parts-panel__empty {
+  padding: var(--space-md);
+  text-align: center;
+  color: var(--theme-text-secondary);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+.sav-parts-panel__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.sav-parts-panel__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--theme-bg-card);
+  border: 1px solid var(--theme-border-muted);
+  border-radius: var(--radius-sm);
+}
+
+.sav-parts-panel__item-main {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-xs);
+  font-size: 0.875rem;
+}
+
+.sav-parts-panel__ref,
+.sav-parts-panel__qty,
+.sav-parts-panel__supplier {
+  color: var(--theme-text-secondary);
+  font-size: 0.8rem;
+}
+
+.sav-parts-panel__item-status {
+  min-width: 140px;
+}
+
+.sav-parts-panel__transition {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: var(--theme-bg-subtle);
+  border: 1px solid var(--theme-border-muted);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+}
+
+.sav-parts-panel__transition-controls {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.spin {
+  animation: sav-parts-spin 1s linear infinite;
+}
+
+@keyframes sav-parts-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

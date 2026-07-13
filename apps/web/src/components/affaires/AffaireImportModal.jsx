@@ -64,6 +64,11 @@ const AffaireImportModal = ({
   const [replaceConfirm, setReplaceConfirm] = useState(null);
   const [initialFormData, setInitialFormData] = useState(null);
   const [_hasChanges, setHasChanges] = useState(false);
+  // [FIX prod 2026-07-13] Verrou d'ecrasement : une fois que l'utilisateur a
+  // choisi manuellement le type dans le Select, on n'ecrase plus son choix
+  // par la detection automatique du parser PDF (cf pdfParser.js
+  // parseBonDePreparation L1183 : defaut 'Prestation').
+  const [typeUserSet, setTypeUserSet] = useState(false);
 
   // ═══ Nouveaux états : aperçu PDF, détection type, batch ═══
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
@@ -399,7 +404,11 @@ const AffaireImportModal = ({
       setFormData((prev) => ({
         ...prev,
         numeroAffaire: info.numeroAffaire || prev.numeroAffaire,
-        type: info.type || prev.type,
+        // [FIX prod 2026-07-13] Respecter le choix utilisateur : ne jamais
+        // ecraser le type si l'utilisateur l'a defini manuellement dans le
+        // Select. Sans ce verrou, le parser BdP force 'Prestation' par
+        // defaut et efface silencieusement le "Location" choisi.
+        type: typeUserSet ? prev.type : info.type || prev.type,
         client: info.client || prev.client,
         interlocuteur: info.interlocuteur || prev.interlocuteur,
         tel: info.tel || prev.tel,
@@ -641,7 +650,11 @@ const AffaireImportModal = ({
     setFormData((prev) => ({
       ...prev,
       numeroAffaire: info.numeroAffaire || prev.numeroAffaire,
-      type: info.type || prev.type,
+      // [FIX prod 2026-07-13] Idem handleFileSelection : preserver le choix
+      // manuel du type dans le mode batch (le user choisit le type UNE fois
+      // pour tout le lot, il ne doit pas se faire ecraser a chaque selection
+      // d'un item du batch).
+      type: typeUserSet ? prev.type : info.type || prev.type,
       client: info.client || prev.client,
       interlocuteur: info.interlocuteur || prev.interlocuteur,
       tel: info.tel || prev.tel,
@@ -695,6 +708,9 @@ const AffaireImportModal = ({
     setBatchResults([]);
     setBatchProgress({ current: 0, total: 0 });
     setSelectedBatchIndex(-1);
+    // [FIX prod 2026-07-13] Reinitialiser le verrou de type manuel lors du
+    // reset complet (fermeture du modal).
+    setTypeUserSet(false);
     if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
     setPdfPreviewUrl(null);
     setShowPreview(false);
@@ -1096,7 +1112,10 @@ const AffaireImportModal = ({
             <FormField className="form-group" label="Type" required>
               <Select
                 value={formData.type}
-                onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
+                onChange={(e) => {
+                  setTypeUserSet(true);
+                  setFormData((prev) => ({ ...prev, type: e.target.value }));
+                }}
               >
                 <option value="Prestation">Prestation</option>
                 <option value="Location">Location</option>

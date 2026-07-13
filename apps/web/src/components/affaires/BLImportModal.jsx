@@ -16,7 +16,6 @@ import {
   Package,
   Save,
   Tag,
-  Trash2,
   Upload,
   X,
 } from 'lucide-react';
@@ -239,6 +238,14 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
   const [docType, setDocType] = useState(null);
   const [affaireId, setAffaireId] = useState(defaultAffaireId || '');
   const [affaireType, setAffaireType] = useState(defaultAffaireType || '');
+  // [FIX prod 2026-07-13] Verrou d'ecrasement : une fois que l'utilisateur a
+  // choisi manuellement un type dans les boutons ci-dessous, on n'ecrase plus
+  // ce choix par la detection automatique du parser PDF (qui defaut sur
+  // 'Prestation' pour un Bon de Preparation, cf pdfParser.js
+  // parseBonDePreparation L1183). Sans ce verrou, en mode batch multi-fichier
+  // l'utilisateur choisit "Location" une fois, puis chaque PDF parse remet
+  // "Prestation" a son insu -> les affaires sont creees avec un mauvais type.
+  const [affaireTypeUserSet, setAffaireTypeUserSet] = useState(Boolean(defaultAffaireType));
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [editedFields, setEditedFields] = useState({});
@@ -296,7 +303,13 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
     setExpandedSections({});
     setCatalogMatches({});
     setAffaireId(defaultAffaireId || '');
-    setAffaireType(defaultAffaireType || '');
+    // [FIX prod 2026-07-13] Conserver le type verrouille par l'utilisateur
+    // entre 2 fichiers d'un batch. Sans cela, chaque fichier tombe sur
+    // defaultAffaireType (souvent vide) puis se fait ecraser par la
+    // detection automatique du parser.
+    if (!affaireTypeUserSet) {
+      setAffaireType(defaultAffaireType || '');
+    }
   };
 
   // Selection multi-fichier : 1er = brouillon courant, le reste va en queue.
@@ -358,8 +371,10 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
       if (parsed?.numero) {
         setAffaireId(parsed.numero);
       }
-      // Auto-remplir le type depuis le parsing (tous types acceptés)
-      if (parsed?.type) {
+      // Auto-remplir le type depuis le parsing (tous types acceptés).
+      // [FIX prod 2026-07-13] Respecter le choix explicite de l'utilisateur :
+      // ne jamais ecraser si `affaireTypeUserSet` est true.
+      if (parsed?.type && !affaireTypeUserSet) {
         setAffaireType(parsed.type);
       }
 
@@ -829,7 +844,10 @@ function BLImportModal({ onClose, onImported, defaultAffaireId, defaultAffaireTy
                       key={opt.value}
                       type="button"
                       className={`bl-loc-type-btn ${affaireType === opt.value ? 'active' : ''}`}
-                      onClick={() => setAffaireType(opt.value)}
+                      onClick={() => {
+                        setAffaireType(opt.value);
+                        setAffaireTypeUserSet(true);
+                      }}
                       style={{
                         '--type-color': opt.color,
                         borderColor: affaireType === opt.value ? opt.color : undefined,

@@ -5,6 +5,44 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.27.1] — 2026-07-13
+
+### Fixed — Import affaires : respect du type choisi (prod hotfix)
+
+Les affaires importées via `BLImportModal` (`ImportsHub`, boutons "Importer BL") ou
+`AffaireImportModal` (depuis Google Calendar) apparaissaient systématiquement en
+type **Prestation** dans la liste, même quand l'utilisateur avait explicitement
+choisi **Location** ou un autre type au moment de l'import.
+
+**Root cause** : le parser PDF (`pdfParser.js#parseBonPreparation` L1183) force
+`info.type = 'Prestation'` par défaut pour tout Bon de Préparation sans
+mot-clé de type détecté. Ce défaut était appliqué par `setAffaireType(parsed.type)`
+(`BLImportModal.jsx` L362-363) et `setFormData({..., type: info.type || prev.type})`
+(`AffaireImportModal.jsx` L402 + L645), **écrasant silencieusement** le choix
+utilisateur. En mode batch multi-fichier, `resetCurrentDraft` ré-initialisait même
+le type entre chaque fichier de la queue.
+
+**Fix** :
+
+- `BLImportModal.jsx` : nouveau flag React `affaireTypeUserSet` (initialisé à
+  `true` si `defaultAffaireType` fourni). Passe à `true` dès que l'utilisateur
+  clique sur un bouton de type. `handleFileSelect` et `resetCurrentDraft`
+  respectent ce verrou : plus aucun écrasement automatique quand
+  `affaireTypeUserSet === true`.
+- `AffaireImportModal.jsx` : nouveau flag `typeUserSet` (initialisé à `false`).
+  Passe à `true` dès que l'utilisateur change le `Select`. `handleFileSelection`
+  et `handleSelectBatchResult` respectent ce verrou. `resetForm` réinitialise
+  le flag lors de la fermeture du modal.
+- `pdfParser.test.js` : nouveau fichier de tests de non-régression documentant
+  le comportement par défaut du parser (`Prestation`) — pour éviter toute
+  régression future du contrat sans mettre à jour les callers.
+
+**Impact utilisateur** : après ce fix, le type choisi dans l'UI d'import n'est
+plus jamais écrasé. Aucune migration DB nécessaire ; les affaires déjà mal
+typées peuvent être corrigées à la main via `AffaireDetailPanel`.
+
+---
+
 ## [2.27.0] — 2026-07-13
 
 ### Added — Conflicts v2 badge AssignmentDialog (T-P1-05c)

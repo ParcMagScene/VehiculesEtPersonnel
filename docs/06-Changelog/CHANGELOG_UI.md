@@ -5,6 +5,43 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.28.0] — 2026-07-13
+
+### Added — SAV v2 panel pièces ticket (T-P1-07c)
+
+- **`apps/web/src/components/equipment/SavTicketPartsPanel.jsx`** :
+  panel React branché sur les 4 helpers T-P1-07b
+  (`fetchSavPartsUnified`, `addSavPartUnified`,
+  `updateSavPartStatusUnified`, `transitionSavTicketUnified`).
+  Formulaire d'ajout inline (`partName` requis, quantité > 0),
+  Select de changement statut par pièce, bloc de transition
+  ticket avec matrice `SAV_TICKET_TRANSITIONS` respectée.
+  Toast succès/erreur, refresh auto après chaque mutation.
+  Message "Namespace v2 SAV désactivé" si flag off /
+  FEATURE_DISABLED.
+- **`apps/web/src/components/equipment/SavTicketPartsPanel.css`** :
+  styles discrets (tokens `--space-*` / `--theme-*`).
+- **`apps/web/src/components/equipment/EquipmentSAV.jsx`** :
+  import + rendu du panel à la fin du `SavSlidePanel` (drawer
+  ticket). Aucun autre comportement modifié.
+- **`apps/web/src/utils/sav/v2Adapters.js`** : ajout matrice
+  `SAV_TICKET_TRANSITIONS` (miroir strict serveur) +
+  `getSavAllowedNext(from)` + `isSavTransitionAllowed(from, to)`.
+- **19 nouveaux tests unitaires** :
+  - 7 sur la matrice de transitions (open, resolved, closed,
+    sortie_sav, statut inconnu, auto-transition, cibles interdites
+    vs valides).
+  - 11 sur `SavTicketPartsPanel` (loading, v2 désactivé, liste
+    vide, affichage, validation, ajout, erreur, change statut,
+    transition matrice).
+  - 1 addition indirecte via re-count.
+
+Conditionné au flag `VITE_FEATURE_V2_SAV`. Zero régression pour
+les utilisateurs en prod (flag off par défaut). Le workflow v1
+legacy (`SavTicketFormModal`) reste actif.
+
+---
+
 ## [2.27.1] — 2026-07-13
 
 ### Fixed — Import affaires : respect du type choisi (prod hotfix)

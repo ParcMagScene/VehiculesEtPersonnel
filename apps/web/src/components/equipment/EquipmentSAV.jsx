@@ -38,6 +38,7 @@ import { useToast } from '../../hooks/useToast';
 import { safeDate } from '../../utils/formatUtils';
 import { cleanName, SAV_PRIORITY, SAV_STATUS, SAV_TYPES } from './equipmentConstants';
 import { getCategoryHierarchy } from './equipmentUtils';
+import SavTicketPartsPanel from './SavTicketPartsPanel.jsx';
 
 // ═══ LISTE DES TICKETS SAV ═══
 const PRIORITY_ORDER = { urgent: 0, high: 1, medium: 2, low: 3 };
@@ -1083,6 +1084,11 @@ const SavSlidePanel = ({
           <p>{t.resolution}</p>
         </div>
       )}
+      {/* T-P1-07c : panel pieces SAV v2 (dogfooding, conditionnel au flag
+          VITE_FEATURE_V2_SAV cote UI ET FEATURE_V2_SAV cote serveur).
+          Si le namespace v2 est off, le panel affiche un message
+          d'info et rend une UI minimale non-bloquante. */}
+      <SavTicketPartsPanel ticketId={t.id} ticketStatus={t.status} />
     </Drawer>
   );
 };

@@ -7,9 +7,12 @@ import {
   adaptSavPartV2ToV1,
   adaptV2SavPartsList,
   adaptV2TicketTransitionResponse,
+  getSavAllowedNext,
+  isSavTransitionAllowed,
   readSavV2ClientFlag,
   SAV_PART_STATUSES,
   SAV_TICKET_STATUSES,
+  SAV_TICKET_TRANSITIONS,
 } from './v2Adapters.js';
 
 describe('sav/v2Adapters — constantes', () => {
@@ -31,6 +34,52 @@ describe('sav/v2Adapters — constantes', () => {
       'closed',
       'sortie_sav',
     ]);
+  });
+});
+
+describe('sav/v2Adapters — SAV_TICKET_TRANSITIONS (T-P1-07c)', () => {
+  it('open -> autorise 5 cibles (dont soi-meme)', () => {
+    expect([...SAV_TICKET_TRANSITIONS.open].sort()).toEqual([
+      'closed',
+      'in_progress',
+      'open',
+      'sortie_sav',
+      'waiting_parts',
+    ]);
+  });
+
+  it('resolved -> autorise closed + reprise in_progress', () => {
+    expect(getSavAllowedNext('resolved').sort()).toEqual(['closed', 'in_progress', 'resolved']);
+  });
+
+  it('closed -> reouverture in_progress uniquement', () => {
+    expect(getSavAllowedNext('closed').sort()).toEqual(['closed', 'in_progress']);
+  });
+
+  it('sortie_sav -> finalisation closed uniquement', () => {
+    expect(getSavAllowedNext('sortie_sav').sort()).toEqual(['closed', 'sortie_sav']);
+  });
+
+  it('statut inconnu -> []', () => {
+    expect(getSavAllowedNext('unknown')).toEqual([]);
+    expect(getSavAllowedNext(undefined)).toEqual([]);
+  });
+
+  it('isSavTransitionAllowed: auto-transition toujours autorisee', () => {
+    expect(isSavTransitionAllowed('open', 'open')).toBe(true);
+    expect(isSavTransitionAllowed('resolved', 'resolved')).toBe(true);
+  });
+
+  it('isSavTransitionAllowed: refuse cible interdite (in_progress -> open)', () => {
+    expect(isSavTransitionAllowed('in_progress', 'open')).toBe(false);
+    // Miroir serveur : on ne peut pas revenir a open depuis in_progress
+    expect(isSavTransitionAllowed('waiting_parts', 'open')).toBe(false);
+  });
+
+  it('isSavTransitionAllowed: accepte cible valide (open -> in_progress)', () => {
+    expect(isSavTransitionAllowed('open', 'in_progress')).toBe(true);
+    expect(isSavTransitionAllowed('waiting_parts', 'in_progress')).toBe(true);
+    expect(isSavTransitionAllowed('resolved', 'closed')).toBe(true);
   });
 });
 

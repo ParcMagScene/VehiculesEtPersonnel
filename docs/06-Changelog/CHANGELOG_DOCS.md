@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.34.0] — 2026-07-13
+
+### Added — SAV v2 : section Panel pièces ticket (T-P1-07c)
+
+- **`docs/api/v2/sav.md`** : ajout section **Dogfooding UI Panel
+  pièces ticket (T-P1-07c)** documentant l'intégration dans
+  `SavSlidePanel`, la nouvelle matrice `SAV_TICKET_TRANSITIONS`
+  côté client, et l'inventaire des 18 tests unitaires (7 matrice
+  + 11 panel).
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.28.0.
+
+---
+
 ## [1.33.0] — 2026-07-13
 
 ### Added — Conflicts v2 : section Badge AssignmentDialog (T-P1-05c)

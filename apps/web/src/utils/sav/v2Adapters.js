@@ -35,6 +35,47 @@ export const SAV_TICKET_STATUSES = Object.freeze([
 ]);
 
 /**
+ * Matrice des transitions autorisees (miroir cote serveur, cf
+ * `apps/api/services/sav/stateMachine.js#ALLOWED_TRANSITIONS`).
+ * Dupliquee cote client pour permettre a l'UI de proposer
+ * uniquement les cibles valides avant appel serveur (feedback
+ * immediat) sans importer le backend.
+ *
+ * Auto-transition (from === to) autorisee (idempotence).
+ *
+ * @type {Readonly<Record<string, ReadonlyArray<string>>>}
+ */
+export const SAV_TICKET_TRANSITIONS = Object.freeze({
+  open: Object.freeze(['open', 'in_progress', 'waiting_parts', 'sortie_sav', 'closed']),
+  in_progress: Object.freeze(['in_progress', 'waiting_parts', 'resolved', 'sortie_sav']),
+  waiting_parts: Object.freeze(['waiting_parts', 'in_progress', 'sortie_sav']),
+  resolved: Object.freeze(['resolved', 'closed', 'in_progress']),
+  sortie_sav: Object.freeze(['sortie_sav', 'closed']),
+  closed: Object.freeze(['closed', 'in_progress']),
+});
+
+/**
+ * Liste des cibles autorisees depuis `from`.
+ * @param {string} from
+ * @returns {string[]}
+ */
+export function getSavAllowedNext(from) {
+  const arr = SAV_TICKET_TRANSITIONS[from];
+  return Array.isArray(arr) ? [...arr] : [];
+}
+
+/**
+ * Verifie si la transition `from -> to` est autorisee (mirror serveur).
+ * @param {string} from
+ * @param {string} to
+ * @returns {boolean}
+ */
+export function isSavTransitionAllowed(from, to) {
+  if (from === to) return true;
+  return getSavAllowedNext(from).includes(to);
+}
+
+/**
  * Normalise une piece SAV (snake -> camel).
  * @param {object|null|undefined} part
  * @returns {object|null}

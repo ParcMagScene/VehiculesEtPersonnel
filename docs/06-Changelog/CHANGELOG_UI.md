@@ -5,6 +5,31 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.27.0] — 2026-07-13
+
+### Added — Conflicts v2 badge AssignmentDialog (T-P1-05c)
+
+- **`apps/web/src/components/personnel/AssignmentConflictBadge.jsx`** :
+  sous-composant non-bloquant branché sur `useConflictsPrecheck`.
+  4 états : invisible (available=false ou params incomplets),
+  loading (Spinner), succès (badge "Aucun conflit détecté"),
+  warning (liste conflits tronquée à 5 + ellipsis + hint).
+- **`apps/web/src/components/personnel/AssignmentDialog.jsx`** :
+  intégration du badge juste avant les alertes erreur/succès.
+  Passe `personId=selectedPersonId` + `startDate`/`endDate` +
+  `excludeMissionId=existingMission.id` en mode édition
+  (évite auto-conflit).
+- **`AssignmentDialog.css`** : styles discrets pour badge OK,
+  liste warning et loading.
+- **9 tests unitaires** (`AssignmentConflictBadge.test.jsx` :
+  invisibilité x3, loading, succès, warning + liste, ellipsis
+  au-delà de 5, exclude en édition, pas d'exclude en création).
+
+Choix explicite : **non-bloquant**. Le POST `createAssignment` v1
+reste seule source de vérité. Bloquage strict reporté en T-P1-05d.
+
+---
+
 ## [2.26.0] — 2026-07-10
 
 ### Added — Equipment UID v2 panel admin (T-P1-06c)

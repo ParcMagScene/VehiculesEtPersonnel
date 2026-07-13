@@ -5,6 +5,19 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [1.33.0] — 2026-07-13
+
+### Added — Conflicts v2 : section Badge AssignmentDialog (T-P1-05c)
+
+- **`docs/api/v2/conflicts.md`** : ajout section **Dogfooding UI
+  Badge conflits AssignmentDialog (T-P1-05c)** documentant les
+  4 états du badge non-bloquant, la limite multi-affectation
+  (seule personne principale vérifiée), et l'inventaire des
+  9 tests unitaires.
+- **`docs/06-Changelog/CHANGELOG_UI.md`** : entry 2.27.0.
+
+---
+
 ## [1.32.0] — 2026-07-10
 
 ### Added — Equipment UID v2 : section Panel admin (T-P1-06c)

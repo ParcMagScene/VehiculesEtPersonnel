@@ -202,3 +202,53 @@ Consommation UI prévue (T-P1-05c à venir) :
   au-dessus du bouton Créer.
 - `LeaveRequestForm` : optionnel — les conflits congés vs missions
   sont déjà remontés par `getLeaveConflicts` v1.
+
+---
+
+## Dogfooding UI — Badge conflits AssignmentDialog (T-P1-05c — 2026-07-13)
+
+Premier composant consommateur des fondations T-P1-05b livré :
+badge non-bloquant de pré-check dans `AssignmentDialog`.
+
+- `apps/web/src/components/personnel/AssignmentConflictBadge.jsx` :
+  sous-composant React branché sur le hook `useConflictsPrecheck`.
+  Rend :
+  - **rien** si `available=false` (pré-check indisponible),
+    ou si les params sont incomplets — le comportement legacy
+    (post-check via `createAssignment(...).warnings.conflicts`
+    v1) reste actif.
+  - **Spinner + "Verification…"** pendant l'appel.
+  - **InlineAlert succes** "Aucun conflit agenda détecté pour
+    cette periode" si `hasConflict=false`.
+  - **InlineAlert warning** avec liste des conflits (source +
+    label + dates, tronqué à 5 avec ellipsis "…et N de plus")
+    + hint "vous pouvez creer quand meme, le serveur logera un
+    warning" si `hasConflict=true`.
+- `apps/web/src/components/personnel/AssignmentDialog.jsx` :
+  insertion du badge juste avant le bloc erreur / succès. Passe
+  `personId=selectedPersonId`, `startDate`, `endDate`, et
+  `excludeMissionId=existingMission.id` en mode edition (evite
+  le faux conflit avec soi-meme).
+- `apps/web/src/components/personnel/AssignmentDialog.css` :
+  styles discrets pour le loading, le badge OK et la liste
+  warning.
+
+Choix explicite : **non-bloquant**. Le badge est purement
+informatif. Le POST `createAssignment` v1 reste actif et remonte
+`warnings.conflicts` comme avant. Un ticket ultérieur T-P1-05d
+pourrait ajouter un bloquage strict avec un flag `confirm=true`
+de contournement.
+
+Limite en multi-affectation : seule la personne principale
+(`selectedPersonId`) est vérifiée. Les personnes supplémentaires
+(`additionalPersonIds`) sont ignorées volontairement pour éviter
+un empilement de badges. Un ticket ultérieur pourrait proposer un
+récapitulatif compact.
+
+Tests de non-régression :
+
+- `apps/web/src/components/personnel/AssignmentConflictBadge.test.jsx`
+  (9 cas : rien si params manquants / dates manquantes /
+  available=false, loading, succès, warning + liste, ellipsis
+  au-delà de 5, exclude mission en édition, pas d'exclude en
+  création).

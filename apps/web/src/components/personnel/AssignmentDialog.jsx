@@ -31,7 +31,6 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
-  Select,
   Spinner,
   Textarea,
 } from '@/design-system';
@@ -42,6 +41,7 @@ import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import api from '../../utils/api';
 import AffaireBadge from '../AffaireBadge';
 import PersonalActionDialog from '../auth/PersonalActionDialog';
+import AssignmentConflictBadge from './AssignmentConflictBadge.jsx';
 
 const POSITION_CATEGORIES = [
   { value: 'administratif', label: 'Administration', color: '#7c3aed' },
@@ -1504,6 +1504,17 @@ const AssignmentDialog = ({
               </FormField>
             </div>
           </div>
+
+          {/* T-P1-05c : pre-check conflits agenda personnel (v2, dogfooding).
+              Non-bloquant : purement informatif, la creation reste possible.
+              En mode multi-affectation, seule la personne principale est
+              verifiee (limite volontaire, cf docs). */}
+          <AssignmentConflictBadge
+            personId={selectedPersonId}
+            startDate={startDate}
+            endDate={endDate}
+            excludeMissionId={isEdit ? (existingMission?.id ?? null) : null}
+          />
 
           {/* Erreur / Succès */}
           {error && (

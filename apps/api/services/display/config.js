@@ -26,6 +26,11 @@ const APPEARANCE_DEFAULTS = Object.freeze({
   autoScroll: true,
   weatherApiKey: '',
   weatherCity: 'Saint-Denis,RE,FR',
+  // Facteur d'agrandissement global du dashboard TV (transform: scale).
+  // Consomme par apps/tv-client/main.js → applyTvScale().
+  // Valeurs recommandees : 1.6 - 1.8 pour une TV 65" a 4-5 m.
+  // Cf. docs/tv-client-scaling.md.
+  tvScale: 1.6,
 });
 
 /**

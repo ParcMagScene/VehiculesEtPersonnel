@@ -26,6 +26,14 @@
     </style>
 </head>
 <body>
+    <!--
+      TV scaling : tout le dashboard TV est encapsule dans #tv-root.tv-scale
+      pour permettre un agrandissement global (TV 65" UHD, lecture a 4-5 m).
+      Le facteur d'echelle par defaut est defini en CSS (var --tv-scale)
+      puis surcharge dynamiquement depuis display_config.tvScale.
+      Voir docs/tv-client-scaling.md.
+    -->
+    <div id="tv-root" class="tv-scale">
     <!-- Navigation mobile par onglets (visible uniquement sur mobile) -->
     <nav id="mobile-tabs">
         <button class="tab-btn active" data-tab="events">📅 Événements</button>
@@ -84,6 +92,8 @@
     </div>
 
     <footer></footer>
+
+    </div><!-- /#tv-root.tv-scale -->
 
     <script src="/tv-client/main.js?v=20260424"></script>
     <script>

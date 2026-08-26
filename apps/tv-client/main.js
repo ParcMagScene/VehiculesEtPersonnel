@@ -262,6 +262,12 @@ function applyConfig(config) {
   if (isSafeCSSValue(config.eventTextColor)) root.style.setProperty('--event-text-color', config.eventTextColor);
   if (config.fontFamily && isSafeCSSValue(config.fontFamily)) root.style.setProperty('--font-family', config.fontFamily);
 
+  // ── Scaling global TV (cf. docs/tv-client-scaling.md) ──
+  // On lit config.tvScale (float dans [0.5, 3]) et on applique le meme
+  // facteur au container #tv-root.tv-scale via transform + compensation
+  // width/height pour garder un rendu qui remplit tout le viewport.
+  applyTvScale(config.tvScale);
+
   // Overscan TV : ?overscan=XX dans l'URL (en px), ou auto-détection Raspberry Pi
   const params = new URLSearchParams(window.location.search);
   let overscan = parseInt(params.get('overscan'), 10);
@@ -275,6 +281,23 @@ function applyConfig(config) {
   if (overscan > 0) {
     root.style.setProperty('--tv-overscan', overscan + 'px');
   }
+}
+
+/**
+ * Applique le facteur d'agrandissement global au container .tv-scale.
+ * Valeur par defaut : 1.6 (recommande pour TV 65" a 4-5 m).
+ * Bornes de securite : [0.5, 3] pour eviter tout facteur aberrant.
+ * Sans effet sur mobile (media query @media (max-width: 768px)
+ * force .tv-scale { transform: none } dans styles.css).
+ */
+function applyTvScale(raw) {
+  const el = document.querySelector('.tv-scale');
+  if (!el) return;
+  const parsed = Number(raw);
+  const scale = Number.isFinite(parsed) && parsed >= 0.5 && parsed <= 3 ? parsed : 1.6;
+  // On ecrit uniquement la variable CSS pour ne pas ecraser la media
+  // query mobile (transform:none) via des styles inline.
+  el.style.setProperty('--tv-scale', String(scale));
 }
 
 // ===============================================

@@ -399,9 +399,10 @@ async function resolveArtwork(track, coordinatorIP) {
       track.uri.startsWith('x-rincon-stream:'));
 
   if (isRadio) {
-    // 1) Essayer le matching local par URI + titre
-    const knownLogo = matchKnownRadioLogo(track.uri, track.title);
-    if (knownLogo) return knownLogo;
+    // 1) Si Sonos fournit deja un artwork embedded (vrai logo officiel de la station
+    //    envoye par le flux SHOUTcast/Icecast/SMAPI - meme rendu que l'app Sonos),
+    //    l'utiliser directement.
+    if (artUrl) return toSonosArtworkUrl(artUrl, coordinatorIP);
 
     // 2) Tenter le favicon ICY via le stream URL
     let streamUrl = track.uri;
@@ -417,13 +418,16 @@ async function resolveArtwork(track, coordinatorIP) {
     if (streamUrl) {
       try {
         const favicon = await getRadioFavicon(streamUrl);
-        artUrl = favicon || '';
+        if (favicon) return favicon;
       } catch {
-        artUrl = '';
+        /* ignore */
       }
-    } else {
-      artUrl = '';
     }
+
+    // 3) Ultime fallback : logo local place-holder (radiomeuh.svg, fip.svg, ...)
+    const knownLogo = matchKnownRadioLogo(track.uri, track.title);
+    if (knownLogo) return knownLogo;
+    return '';
   }
 
   return toSonosArtworkUrl(artUrl, coordinatorIP);

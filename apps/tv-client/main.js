@@ -591,7 +591,6 @@ async function loadSonosNowPlaying() {
 function updateSonosWidget(data) {
   const widget = document.getElementById('sonos-widget');
   const albumArt = document.getElementById('sonos-album-art');
-  const badge = document.getElementById('sonos-service-badge');
   const titleEl = document.getElementById('sonos-title');
   const artistEl = document.getElementById('sonos-artist');
 
@@ -602,8 +601,10 @@ function updateSonosWidget(data) {
     widget.style.display = 'flex';
     widget.style.opacity = data.playing ? '1' : '0.6';
     if (albumArt) {
-      const artUrl = data.albumArtURI || data.albumArt || '/display-logo/logo.png';
-      // Éviter de re-tenter les URLs en 404 (ex: RadioMeuh.png manquant)
+      // Priorite au logo officiel du service (Radio Meuh, France Inter, Tidal,
+      // Spotify, etc.) si detecte. Fallback : artwork de l'album, puis logo entreprise.
+      const artUrl =
+        data.service?.logo || data.albumArtURI || data.albumArt || '/display-logo/logo.png';
       if (albumArt._failedUrls && albumArt._failedUrls.has(artUrl)) {
         albumArt.src = '/display-logo/logo.png';
       } else if (albumArt.src !== artUrl) {
@@ -617,23 +618,6 @@ function updateSonosWidget(data) {
       }
     }
 
-    // Badge du service musical (Spotify, Deezer, radio, etc.)
-    if (badge) {
-      const service = data.service;
-      if (service && service.logo) {
-        badge.onerror = () => {
-          badge.onerror = null;
-          badge.style.display = 'none';
-        };
-        if (badge.src !== service.logo) badge.src = service.logo;
-        badge.alt = service.name || '';
-        badge.title = service.name || '';
-        badge.style.display = '';
-      } else {
-        badge.style.display = 'none';
-      }
-    }
-
     // Artiste / titre : fournis directement par le backend (parsing radio centralisé)
     if (titleEl) titleEl.textContent = data.title || '';
     if (artistEl) artistEl.textContent = data.artist || '';
@@ -641,7 +625,6 @@ function updateSonosWidget(data) {
 
   } else {
     widget.style.display = 'none';
-    if (badge) badge.style.display = 'none';
     if (titleEl) titleEl.textContent = '';
     if (artistEl) artistEl.textContent = '';
   }

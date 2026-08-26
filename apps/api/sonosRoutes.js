@@ -118,6 +118,8 @@ function matchKnownRadioLogo(uri, title) {
 
 /**
  * Detecte le service musical source depuis l'URI de la piste (schemas Sonos).
+ * Pour les radios connues, retourne le vrai logo de la station en priorite
+ * (ex: Radio Meuh -> /radio-logos/radiomeuh.svg) au lieu du logo generique.
  * Reference : https://developer.sonos.com/reference/soap-api/uri-schemes/
  *
  * @param {object} track — objet track du package sonos
@@ -162,7 +164,12 @@ function detectSonosService(track) {
     return { id: 'qobuz', name: 'Qobuz', logo: '/sonos-logos/qobuz.svg' };
   }
 
-  // ── Radio (stream ou tunein) ──
+  // ── Radio : match specifique de la station via matchKnownRadioLogo ──
+  // Priorite au vrai logo local plutot qu'a un badge generique.
+  const knownRadioLogo = matchKnownRadioLogo(uri, track.title);
+  if (knownRadioLogo) {
+    return { id: 'radio', name: track.title || 'Radio', logo: knownRadioLogo };
+  }
   if (uri.startsWith('x-sonosapi-stream:')) {
     return { id: 'tunein', name: 'TuneIn', logo: '/sonos-logos/tunein.svg' };
   }

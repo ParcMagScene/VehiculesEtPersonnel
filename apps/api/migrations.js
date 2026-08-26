@@ -28,6 +28,7 @@ import { runSavPartsMigration } from './migrations/sav-parts-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
+import { runTaskAlertRulesMigration } from './migrations/task-alert-rules-v1.js';
 import { runVideoMigrations } from './migrations/video-v1.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -259,8 +260,27 @@ export function runPostInitMigrations(db) {
       db.prepare('ALTER TABLE orders ADD COLUMN supplier_order_number TEXT').run();
       logger.info('✅ Migration: colonne supplier_order_number ajoutée à orders');
     }
+    // L2 — libellé libre pour identifier la commande (optionnel, complète la référence)
+    if (!orderCols.includes('name')) {
+      db.prepare('ALTER TABLE orders ADD COLUMN name TEXT').run();
+      logger.info('✅ Migration: colonne name ajoutée à orders');
+    }
   } catch (error) {
     logger.warn('⚠️ Migration orders workflow:', error.message);
+  }
+
+  // ═══ Migration : material_requests — colonne target_order_id (cible souhaitée par le demandeur) ═══
+  try {
+    const mrCols = db
+      .prepare('PRAGMA table_info(material_requests)')
+      .all()
+      .map((c) => c.name);
+    if (!mrCols.includes('target_order_id')) {
+      db.prepare('ALTER TABLE material_requests ADD COLUMN target_order_id INTEGER').run();
+      logger.info('✅ Migration: colonne target_order_id ajoutée à material_requests');
+    }
+  } catch (error) {
+    logger.warn('⚠️ Migration material_requests target_order_id:', error.message);
   }
 
   // ═══ Migration : completion_alerts — table pour alertes de complétion ═══
@@ -941,6 +961,9 @@ export function runPostInitMigrations(db) {
 
   // ═══ Uniformisation Marques & Sociétés — Phase 3 ═══
   runBrandsMigrations(db);
+
+  // ═══ Alertes sonores sur les taches planifiees (Dashboard TV) ═══
+  runTaskAlertRulesMigration(db);
 
   // [PERF Phase 4.L] Cleanup des noms sérialisés (suffixe " #N") déplacé en
   // migration versionnée 0004_cleanup_equipment_serialize_suffix.sql — ne

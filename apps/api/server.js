@@ -94,6 +94,7 @@ import { csrfOriginCheck } from './middleware/csrfOriginCheck.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { httpLogger } from './middleware/httpLogger.js';
 import { xssSanitize } from './middleware/sanitize.js';
+import { optionalTvToken } from './middleware/tvAuth.js';
 import { initSentry, sentryErrorHandler, sentryRequestHandler } from './observability/sentry.js';
 import {
   setupMaterialRequestsRoutes,
@@ -128,6 +129,7 @@ import {
   setupStockStatsRoutes,
 } from './stockRoutes.js';
 import { setupSuiviRoutes } from './suiviRoutes.js';
+import { setupTaskAlertRoutes } from './taskAlertRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupAffairesV2Routes } from './v2/affairesRoutes.js';
@@ -538,6 +540,9 @@ setupDisplayRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Module Sonos (contrôle enceintes, zones, favoris, now-playing)
 setupSonosRoutes(app, authenticateToken, requireAdmin);
+
+// Routes Alertes sonores sur les taches planifiees (Dashboard TV)
+setupTaskAlertRoutes(app, authenticateToken, requireAdmin, optionalTvToken);
 
 // Routes Module Annuaire (Clients enrichis, Fournisseurs enrichis, Prestataires, Contacts, Référentiels, Import CSV)
 setupAnnuaireClientsRoutes(app, authenticateToken, requireAdmin);

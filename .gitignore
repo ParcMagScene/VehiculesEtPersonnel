@@ -129,6 +129,7 @@ public/Logos/*.svg
 # Fichiers audio potentiellement protégés
 *.wav
 !public/SNCF.wav
+!public/alert-sounds/*.wav
 
 # Backups de configuration
 *.backup

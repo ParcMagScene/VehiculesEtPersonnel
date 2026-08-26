@@ -213,6 +213,7 @@ function logAction(screenId, action, details, userId) {
 import { setupDisplayLegacyTvRoutes } from './display/legacyTvRoutes.js';
 import { optionalTvToken, verifyTvToken } from './middleware/tvAuth.js';
 import { getSonosNowPlaying } from './sonosRoutes.js';
+import { computeActiveAlerts } from './taskAlertRoutes.js';
 
 // ════════════════════════════════════════════════════════════════
 export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
@@ -2242,6 +2243,14 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         logger.error('Sonos in tv-public-state:', e.message);
       }
 
+      // Alertes actives sur les taches (par section, cf. taskAlertRoutes)
+      let activeAlerts = [];
+      try {
+        activeAlerts = computeActiveAlerts(db, todayISO, events);
+      } catch (e) {
+        logger.error('activeAlerts in tv-public-state:', e.message);
+      }
+
       res.json({
         config: {
           primaryColor: config.primaryColor || '#00e1ff',
@@ -2260,6 +2269,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         events,
         completedEvents,
         sonos,
+        activeAlerts,
         alarmTest: alarmTestTimestamp,
       });
     } catch (error) {

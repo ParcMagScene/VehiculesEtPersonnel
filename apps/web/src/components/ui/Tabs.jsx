@@ -2,6 +2,13 @@ import { createContext, useContext, useId, useState } from 'react';
 
 const TabsContext = createContext(null);
 
+function sanitizeTabValue(value) {
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-');
+}
+
 /**
  * Tabs — Navigation par onglets
  *
@@ -17,6 +24,7 @@ const TabsContext = createContext(null);
  */
 export function Tabs({ defaultValue, value: controlledValue, onChange, children, className = '' }) {
   const [internal, setInternal] = useState(defaultValue);
+  const baseId = useId();
   const current = controlledValue !== undefined ? controlledValue : internal;
   const handleChange = (val) => {
     if (controlledValue === undefined) setInternal(val);
@@ -24,7 +32,7 @@ export function Tabs({ defaultValue, value: controlledValue, onChange, children,
   };
 
   return (
-    <TabsContext.Provider value={{ active: current, onChange: handleChange }}>
+    <TabsContext.Provider value={{ active: current, onChange: handleChange, baseId }}>
       <div className={`ui-tabs ${className}`} data-active={current}>
         {children}
       </div>
@@ -51,17 +59,19 @@ export function TabList({ children, className = '' }) {
  * Tab — Bouton onglet individuel
  */
 export function Tab({ value, icon, badge, disabled = false, children, className = '' }) {
-  const id = useId();
   const ctx = useTabsContext();
   const isActive = ctx?.active === value;
+  const valueId = sanitizeTabValue(value);
+  const tabId = `${ctx?.baseId || 'tabs'}-tab-${valueId}`;
+  const panelId = `${ctx?.baseId || 'tabs'}-panel-${valueId}`;
 
   return (
     <button
       type="button"
       role="tab"
-      id={`tab-${id}`}
+      id={tabId}
       aria-selected={isActive}
-      aria-controls={`panel-${id}`}
+      aria-controls={panelId}
       className={`ui-tab ${isActive ? 'ui-tab--active' : ''} ${disabled ? 'ui-tab--disabled' : ''} ${className}`}
       disabled={disabled}
       onClick={() => ctx?.onChange?.(value)}
@@ -79,9 +89,17 @@ export function Tab({ value, icon, badge, disabled = false, children, className 
 export function TabPanel({ value, children, className = '' }) {
   const ctx = useTabsContext();
   if (ctx?.active !== value) return null;
+  const valueId = sanitizeTabValue(value);
+  const tabId = `${ctx?.baseId || 'tabs'}-tab-${valueId}`;
+  const panelId = `${ctx?.baseId || 'tabs'}-panel-${valueId}`;
 
   return (
-    <div role="tabpanel" className={`ui-tab-panel ${className}`}>
+    <div
+      id={panelId}
+      role="tabpanel"
+      aria-labelledby={tabId}
+      className={`ui-tab-panel ${className}`}
+    >
       {children}
     </div>
   );

@@ -47,7 +47,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
       setConfig(appearance);
       setLogoPath(logo.path);
     } catch {
-      toast.error('Erreur chargement config');
+      toast.error("Impossible de charger la configuration d'apparence.");
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
       refreshBus.publish('display');
       toast.success('Configuration enregistrée');
     } catch {
-      toast.error('Erreur enregistrement');
+      toast.error("Impossible d'enregistrer la configuration d'apparence.");
     } finally {
       setSaving(false);
     }
@@ -93,7 +93,7 @@ function AppearanceTab({ _currentUser, refreshKey, onPreviewChange }) {
         refreshBus.publish('display');
         toast.success('Logo mis à jour');
       } catch {
-        toast.error('Erreur upload logo');
+        toast.error('Impossible de téléverser le logo.');
       }
     },
     [toast],

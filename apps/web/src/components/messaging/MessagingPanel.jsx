@@ -179,7 +179,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       setConversations(data);
     } catch (err) {
       console.error('Erreur chargement conversations:', err);
-      toast.error('Erreur chargement des conversations');
+      toast.error('Impossible de charger les conversations.');
     } finally {
       setLoading(false);
     }
@@ -199,7 +199,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
         );
       } catch (err) {
         console.error('Erreur chargement messages:', err);
-        toast.error('Erreur chargement des messages');
+        toast.error('Impossible de charger les messages.');
       }
     },
     [toast],
@@ -266,7 +266,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       );
     } catch (err) {
       console.error('Erreur envoi message:', err);
-      toast.error('Erreur envoi du message');
+      toast.error("Impossible d'envoyer le message.");
       setInputText(text);
     }
   };
@@ -287,7 +287,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       reader.readAsDataURL(file);
     } catch (err) {
       console.error('Erreur envoi fichier:', err);
-      toast.error('Erreur envoi du fichier');
+      toast.error("Impossible d'envoyer le fichier.");
     }
   };
 
@@ -307,7 +307,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       }
     } catch (err) {
       console.error('Erreur création conversation:', err);
-      toast.error('Erreur création de la conversation');
+      toast.error('Impossible de créer la conversation.');
     }
   };
 
@@ -319,7 +319,7 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
       setShowNewConv(true);
     } catch (err) {
       console.error('Erreur chargement utilisateurs:', err);
-      toast.error('Erreur chargement des utilisateurs');
+      toast.error('Impossible de charger les utilisateurs.');
     }
   };
 

@@ -1196,7 +1196,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                           variant="ghost"
                           key={c}
                           className={`dep-ed-swatch${c === cat.color?.toLowerCase() ? ' active' : ''}`}
-                          style={{ background: c }}
+                          style={{ '--dep-ed-swatch-color': c }}
                           title={c}
                           onClick={() => {
                             pushHistory();
@@ -1313,7 +1313,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                       variant="ghost"
                       key={c}
                       className={`dep-ed-swatch${c === selectedZone.color?.toLowerCase() ? ' active' : ''}`}
-                      style={{ background: c }}
+                      style={{ '--dep-ed-swatch-color': c }}
                       title={c}
                       onClick={() => {
                         pushHistory();
@@ -1514,7 +1514,7 @@ export default function DepotMapEditor({ zones, depotId, onClose, onSaved }) {
                 className={`dep-ed-zone-item ${selectedZoneId === zone.id ? 'active' : ''}`}
                 onClick={() => setSelectedZoneId(zone.id)}
               >
-                <span className="dep-ed-zone-dot" style={{ background: zone.color }} />
+                <span className="dep-ed-zone-dot" style={{ '--dep-ed-zone-color': zone.color }} />
                 <span className="dep-ed-zone-name">{zone.id}</span>
                 <span className="dep-ed-zone-dim">
                   {zone.bbox.width}×{zone.bbox.height}

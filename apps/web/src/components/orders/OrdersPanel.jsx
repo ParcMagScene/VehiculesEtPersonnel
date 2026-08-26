@@ -44,6 +44,8 @@ import {
   QuotesList,
 } from './OrdersListViews';
 
+const REQUEST_STATS_REFRESH_INTERVAL_MS = 30000;
+
 // ─────────────────────────────────────────────────────────────
 // Code-split : modales/dialogs/slide-panels ne se rendent qu'à
 // l'interaction utilisateur (clic sur item, bouton Nouveau, ...).
@@ -141,6 +143,8 @@ function OrdersPanel({ currentUser, isMobile }) {
   // ═══ Chargement des données ═══
   const abortRef = useRef(null);
   const debounceRef = useRef(null);
+  const requestStatsFetchedAtRef = useRef(0);
+  const suppliersLoadRef = useRef(null);
 
   const loadData = useCallback(async () => {
     if (abortRef.current) abortRef.current.abort();
@@ -154,25 +158,37 @@ function OrdersPanel({ currentUser, isMobile }) {
 
       if (isSimpleUser) {
         const requestParams = { ...params, requested_by: currentUser.id };
-        const results = await Promise.all([
-          api.getMaterialRequests(requestParams),
-          api.getMaterialRequestsStats(),
-          api.getMyLinkedOrders(),
-          api.getSuppliers({}),
-        ]);
+        const shouldFetchSimpleRequests = activeTab === 'requests';
+        const shouldFetchSimpleRequestStats =
+          activeTab === 'requests' ||
+          !requestStats ||
+          Date.now() - requestStatsFetchedAtRef.current > REQUEST_STATS_REFRESH_INTERVAL_MS;
+
+        const promises = [api.getMyLinkedOrders()];
+        if (shouldFetchSimpleRequests) promises.push(api.getMaterialRequests(requestParams));
+        if (shouldFetchSimpleRequestStats) promises.push(api.getMaterialRequestsStats());
+
+        const results = await Promise.all(promises);
         if (controller.signal.aborted) return;
-        setMaterialRequests(results[0]);
-        setRequestStats(results[1]);
-        setMyLinkedOrders(results[2]);
-        setSuppliers(results[3]);
+
+        let idx = 0;
+        setMyLinkedOrders(results[idx++]);
+        if (shouldFetchSimpleRequests) setMaterialRequests(results[idx++]);
+        if (shouldFetchSimpleRequestStats) {
+          setRequestStats(results[idx++]);
+          requestStatsFetchedAtRef.current = Date.now();
+        }
       } else {
         const promises = [api.getSuppliers(searchTerm ? { search: searchTerm } : {})];
+        const shouldFetchRequestStats =
+          activeTab === 'requests' ||
+          Date.now() - requestStatsFetchedAtRef.current > REQUEST_STATS_REFRESH_INTERVAL_MS;
         if (activeTab === 'orders' || !orders.length) promises.push(api.getOrders(params));
         if (activeTab === 'quotes' || !quotes.length) promises.push(api.getQuotes(params));
         promises.push(api.getOrdersStats());
         if (!clients.length) promises.push(api.getClients());
         if (activeTab === 'requests') promises.push(api.getMaterialRequests(params));
-        promises.push(api.getMaterialRequestsStats());
+        if (shouldFetchRequestStats) promises.push(api.getMaterialRequestsStats());
         if (activeTab === 'suppliers')
           promises.push(api.getSuppliersWithOrders(showArchivedSuppliers));
         promises.push(api.getCompletionAlerts(true));
@@ -190,7 +206,10 @@ function OrdersPanel({ currentUser, isMobile }) {
           idx++;
         } else if (!clients.length) idx++;
         if (activeTab === 'requests') setMaterialRequests(results[idx++]);
-        setRequestStats(results[idx++]);
+        if (shouldFetchRequestStats) {
+          setRequestStats(results[idx++]);
+          requestStatsFetchedAtRef.current = Date.now();
+        }
         if (activeTab === 'suppliers') setSuppliersWithOrders(results[idx++]);
         setCompletionAlerts(results[idx] || []);
       }
@@ -201,6 +220,29 @@ function OrdersPanel({ currentUser, isMobile }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, statusFilter, activeTab, showArchivedSuppliers]);
+
+  const ensureRequestSuppliers = useCallback(async () => {
+    if (!isSimpleUser || suppliers.length > 0) return;
+    if (suppliersLoadRef.current) return suppliersLoadRef.current;
+
+    suppliersLoadRef.current = api
+      .getSuppliers({})
+      .then((data) => {
+        setSuppliers(data);
+        return data;
+      })
+      .catch(() => {})
+      .finally(() => {
+        suppliersLoadRef.current = null;
+      });
+
+    return suppliersLoadRef.current;
+  }, [isSimpleUser, suppliers.length]);
+
+  useEffect(() => {
+    if (!showRequestModal) return;
+    ensureRequestSuppliers();
+  }, [showRequestModal, ensureRequestSuppliers]);
 
   // Rafraîchissement silencieux des fournisseurs (sans spinner) après création/modification
   const refreshSuppliersOnly = useCallback(async () => {
@@ -264,7 +306,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setEditingOrder(null);
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer la commande: ${error.message}`
+          : "Impossible d'enregistrer la commande.",
+      );
     }
   };
   const handleDeleteOrder = (order) => {
@@ -278,7 +324,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedOrder(null);
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer la commande: ${error.message}`
+              : 'Impossible de supprimer la commande.',
+          );
         }
       },
     });
@@ -289,7 +339,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setEditingOrder(full);
       setShowOrderForm(true);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir la commande: ${error.message}`
+          : "Impossible d'ouvrir la commande.",
+      );
     }
   };
   const handleViewOrder = async (order) => {
@@ -297,7 +351,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const full = await api.getOrderById(order.id);
       setSelectedOrder(full);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'afficher la commande: ${error.message}`
+          : "Impossible d'afficher la commande.",
+      );
     }
   };
   const handleOpenOrderDialog = async (order) => {
@@ -305,7 +363,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const full = await api.getOrderById(order.id);
       setDialogOrder(full);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir le détail de la commande: ${error.message}`
+          : "Impossible d'ouvrir le détail de la commande.",
+      );
     }
   };
 
@@ -319,7 +381,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setEditingQuote(null);
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer le devis: ${error.message}`
+          : "Impossible d'enregistrer le devis.",
+      );
     }
   };
   const handleDeleteQuote = (quote) => {
@@ -333,7 +399,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedQuote(null);
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer le devis: ${error.message}`
+              : 'Impossible de supprimer le devis.',
+          );
         }
       },
     });
@@ -344,7 +414,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setEditingQuote(full);
       setShowQuoteForm(true);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer la demande: ${error.message}`
+          : "Impossible d'enregistrer la demande.",
+      );
     }
   };
   const handleViewQuote = async (quote) => {
@@ -352,7 +426,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const full = await api.getQuoteById(quote.id);
       setSelectedQuote(full);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir le devis: ${error.message}`
+          : "Impossible d'ouvrir le devis.",
+      );
     }
   };
   const handleOpenQuoteDialog = async (quote) => {
@@ -360,7 +438,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const full = await api.getQuoteById(quote.id);
       setDialogQuote(full);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir le détail du devis: ${error.message}`
+          : "Impossible d'ouvrir le détail du devis.",
+      );
     }
   };
   const handleConvertQuote = (quote) => {
@@ -374,7 +456,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           setSelectedQuote(null);
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de convertir le devis en commande: ${error.message}`
+              : 'Impossible de convertir le devis en commande.',
+          );
         }
       },
     });
@@ -414,7 +500,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       // Rafraîchissement silencieux : pas de spinner, l'update optimiste reste visible
       refreshSuppliersOnly();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer le fournisseur: ${error.message}`
+          : "Impossible d'enregistrer le fournisseur.",
+      );
     }
   };
   const handleDeleteSupplier = (supplier) => {
@@ -427,7 +517,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           refreshBus.publish('orders');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer le fournisseur: ${error.message}`
+              : 'Impossible de supprimer le fournisseur.',
+          );
         }
       },
     });
@@ -451,7 +545,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       setShowRequestModal(false);
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer la demande: ${error.message}`
+          : "Impossible d'enregistrer la demande.",
+      );
     }
   };
   const handleEditRequest = (request) => {
@@ -465,7 +563,11 @@ function OrdersPanel({ currentUser, isMobile }) {
         const data = await api.getEligibleOrdersForRequest(request.id);
         setApprovingRequest({ request, eligibleData: data });
       } catch (error) {
-        toast.error('Erreur chargement commandes: ' + error.message);
+        toast.error(
+          error?.message
+            ? `Impossible de charger les commandes éligibles: ${error.message}`
+            : 'Impossible de charger les commandes éligibles.',
+        );
       }
       return;
     }
@@ -477,7 +579,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       refreshBus.publish('orders');
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de valider la demande: ${error.message}`
+          : 'Impossible de valider la demande.',
+      );
     }
   };
 
@@ -503,7 +609,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       refreshBus.publish('orders');
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de valider la demande: ${error.message}`
+          : 'Impossible de valider la demande.',
+      );
     }
   };
 
@@ -578,7 +688,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       });
       await finalizeApproval(dispatchPrefill.request.id, finalAssignments);
     } catch (error) {
-      toast.error('Erreur création commande: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de créer la commande: ${error.message}`
+          : 'Impossible de créer la commande.',
+      );
     }
   };
   const handleDeleteRequest = (request) => {
@@ -596,7 +710,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           refreshBus.publish('orders');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer la demande: ${error.message}`
+              : 'Impossible de supprimer la demande.',
+          );
         }
       },
     });
@@ -613,7 +731,11 @@ function OrdersPanel({ currentUser, isMobile }) {
           toast.success('Demande retirée de la commande');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + (error.message || 'Impossible de retirer la demande'));
+          toast.error(
+            error?.message
+              ? `Impossible de retirer la demande de la commande: ${error.message}`
+              : 'Impossible de retirer la demande de la commande.',
+          );
         }
       },
     });
@@ -628,7 +750,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       ]);
       setSelectedSupplierPanel({ ...supplier, orders, catalogs });
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de charger le fournisseur: ${error.message}`
+          : 'Impossible de charger le fournisseur.',
+      );
     }
   };
   const handleSupplierDoubleClick = async (supplier) => {
@@ -636,7 +762,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       const detail = await api.getSupplierFullDetail(supplier.id);
       setSupplierDetailData(detail);
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'ouvrir le fournisseur: ${error.message}`
+          : "Impossible d'ouvrir le fournisseur.",
+      );
     }
   };
 
@@ -645,7 +775,11 @@ function OrdersPanel({ currentUser, isMobile }) {
       await api.markAlertRead(alertId);
       setCompletionAlerts((prev) => prev.filter((a) => a.id !== alertId));
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible de marquer l'alerte comme lue: ${error.message}`
+          : "Impossible de marquer l'alerte comme lue.",
+      );
     }
   };
 
@@ -927,7 +1061,10 @@ function OrdersPanel({ currentUser, isMobile }) {
               <Button
                 variant="ghost"
                 className="orders-add-btn"
-                onClick={() => setShowRequestModal(true)}
+                onClick={() => {
+                  setShowRequestModal(true);
+                  ensureRequestSuppliers();
+                }}
               >
                 <Plus size={16} /> Nouvelle demande
               </Button>
@@ -1040,7 +1177,11 @@ function OrdersPanel({ currentUser, isMobile }) {
                     setSelectedOrder(full);
                     loadData();
                   } catch (error) {
-                    toast.error('Erreur: ' + error.message);
+                    toast.error(
+                      error?.message
+                        ? `Impossible de mettre à jour la commande: ${error.message}`
+                        : 'Impossible de mettre à jour la commande.',
+                    );
                   }
                 }}
               />
@@ -1112,7 +1253,11 @@ function OrdersPanel({ currentUser, isMobile }) {
                 setDialogOrder(full);
                 loadData();
               } catch (error) {
-                toast.error('Erreur: ' + error.message);
+                toast.error(
+                  error?.message
+                    ? `Impossible de mettre à jour la commande: ${error.message}`
+                    : 'Impossible de mettre à jour la commande.',
+                );
               }
             }}
           />
@@ -1140,7 +1285,11 @@ function OrdersPanel({ currentUser, isMobile }) {
                 setDialogQuote(full);
                 loadData();
               } catch (error) {
-                toast.error('Erreur: ' + error.message);
+                toast.error(
+                  error?.message
+                    ? `Impossible de mettre à jour le devis: ${error.message}`
+                    : 'Impossible de mettre à jour le devis.',
+                );
               }
             }}
           />

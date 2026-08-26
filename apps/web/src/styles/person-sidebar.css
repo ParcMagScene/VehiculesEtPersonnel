@@ -1,0 +1,138 @@
+/* ═══════════════════════════════════════════════════════════════
+   person-sidebar.css — Apparence commune des sidebars Personnel
+   ───────────────────────────────────────────────────────────────
+   Harmonise UNIQUEMENT les éléments structurants des sidebars
+   (titre, headers de groupe, recherche) entre :
+     - Planning  (.pp-column-header / .pp-section-header /
+                  .pp-planning-search-wrap)
+     - Suivi     (.suivi-sidebar-title / .suivi-group-header /
+                  .suivi-search-wrap)
+
+   IMPORTANT — Contrastes :
+   Le module Suivi utilise sa propre palette (--bg-secondary,
+   --text-primary, chips colorées #60a5fa, #fb923c, etc.). On NE touche
+   PAS au fond de la sidebar, ni aux person-items, ni aux type-filters,
+   ni à la batch-bar : ces éléments restent dans leur palette d'origine
+   pour préserver la lisibilité.
+
+   Importé après index.css dans main.jsx pour gagner la cascade.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Bandeau / header de section (gradient violet, texte clair) */
+  --ps-section-bg: var(--theme-gradient);
+  --ps-section-color: var(--theme-text-inverse);
+  --ps-section-height: 40px;
+  --ps-section-padding: var(--space-2) var(--space-4);
+  --ps-section-font-size: var(--font-base);
+  --ps-section-font-weight: 600;
+  --ps-section-letter-spacing: 0.05em;
+
+  /* Recherche (padding aéré commun) */
+  --ps-search-padding: var(--space-4) var(--space-3) var(--space-3);
+  --ps-search-gap: var(--space-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   1. Bandeau "Personnel" (Suivi) — aligné sur .pp-column-header
+   ───────────────────────────────────────────────────────────────
+   Spécificité augmentée via .suivi-sidebar pour gagner la cascade
+   sur SuiviPanel.css chargé en lazy par le composant.
+   ═══════════════════════════════════════════════════════════════ */
+
+.suivi-sidebar .suivi-sidebar-title {
+  margin: 0;
+  height: var(--ps-section-height);
+  padding: var(--ps-section-padding);
+  background: var(--ps-section-bg);
+  color: var(--ps-section-color);
+  font-size: var(--ps-section-font-size);
+  font-weight: var(--ps-section-font-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--ps-section-letter-spacing);
+  border-bottom: 1px solid var(--theme-border-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+}
+.suivi-sidebar .suivi-sidebar-title,
+.suivi-sidebar .suivi-sidebar-title * {
+  color: var(--ps-section-color);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2. Headers de groupe (Suivi) — aligné sur .pp-section-header
+   ═══════════════════════════════════════════════════════════════ */
+
+.suivi-sidebar .suivi-group-header {
+  background: var(--ps-section-bg);
+  color: var(--ps-section-color);
+  height: var(--ps-section-height);
+  min-height: var(--ps-section-height);
+  padding: var(--ps-section-padding);
+  font-size: var(--ps-section-font-size);
+  font-weight: var(--ps-section-font-weight);
+  text-transform: uppercase;
+  letter-spacing: var(--ps-section-letter-spacing);
+  border-bottom: 1px solid var(--glass-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+.suivi-sidebar .suivi-group-header,
+.suivi-sidebar .suivi-group-header *,
+.suivi-sidebar .suivi-group-header .suivi-group-toggle-icon {
+  color: var(--ps-section-color);
+}
+
+.suivi-sidebar .suivi-group-header-collapsible {
+  cursor: pointer;
+}
+.suivi-sidebar .suivi-group-header-collapsible:hover {
+  background: linear-gradient(
+    135deg,
+    var(--theme-purple-accent, var(--theme-primary)) 0%,
+    var(--theme-accent, var(--theme-primary)) 100%
+  );
+}
+.suivi-sidebar .suivi-group-header-collapsible:hover,
+.suivi-sidebar .suivi-group-header-collapsible:hover * {
+  color: var(--ps-section-color);
+}
+
+/* Favoris : teinte chaude mais texte inverse clair conservé pour
+   garantir un ratio AA (orange foncé → blanc). */
+.suivi-sidebar .suivi-group-favorites .suivi-group-header {
+  background: linear-gradient(
+    135deg,
+    #b45309 0%,
+    var(--theme-purple-accent, var(--theme-primary)) 100%
+  );
+}
+.suivi-sidebar .suivi-group-favorites .suivi-group-header,
+.suivi-sidebar .suivi-group-favorites .suivi-group-header * {
+  color: var(--ps-section-color);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3. Recherche — padding aéré commun aux deux modules
+   ═══════════════════════════════════════════════════════════════ */
+
+.suivi-search-wrap,
+.pp-planning-search-wrap {
+  padding: var(--ps-search-padding);
+}
+.suivi-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-search-gap);
+}
+.suivi-search-wrap > *:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.pp-planning-search-wrap {
+  gap: var(--ps-search-gap);
+}

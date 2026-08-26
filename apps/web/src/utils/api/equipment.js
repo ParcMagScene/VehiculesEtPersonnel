@@ -45,17 +45,14 @@ export function registerEquipmentMethods(ApiClient) {
         body: JSON.stringify({ photo }),
       });
     },
-    async importEquipmentCsv(data, mode = 'import') {
-      return this.request('/equipment/import-csv', {
-        method: 'POST',
-        body: JSON.stringify({ data, mode }),
-      });
-    },
     async getEquipmentCategoriesTree() {
       return this.request('/equipment-categories/tree');
     },
     async getEquipmentByUid(uid) {
       return this.request(`/equipment/by-uid/${uid}`);
+    },
+    async getEquipmentByReference(reference) {
+      return this.request(`/equipment/by-reference/${encodeURIComponent(reference)}`);
     },
 
     // Assignments matériel

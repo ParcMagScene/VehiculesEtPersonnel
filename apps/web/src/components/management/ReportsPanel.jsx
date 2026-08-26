@@ -128,6 +128,13 @@ const ReportsPanel = ({ _currentUser }) => {
   const [section, setSection] = useState('fleet');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [loadedSections, setLoadedSections] = useState({
+    fleet: false,
+    maintenance: false,
+    personnel: false,
+    orders: false,
+    affaires: false,
+  });
 
   // Data
   const [vehicles, setVehicles] = useState([]);
@@ -142,40 +149,139 @@ const ReportsPanel = ({ _currentUser }) => {
   const [periodStart, setPeriodStart] = useState(format(startOfYear(new Date()), 'yyyy-MM-dd'));
   const [periodEnd, setPeriodEnd] = useState(format(new Date(), 'yyyy-MM-dd'));
 
-  // Load data on mount
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [v, r, m, p, o, a, os] = await Promise.allSettled([
-        api.getVehicles(),
-        api.getReservations(),
-        api.getMaintenances(),
-        api.getPersons(),
-        api.getOrders(),
-        api.getAffaires(),
-        api.getOrdersStats(),
-      ]);
-      setVehicles(v.status === 'fulfilled' ? v.value || [] : []);
-      setReservations(r.status === 'fulfilled' ? r.value || [] : []);
-      setMaintenances(m.status === 'fulfilled' ? m.value || [] : []);
-      setPersons(p.status === 'fulfilled' ? p.value || [] : []);
-      setOrders(o.status === 'fulfilled' ? o.value || [] : []);
-      setAffaires(a.status === 'fulfilled' ? a.value || [] : []);
-      setOrdersStats(os.status === 'fulfilled' ? os.value : null);
-    } catch (err) {
-      setError('Erreur de chargement');
-    } finally {
-      setLoading(false);
-    }
+  const markSectionLoaded = useCallback((key) => {
+    setLoadedSections((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
   }, []);
 
+  const loadFleetData = useCallback(
+    async ({ force = false } = {}) => {
+      if (loadedSections.fleet && !force) return;
+      setLoading(true);
+      setError('');
+      try {
+        const [v, r] = await Promise.all([api.getVehicles(), api.getReservations()]);
+        setVehicles(v || []);
+        setReservations(r || []);
+        markSectionLoaded('fleet');
+      } catch (err) {
+        setError('Erreur de chargement');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadedSections.fleet, markSectionLoaded],
+  );
+
+  const loadMaintenanceData = useCallback(
+    async ({ force = false } = {}) => {
+      if (loadedSections.maintenance && !force) return;
+      setLoading(true);
+      setError('');
+      try {
+        const m = await api.getMaintenances();
+        setMaintenances(m || []);
+        markSectionLoaded('maintenance');
+      } catch (err) {
+        setError('Erreur de chargement');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadedSections.maintenance, markSectionLoaded],
+  );
+
+  const loadPersonnelData = useCallback(
+    async ({ force = false } = {}) => {
+      if (loadedSections.personnel && !force) return;
+      setLoading(true);
+      setError('');
+      try {
+        const p = await api.getPersons();
+        setPersons(p || []);
+        markSectionLoaded('personnel');
+      } catch (err) {
+        setError('Erreur de chargement');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadedSections.personnel, markSectionLoaded],
+  );
+
+  const loadOrdersData = useCallback(
+    async ({ force = false, includeStats = true } = {}) => {
+      if (loadedSections.orders && !force) return;
+      setLoading(true);
+      setError('');
+      try {
+        const requests = [api.getOrders()];
+        if (includeStats) requests.push(api.getOrdersStats());
+        const [o, os] = await Promise.all(requests);
+        setOrders(o || []);
+        if (includeStats) setOrdersStats(os || null);
+        markSectionLoaded('orders');
+      } catch (err) {
+        setError('Erreur de chargement');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadedSections.orders, markSectionLoaded],
+  );
+
+  const loadAffairesData = useCallback(
+    async ({ force = false } = {}) => {
+      if (loadedSections.affaires && !force) return;
+      setLoading(true);
+      setError('');
+      try {
+        const a = await api.getAffaires();
+        setAffaires(a || []);
+        markSectionLoaded('affaires');
+      } catch (err) {
+        setError('Erreur de chargement');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadedSections.affaires, markSectionLoaded],
+  );
+
+  const loadSectionData = useCallback(
+    async (targetSection = section, force = false) => {
+      if (targetSection === 'fleet') return loadFleetData({ force });
+      if (targetSection === STATUS.MAINTENANCE) return loadMaintenanceData({ force });
+      if (targetSection === 'personnel') return loadPersonnelData({ force });
+      if (targetSection === 'orders') return loadOrdersData({ force, includeStats: true });
+      if (targetSection === 'affaires') return loadAffairesData({ force });
+      if (targetSection === 'exports') {
+        await loadFleetData({ force });
+        await loadMaintenanceData({ force });
+        await loadPersonnelData({ force });
+        await loadOrdersData({ force, includeStats: false });
+        await loadAffairesData({ force });
+      }
+      return null;
+    },
+    [
+      loadAffairesData,
+      loadFleetData,
+      loadMaintenanceData,
+      loadOrdersData,
+      loadPersonnelData,
+      section,
+    ],
+  );
+
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadSectionData(section);
+  }, [loadSectionData, section]);
 
   // Auto-refresh quand des commandes changent ailleurs
-  useRefreshSubscription('orders', loadData);
+  useRefreshSubscription('orders', () => {
+    if (section === 'orders') loadOrdersData({ force: true, includeStats: true });
+    if (section === 'exports') loadOrdersData({ force: true, includeStats: false });
+  });
 
   // ═══════════════════════════════════════
   // Fleet Report
@@ -521,7 +627,11 @@ const ReportsPanel = ({ _currentUser }) => {
         </div>
         <div className="rp-header-actions">
           <Tooltip content="Rafraîchir les données">
-            <Button variant="ghost" className="rp-btn rp-btn-icon" onClick={loadData}>
+            <Button
+              variant="ghost"
+              className="rp-btn rp-btn-icon"
+              onClick={() => loadSectionData(section, true)}
+            >
               <RefreshCw size={16} />
             </Button>
           </Tooltip>

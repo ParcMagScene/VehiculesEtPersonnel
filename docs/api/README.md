@@ -20,6 +20,7 @@ Les routes marquées 🔑 requièrent en plus le rôle `is_admin`.
 | Module | Fichier source | Doc | Endpoints |
 |--------|---------------|-----|:---------:|
 | Auth & Accès | `authRoutes.js` + `adminRoutes.js` | [auth.md](auth.md) | 22 |
+| Actions personnelles (auth éphémère) | `personalActionsRoutes.js` | [personal-actions.md](personal-actions.md) | 1 |
 | Véhicules & Réservations | `vehicleRoutes.js` | [vehicles.md](vehicles.md) | 10 |
 | Personnel & Planning | `personnelRoutes.js` | [personnel.md](personnel.md) | 22 |
 | Matériel & SAV | `equipmentRoutes.js` | [equipment.md](equipment.md) | 20 |

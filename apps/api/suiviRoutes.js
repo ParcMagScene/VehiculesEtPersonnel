@@ -43,6 +43,45 @@ import {
 } from './suiviRoutes/_pdf.js';
 
 export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
+  const trackingIncidentColumns = db
+    .prepare('PRAGMA table_info(tracking_incident_entries)')
+    .all()
+    .map((c) => c.name);
+  const hasTrackingIncidentVehicleIdText = trackingIncidentColumns.includes('vehicle_id_text');
+
+  const normalizeIncidentVehicleInput = (item) => {
+    const directTextId = String(item?.vehicle_id_text || '').trim();
+    if (directTextId) return directTextId;
+
+    const legacyId = item?.vehicle_id;
+    if (legacyId === null || legacyId === undefined || legacyId === '') return null;
+    return String(legacyId).trim();
+  };
+
+  const resolveVehicleIdText = (item) => {
+    const candidate = normalizeIncidentVehicleInput(item);
+    if (!candidate) return null;
+
+    const numericCandidate = Number(candidate);
+    const resolved = db
+      .prepare(
+        `SELECT id
+         FROM vehicles
+         WHERE id = ?
+            OR (? IS NOT NULL AND CAST(id AS INTEGER) = ?)
+         ORDER BY CASE WHEN id = ? THEN 0 ELSE 1 END
+         LIMIT 1`,
+      )
+      .get(
+        candidate,
+        Number.isFinite(numericCandidate) ? numericCandidate : null,
+        Number.isFinite(numericCandidate) ? numericCandidate : null,
+        candidate,
+      );
+
+    return resolved?.id || null;
+  };
+
   // ─────────────────────────────────────────────────
   // Routes statiques AVANT les routes avec paramètres
   // (sinon /api/suivi/:personnelId/:date intercepterait tout)
@@ -84,16 +123,46 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         return res.status(400).json({ success: false, error: 'Format date invalide' });
       }
 
-      // Tâches du jour (on conserve aussi les tâches terminées)
+      // Tâches du jour utilisées par le modal "Depuis planning".
+      // On conserve aussi les tâches terminées effacées (clear-completed)
+      // pour qu'elles restent re-sélectionnables dans une fiche de suivi.
       const tasks = db
         .prepare(
           `SELECT ta.id, ta.title, ta.section, ta.period, ta.time, ta.end_time,
                   ta.affaire_num, ta.notes, ta.status, ta.google_event_title,
+                  ta.deleted_at,
+                  EXISTS (
+                    SELECT 1
+                    FROM task_assignments prev
+                    WHERE prev.deleted_at IS NOT NULL
+                      AND prev.notes LIKE '%[reportée]%'
+                      AND prev.date < ta.date
+                      AND prev.section = ta.section
+                      AND prev.title = ta.title
+                      AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                      AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                      AND COALESCE(prev.source_id, '') = COALESCE(ta.source_id, '')
+                      AND COALESCE(prev.time, '') = COALESCE(ta.time, '')
+                  ) AS is_rolled,
+                  (
+                    SELECT MAX(prev.date)
+                    FROM task_assignments prev
+                    WHERE prev.deleted_at IS NOT NULL
+                      AND prev.notes LIKE '%[reportée]%'
+                      AND prev.date < ta.date
+                      AND prev.section = ta.section
+                      AND prev.title = ta.title
+                      AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                      AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                      AND COALESCE(prev.source_id, '') = COALESCE(ta.source_id, '')
+                      AND COALESCE(prev.time, '') = COALESCE(ta.time, '')
+                  ) AS rolled_from_date,
                   a.nom AS affaire_nom, a.titre AS affaire_titre,
                   a.type AS affaire_type, a.client AS affaire_client
            FROM task_assignments ta
            LEFT JOIN affaires a ON ta.affaire_num = a.numero_affaire
-           WHERE ta.date = ? AND ta.deleted_at IS NULL
+           WHERE ta.date = ?
+             AND (ta.deleted_at IS NULL OR ta.status = 'done')
            ORDER BY ta.period ASC, ta.time ASC, ta.section ASC`,
         )
         .all(date);
@@ -393,15 +462,31 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         const placeholders = ticketIds.map(() => '?').join(',');
         entries = db
           .prepare(
-            `SELECT ie.*, p.first_name, p.last_name
-             FROM tracking_incident_entries ie
-             LEFT JOIN persons p ON p.id = ie.reporter_person_id
-             WHERE ie.ticket_id IN (${placeholders})
-             ORDER BY ie.created_at ASC`,
+            hasTrackingIncidentVehicleIdText
+              ? `SELECT ie.*, p.first_name, p.last_name,
+                        COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT)) AS resolved_vehicle_id_text,
+                        v.name AS resolved_vehicle_name
+                 FROM tracking_incident_entries ie
+                 LEFT JOIN persons p ON p.id = ie.reporter_person_id
+                 LEFT JOIN vehicles v ON v.id = COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT))
+                 WHERE ie.ticket_id IN (${placeholders})
+                 ORDER BY ie.created_at ASC`
+              : `SELECT ie.*, p.first_name, p.last_name,
+                        CASE WHEN ie.vehicle_id IS NULL THEN NULL ELSE CAST(ie.vehicle_id AS TEXT) END AS resolved_vehicle_id_text,
+                        v.name AS resolved_vehicle_name
+                 FROM tracking_incident_entries ie
+                 LEFT JOIN persons p ON p.id = ie.reporter_person_id
+                 LEFT JOIN vehicles v ON v.id = CAST(ie.vehicle_id AS TEXT)
+                 WHERE ie.ticket_id IN (${placeholders})
+                 ORDER BY ie.created_at ASC`,
           )
           .all(...ticketIds)
           .map((e) => ({
             ...e,
+            vehicle_id_text: String(e.resolved_vehicle_id_text || '').trim() || null,
+            vehicle_name_snapshot:
+              String(e.vehicle_name_snapshot || '').trim() ||
+              String(e.resolved_vehicle_name || '').trim(),
             reporter_name:
               [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
               e.reporter_name_snapshot ||
@@ -536,12 +621,8 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         const createVehicleBreakdownReportIfNeeded = (item) => {
           if (item.incident_type !== 'vehicle_problem') return item.linked_maintenance_id || null;
 
-          const vehicleId =
-            item.vehicle_id === null || item.vehicle_id === undefined
-              ? null
-              : Number(item.vehicle_id);
-
-          if (!vehicleId || !Number.isFinite(vehicleId)) return item.linked_maintenance_id || null;
+          const vehicleIdText = resolveVehicleIdText(item);
+          if (!vehicleIdText) return item.linked_maintenance_id || null;
 
           const existingMaintenanceId = String(item.linked_maintenance_id || '').trim();
           if (existingMaintenanceId) {
@@ -551,7 +632,9 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
             if (existing?.id) return existing.id;
           }
 
-          const vehicle = db.prepare('SELECT id, name FROM vehicles WHERE id = ?').get(vehicleId);
+          const vehicle = db
+            .prepare('SELECT id, name FROM vehicles WHERE id = ?')
+            .get(vehicleIdText);
           if (!vehicle?.id) return null;
 
           const maintenanceId = crypto.randomUUID().replace(/-/g, '');
@@ -568,7 +651,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           ).run(
             maintenanceId,
-            vehicleId,
+            vehicle.id,
             vehicleName,
             'other',
             'reported',
@@ -592,13 +675,21 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         };
 
         const insertIncident = db.prepare(
-          `INSERT INTO tracking_incident_entries (
-             id, ticket_id, incident_type, description,
-             reporter_person_id, reporter_name_snapshot,
-             vehicle_id, vehicle_name_snapshot, linked_maintenance_id,
-             created_by, modified_by
-           )
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          hasTrackingIncidentVehicleIdText
+            ? `INSERT INTO tracking_incident_entries (
+                 id, ticket_id, incident_type, description,
+                 reporter_person_id, reporter_name_snapshot,
+                 vehicle_id, vehicle_id_text, vehicle_name_snapshot, linked_maintenance_id,
+                 created_by, modified_by
+               )
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            : `INSERT INTO tracking_incident_entries (
+                 id, ticket_id, incident_type, description,
+                 reporter_person_id, reporter_name_snapshot,
+                 vehicle_id, vehicle_name_snapshot, linked_maintenance_id,
+                 created_by, modified_by
+               )
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         );
 
         const addAll = db.transaction((items) => {
@@ -615,26 +706,47 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
               reporterSnapshot = [p?.first_name, p?.last_name].filter(Boolean).join(' ').trim();
             }
 
-            const vehicleId =
-              item.vehicle_id === null || item.vehicle_id === undefined
-                ? null
-                : Number(item.vehicle_id);
+            const requestedVehicleInput = normalizeIncidentVehicleInput(item);
+            const vehicleIdText = resolveVehicleIdText(item);
+            if (requestedVehicleInput && !vehicleIdText) {
+              const err = new Error(`Véhicule introuvable: ${requestedVehicleInput}`);
+              err.statusCode = 400;
+              throw err;
+            }
             const vehicleSnapshot = String(item.vehicle_name_snapshot || '').trim();
             const linkedMaintenanceId = createVehicleBreakdownReportIfNeeded(item);
 
-            insertIncident.run(
-              crypto.randomUUID().replace(/-/g, ''),
-              ticketId,
-              item.incident_type,
-              item.description || '',
-              reporterId,
-              reporterSnapshot,
-              Number.isFinite(vehicleId) ? vehicleId : null,
-              vehicleSnapshot,
-              linkedMaintenanceId,
-              req.user.id,
-              req.user.id,
-            );
+            if (hasTrackingIncidentVehicleIdText) {
+              insertIncident.run(
+                crypto.randomUUID().replace(/-/g, ''),
+                ticketId,
+                item.incident_type,
+                item.description || '',
+                reporterId,
+                reporterSnapshot,
+                null,
+                vehicleIdText,
+                vehicleSnapshot,
+                linkedMaintenanceId,
+                req.user.id,
+                req.user.id,
+              );
+            } else {
+              const legacyVehicleId = Number(item.vehicle_id);
+              insertIncident.run(
+                crypto.randomUUID().replace(/-/g, ''),
+                ticketId,
+                item.incident_type,
+                item.description || '',
+                reporterId,
+                reporterSnapshot,
+                Number.isFinite(legacyVehicleId) ? legacyVehicleId : null,
+                vehicleSnapshot,
+                linkedMaintenanceId,
+                req.user.id,
+                req.user.id,
+              );
+            }
           }
         });
 
@@ -645,15 +757,31 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
           .get(ticketId);
         const savedEntries = db
           .prepare(
-            `SELECT ie.*, p.first_name, p.last_name
-             FROM tracking_incident_entries ie
-             LEFT JOIN persons p ON p.id = ie.reporter_person_id
-             WHERE ie.ticket_id = ?
-             ORDER BY ie.created_at ASC`,
+            hasTrackingIncidentVehicleIdText
+              ? `SELECT ie.*, p.first_name, p.last_name,
+                        COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT)) AS resolved_vehicle_id_text,
+                        v.name AS resolved_vehicle_name
+                 FROM tracking_incident_entries ie
+                 LEFT JOIN persons p ON p.id = ie.reporter_person_id
+                 LEFT JOIN vehicles v ON v.id = COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT))
+                 WHERE ie.ticket_id = ?
+                 ORDER BY ie.created_at ASC`
+              : `SELECT ie.*, p.first_name, p.last_name,
+                        CASE WHEN ie.vehicle_id IS NULL THEN NULL ELSE CAST(ie.vehicle_id AS TEXT) END AS resolved_vehicle_id_text,
+                        v.name AS resolved_vehicle_name
+                 FROM tracking_incident_entries ie
+                 LEFT JOIN persons p ON p.id = ie.reporter_person_id
+                 LEFT JOIN vehicles v ON v.id = CAST(ie.vehicle_id AS TEXT)
+                 WHERE ie.ticket_id = ?
+                 ORDER BY ie.created_at ASC`,
           )
           .all(ticketId)
           .map((e) => ({
             ...e,
+            vehicle_id_text: String(e.resolved_vehicle_id_text || '').trim() || null,
+            vehicle_name_snapshot:
+              String(e.vehicle_name_snapshot || '').trim() ||
+              String(e.resolved_vehicle_name || '').trim(),
             reporter_name:
               [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
               e.reporter_name_snapshot ||
@@ -669,6 +797,9 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
         });
       } catch (error) {
         logger.error('POST /api/suivi/incidents/tickets error:', error);
+        if (error?.statusCode === 400) {
+          return res.status(400).json({ success: false, error: error.message });
+        }
         res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
     },
@@ -882,7 +1013,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ─── POST /api/suivi/batch/pdf ─── Export PDF multi-fiches (normal, sans recto-verso)
-  app.post('/api/suivi/batch/pdf', authenticateToken, (req, res) => {
+  app.post('/api/suivi/batch/pdf', authenticateToken, async (req, res) => {
     try {
       const { sheetIds } = req.body;
       if (!Array.isArray(sheetIds) || sheetIds.length === 0) {
@@ -901,7 +1032,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       if (sheets.length === 0) {
         return res.status(404).json({ success: false, error: 'Aucune fiche trouvée' });
       }
-      generateBatchPdf(sheets, res);
+      await generateBatchPdf(sheets, res);
     } catch (error) {
       logger.error('POST /api/suivi/batch/pdf error:', error);
       if (!res.headersSent) {
@@ -911,7 +1042,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // ─── POST /api/suivi/batch/print ─── PDF impression recto-verso (Matin/Après-midi + filigrane)
-  app.post('/api/suivi/batch/print', authenticateToken, (req, res) => {
+  app.post('/api/suivi/batch/print', authenticateToken, async (req, res) => {
     try {
       const { sheetIds } = req.body;
       if (!Array.isArray(sheetIds) || sheetIds.length === 0) {
@@ -930,7 +1061,7 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
       if (sheets.length === 0) {
         return res.status(404).json({ success: false, error: 'Aucune fiche trouvée' });
       }
-      generateBatchPrintPdf(sheets, res);
+      await generateBatchPrintPdf(sheets, res);
     } catch (error) {
       logger.error('POST /api/suivi/batch/print error:', error);
       if (!res.headersSent) {
@@ -1144,13 +1275,13 @@ export function setupSuiviRoutes(app, authenticateToken, requireAdmin) {
   );
 
   // ─── GET /api/suivi/:ficheId/pdf ─── Export PDF individuel
-  app.get('/api/suivi/:ficheId/pdf', authenticateToken, (req, res) => {
+  app.get('/api/suivi/:ficheId/pdf', authenticateToken, async (req, res) => {
     try {
       const full = getSheetWithEntries(req.params.ficheId);
       if (!full) {
         return res.status(404).json({ success: false, error: 'Fiche non trouvée' });
       }
-      generateSheetPdf(enrichSheetWithDayContext(full), res);
+      await generateSheetPdf(enrichSheetWithDayContext(full), res);
     } catch (error) {
       logger.error('GET /api/suivi/:ficheId/pdf error:', error);
       if (!res.headersSent) {

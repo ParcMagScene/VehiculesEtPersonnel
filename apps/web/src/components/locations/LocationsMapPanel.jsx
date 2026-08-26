@@ -5,22 +5,25 @@
 import 'leaflet/dist/leaflet.css';
 import './LocationsMapPanel.css';
 
-import { Building2, Map } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Building2, Map, Maximize2 } from 'lucide-react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Modal, ModalBody, ModalHeader } from '@/design-system';
+import { Button, Modal, ModalBody, ModalHeader, Spinner } from '@/design-system';
 
 import { filterGeoLocations, LOCATION_TYPES } from './map-utils';
 import { loadMapViewState, normalizeViewForStorage, saveMapViewState } from './map-view-state';
-import MapDualPrintModal from './MapDualPrintModal';
-import MapGeneral from './MapGeneral';
-import MapLocal from './MapLocal';
 import MapPrintControl from './MapPrintControl';
+
+const MapDualPrintModal = lazy(() => import('./MapDualPrintModal'));
+const MapGeneral = lazy(() => import('./MapGeneral'));
+const MapLocal = lazy(() => import('./MapLocal'));
 
 export default function LocationsMapPanel({ locations, onClose, onEditLocation }) {
   const [activeView, setActiveView] = useState('general'); // 'general' | 'local'
   const [showDualPrint, setShowDualPrint] = useState(false);
   const [mapViewState, setMapViewState] = useState(() => loadMapViewState());
+  const [generalKey, setGeneralKey] = useState(0);
+  const [localKey, setLocalKey] = useState(0);
   const mapContainerRef = useRef(null);
 
   const geoCount = useMemo(() => filterGeoLocations(locations).length, [locations]);
@@ -51,6 +54,23 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
       };
     });
   }, []);
+
+  const handleRecenter = useCallback(() => {
+    setMapViewState((prev) => {
+      const next = { ...prev };
+      if (activeView === 'general') {
+        next.generalView = null;
+      } else {
+        next.localView = null;
+      }
+      return next;
+    });
+    if (activeView === 'general') {
+      setGeneralKey((k) => k + 1);
+    } else {
+      setLocalKey((k) => k + 1);
+    }
+  }, [activeView]);
 
   const updateLocalZone = useCallback((nextZone) => {
     if (!nextZone) return;
@@ -104,6 +124,15 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
               {geoCount}/{totalCount} géolocalisé{geoCount !== 1 ? 's' : ''}
             </span>
             <div className="locations-map-header-actions">
+              <Button
+                type="button"
+                className="locations-map-recenter-btn"
+                onClick={handleRecenter}
+                title="Recadrer la carte pour afficher tous les lieux"
+              >
+                <Maximize2 size={14} />
+                Recadrer
+              </Button>
               <MapPrintControl
                 mapContainerRef={mapContainerRef}
                 title={activeView === 'general' ? 'Carte générale' : 'Autour du dépôt'}
@@ -119,7 +148,7 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
       <ModalBody>
         {/* Onglets */}
         <div className="locations-map-tabs" role="tablist">
-          <button
+          <Button
             type="button"
             role="tab"
             aria-selected={activeView === 'general'}
@@ -128,8 +157,8 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
           >
             <Map size={16} />
             Carte générale
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             role="tab"
             aria-selected={activeView === 'local'}
@@ -138,29 +167,39 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
           >
             <Building2 size={16} />
             Autour du dépôt
-          </button>
+          </Button>
         </div>
 
         {/* Contenu carte — no-drag empêche useDraggableModals.onDragStart */}
         <div className="locations-map-body no-drag" ref={mapContainerRef}>
-          {activeView === 'general' ? (
-            <MapGeneral
-              locations={locations}
-              onEditLocation={onEditLocation}
-              initialView={mapViewState.generalView}
-              onViewChange={(view) => updateView('generalView', view)}
-            />
-          ) : (
-            <MapLocal
-              locations={locations}
-              onEditLocation={onEditLocation}
-              initialView={mapViewState.localView}
-              onViewChange={(view) => updateView('localView', view)}
-              zoneCenter={mapViewState.localZone.center}
-              zoneRadius={mapViewState.localZone.radius}
-              onZoneChange={updateLocalZone}
-            />
-          )}
+          <Suspense
+            fallback={
+              <div className="locations-map-loading">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            {activeView === 'general' ? (
+              <MapGeneral
+                key={`general-${generalKey}`}
+                locations={locations}
+                onEditLocation={onEditLocation}
+                initialView={mapViewState.generalView}
+                onViewChange={(view) => updateView('generalView', view)}
+              />
+            ) : (
+              <MapLocal
+                key={`local-${localKey}`}
+                locations={locations}
+                onEditLocation={onEditLocation}
+                initialView={mapViewState.localView}
+                onViewChange={(view) => updateView('localView', view)}
+                zoneCenter={mapViewState.localZone.center}
+                zoneRadius={mapViewState.localZone.radius}
+                onZoneChange={updateLocalZone}
+              />
+            )}
+          </Suspense>
         </div>
 
         {/* Légende */}
@@ -178,17 +217,19 @@ export default function LocationsMapPanel({ locations, onClose, onEditLocation }
           </span>
         </div>
         {showDualPrint && (
-          <MapDualPrintModal
-            locations={locations}
-            onClose={() => setShowDualPrint(false)}
-            initialGeneralView={mapViewState.printGeneralView}
-            onGeneralViewChange={(view) => updateView('printGeneralView', view)}
-            initialLocalView={mapViewState.printLocalView}
-            onLocalViewChange={(view) => updateView('printLocalView', view)}
-            zoneCenter={mapViewState.localZone.center}
-            zoneRadius={mapViewState.localZone.radius}
-            onZoneChange={updateLocalZone}
-          />
+          <Suspense fallback={null}>
+            <MapDualPrintModal
+              locations={locations}
+              onClose={() => setShowDualPrint(false)}
+              initialGeneralView={mapViewState.printGeneralView}
+              onGeneralViewChange={(view) => updateView('printGeneralView', view)}
+              initialLocalView={mapViewState.printLocalView}
+              onLocalViewChange={(view) => updateView('printLocalView', view)}
+              zoneCenter={mapViewState.localZone.center}
+              zoneRadius={mapViewState.localZone.radius}
+              onZoneChange={updateLocalZone}
+            />
+          </Suspense>
         )}
       </ModalBody>
     </Modal>

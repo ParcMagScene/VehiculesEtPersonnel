@@ -125,32 +125,24 @@ export const OrderSlidePanel = React.memo(
         )}
         <div className="slide-actions">
           {order.status === 'draft' && (
-            <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}>
+            <Button variant="secondary" onClick={() => onStatusChange('sent')}>
               <Send size={14} /> Envoyer
             </Button>
           )}
           {order.status === 'sent' && (
-            <Button
-              variant="ghost"
-              className="action-btn"
-              onClick={() => onStatusChange('confirmed')}
-            >
+            <Button variant="secondary" onClick={() => onStatusChange('confirmed')}>
               <Check size={14} /> Confirmer
             </Button>
           )}
           {order.status === STATUS.CONFIRMED && (
-            <Button
-              variant="ghost"
-              className="action-btn"
-              onClick={() => onStatusChange('received')}
-            >
+            <Button variant="secondary" onClick={() => onStatusChange('received')}>
               <Package size={14} /> Réceptionner
             </Button>
           )}
-          <Button variant="ghost" className="action-btn" onClick={onEdit}>
+          <Button variant="primary" onClick={onEdit}>
             <Edit2 size={14} /> Modifier
           </Button>
-          <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
+          <Button variant="danger" onClick={onDelete}>
             <Trash2 size={14} /> Supprimer
           </Button>
         </div>
@@ -256,14 +248,14 @@ export const QuoteSlidePanel = React.memo(
         )}
         <div className="slide-actions">
           {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
-            <Button variant="ghost" className="action-btn success" onClick={onConvert}>
+            <Button variant="success" onClick={onConvert}>
               <ArrowRight size={14} /> Convertir
             </Button>
           )}
-          <Button variant="ghost" className="action-btn" onClick={onEdit}>
+          <Button variant="primary" onClick={onEdit}>
             <Edit2 size={14} /> Modifier
           </Button>
-          <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
+          <Button variant="danger" onClick={onDelete}>
             <Trash2 size={14} /> Supprimer
           </Button>
         </div>

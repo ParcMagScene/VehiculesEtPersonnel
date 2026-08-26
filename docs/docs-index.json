@@ -1,12 +1,13 @@
 {
   "version": "1.0.0",
-  "generated": "2026-06-04",
+  "generated": "2026-08-26",
   "sections": {
     "api": {
       "path": "docs/api/",
       "index": "docs/api/README.md",
       "files": [
         "docs/api/auth.md",
+        "docs/api/personal-actions.md",
         "docs/api/vehicles.md",
         "docs/api/personnel.md",
         "docs/api/equipment.md",
@@ -26,7 +27,20 @@
         "docs/api/inventory.md",
         "docs/api/mailing.md",
         "docs/api/google.md",
-        "docs/api/totp.md"
+        "docs/api/totp.md",
+        "docs/api/v2/README.md",
+        "docs/api/v2/core.md",
+        "docs/api/v2/websocket.md",
+        "docs/api/v2/planning.md",
+        "docs/api/v2/display.md",
+        "docs/api/v2/locations.md",
+        "docs/api/v2/affaires.md",
+        "docs/api/v2/leaves.md",
+        "docs/api/v2/conflicts.md",
+        "docs/api/v2/equipment-uid.md",
+        "docs/api/v2/equipment-assignments.md",
+        "docs/api/v2/orders.md",
+        "docs/api/v2/sav.md"
       ]
     },
     "architecture": {
@@ -58,7 +72,7 @@
       ]
     }
   },
-  "totalFiles": 121,
+  "totalFiles": 146,
   "totalEndpoints": 457,
   "totalTables": 86,
   "totalModules": 20

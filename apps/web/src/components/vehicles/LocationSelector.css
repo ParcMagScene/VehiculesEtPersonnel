@@ -76,7 +76,7 @@
   gap: 0.4rem;
   margin-top: 0.5rem;
   padding: 0.35rem 0.5rem;
-  border-left: 3px solid var(--theme-primary);
+  border-left: 3px solid var(--location-zone-color, var(--theme-primary));
   font-size: var(--font-sm);
   color: var(--theme-text-muted);
   background: var(--theme-bg-secondary);
@@ -86,6 +86,7 @@
 .location-dot {
   width: 10px;
   height: 10px;
+  background: var(--location-zone-color, var(--theme-primary));
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }

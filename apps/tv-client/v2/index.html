@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Dashboard TV — v2</title>
+  <link rel="icon" type="image/png" href="/display-logo/logo.png" />
+  <link rel="manifest" href="/tv-client/manifest.json" />
+  <meta name="theme-color" content="#00e1ff" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <style>
+    /*
+     * TV-client v2 — style minimaliste autonome.
+     * Ticket : T-P0-16 (EXECUTION_PLAN_EMAG_3_0.md).
+     * On n'importe PAS styles.css v1 pour ne pas polluer le namespace
+     * v2. La refonte visuelle complete est reportee a un ticket UI dedie.
+     */
+    :root {
+      --tvv2-bg: #000;
+      --tvv2-fg: #fff;
+      --tvv2-accent: #00e1ff;
+      --tvv2-muted: rgba(255, 255, 255, 0.55);
+      --tvv2-alert-urgent: #ff2a2a;
+      --tvv2-alert-high: #ff8a00;
+      --tvv2-alert-normal: #00e1ff;
+      --tvv2-alert-low: #6cff88;
+      --tvv2-font: 'Segoe UI', Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--tvv2-bg);
+      color: var(--tvv2-fg);
+      font-family: var(--tvv2-font);
+      overflow: hidden;
+    }
+    body { display: flex; flex-direction: column; }
+    header.tvv2-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 2px solid var(--tvv2-accent);
+    }
+    .tvv2-title { font-size: 1.5rem; letter-spacing: 0.05em; }
+    .tvv2-status { font-size: 0.85rem; color: var(--tvv2-muted); }
+    .tvv2-status .dot {
+      display: inline-block;
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+      background: var(--tvv2-muted);
+      vertical-align: middle;
+    }
+    .tvv2-status.connected .dot { background: var(--tvv2-alert-low); }
+    .tvv2-status.error .dot { background: var(--tvv2-alert-urgent); }
+    main.tvv2-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1rem;
+      padding: 1rem 2rem;
+      overflow: hidden;
+    }
+    .tvv2-panel {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow: auto;
+    }
+    .tvv2-panel h2 {
+      font-size: 1rem;
+      color: var(--tvv2-accent);
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .tvv2-welcome {
+      font-size: 2rem;
+      color: var(--tvv2-fg);
+      margin-bottom: 1rem;
+    }
+    .tvv2-msg {
+      padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem;
+      border-left: 4px solid var(--tvv2-alert-normal);
+      background: rgba(0, 225, 255, 0.05);
+      border-radius: 0.25rem;
+    }
+    .tvv2-msg.urgent { border-left-color: var(--tvv2-alert-urgent); background: rgba(255, 42, 42, 0.08); }
+    .tvv2-msg.high { border-left-color: var(--tvv2-alert-high); background: rgba(255, 138, 0, 0.08); }
+    .tvv2-msg.low { border-left-color: var(--tvv2-alert-low); background: rgba(108, 255, 136, 0.05); }
+    .tvv2-msg .title { font-weight: 600; margin-bottom: 0.25rem; }
+    .tvv2-msg .body { font-size: 0.9rem; color: var(--tvv2-muted); }
+    footer.tvv2-footer {
+      padding: 0.5rem 2rem;
+      font-size: 0.75rem;
+      color: var(--tvv2-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-between;
+    }
+    .tvv2-error-banner {
+      background: var(--tvv2-alert-urgent);
+      color: #fff;
+      padding: 1rem 2rem;
+      text-align: center;
+      display: none;
+    }
+    .tvv2-error-banner.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div id="tvv2-error" class="tvv2-error-banner"></div>
+
+  <header class="tvv2-header">
+    <div>
+      <div class="tvv2-title" id="tvv2-screen-name">Dashboard TV v2</div>
+      <div class="tvv2-status" id="tvv2-status">
+        <span class="dot"></span><span class="label">Initialisation…</span>
+      </div>
+    </div>
+    <div class="tvv2-status" id="tvv2-proto"></div>
+  </header>
+
+  <main class="tvv2-body">
+    <section class="tvv2-panel" id="tvv2-playlist-panel">
+      <h2>Playlist active</h2>
+      <div id="tvv2-playlist"><em>Chargement…</em></div>
+    </section>
+    <section class="tvv2-panel" id="tvv2-signals-panel">
+      <div class="tvv2-welcome" id="tvv2-welcome"></div>
+      <h2>Messages</h2>
+      <div id="tvv2-messages"><em>En attente du snapshot…</em></div>
+    </section>
+  </main>
+
+  <footer class="tvv2-footer">
+    <span id="tvv2-last-snapshot">—</span>
+    <span>eM@g TV v2 · <a href="/tv-client/index.html" style="color: var(--tvv2-muted);">v1</a></span>
+  </footer>
+
+  <script src="/tv-client/v2/main.js?v=20260709"></script>
+</body>
+</html>

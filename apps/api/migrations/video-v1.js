@@ -99,6 +99,33 @@ export function runVideoMigrations(db) {
     }
   }
 
+  // ─── 5bis. [T-P0-17] Enrichissement `video_access_logs` : ajout des
+  //     colonnes user_agent, request_id, resource_uri (URI RTSP masquée),
+  //     response_status. Idempotent via pragma table_info.
+  //     Voir docs/02-Securite/VIDEO_HARDENING.md §5.
+  try {
+    const cols = db.pragma('table_info(video_access_logs)');
+    const names = cols.map((c) => c.name);
+    if (!names.includes('user_agent')) {
+      db.exec(`ALTER TABLE video_access_logs ADD COLUMN user_agent TEXT`);
+      logger.info('  ✅ video_access_logs.user_agent ajoutée');
+    }
+    if (!names.includes('request_id')) {
+      db.exec(`ALTER TABLE video_access_logs ADD COLUMN request_id TEXT`);
+      logger.info('  ✅ video_access_logs.request_id ajoutée');
+    }
+    if (!names.includes('resource_uri')) {
+      db.exec(`ALTER TABLE video_access_logs ADD COLUMN resource_uri TEXT`);
+      logger.info('  ✅ video_access_logs.resource_uri ajoutée');
+    }
+    if (!names.includes('response_status')) {
+      db.exec(`ALTER TABLE video_access_logs ADD COLUMN response_status INTEGER`);
+      logger.info('  ✅ video_access_logs.response_status ajoutée');
+    }
+  } catch (e) {
+    logger.warn('Migration video_access_logs (T-P0-17):', e.message);
+  }
+
   // ─── 6. Table camera_presets (vues multi-caméras) ───
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS camera_presets (

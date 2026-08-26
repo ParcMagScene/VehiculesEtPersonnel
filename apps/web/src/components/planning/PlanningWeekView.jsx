@@ -16,7 +16,7 @@ import React from 'react';
 import { Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS } from '../../constants/colors';
+import { STATUS_COLORS, GOOGLE_COLORS } from '../../constants/colors';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 import { safeParseDate } from '../../utils/dateUtils';
 import AffaireBadge from '../AffaireBadge';
@@ -245,10 +245,10 @@ const WeekMiniCardInner = ({
       <div
         key={`wg-${item.id}`}
         className={`wk-card wk-google ${isProcessed ? 'processed' : 'pending'}`}
-        style={{ borderLeftColor: isProcessed ? STATUS_COLORS.success : '#4285f4' }}
+        style={{ borderLeftColor: isProcessed ? STATUS_COLORS.success : GOOGLE_COLORS.blue }}
         onClick={() => onOpenEventTaskModal(item)}
       >
-        <Calendar size={10} style={{ color: '#4285f4' }} />
+        <Calendar size={10} style={{ color: GOOGLE_COLORS.blue }} />
         <span className="wk-title" title={summary}>
           {summary.slice(0, 22)}
           {summary.length > 22 ? '…' : ''}
@@ -381,7 +381,6 @@ const PlanningWeekViewInner = ({
           <span className="ev-col-h ev-col-h-spacer"></span>
           <span className="ev-col-h ev-col-h-time">Heure</span>
           <span className="ev-col-h ev-col-h-personnel">Personnels</span>
-          <span className="ev-col-h ev-col-h-actions">Actions</span>
         </div>
         {sectionOrder.map((secKey) => {
           const secInfo = SECTIONS[secKey];

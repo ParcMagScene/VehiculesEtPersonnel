@@ -8,26 +8,19 @@ import {
   endOfWeek,
   format,
   isSameMonth,
-  isToday,
-  isWeekend,
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import {
-  Ban,
-  Briefcase,
-  Calendar as CalIcon,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  MapPin,
-  Palmtree,
-  Users,
-} from 'lucide-react';
+import { Clock, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Avatar, Button, EmptyState, SearchBar } from '@/design-system';
+import { Button, EmptyState } from '@/design-system';
+
+import PersonnelAgendaSidebar from './PersonnelAgendaSidebar';
+import PersonnelAgendaToolbar from './PersonnelAgendaToolbar';
+import PersonnelAgendaWeekView from './PersonnelAgendaWeekView';
+import PersonnelAgendaMonthView from './PersonnelAgendaMonthView';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
@@ -56,6 +49,8 @@ const EVENT_COLORS = {
     text: 'var(--theme-warning-text)',
   },
 };
+
+export { EVENT_COLORS };
 
 const MISSION_TYPE_LABELS = {
   intervention: 'Intervention',
@@ -268,17 +263,6 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
   // Personne sélectionnée
   const selectedPerson = persons.find((p) => p.id === selectedPersonId);
 
-  // Filtre personnes
-  const filteredPersons = useMemo(() => {
-    if (!searchPerson) return persons;
-    const q = searchPerson.toLowerCase();
-    return persons.filter(
-      (p) =>
-        `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
-        (p.email || '').toLowerCase().includes(q),
-    );
-  }, [persons, searchPerson]);
-
   // Titre de la période
   const periodTitle =
     agendaView === 'week'
@@ -288,103 +272,25 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
   return (
     <div className="personnel-agenda">
       {/* Barre latérale - sélection personne */}
-      <div className="agenda-sidebar">
-        <div className="agenda-sidebar-header">
-          <Users size={18} />
-          <span>Personnel</span>
-        </div>
-        <SearchBar
-          value={searchPerson}
-          onChange={setSearchPerson}
-          placeholder="Rechercher..."
-          size="sm"
-        />
-        <div className="agenda-person-list">
-          {filteredPersons.map((person) => (
-            <Button
-              variant="ghost"
-              key={person.id}
-              className={`agenda-person-item ${person.id === selectedPersonId ? 'active' : ''}`}
-              onClick={() => setSelectedPersonId(person.id)}
-            >
-              <Avatar name={`${person.first_name || ''} ${person.last_name || ''}`} size="sm" />
-              <div className="agenda-person-info">
-                <div className="agenda-person-name">
-                  {person.first_name} {person.last_name}
-                </div>
-                <div className="agenda-person-role">
-                  {person.role || person.position || person.type || ''}
-                </div>
-              </div>
-            </Button>
-          ))}
-        </div>
-        {/* Légende */}
-        <div className="agenda-legend">
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: EVENT_COLORS.mission.border }} />
-            <span>Missions</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: EVENT_COLORS.leave.border }} />
-            <span>Congés</span>
-          </div>
-          <div className="legend-item">
-            <span
-              className="legend-dot"
-              style={{ background: EVENT_COLORS.unavailability.border }}
-            />
-            <span>Indisponible</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-dot" style={{ background: EVENT_COLORS.google.border }} />
-            <span>Google</span>
-          </div>
-        </div>
-      </div>
+      <PersonnelAgendaSidebar
+        persons={persons}
+        selectedPersonId={selectedPersonId}
+        onSelectPerson={setSelectedPersonId}
+        searchPerson={searchPerson}
+        onSearchChange={setSearchPerson}
+      />
 
       {/* Zone principale */}
       <div className="agenda-main">
         {/* Toolbar */}
-        <div className="agenda-toolbar">
-          <div className="agenda-toolbar-left">
-            <h2 className="agenda-person-title">
-              {selectedPerson
-                ? `${selectedPerson.first_name} ${selectedPerson.last_name}`
-                : 'Sélectionnez une personne'}
-            </h2>
-          </div>
-          <div className="agenda-toolbar-center">
-            <Button variant="ghost" className="agenda-nav-btn" onClick={() => navigate('prev')}>
-              <ChevronLeft size={18} />
-            </Button>
-            <span className="agenda-period-title">{periodTitle}</span>
-            <Button variant="ghost" className="agenda-nav-btn" onClick={() => navigate('next')}>
-              <ChevronRight size={18} />
-            </Button>
-            <Button variant="ghost" className="agenda-today-btn" onClick={goToday}>
-              Aujourd'hui
-            </Button>
-          </div>
-          <div className="agenda-toolbar-right">
-            <div className="agenda-view-toggle">
-              <Button
-                variant="ghost"
-                className={agendaView === 'week' ? 'active' : ''}
-                onClick={() => setAgendaView('week')}
-              >
-                Semaine
-              </Button>
-              <Button
-                variant="ghost"
-                className={agendaView === 'month' ? 'active' : ''}
-                onClick={() => setAgendaView('month')}
-              >
-                Mois
-              </Button>
-            </div>
-          </div>
-        </div>
+        <PersonnelAgendaToolbar
+          selectedPerson={selectedPerson}
+          agendaView={agendaView}
+          onViewChange={setAgendaView}
+          periodTitle={periodTitle}
+          onNavigate={navigate}
+          onToday={goToday}
+        />
 
         {/* Grille calendrier */}
         {loading ? (
@@ -398,118 +304,13 @@ function PersonnelAgenda({ persons = [], currentUser, googleEvents = [] }) {
             title="Sélectionnez une personne pour voir son agenda"
           />
         ) : agendaView === 'week' ? (
-          /* === VUE SEMAINE === */
-          <div className="agenda-week">
-            <div className="agenda-week-header">
-              {visibleDays.map((day) => (
-                <div
-                  key={day.toString()}
-                  className={`agenda-week-day-header ${isToday(day) ? 'today' : ''} ${isWeekend(day) ? 'weekend' : ''}`}
-                >
-                  <span className="week-day-name">{format(day, 'EEE', { locale: fr })}</span>
-                  <span className={`week-day-number ${isToday(day) ? 'today-badge' : ''}`}>
-                    {format(day, 'd')}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="agenda-week-body">
-              {visibleDays.map((day) => {
-                const dayEvents = getEventsForDay(day);
-                return (
-                  <div
-                    key={day.toString()}
-                    className={`agenda-week-day ${isToday(day) ? 'today' : ''} ${isWeekend(day) ? 'weekend' : ''}`}
-                  >
-                    {dayEvents.length === 0 && <div className="agenda-day-free">Disponible</div>}
-                    {dayEvents.map((evt) => (
-                      <div
-                        key={evt.id}
-                        className="agenda-event"
-                        style={{
-                          background: EVENT_COLORS[evt.type]?.bg,
-                          borderLeftColor: EVENT_COLORS[evt.type]?.border,
-                          color: EVENT_COLORS[evt.type]?.text,
-                        }}
-                        title={`${evt.title}${evt.subtitle ? ' — ' + evt.subtitle : ''}`}
-                      >
-                        <div className="agenda-event-icon">
-                          {evt.type === 'mission' && <Briefcase size={12} />}
-                          {evt.type === 'leave' && <Palmtree size={12} />}
-                          {evt.type === 'unavailability' && <Ban size={12} />}
-                          {evt.type === 'google' && <CalIcon size={12} />}
-                        </div>
-                        <div className="agenda-event-text">
-                          <div className="agenda-event-title">{evt.title}</div>
-                          {evt.subtitle && (
-                            <div className="agenda-event-subtitle">{evt.subtitle}</div>
-                          )}
-                          {evt.location && (
-                            <div className="agenda-event-location">
-                              <MapPin size={10} /> {evt.location}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <PersonnelAgendaWeekView visibleDays={visibleDays} getEventsForDay={getEventsForDay} />
         ) : (
-          /* === VUE MOIS === */
-          <div className="agenda-month">
-            <div className="agenda-month-header">
-              {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((d) => (
-                <div key={d} className="agenda-month-day-label">
-                  {d}
-                </div>
-              ))}
-            </div>
-            <div className="agenda-month-grid">
-              {/* Padding for first week */}
-              {(() => {
-                const firstDay = visibleDays[0];
-                const dayOfWeek = (firstDay.getDay() + 6) % 7; // 0=Mon
-                const padding = [];
-                for (let i = 0; i < dayOfWeek; i++) {
-                  padding.push(<div key={`pad-${i}`} className="agenda-month-cell empty" />);
-                }
-                return padding;
-              })()}
-              {visibleDays.map((day) => {
-                const dayEvents = getEventsForDay(day);
-                return (
-                  <div
-                    key={day.toString()}
-                    className={`agenda-month-cell ${isToday(day) ? 'today' : ''} ${!isSameMonth(day, agendaDate) ? 'other-month' : ''} ${isWeekend(day) ? 'weekend' : ''}`}
-                  >
-                    <div className="month-cell-date">
-                      <span className={isToday(day) ? 'today-badge' : ''}>{format(day, 'd')}</span>
-                    </div>
-                    <div className="month-cell-events">
-                      {dayEvents.slice(0, 3).map((evt) => (
-                        <div
-                          key={evt.id}
-                          className="month-event-dot"
-                          style={{
-                            background: EVENT_COLORS[evt.type]?.border,
-                          }}
-                          title={evt.title}
-                        >
-                          <span className="month-event-label">{evt.title}</span>
-                        </div>
-                      ))}
-                      {dayEvents.length > 3 && (
-                        <div className="month-event-more">+{dayEvents.length - 3}</div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <PersonnelAgendaMonthView
+            visibleDays={visibleDays}
+            agendaDate={agendaDate}
+            getEventsForDay={getEventsForDay}
+          />
         )}
       </div>
     </div>

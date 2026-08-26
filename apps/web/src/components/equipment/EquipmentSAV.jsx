@@ -20,6 +20,10 @@ import {
   Drawer,
   EmptyState,
   Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalLayout,
   Select,
   Table,
@@ -34,6 +38,7 @@ import { useToast } from '../../hooks/useToast';
 import { safeDate } from '../../utils/formatUtils';
 import { cleanName, SAV_PRIORITY, SAV_STATUS, SAV_TYPES } from './equipmentConstants';
 import { getCategoryHierarchy } from './equipmentUtils';
+import SavTicketPartsPanel from './SavTicketPartsPanel.jsx';
 
 // ═══ LISTE DES TICKETS SAV ═══
 const PRIORITY_ORDER = { urgent: 0, high: 1, medium: 2, low: 3 };
@@ -239,7 +244,7 @@ const SavTicketsList = ({
                 <td>
                   <span
                     className="eq-pri-dot"
-                    style={{ background: pri.color }}
+                    style={{ '--eq-priority-color': pri.color }}
                     title={pri.label}
                   />
                 </td>
@@ -261,7 +266,7 @@ const SavTicketsList = ({
                 </td>
                 <td>{SAV_TYPES[t.type] || t.type}</td>
                 <td>
-                  <span className="eq-status-badge" style={{ background: tst.color }}>
+                  <span className="eq-status-badge" style={{ '--eq-status-color': tst.color }}>
                     {tst.label}
                   </span>
                 </td>
@@ -877,6 +882,12 @@ const MobileSavRequestForm = ({ equipment, onSubmit, onClose }) => {
                       role="button"
                       tabIndex={0}
                       onClick={() => handleSelect(eq)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleSelect(eq);
+                        }
+                      }}
                       className="eq-sav-dropdown-item"
                     >
                       <span className="eq-sav-dropdown-icon">
@@ -981,7 +992,7 @@ const SavSlidePanel = ({
       title={
         <span className="eq-slide-title-row">
           <span className="eq-slide-name">🔧 {t.title}</span>
-          <span className="eq-slide-status" style={{ background: tst.color }}>
+          <span className="eq-slide-status" style={{ '--eq-status-color': tst.color }}>
             {tst.label}
           </span>
         </span>
@@ -1018,7 +1029,9 @@ const SavSlidePanel = ({
         <div className="eq-detail-field">
           <span>🎯</span>
           <span>Priorité</span>
-          <strong style={{ color: pri.color }}>{pri.label}</strong>
+          <strong className="eq-priority-value" style={{ '--eq-priority-color': pri.color }}>
+            {pri.label}
+          </strong>
         </div>
         <div className="eq-detail-field">
           <span>🔧</span>
@@ -1029,12 +1042,14 @@ const SavSlidePanel = ({
           <div className="eq-detail-field">
             <Package size={14} />
             <span>Matériel</span>
-            <strong
+            <Button
+              variant="ghost"
+              type="button"
               className="eq-clickable-link"
               onClick={() => onOpenEquipmentDialog && onOpenEquipmentDialog(eq)}
             >
               {eq.categoryIcon || '📦'} {cleanName(eq.name)}
-            </strong>
+            </Button>
           </div>
         )}
         <div className="eq-detail-field">
@@ -1069,6 +1084,11 @@ const SavSlidePanel = ({
           <p>{t.resolution}</p>
         </div>
       )}
+      {/* T-P1-07c : panel pieces SAV v2 (dogfooding, conditionnel au flag
+          VITE_FEATURE_V2_SAV cote UI ET FEATURE_V2_SAV cote serveur).
+          Si le namespace v2 est off, le panel affiche un message
+          d'info et rend une UI minimale non-bloquante. */}
+      <SavTicketPartsPanel ticketId={t.id} ticketStatus={t.status} />
     </Drawer>
   );
 };
@@ -1097,119 +1117,113 @@ const SavDetailDialog = ({
   const displaySerial = eq?.serialNumber || eq?.serial_number || t.importSerial || null;
 
   return (
-    <div
-      className={`eq-dialog-overlay${isClosing ? ' closing' : ''}`}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) handleClose();
-      }}
+    <Modal
+      open={!!ticket && !isClosing}
+      onClose={handleClose}
+      size="lg"
+      className="eq-dialog eq-dialog-sav"
     >
-      <div className="eq-dialog eq-dialog-sav">
-        <div className="eq-dialog-header">
-          <div className="eq-dialog-title-row">
-            <span className="eq-dialog-cat" style={{ background: tst.color }}>
-              🔧 {tst.label}
-            </span>
-            {(eq || t.importName || t.importCode) && (
-              <span className="eq-dialog-equip-ref">
-                {eq ? `${eq.categoryIcon || '📦'} ${cleanName(eq.name)}` : t.importName || ''}{' '}
-                {displayRef ? `(${displayRef})` : ''}
-              </span>
+      <ModalHeader
+        onClose={handleClose}
+        className="eq-sav-modal-header"
+        style={{ '--eq-status-color': tst.color }}
+      >
+        <span className="eq-sav-title-status">🔧 {tst.label}</span>
+        {(eq || t.importName || t.importCode) && (
+          <span className="eq-sav-title-ref">
+            {eq ? `${eq.categoryIcon || '📦'} ${cleanName(eq.name)}` : t.importName || ''}{' '}
+            {displayRef ? `(${displayRef})` : ''}
+          </span>
+        )}
+      </ModalHeader>
+      <ModalBody className="eq-dialog-body">
+        <div className="eq-detail-body">
+          <div className="eq-detail-fields">
+            <div className="eq-detail-field">
+              <span>🔴</span>
+              <span>Panne</span>
+              <strong>{t.title}</strong>
+            </div>
+            <div className="eq-detail-field">
+              <span>🎯</span>
+              <span>Priorité</span>
+              <strong className="eq-priority-value" style={{ '--eq-priority-color': pri.color }}>
+                {pri.label}
+              </strong>
+            </div>
+            <div className="eq-detail-field">
+              <span>🔧</span>
+              <span>Type</span>
+              <strong>{SAV_TYPES[t.type] || t.type}</strong>
+            </div>
+            {displayRef && (
+              <div className="eq-detail-field">
+                <span>🏷️</span>
+                <span>Référence</span>
+                <strong>{displayRef}</strong>
+              </div>
+            )}
+            {displaySerial && (
+              <div className="eq-detail-field">
+                <span>🔢</span>
+                <span>N° Série</span>
+                <strong>{displaySerial}</strong>
+              </div>
+            )}
+            {tech && (
+              <div className="eq-detail-field">
+                <User size={14} />
+                <span>Technicien</span>
+                <strong>
+                  {tech.firstName} {tech.lastName}
+                </strong>
+              </div>
+            )}
+            <div className="eq-detail-field">
+              <Calendar size={14} />
+              <span>Créé le</span>
+              <strong>{safeDate(t.createdAt)}</strong>
+            </div>
+            {t.resolvedAt && (
+              <div className="eq-detail-field">
+                <CheckCircle size={14} />
+                <span>Résolu le</span>
+                <strong>{safeDate(t.resolvedAt)}</strong>
+              </div>
+            )}
+            {t.cost != null && t.cost > 0 && (
+              <div className="eq-detail-field">
+                <DollarSign size={14} />
+                <span>Coût</span>
+                <strong>{parseFloat(t.cost).toFixed(2)} €</strong>
+              </div>
             )}
           </div>
-          <Tooltip content="Fermer">
-            <Button variant="ghost" className="eq-dialog-close" onClick={handleClose}>
-              <X size={20} />
-            </Button>
-          </Tooltip>
-        </div>
-        <div className="eq-dialog-body">
-          <div className="eq-detail-body">
-            <div className="eq-detail-fields">
-              <div className="eq-detail-field">
-                <span>🔴</span>
-                <span>Panne</span>
-                <strong>{t.title}</strong>
-              </div>
-              <div className="eq-detail-field">
-                <span>🎯</span>
-                <span>Priorité</span>
-                <strong style={{ color: pri.color }}>{pri.label}</strong>
-              </div>
-              <div className="eq-detail-field">
-                <span>🔧</span>
-                <span>Type</span>
-                <strong>{SAV_TYPES[t.type] || t.type}</strong>
-              </div>
-              {displayRef && (
-                <div className="eq-detail-field">
-                  <span>🏷️</span>
-                  <span>Référence</span>
-                  <strong>{displayRef}</strong>
-                </div>
-              )}
-              {displaySerial && (
-                <div className="eq-detail-field">
-                  <span>🔢</span>
-                  <span>N° Série</span>
-                  <strong>{displaySerial}</strong>
-                </div>
-              )}
-              {tech && (
-                <div className="eq-detail-field">
-                  <User size={14} />
-                  <span>Technicien</span>
-                  <strong>
-                    {tech.firstName} {tech.lastName}
-                  </strong>
-                </div>
-              )}
-              <div className="eq-detail-field">
-                <Calendar size={14} />
-                <span>Créé le</span>
-                <strong>{safeDate(t.createdAt)}</strong>
-              </div>
-              {t.resolvedAt && (
-                <div className="eq-detail-field">
-                  <CheckCircle size={14} />
-                  <span>Résolu le</span>
-                  <strong>{safeDate(t.resolvedAt)}</strong>
-                </div>
-              )}
-              {t.cost != null && t.cost > 0 && (
-                <div className="eq-detail-field">
-                  <DollarSign size={14} />
-                  <span>Coût</span>
-                  <strong>{parseFloat(t.cost).toFixed(2)} €</strong>
-                </div>
-              )}
+          {t.description && (
+            <div className="eq-detail-notes">
+              <h4>Description</h4>
+              <p>{t.description}</p>
             </div>
-            {t.description && (
-              <div className="eq-detail-notes">
-                <h4>Description</h4>
-                <p>{t.description}</p>
-              </div>
-            )}
-            {t.resolution && (
-              <div className="eq-detail-notes">
-                <h4>✅ Résolution</h4>
-                <p>{t.resolution}</p>
-              </div>
-            )}
-
-            <div className="eq-dialog-actions">
-              <Button variant="secondary" onClick={() => onEdit(t)}>
-                <Edit2 size={14} /> Modifier
-              </Button>
-              {isAdmin && (
-                <Button variant="danger" onClick={() => onDelete(t.id)}>
-                  <Trash2 size={14} /> Supprimer
-                </Button>
-              )}
+          )}
+          {t.resolution && (
+            <div className="eq-detail-notes">
+              <h4>✅ Résolution</h4>
+              <p>{t.resolution}</p>
             </div>
-          </div>
+          )}
         </div>
-      </div>
-    </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={() => onEdit(t)}>
+          <Edit2 size={14} /> Modifier
+        </Button>
+        {isAdmin && (
+          <Button variant="danger" onClick={() => onDelete(t.id)}>
+            <Trash2 size={14} /> Supprimer
+          </Button>
+        )}
+      </ModalFooter>
+    </Modal>
   );
 };
 

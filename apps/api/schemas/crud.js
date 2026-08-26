@@ -23,6 +23,14 @@ export const personSchema = z
     postal_code: optStr(10),
     photo: optStr(1000),
     notes: optStr(5000),
+    show_in_planning: z
+      .union([z.boolean(), z.literal(0), z.literal(1)])
+      .optional()
+      .nullable(),
+    default_positions: z
+      .union([z.string(), z.array(z.string())])
+      .optional()
+      .nullable(),
     license_types: z
       .union([z.string(), z.array(z.string())])
       .optional()
@@ -40,6 +48,8 @@ export const personSchema = z
     contract_end: optDate,
     weekly_hours: optNum,
     position_id: optInt,
+    user_id: optInt,
+    driver_id: optInt,
     // ── Annuaire Personnel (étendu) ──
     country: optStr(100),
     phone_personal: optStr(30),

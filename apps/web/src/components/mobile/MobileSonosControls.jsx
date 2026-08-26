@@ -5,7 +5,7 @@
 import { Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 import { formatTime } from '../../hooks/useSonos';
 
@@ -71,7 +71,7 @@ function MobileSonosControls({
 
       {/* Transport */}
       <div className="mobile-sonos-transport">
-        <button
+        <Button
           type="button"
           className={`mobile-sonos-transport-btn mobile-sonos-transport-sm${shuffleActive ? ' mobile-sonos-active' : ''}`}
           onClick={() => onShuffle(!shuffleActive)}
@@ -79,8 +79,8 @@ function MobileSonosControls({
           aria-label="Aléatoire"
         >
           <Shuffle size={16} />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="mobile-sonos-transport-btn"
           onClick={onPrevious}
@@ -88,9 +88,9 @@ function MobileSonosControls({
           aria-label="Précédent"
         >
           <SkipBack size={22} />
-        </button>
+        </Button>
         {state === 'playing' ? (
-          <button
+          <Button
             type="button"
             className="mobile-sonos-transport-btn mobile-sonos-transport-main"
             onClick={onPause}
@@ -98,9 +98,9 @@ function MobileSonosControls({
             aria-label="Pause"
           >
             <Pause size={28} />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             type="button"
             className="mobile-sonos-transport-btn mobile-sonos-transport-main"
             onClick={onPlay}
@@ -108,9 +108,9 @@ function MobileSonosControls({
             aria-label="Lecture"
           >
             <Play size={28} />
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           className="mobile-sonos-transport-btn"
           onClick={onNext}
@@ -118,8 +118,8 @@ function MobileSonosControls({
           aria-label="Suivant"
         >
           <SkipForward size={22} />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className={`mobile-sonos-transport-btn mobile-sonos-transport-sm${repeatMode && repeatMode !== 'none' ? ' mobile-sonos-active' : ''}`}
           onClick={() => onRepeat(nextRepeatMode())}
@@ -127,7 +127,7 @@ function MobileSonosControls({
           aria-label={`Répétition : ${repeatMode || 'off'}`}
         >
           {repeatMode === 'one' ? <Repeat1 size={16} /> : <Repeat size={16} />}
-        </button>
+        </Button>
       </div>
     </>
   );

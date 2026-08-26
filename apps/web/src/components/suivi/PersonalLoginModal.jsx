@@ -113,22 +113,22 @@ function PersonalLoginModal({ personnel = [], isOpen, onClose }) {
 
         {/* Onglets PIN/Mot de passe */}
         <div className="auth-mode-tabs">
-          <button
+          <Button
             type="button"
             className={`auth-tab ${authMode === 'pin' ? 'active' : ''}`}
             onClick={() => handleAuthModeChange('pin')}
             disabled={authLoading}
           >
             Code PIN
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             className={`auth-tab ${authMode === 'password' ? 'active' : ''}`}
             onClick={() => handleAuthModeChange('password')}
             disabled={authLoading}
           >
             Mot de passe
-          </button>
+          </Button>
         </div>
 
         {/* Champ PIN */}
@@ -174,7 +174,7 @@ function PersonalLoginModal({ personnel = [], isOpen, onClose }) {
                 disabled={authLoading}
                 className="password-input"
               />
-              <button
+              <Button
                 type="button"
                 className="toggle-password-btn"
                 onClick={() => setShowPassword(!showPassword)}
@@ -182,7 +182,7 @@ function PersonalLoginModal({ personnel = [], isOpen, onClose }) {
                 aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+              </Button>
             </div>
           </div>
         )}

@@ -57,15 +57,21 @@ const STATUS_INFO = {
   cancelled: { label: 'Annulée', icon: XCircle, color: STATUS_COLORS.danger },
 };
 
-function MobileTasks({ currentUser, onBack }) {
+function MobileTasks({ currentUser, onBack, initialDate = null }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [personId, setPersonId] = useState(null);
   const [updating, setUpdating] = useState(null);
   const [collapsedSections, setCollapsedSections] = useState(new Set());
-  const [showAllTasks, setShowAllTasks] = useState(false);
+  // QR scanné → accès partagé : montrer TOUTES les tâches du jour par défaut.
+  const [showAllTasks, setShowAllTasks] = useState(!!initialDate);
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Date cible : depuis le QR (initialDate) ou aujourd'hui sinon.
+  const targetDate =
+    initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)
+      ? initialDate
+      : new Date().toISOString().slice(0, 10);
+  const today = targetDate;
 
   // Résoudre le person_id lié au user courant
   useEffect(() => {
@@ -146,13 +152,21 @@ function MobileTasks({ currentUser, onBack }) {
   const totalCount = tasks.length;
   const isAdmin = currentUser?.role === ROLES.ADMIN || currentUser?.role === ROLES.MANAGER;
 
+  // Titre : "T\u00e2ches du jour" par d\u00e9faut, "T\u00e2ches du JJ/MM/AAAA" si date depuis QR.
+  const headerTitle = initialDate
+    ? (() => {
+        const [yy, mm, dd] = targetDate.split('-');
+        return `T\u00e2ches du ${dd}/${mm}/${yy}`;
+      })()
+    : 'T\u00e2ches du jour';
+
   return (
     <div className="mobile-tasks">
       <div className="mobile-tasks-header">
         <Button variant="ghost" className="mobile-back-btn" onClick={onBack} aria-label="Retour">
           <ArrowLeft size={20} />
         </Button>
-        <h2>Tâches du jour</h2>
+        <h2>{headerTitle}</h2>
         <Button
           variant="ghost"
           className="mobile-tasks-refresh"

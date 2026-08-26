@@ -1,0 +1,151 @@
+/* ═══════════════════════════════════════════════════════════════
+   PersonnelPlanningView Styles
+   Planning grid, toolbar, calendar views
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Toolbar Container ─── */
+.pp-planning-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--theme-bg-secondary);
+  border-bottom: 1px solid var(--theme-border);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.pp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-wrap: nowrap;
+  flex: 1;
+  min-width: max-content;
+}
+
+.pp-toolbar-left {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pp-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+}
+
+/* ─── Planning Header (date nav + vue) ─── */
+.pp-planning-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  flex-wrap: nowrap;
+  min-width: max-content;
+}
+
+.pp-planning-header-left,
+.pp-planning-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+}
+
+.pp-period-label {
+  white-space: nowrap;
+}
+
+/* ─── Filter Select Styling ─── */
+.pp-filter-select {
+  min-width: 140px;
+}
+
+.pp-filter-select.ui-select {
+  font-size: var(--font-sm);
+  padding: 6px 8px;
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--theme-text);
+}
+
+.pp-filter-select.ui-select:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.pp-filter-select.ui-select option {
+  padding: 4px 8px;
+  color: var(--theme-text);
+  background: white;
+}
+
+.pp-filter-select.ui-select option:hover {
+  background: var(--theme-primary);
+  color: white;
+}
+
+/* ─── Filter Badge ─── */
+.pp-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--theme-primary);
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+}
+
+.pp-filter-badge svg {
+  flex-shrink: 0;
+}
+
+/* ─── Responsive: Stack on smaller screens ─── */
+@media (max-width: 768px) {
+  .pp-planning-toolbar {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .pp-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .pp-planning-header {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+  }
+
+  .pp-planning-header-right {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .pp-toolbar-left {
+    min-width: 100%;
+  }
+
+  .pp-toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pp-filter-select {
+    min-width: 100%;
+  }
+}

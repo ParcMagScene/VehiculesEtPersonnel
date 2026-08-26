@@ -46,9 +46,11 @@ import {
   Avatar,
   Button,
   Drawer,
+  FormField,
   Input,
   Modal,
   ModalBody,
+  ModalFooter,
   ModalHeader,
   SectionHeader,
   Select,
@@ -65,11 +67,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { AFFAIRE_TYPE_SECTIONS, AFFAIRE_TYPES, getTypeInfo } from '../../utils/affaireConstants';
-import {
-  AFFAIRE_STATUS_MAP,
-  getAvailableTransitions,
-  STEP_TEMPLATES,
-} from '../../utils/affaireWorkflow';
+import { AFFAIRE_STATUS_MAP, getAvailableTransitions } from '../../utils/affaireWorkflow';
 import api, { getApiUrl } from '../../utils/api';
 import { groupBpItemsBySectionMap } from '../../utils/bpItemsGrouping';
 import { capitalizeText } from '../../utils/dateUtils';
@@ -82,12 +80,17 @@ import { formatPhoneDisplay } from '../PhoneInput';
 const ReservationModal = lazy(() => import('../vehicles/ReservationModal'));
 const EventDetailsModal = lazy(() => import('../planning/EventDetailsModal'));
 const BLImportModal = lazy(() => import('./BLImportModal'));
-const BLImportLocPrestaModal = lazy(() => import('./BLImportLocPrestaModal'));
 const DynamicDisplayDialog = lazy(() => import('../DynamicDisplayDialog'));
 const GenerateOrdersModal = lazy(() => import('./GenerateOrdersModal'));
 const BPAnnotationViewer = lazy(() => import('./BPAnnotationViewer'));
 
 const API_BASE_URL = getApiUrl();
+
+function triggerOnEnterSpace(event, callback) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  callback();
+}
 
 // ═══ Étapes de tâches opérationnelles ═══
 const TASK_STEPS = [
@@ -173,18 +176,41 @@ const TASK_STEPS = [
   },
 ];
 
-// Étapes filtrées par type d'affaire (Phase 9)
-const getVisibleSteps = (type) => {
-  const templateKeys = STEP_TEMPLATES[type];
-  if (!templateKeys) return TASK_STEPS;
-  return TASK_STEPS.filter((s) => templateKeys.includes(s.key));
-};
+// Toutes les étapes de tâches sont disponibles dans la planification,
+// indépendamment du type d'affaire. Les `STEP_TEMPLATES` ne sont utilisés
+// que pour suggérer un workflow, pas pour restreindre les options.
+const getVisibleSteps = () => TASK_STEPS;
 
 const TASK_STATUS_MAP = {
   pending: { label: 'En attente', color: '#94a3b8', bg: '#f1f5f9' },
   in_progress: { label: 'En cours', color: STATUS_COLORS.warning, bg: '#fef3c7' },
   done: { label: 'Terminé', color: STATUS_COLORS.success, bg: '#d1fae5' },
   cancelled: { label: 'Annulé', color: STATUS_COLORS.danger, bg: '#fee2e2' },
+};
+
+// Détecte la période (AM / PM / JOURNEE) à partir d'une plage horaire HH:MM→HH:MM.
+// Retourne null si aucune heure n'est renseignée (n'écrase rien).
+const detectPeriodFromTimes = (time, endTime) => {
+  const toMin = (t) => {
+    if (!t || typeof t !== 'string' || !t.includes(':')) return null;
+    const [h, m] = t.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return h * 60 + m;
+  };
+  const startMin = toMin(time);
+  const endMin = toMin(endTime);
+  if (startMin == null && endMin == null) return null;
+  const NOON = 12 * 60;
+  // 12:00 → début PM ; fin ≤ 12:00 → reste AM
+  const startIsAM = startMin != null ? startMin < NOON : null;
+  const endIsAM = endMin != null ? endMin <= NOON : null;
+  if (startIsAM != null && endIsAM == null) return startIsAM ? 'AM' : 'PM';
+  if (startIsAM == null && endIsAM != null) return endIsAM ? 'AM' : 'PM';
+  if (startIsAM && endIsAM) return 'AM';
+  if (!startIsAM && !endIsAM) return 'PM';
+  if (startIsAM && !endIsAM) return 'JOURNEE';
+  // start PM + end AM : incohérent, on conserve PM
+  return 'PM';
 };
 
 const fmtDate = (dateStr) => {
@@ -807,7 +833,7 @@ const AffaireDetailContent = ({
               date: existing.date || '',
               time: existing.time || '',
               endTime: existing.end_time || '',
-              period: existing.period || '',
+              period: existing.all_day === 1 ? 'JOURNEE' : existing.period || '',
               notes: existing.notes || '',
               taskId: existing.id,
               status: existing.status || 'pending',
@@ -843,7 +869,18 @@ const AffaireDetailContent = ({
   }, []);
 
   const updateTaskStep = (key, field, value) => {
-    setTaskSteps((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
+    setTaskSteps((prev) => {
+      const next = { ...prev[key], [field]: value };
+      // Auto-détection de la période (AM / Journée / PM) selon les heures saisies
+      if (field === 'time' || field === 'endTime') {
+        const detected = detectPeriodFromTimes(
+          field === 'time' ? value : next.time,
+          field === 'endTime' ? value : next.endTime,
+        );
+        if (detected) next.period = detected;
+      }
+      return { ...prev, [key]: next };
+    });
   };
 
   const getSectionForStep = useCallback(
@@ -869,13 +906,15 @@ const AffaireDetailContent = ({
       for (const step of TASK_STEPS) {
         const s = taskSteps[step.key];
         if (!s) continue;
+        const isAllDay = s.period === 'JOURNEE';
         if (s.enabled && !s.taskId) {
           // Nouvelle étape activée → créer
           toCreate.push({
             date: s.date,
-            period: s.period || null,
+            period: isAllDay ? null : s.period || null,
             time: s.time || null,
             end_time: s.endTime || null,
+            all_day: isAllDay ? 1 : 0,
             section: getSectionForStep(step.key),
             title: `${step.emoji} ${step.label}`,
             notes: s.notes || '',
@@ -890,9 +929,10 @@ const AffaireDetailContent = ({
           toUpdate.push({
             id: s.taskId,
             date: s.date,
-            period: s.period || null,
+            period: isAllDay ? null : s.period || null,
             time: s.time || null,
             end_time: s.endTime || null,
+            all_day: isAllDay ? 1 : 0,
             section: getSectionForStep(step.key),
             title: `${step.emoji} ${step.label}`,
             google_event_title: eventName,
@@ -928,12 +968,17 @@ const AffaireDetailContent = ({
     }
   }, [taskSteps, affaire, getSectionForStep, showFeedback, loadAffaireTasks, onDataChanged]);
 
-  // Nombre d'étapes activées
-  const visibleSteps = useMemo(() => getVisibleSteps(affaire.type), [affaire.type]);
+  // Nombre d'étapes activées (toutes les étapes sont disponibles, indépendamment du type)
+  const visibleSteps = useMemo(() => getVisibleSteps(), []);
   const enabledStepCount = useMemo(
     () => visibleSteps.filter((s) => taskSteps[s.key]?.enabled).length,
     [taskSteps, visibleSteps],
   );
+
+  // Auto-ouvrir la section Planification : DÉSACTIVÉ.
+  // Un résumé condensé des étapes activées s'affiche directement sous le titre
+  // (voir <div class="task-steps-summary">), donc la section reste fermée par
+  // défaut et l'utilisateur la déplie uniquement pour éditer.
   // Vérifier si des changements non sauvegardés existent
   const hasTaskChanges = useMemo(() => {
     for (const step of visibleSteps) {
@@ -946,7 +991,8 @@ const AffaireDetailContent = ({
         if (s.date !== (existingTask.date || '')) return true;
         if (s.time !== (existingTask.time || '')) return true;
         if (s.endTime !== (existingTask.end_time || '')) return true;
-        if (s.period !== (existingTask.period || '')) return true;
+        const existingPeriod = existingTask.all_day === 1 ? 'JOURNEE' : existingTask.period || '';
+        if (s.period !== existingPeriod) return true;
         if (s.notes !== (existingTask.notes || '')) return true;
       }
     }
@@ -1239,8 +1285,7 @@ const AffaireDetailContent = ({
         />
         {isEditing && editForm && setEditForm ? (
           <div className="detail-grid edit-mode">
-            <div className="detail-field full-width">
-              <label>Nom</label>
+            <FormField className="detail-field full-width" label="Nom">
               <Input
                 type="text"
                 value={editForm.nom}
@@ -1248,18 +1293,16 @@ const AffaireDetailContent = ({
                 className="edit-input"
                 placeholder="Nom de l'affaire"
               />
-            </div>
-            <div className="detail-field">
-              <label>N° Affaire</label>
+            </FormField>
+            <FormField className="detail-field" label="N° Affaire">
               <Input
                 type="text"
                 value={editForm.numeroAffaire}
                 onChange={(e) => setEditForm((f) => ({ ...f, numeroAffaire: e.target.value }))}
                 className="edit-input"
               />
-            </div>
-            <div className="detail-field">
-              <label>Type</label>
+            </FormField>
+            <FormField className="detail-field" label="Type">
               <Select
                 value={editForm.type}
                 onChange={(e) => setEditForm((f) => ({ ...f, type: e.target.value }))}
@@ -1271,11 +1314,12 @@ const AffaireDetailContent = ({
                   </option>
                 ))}
               </Select>
-            </div>
+            </FormField>
             <div className="detail-field u-relative" ref={clientDropdownRef}>
-              <label>Client</label>
+              <div className="detail-label">Client</div>
               <Input
                 type="text"
+                aria-label="Client"
                 value={editForm.client}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -1296,25 +1340,29 @@ const AffaireDetailContent = ({
               {showClientDropdown && clientSuggestions.length > 0 && (
                 <ul className="autocomplete-dropdown">
                   {clientSuggestions.map((c) => (
-                    <li
-                      key={c.id}
-                      onClick={() => {
-                        setEditForm((f) => ({ ...f, client: c.name }));
-                        setShowClientDropdown(false);
-                        setClientSuggestions([]);
-                      }}
-                    >
-                      <span className="ac-name">{c.name}</span>
-                      {c.city && <span className="ac-detail">{c.city}</span>}
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        className="autocomplete-option"
+                        onClick={() => {
+                          setEditForm((f) => ({ ...f, client: c.name }));
+                          setShowClientDropdown(false);
+                          setClientSuggestions([]);
+                        }}
+                      >
+                        <span className="ac-name">{c.name}</span>
+                        {c.city && <span className="ac-detail">{c.city}</span>}
+                      </button>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
             <div className="detail-field u-relative" ref={contactDropdownRef}>
-              <label>Interlocuteur</label>
+              <div className="detail-label">Interlocuteur</div>
               <Input
                 type="text"
+                aria-label="Interlocuteur"
                 value={editForm.interlocuteur}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -1335,76 +1383,91 @@ const AffaireDetailContent = ({
               {showContactDropdown && contactSuggestions.length > 0 && (
                 <ul className="autocomplete-dropdown">
                   {contactSuggestions.map((c) => (
-                    <li
-                      key={c.id}
-                      onClick={() => {
-                        const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ');
-                        setEditForm((f) => ({
-                          ...f,
-                          interlocuteur: fullName,
-                          tel: f.tel || c.phone || '',
-                        }));
-                        setShowContactDropdown(false);
-                        setContactSuggestions([]);
-                      }}
-                    >
-                      <span className="ac-name">
-                        {[c.first_name, c.last_name].filter(Boolean).join(' ')}
-                      </span>
-                      {c.client_name && <span className="ac-detail">{c.client_name}</span>}
-                      {c.job_title && <span className="ac-detail">— {c.job_title}</span>}
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        className="autocomplete-option"
+                        onClick={() => {
+                          const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ');
+                          setEditForm((f) => ({
+                            ...f,
+                            interlocuteur: fullName,
+                            tel: f.tel || c.phone || '',
+                          }));
+                          setShowContactDropdown(false);
+                          setContactSuggestions([]);
+                        }}
+                      >
+                        <span className="ac-name">
+                          {[c.first_name, c.last_name].filter(Boolean).join(' ')}
+                        </span>
+                        {c.client_name && <span className="ac-detail">{c.client_name}</span>}
+                        {c.job_title && <span className="ac-detail">— {c.job_title}</span>}
+                      </button>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
-            <div className="detail-field">
-              <label>
-                <Phone size={12} /> Téléphone
-              </label>
+            <FormField
+              className="detail-field"
+              label={
+                <>
+                  <Phone size={12} /> Téléphone
+                </>
+              }
+            >
               <Input
                 type="text"
                 value={editForm.tel}
                 onChange={(e) => setEditForm((f) => ({ ...f, tel: e.target.value }))}
                 className="edit-input"
               />
-            </div>
-            <div className="detail-field">
-              <label>Devis</label>
+            </FormField>
+            <FormField className="detail-field" label="Devis">
               <Input
                 type="text"
                 value={editForm.devis}
                 onChange={(e) => setEditForm((f) => ({ ...f, devis: e.target.value }))}
                 className="edit-input"
               />
-            </div>
-            <div className="detail-field">
-              <label>
-                <Calendar size={12} /> Date début
-              </label>
+            </FormField>
+            <FormField
+              className="detail-field"
+              label={
+                <>
+                  <Calendar size={12} /> Date début
+                </>
+              }
+            >
               <Input
                 type="date"
                 value={editForm.dateDebut}
                 onChange={(e) => setEditForm((f) => ({ ...f, dateDebut: e.target.value }))}
                 className="edit-input"
               />
-            </div>
-            <div className="detail-field">
-              <label>
-                <Calendar size={12} /> Date fin
-              </label>
+            </FormField>
+            <FormField
+              className="detail-field"
+              label={
+                <>
+                  <Calendar size={12} /> Date fin
+                </>
+              }
+            >
               <Input
                 type="date"
                 value={editForm.dateFin}
                 onChange={(e) => setEditForm((f) => ({ ...f, dateFin: e.target.value }))}
                 className="edit-input"
               />
-            </div>
+            </FormField>
             <div className="detail-field full-width">
-              <label>
+              <div className="detail-label">
                 <MapPin size={12} /> Lieu / Adresse
-              </label>
+              </div>
               <AddressAutocomplete
+                aria-label="Lieu ou adresse"
                 value={editForm.adresseLivraison}
                 onChange={(val) => setEditForm((f) => ({ ...f, adresseLivraison: val }))}
                 className="edit-input"
@@ -1412,64 +1475,64 @@ const AffaireDetailContent = ({
               />
             </div>
             <div className="detail-field full-width">
-              <label>
+              <div className="detail-label">
                 <FileText size={12} /> Titre / Événement
-              </label>
+              </div>
               <Input
                 type="text"
+                aria-label="Titre ou événement"
                 value={editForm.titre}
                 onChange={(e) => setEditForm((f) => ({ ...f, titre: e.target.value }))}
                 className="edit-input"
               />
             </div>
-            <div className="detail-field full-width">
-              <label>Description</label>
+            <FormField className="detail-field full-width" label="Description">
               <Textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
                 className="edit-input edit-textarea"
                 rows={3}
               />
-            </div>
+            </FormField>
           </div>
         ) : (
           <div className="detail-grid">
             {affaire.nom && (
               <div className="detail-field full-width">
-                <label>Nom</label>
+                <div className="detail-label">Nom</div>
                 <span className="detail-nom">{affaire.nom}</span>
               </div>
             )}
             <div className="detail-field">
-              <label>N° Affaire</label>
+              <div className="detail-label">N° Affaire</div>
               <span className="detail-numero">{affaire.numeroAffaire || '—'}</span>
             </div>
             <div className="detail-field">
-              <label>Type</label>
+              <div className="detail-label">Type</div>
               <span className="affaire-type-badge" style={{ background: typeInfo.color }}>
                 {typeInfo.label}
               </span>
             </div>
             <div className="detail-field">
-              <label>Client</label>
+              <div className="detail-label">Client</div>
               <span>{capitalizeText(affaire.client) || '—'}</span>
             </div>
             <div className="detail-field">
-              <label>Interlocuteur</label>
+              <div className="detail-label">Interlocuteur</div>
               <span>{capitalizeText(affaire.interlocuteur) || '—'}</span>
             </div>
             {affaire.tel && (
               <div className="detail-field">
-                <label>
+                <div className="detail-label">
                   <Phone size={12} /> Téléphone
-                </label>
+                </div>
                 <span>{formatPhoneDisplay(affaire.tel)}</span>
               </div>
             )}
             <div className="detail-field full-width">
-              <label>
+              <div className="detail-label">
                 <Calendar size={12} /> Période
-              </label>
+              </div>
               <span>
                 {fmtDate(affaire.dateDebut)}
                 {affaire.dateFin && affaire.dateFin !== affaire.dateDebut && (
@@ -1483,34 +1546,34 @@ const AffaireDetailContent = ({
               </span>
             </div>
             <div className="detail-field full-width">
-              <label>
+              <div className="detail-label">
                 <MapPin size={12} /> Lieu
-              </label>
+              </div>
               <span>{capitalizeText(affaire.adresseLivraison) || '—'}</span>
             </div>
             {(affaire.eventName || affaire.titre) && (
               <div className="detail-field full-width">
-                <label>
+                <div className="detail-label">
                   <FileText size={12} /> Titre / Événement
-                </label>
+                </div>
                 <span>{capitalizeText(affaire.eventName || affaire.titre)}</span>
               </div>
             )}
             {affaire.description && (
               <div className="detail-field full-width">
-                <label>Description</label>
+                <div className="detail-label">Description</div>
                 <p className="detail-description">{affaire.description}</p>
               </div>
             )}
             {affaire.devis && (
               <div className="detail-field">
-                <label>Devis</label>
+                <div className="detail-label">Devis</div>
                 <span>{affaire.devis}</span>
               </div>
             )}
             {affaire.source && (
               <div className="detail-field">
-                <label>Source</label>
+                <div className="detail-label">Source</div>
                 <span className="detail-source-tag">
                   {affaire.source === 'db'
                     ? 'Base de données'
@@ -1546,6 +1609,7 @@ const AffaireDetailContent = ({
                   key={ev.id}
                   className="detail-list-item event-item clickable"
                   onClick={() => setViewedEvent(ev)}
+                  onKeyDown={(e) => triggerOnEnterSpace(e, () => setViewedEvent(ev))}
                   title="Cliquer pour voir les détails de l'événement"
                 >
                   <div className="event-summary">
@@ -1616,6 +1680,8 @@ const AffaireDetailContent = ({
                 <div
                   key={bl.id}
                   className="bl-import-card"
+                  role={bl.filePath ? 'button' : undefined}
+                  tabIndex={bl.filePath ? 0 : undefined}
                   style={{ cursor: bl.filePath ? 'pointer' : 'default' }}
                   onClick={
                     bl.filePath
@@ -1623,6 +1689,15 @@ const AffaireDetailContent = ({
                           setAnnotatingBL(bl);
                           await annotate(affaire.numeroAffaire, bl.id);
                         }
+                      : undefined
+                  }
+                  onKeyDown={
+                    bl.filePath
+                      ? (e) =>
+                          triggerOnEnterSpace(e, async () => {
+                            setAnnotatingBL(bl);
+                            await annotate(affaire.numeroAffaire, bl.id);
+                          })
                       : undefined
                   }
                   title={bl.filePath ? 'Cliquer pour voir le PDF annoté' : undefined}
@@ -1720,6 +1795,7 @@ const AffaireDetailContent = ({
                 key={r.id}
                 className="detail-list-item resa-item clickable"
                 onClick={() => handleViewReservation(r)}
+                onKeyDown={(e) => triggerOnEnterSpace(e, () => handleViewReservation(r))}
                 title="Cliquer pour ouvrir la réservation"
               >
                 <div className="resa-vehicle">
@@ -1821,17 +1897,16 @@ const AffaireDetailContent = ({
               {linkSearchResults.length > 0 && (
                 <div className="link-search-results">
                   {linkSearchResults.map((a) => (
-                    <div
+                    <button
+                      type="button"
                       key={a.id}
                       className="link-search-item"
-                      role="button"
-                      tabIndex={0}
                       onClick={() => handleAddLink(a.id)}
                     >
                       <AffaireBadge numero={a.numeroAffaire} type={a.type} size="sm" />
                       <span className="link-search-client">{a.client || '—'}</span>
                       <span className="link-search-title">{a.titre || a.eventName || ''}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -1893,16 +1968,68 @@ const AffaireDetailContent = ({
 
       {/* ═══ Section 2b : Planification opérationnelle (rétractable) ═══ */}
       <section className="detail-section">
-        <h3
+        <div
           className="detail-section-title collapsible u-cursor-pointer u-select-none"
           onClick={() => setPlanningOpen((v) => !v)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => triggerOnEnterSpace(e, () => setPlanningOpen((v) => !v))}
         >
           <ClipboardList size={15} /> Planification
           <span className="section-count">
             {enabledStepCount}/{visibleSteps.length}
           </span>
           <ChevronDown size={16} className={`section-toggle-icon${planningOpen ? ' open' : ''}`} />
-        </h3>
+        </div>
+
+        {/* Résumé condensé des étapes activées (visible même section repliée) */}
+        {!isLoadingTasks && enabledStepCount > 0 && !planningOpen && (
+          <div
+            className="task-steps-summary"
+            onClick={() => setPlanningOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => triggerOnEnterSpace(e, () => setPlanningOpen(true))}
+          >
+            {visibleSteps
+              .filter((step) => taskSteps[step.key]?.enabled)
+              .map((step) => {
+                const s = taskSteps[step.key];
+                const statusInfo = TASK_STATUS_MAP[s.status] || TASK_STATUS_MAP.pending;
+                return (
+                  <span
+                    key={step.key}
+                    className="task-step-chip"
+                    style={{
+                      '--tsc-color': step.color,
+                      '--tsc-bg': `${step.color}10`,
+                    }}
+                    title={s.notes || `${step.label} — ${statusInfo.label}`}
+                  >
+                    <span className="tsc-emoji">{step.emoji}</span>
+                    <span className="tsc-label">{step.label}</span>
+                    {s.date && (
+                      <span className="tsc-date">
+                        {fmtDate(s.date)}
+                        {s.period
+                          ? ` · ${s.period === 'AM' ? 'Matin' : s.period === 'PM' ? 'A-M' : 'Jour'}`
+                          : ''}
+                      </span>
+                    )}
+                    <span
+                      className="tsc-status"
+                      style={{
+                        '--tsc-status-bg': statusInfo.bg,
+                        '--tsc-status-color': statusInfo.color,
+                      }}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </span>
+                );
+              })}
+          </div>
+        )}
 
         {planningOpen &&
           (isLoadingTasks ? (
@@ -1925,6 +2052,7 @@ const AffaireDetailContent = ({
                       role="button"
                       tabIndex={0}
                       onClick={(e) => toggleTaskStep(step.key, e)}
+                      onKeyDown={(e) => triggerOnEnterSpace(e, () => toggleTaskStep(step.key, e))}
                     >
                       <div
                         className="task-step-check"
@@ -1947,16 +2075,19 @@ const AffaireDetailContent = ({
                       {s.enabled && s.date && (
                         <span className="task-step-date">
                           {fmtDate(s.date)}
-                          {s.period ? ` · ${s.period === 'AM' ? 'Matin' : 'Après-midi'}` : ''}
+                          {s.period
+                            ? ` · ${s.period === 'AM' ? 'Matin' : s.period === 'PM' ? 'Après-midi' : 'Journée'}`
+                            : ''}
                         </span>
                       )}
                     </div>
                     {s.enabled && (
                       <div className="task-step-fields" onClick={(e) => e.stopPropagation()}>
                         <div className="tsf-row">
-                          <label>Date</label>
+                          <div className="tsf-label">Date</div>
                           <Input
                             type="date"
+                            aria-label={`Date ${step.label}`}
                             value={s.date}
                             onChange={(e) => updateTaskStep(step.key, 'date', e.target.value)}
                           />
@@ -1972,33 +2103,38 @@ const AffaireDetailContent = ({
                               Auj.
                             </Button>
                           </Tooltip>
-                          <label>Période</label>
+                          <div className="tsf-label">Période</div>
                           <Select
+                            aria-label={`Période ${step.label}`}
                             value={s.period}
                             onChange={(e) => updateTaskStep(step.key, 'period', e.target.value)}
                           >
                             <option value="AM">Matin</option>
                             <option value="PM">Après-midi</option>
+                            <option value="JOURNEE">Journée entière</option>
                           </Select>
                         </div>
                         <div className="tsf-row">
-                          <label>Début</label>
+                          <div className="tsf-label">Début</div>
                           <Input
                             type="time"
+                            aria-label={`Heure de début ${step.label}`}
                             value={s.time}
                             onChange={(e) => updateTaskStep(step.key, 'time', e.target.value)}
                           />
-                          <label>Fin</label>
+                          <div className="tsf-label">Fin</div>
                           <Input
                             type="time"
+                            aria-label={`Heure de fin ${step.label}`}
                             value={s.endTime}
                             onChange={(e) => updateTaskStep(step.key, 'endTime', e.target.value)}
                           />
                         </div>
                         <div className="tsf-row">
-                          <label>Notes</label>
+                          <div className="tsf-label">Notes</div>
                           <Input
                             type="text"
+                            aria-label={`Notes ${step.label}`}
                             placeholder="Notes..."
                             value={s.notes}
                             onChange={(e) => updateTaskStep(step.key, 'notes', e.target.value)}
@@ -2111,9 +2247,15 @@ const AffaireDetailContent = ({
               <div
                 key={p.id}
                 className={`detail-list-item person-item${onNavigateToEntity ? ' clickable' : ''}`}
+                role={onNavigateToEntity ? 'button' : undefined}
+                tabIndex={onNavigateToEntity ? 0 : undefined}
                 onClick={() => {
                   if (onNavigateToEntity) onNavigateToEntity('person', { id: p.id });
                 }}
+                onKeyDown={(e) =>
+                  onNavigateToEntity &&
+                  triggerOnEnterSpace(e, () => onNavigateToEntity('person', { id: p.id }))
+                }
                 title={onNavigateToEntity ? 'Voir dans le module Personnel' : undefined}
               >
                 <div className="person-header-row">
@@ -2219,6 +2361,8 @@ const AffaireDetailContent = ({
         {showUploadForm && (
           <div
             className={`upload-zone ${uploadDragging ? 'dragging' : ''} ${uploadProgress ? 'uploading' : ''}`}
+            role="button"
+            tabIndex={0}
             onDragOver={(e) => {
               e.preventDefault();
               setUploadDragging(true);
@@ -2230,6 +2374,7 @@ const AffaireDetailContent = ({
               handleFileUpload(e.dataTransfer.files);
             }}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => triggerOnEnterSpace(e, () => fileInputRef.current?.click())}
           >
             <Input
               ref={fileInputRef}
@@ -2974,29 +3119,16 @@ const AffaireSlidePanel = ({
       />
       {showBLImport && (
         <Suspense fallback={null}>
-          {['Location', 'Prestation'].includes(currentAffaire.type) ? (
-            <BLImportLocPrestaModal
-              onClose={() => setShowBLImport(false)}
-              onImported={() => {
-                setShowBLImport(false);
-                setHasBLImports(true);
-                if (onRefresh) onRefresh();
-              }}
-              defaultAffaireId={currentAffaire.numeroAffaire}
-              defaultAffaireType={currentAffaire.type}
-            />
-          ) : (
-            <BLImportModal
-              onClose={() => setShowBLImport(false)}
-              onImported={() => {
-                setShowBLImport(false);
-                setHasBLImports(true);
-                if (onRefresh) onRefresh();
-              }}
-              defaultAffaireId={currentAffaire.numeroAffaire}
-              defaultAffaireType={currentAffaire.type}
-            />
-          )}
+          <BLImportModal
+            onClose={() => setShowBLImport(false)}
+            onImported={() => {
+              setShowBLImport(false);
+              setHasBLImports(true);
+              if (onRefresh) onRefresh();
+            }}
+            defaultAffaireId={currentAffaire.numeroAffaire}
+            defaultAffaireType={currentAffaire.type}
+          />
         </Suspense>
       )}
       {showDisplayDialog && (
@@ -3194,55 +3326,7 @@ const AffaireDetailModal = ({
   return (
     <>
       <Modal open={!!affaire} onClose={handleClose} size="xl" className="affaire-dialog">
-        <ModalHeader
-          onClose={handleClose}
-          className="dialog-header"
-          rightContent={
-            isEditing ? (
-              <>
-                <Tooltip content="Annuler les modifications" position="bottom">
-                  <Button variant="ghost" className="dialog-cancel-btn" onClick={cancelEditing}>
-                    <X size={15} /> Annuler
-                  </Button>
-                </Tooltip>
-                <Tooltip content="Enregistrer les modifications" position="bottom">
-                  <Button
-                    variant="ghost"
-                    className="dialog-save-btn"
-                    onClick={saveEditing}
-                    disabled={isSaving}
-                  >
-                    <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                  </Button>
-                </Tooltip>
-              </>
-            ) : (
-              <>
-                <Tooltip content="Modifier les informations de l'affaire" position="bottom">
-                  <Button variant="ghost" className="dialog-edit-btn" onClick={startEditing}>
-                    <Edit3 size={15} /> Modifier
-                  </Button>
-                </Tooltip>
-                <Button
-                  variant="ghost"
-                  className="dialog-bl-btn"
-                  onClick={() => setShowBLImport(true)}
-                  title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
-                >
-                  {hasBLImports ? (
-                    <>
-                      <RefreshCw size={15} /> MAJ BL
-                    </>
-                  ) : (
-                    <>
-                      <FileText size={15} /> Import BL
-                    </>
-                  )}
-                </Button>
-              </>
-            )
-          }
-        >
+        <ModalHeader onClose={handleClose} className="dialog-header">
           <span className="dialog-title-row">
             <span className="dialog-numero">
               {isEditing && editForm ? editForm.numeroAffaire : affaire.numeroAffaire}
@@ -3275,32 +3359,58 @@ const AffaireDetailModal = ({
             currentUser={currentUser}
           />
         </ModalBody>
+        <ModalFooter align="end" className="dialog-footer">
+          {isEditing ? (
+            <>
+              <Tooltip content="Annuler les modifications" position="top">
+                <Button variant="ghost" onClick={cancelEditing}>
+                  <X size={15} /> Annuler
+                </Button>
+              </Tooltip>
+              <Tooltip content="Enregistrer les modifications" position="top">
+                <Button variant="success" onClick={saveEditing} disabled={isSaving}>
+                  <Save size={15} /> {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                </Button>
+              </Tooltip>
+            </>
+          ) : (
+            <>
+              <Tooltip content="Modifier les informations de l'affaire" position="top">
+                <Button variant="primary" onClick={startEditing}>
+                  <Edit3 size={15} /> Modifier
+                </Button>
+              </Tooltip>
+              <Button
+                variant="secondary"
+                onClick={() => setShowBLImport(true)}
+                title={hasBLImports ? 'Mettre à jour le BL/BP' : 'Importer un BL/BP'}
+              >
+                {hasBLImports ? (
+                  <>
+                    <RefreshCw size={15} /> MAJ BL
+                  </>
+                ) : (
+                  <>
+                    <FileText size={15} /> Import BL
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+        </ModalFooter>
 
         {showBLImport && (
           <Suspense fallback={null}>
-            {['Location', 'Prestation'].includes(affaire.type) ? (
-              <BLImportLocPrestaModal
-                onClose={() => setShowBLImport(false)}
-                onImported={() => {
-                  setShowBLImport(false);
-                  setHasBLImports(true);
-                  handleDataChanged();
-                }}
-                defaultAffaireId={affaire.numeroAffaire}
-                defaultAffaireType={affaire.type}
-              />
-            ) : (
-              <BLImportModal
-                onClose={() => setShowBLImport(false)}
-                onImported={() => {
-                  setShowBLImport(false);
-                  setHasBLImports(true);
-                  handleDataChanged();
-                }}
-                defaultAffaireId={affaire.numeroAffaire}
-                defaultAffaireType={affaire.type}
-              />
-            )}
+            <BLImportModal
+              onClose={() => setShowBLImport(false)}
+              onImported={() => {
+                setShowBLImport(false);
+                setHasBLImports(true);
+                handleDataChanged();
+              }}
+              defaultAffaireId={affaire.numeroAffaire}
+              defaultAffaireType={affaire.type}
+            />
           </Suspense>
         )}
         {showDisplayDialog && (

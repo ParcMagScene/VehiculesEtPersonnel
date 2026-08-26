@@ -325,44 +325,23 @@
   border-right: none;
 }
 
-.mobile-module-content .eq-dialog-actions {
-  border-radius: 0;
-  border: none;
-  border-top: 1px solid var(--theme-border);
-  padding: var(--space-3) var(--space-4);
+.mobile-module-content .eq-dialog-footer {
   padding-bottom: max(12px, env(safe-area-inset-bottom));
   flex-direction: column;
+  align-items: stretch;
   gap: var(--space-2);
 }
 
 .mobile-module-content .eq-actions-group {
-  display: flex;
   flex-direction: column;
   gap: var(--space-2);
   width: 100%;
-  padding: 0;
-  border: none;
 }
 
-.mobile-module-content .eq-actions-group + .eq-actions-group {
-  padding-left: 0;
-  padding-top: 0;
-  border-left: none;
-  border-top: none;
-}
-
-.mobile-module-content .eq-dialog-actions .eq-btn-primary,
-.mobile-module-content .eq-dialog-actions .eq-btn-secondary,
-.mobile-module-content .eq-dialog-actions .eq-btn-danger {
+.mobile-module-content .eq-dialog-footer .ui-btn {
   width: 100%;
   justify-content: center;
-  padding: var(--space-3) var(--space-4);
   font-size: var(--font-base);
-  border-radius: var(--radius-md-lg);
-}
-
-.mobile-module-content .eq-dialog-actions > .eq-btn-danger {
-  margin-left: 0;
 }
 
 /* Masquer slide panel sur mobile */

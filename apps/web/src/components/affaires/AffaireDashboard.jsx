@@ -63,8 +63,8 @@ export default function AffaireDashboard() {
           </div>
         )}
         {data.upcoming > 0 && (
-          <div className="ad-card" style={{ borderColor: '#3b82f6' }}>
-            <span className="ad-card-value" style={{ color: '#3b82f6' }}>
+          <div className="ad-card ad-card-info">
+            <span className="ad-card-value">
               <Calendar size={14} /> {data.upcoming}
             </span>
             <span className="ad-card-label">7 prochains jours</span>

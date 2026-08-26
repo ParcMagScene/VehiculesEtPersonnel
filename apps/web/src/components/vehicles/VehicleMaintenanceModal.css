@@ -329,6 +329,7 @@
   margin-top: 0.5rem;
   font-size: var(--font-base);
   font-weight: 600;
+  color: var(--controle-status-color, var(--theme-text-dark));
   padding: 0.5rem;
   border-radius: var(--radius-xs);
   background: var(--shadow-xs);

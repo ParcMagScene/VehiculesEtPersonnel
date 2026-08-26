@@ -15,6 +15,7 @@ import MobileHome from './MobileHome';
 import MobileLogin from './MobileLogin';
 import MobileParcDashboard from './MobileParcDashboard';
 import MobileQRLanding from './MobileQRLanding';
+import MobileQRRefLanding from './MobileQRRefLanding';
 
 const MobilePlanning = lazy(() => import('./MobilePlanning'));
 const MobileAvailability = lazy(() => import('./MobileAvailability'));
@@ -45,12 +46,22 @@ function MobileScreenFallback() {
 function MobileApp({ onSwitchToDesktop }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const { currentScreen, qrUid: routerQrUid, navigate, goBack } = useMobileRouter();
+  const {
+    currentScreen,
+    qrUid: routerQrUid,
+    qrRef: routerQrRef,
+    params: routerParams,
+    navigate,
+    goBack,
+  } = useMobileRouter();
   const setCurrentScreen = navigate; // Bridge — migration progressive
   const [qrEquipmentUid, setQrEquipmentUid] = useState(null);
+  const [qrEquipmentRef, setQrEquipmentRef] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [maintenances, setMaintenances] = useState([]);
+  const [coreLoaded, setCoreLoaded] = useState(false);
+  const [coreDataLoading, setCoreDataLoading] = useState(false);
   const [clients, setClients] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [garages, setGarages] = useState([]);
@@ -76,6 +87,7 @@ function MobileApp({ onSwitchToDesktop }) {
   const maintenanceFormRef = useRef(null);
   const msgToastTimerRef = useRef(null);
   const currentScreenRef = useRef('home');
+  const coreLoadPromiseRef = useRef(null);
 
   // SSE messagerie temps réel (fallback polling auto)
   const handleNewMessage = useCallback((msg) => {
@@ -110,32 +122,48 @@ function MobileApp({ onSwitchToDesktop }) {
     checkAuth();
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await api.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setCoreLoaded(false);
     setCurrentScreen('home');
-  };
+  }, [setCurrentScreen]);
 
   // Charger les données coeur (utilisées par l'accueil/parc)
   const loadCoreParcData = useCallback(async () => {
-    try {
-      const [vehiclesData, reservationsData, maintenancesData] = await Promise.all([
-        api.getVehicles(),
-        api.getReservations(),
-        api.getMaintenances(),
-      ]);
+    if (coreLoadPromiseRef.current) return coreLoadPromiseRef.current;
 
-      setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
-      setReservations(reservationsData);
-      setMaintenances(maintenancesData);
-    } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
-      if (error.message.includes('authentification') || error.message.includes('401')) {
-        handleLogout();
+    const loadPromise = (async () => {
+      setCoreDataLoading(true);
+      try {
+        const [vehiclesData, reservationsData, maintenancesData] = await Promise.all([
+          api.getVehicles(),
+          api.getReservations(),
+          api.getMaintenances(),
+        ]);
+
+        setVehicles(vehiclesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
+        setReservations(reservationsData);
+        setMaintenances(maintenancesData);
+        setCoreLoaded(true);
+      } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        if (error.message.includes('authentification') || error.message.includes('401')) {
+          handleLogout();
+        }
+      } finally {
+        setCoreDataLoading(false);
       }
-    }
-  }, []);
+    })();
+
+    coreLoadPromiseRef.current = loadPromise;
+    return loadPromise.finally(() => {
+      if (coreLoadPromiseRef.current === loadPromise) {
+        coreLoadPromiseRef.current = null;
+      }
+    });
+  }, [handleLogout]);
 
   // Charger les référentiels à la demande (écrans planning/réservation/maintenance)
   const loadAuxiliaryParcData = useCallback(
@@ -192,7 +220,7 @@ function MobileApp({ onSwitchToDesktop }) {
         setAuxDataLoading(false);
       }
     },
-    [auxLoaded],
+    [auxLoaded, handleLogout],
   );
 
   // Refresh complet demandé par certains écrans
@@ -208,10 +236,25 @@ function MobileApp({ onSwitchToDesktop }) {
     ]);
   }, [loadCoreParcData, loadAuxiliaryParcData]);
 
+  const needsParcCoreData =
+    currentScreen === 'parc-dashboard' ||
+    currentScreen === 'planning' ||
+    currentScreen === 'availability' ||
+    currentScreen === 'reservations' ||
+    currentScreen === 'maintenances';
+
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
+    if (!needsParcCoreData || coreLoaded || coreDataLoading) return;
     loadCoreParcData();
-  }, [isAuthenticated, isLoading, loadCoreParcData]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    needsParcCoreData,
+    coreLoaded,
+    coreDataLoading,
+    loadCoreParcData,
+  ]);
 
   useEffect(() => {
     if (!isAuthenticated || isLoading) return;
@@ -235,6 +278,11 @@ function MobileApp({ onSwitchToDesktop }) {
   useEffect(() => {
     if (routerQrUid) setQrEquipmentUid(routerQrUid);
   }, [routerQrUid]);
+
+  // Sync QR Référence depuis le router hash (plaques flight-case)
+  useEffect(() => {
+    if (routerQrRef) setQrEquipmentRef(routerQrRef);
+  }, [routerQrRef]);
 
   // Polling notifications messages non lus — remplacé par SSE (useMessagingSSE)
 
@@ -294,6 +342,23 @@ function MobileApp({ onSwitchToDesktop }) {
     );
   }
 
+  // Écran d'atterrissage QR par référence — plaques flight-case
+  if (currentScreen === 'qr-ref-landing' && qrEquipmentRef) {
+    return (
+      <MobileQRRefLanding
+        reference={qrEquipmentRef}
+        onSelectUid={(uid) => {
+          setQrEquipmentUid(uid);
+          setCurrentScreen('equipment-qr');
+        }}
+        onGoHome={() => {
+          setQrEquipmentRef(null);
+          navigate('home');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="mobile-app">
       {/* Header unifié */}
@@ -330,7 +395,7 @@ function MobileApp({ onSwitchToDesktop }) {
               {PALETTES.map((p) => {
                 const colors = isDark ? p.darkColors : p.colors;
                 return (
-                  <button
+                  <Button
                     type="button"
                     key={p.id}
                     className={`mobile-sheet-palette-btn ${palette === p.id ? 'active' : ''}`}
@@ -343,7 +408,7 @@ function MobileApp({ onSwitchToDesktop }) {
                         background: `linear-gradient(135deg, ${colors.primary} 50%, ${colors.accent} 50%)`,
                       }}
                     />
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -407,20 +472,23 @@ function MobileApp({ onSwitchToDesktop }) {
           />
         )}
 
-        {currentScreen === 'parc-dashboard' && (
-          <MobileParcDashboard
-            vehicles={vehicles}
-            reservations={reservations}
-            maintenances={maintenances}
-            onNavigate={setCurrentScreen}
-            onBack={() => setCurrentScreen('home')}
-            onCreateReservation={handleCreateReservation}
-            onCreateMaintenance={handleCreateMaintenance}
-          />
-        )}
+        {currentScreen === 'parc-dashboard' &&
+          (coreDataLoading || !coreLoaded ? (
+            <MobileScreenFallback />
+          ) : (
+            <MobileParcDashboard
+              vehicles={vehicles}
+              reservations={reservations}
+              maintenances={maintenances}
+              onNavigate={setCurrentScreen}
+              onBack={() => setCurrentScreen('home')}
+              onCreateReservation={handleCreateReservation}
+              onCreateMaintenance={handleCreateMaintenance}
+            />
+          ))}
 
         {currentScreen === 'planning' &&
-          (!planningDepsReady || auxDataLoading ? (
+          (!coreLoaded || coreDataLoading || !planningDepsReady || auxDataLoading ? (
             <MobileScreenFallback />
           ) : (
             <Suspense fallback={<MobileScreenFallback />}>
@@ -437,22 +505,25 @@ function MobileApp({ onSwitchToDesktop }) {
             </Suspense>
           ))}
 
-        {currentScreen === 'availability' && (
-          <Suspense fallback={<MobileScreenFallback />}>
-            <MobileAvailability
-              vehicles={vehicles}
-              reservations={reservations}
-              maintenances={maintenances}
-              onClose={() => setCurrentScreen('parc-dashboard')}
-              onCreateReservation={(_vehicleId, _date) => {
-                setCurrentScreen('reservations');
-              }}
-            />
-          </Suspense>
-        )}
+        {currentScreen === 'availability' &&
+          (coreDataLoading || !coreLoaded ? (
+            <MobileScreenFallback />
+          ) : (
+            <Suspense fallback={<MobileScreenFallback />}>
+              <MobileAvailability
+                vehicles={vehicles}
+                reservations={reservations}
+                maintenances={maintenances}
+                onClose={() => setCurrentScreen('parc-dashboard')}
+                onCreateReservation={(_vehicleId, _date) => {
+                  setCurrentScreen('reservations');
+                }}
+              />
+            </Suspense>
+          ))}
 
         {currentScreen === 'reservations' &&
-          (!reservationsDepsReady || auxDataLoading ? (
+          (!coreLoaded || coreDataLoading || !reservationsDepsReady || auxDataLoading ? (
             <MobileScreenFallback />
           ) : (
             <Suspense fallback={<MobileScreenFallback />}>
@@ -471,7 +542,7 @@ function MobileApp({ onSwitchToDesktop }) {
           ))}
 
         {currentScreen === 'maintenances' &&
-          (!maintenancesDepsReady || auxDataLoading ? (
+          (!coreLoaded || coreDataLoading || !maintenancesDepsReady || auxDataLoading ? (
             <MobileScreenFallback />
           ) : (
             <Suspense fallback={<MobileScreenFallback />}>
@@ -496,7 +567,11 @@ function MobileApp({ onSwitchToDesktop }) {
 
         {currentScreen === 'tasks' && (
           <Suspense fallback={<MobileScreenFallback />}>
-            <MobileTasks currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+            <MobileTasks
+              currentUser={currentUser}
+              onBack={() => setCurrentScreen('home')}
+              initialDate={routerParams?.date || null}
+            />
           </Suspense>
         )}
 
@@ -581,7 +656,12 @@ function MobileApp({ onSwitchToDesktop }) {
 
         {currentScreen === 'suivi' && (
           <Suspense fallback={<MobileScreenFallback />}>
-            <MobileSuivi currentUser={currentUser} onBack={() => setCurrentScreen('home')} />
+            <MobileSuivi
+              currentUser={currentUser}
+              onBack={() => setCurrentScreen('home')}
+              initialDate={routerParams?.date || null}
+              initialPersonId={routerParams?.person || null}
+            />
           </Suspense>
         )}
 

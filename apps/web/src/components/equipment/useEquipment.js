@@ -4,6 +4,12 @@ import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import {
+  fetchAllDepotZones,
+  fetchDepotZones,
+  readLocationsV2ClientFlag,
+} from '../../utils/locations/fetchDepotZones';
+import { userHasPermission, userIsAdmin } from '../../utils/permissions';
 import { findZone } from './equipmentUtils';
 
 export const useEquipment = ({ currentUser, initialTab }) => {
@@ -70,13 +76,19 @@ export const useEquipment = ({ currentUser, initialTab }) => {
     return depotZones || allDepotZones?.depots?.[0] || null;
   }, [depotMapModalZone, depotZones, allDepotZones]);
 
-  const isAdmin = currentUser?.isAdmin === true;
-  const canManageEquipmentMaintenance =
-    isAdmin || currentUser?.permissions?.canManageEquipmentMaintenance === true;
+  const isAdmin = userIsAdmin(currentUser);
+  const canManageEquipmentMaintenance = userHasPermission(
+    currentUser,
+    'canManageEquipmentMaintenance',
+  );
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      // [T-P0-12b] Flag client Locations v2. Off par defaut : chemin
+      // v1 identique. On lit le flag a chaque loadData pour supporter
+      // un rechargement apres bascule sans reload de page.
+      const useV2Locations = readLocationsV2ClientFlag();
       const [
         eqData,
         catData,
@@ -95,9 +107,9 @@ export const useEquipment = ({ currentUser, initialTab }) => {
         api.getPersons().catch(() => []),
         api.getEquipmentPhotos().catch(() => ({ photos: [], logos: [] })),
         api.getEquipmentLists().catch(() => []),
-        api.getEquipmentDepotZones().catch(() => null),
+        fetchDepotZones(api, { useV2: useV2Locations }),
         api.getEquipmentLocationStats().catch(() => null),
-        api.getAllDepotZones().catch(() => null),
+        fetchAllDepotZones(api, { useV2: useV2Locations }),
         api.getBrands().catch(() => []),
       ]);
       setEquipment(eqData);

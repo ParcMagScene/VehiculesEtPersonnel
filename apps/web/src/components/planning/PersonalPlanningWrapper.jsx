@@ -12,6 +12,7 @@ import { usePersonalAuth } from '../../contexts/PersonalAuthContext.jsx';
 import { usePersonalAuthWithAutoLogout } from '../../hooks/usePersonalAuthWithAutoLogout.js';
 import PersonalLoginModal from '../suivi/PersonalLoginModal';
 import TaskPlanningPanel from './TaskPlanningPanel';
+import './PersonalPlanningWrapper.css';
 
 /**
  * Wrapper pour TaskPlanningPanel avec gestion de l'authentification personnelle
@@ -82,24 +83,13 @@ function PersonalPlanningWrapper({
         }}
       >
         {/* Header de session personnelle */}
-        <div
-          style={{
-            padding: '1rem',
-            backgroundColor: '#fef3c7',
-            borderLeft: '4px solid #f59e0b',
-            marginBottom: '1rem',
-            borderRadius: '0.375rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
+        <div className="ppw-header">
           <div>
-            <strong style={{ color: '#92400e' }}>
+            <strong className="ppw-header-title">
               🔒 Planning Personnel — {authenticatedPerson.first_name}{' '}
               {authenticatedPerson.last_name}
             </strong>
-            <p style={{ fontSize: '0.875rem', color: '#a16207', marginTop: '0.25rem' }}>
+            <p className="ppw-header-message">
               Vous consultez vos tâches et assignments. Vous serez automatiquement déconnecté après
               modification ou après 15 minutes d'inactivité.
             </p>
@@ -108,10 +98,7 @@ function PersonalPlanningWrapper({
             variant="ghost"
             onClick={handleManualLogout}
             title="Déconnecter ce personnel"
-            style={{
-              color: '#b45309',
-              fontSize: '0.875rem',
-            }}
+            className="ppw-header-logout"
           >
             <LogOut size={16} />
             Terminer
@@ -136,9 +123,9 @@ function PersonalPlanningWrapper({
             title="Données Sauvegardées"
             showClose={false}
           >
-            <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-              <AlertCircle size={48} style={{ color: '#10b981', marginBottom: '1rem' }} />
-              <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+            <div className="ppw-modal-content">
+              <AlertCircle size={48} className="ppw-modal-icon" />
+              <p className="ppw-modal-message">
                 Vos modifications ont été sauvegardées. <br />
                 Vous allez être déconnecté...
               </p>

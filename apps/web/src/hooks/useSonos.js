@@ -17,7 +17,7 @@ const formatTime = (seconds) => {
 
 export { formatTime };
 
-export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {}) {
+export default function useSonos({ autoPolling = true, pollInterval = 15000 } = {}) {
   const toast = useToast();
 
   // ── Config ──
@@ -36,6 +36,8 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
   // ── Polling ──
   const [polling, setPolling] = useState(false);
   const intervalRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const [isPageVisible, setIsPageVisible] = useState(() => document.visibilityState !== 'hidden');
 
   // ── Favoris ──
   const [favorites, setFavorites] = useState([]);
@@ -74,11 +76,20 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
   const loadNowPlaying = useCallback(async () => {
     try {
       const data = await api.getSonosNowPlaying();
-      setNowPlaying(data);
+      if (isMountedRef.current) setNowPlaying(data);
     } catch {
-      setNowPlaying({ playing: false, error: 'Erreur de connexion' });
+      if (isMountedRef.current) {
+        setNowPlaying({ playing: false, error: 'Erreur de connexion' });
+      }
     }
   }, []);
+
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
 
   const loadZones = useCallback(async () => {
     try {
@@ -188,9 +199,18 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
     }
   }, [sonosIP, loadZones, loadMusicServices, loadQueue, autoPolling]);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(document.visibilityState !== 'hidden');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   // ── Polling ──
   useEffect(() => {
-    if (polling) {
+    if (polling && isPageVisible) {
       loadNowPlaying();
       loadQueue();
       if (activeZone) loadZoneState(activeZone);
@@ -203,7 +223,7 @@ export default function useSonos({ autoPolling = true, pollInterval = 5000 } = {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [polling, pollInterval, loadNowPlaying, loadQueue, activeZone, loadZoneState]);
+  }, [polling, pollInterval, loadNowPlaying, loadQueue, activeZone, loadZoneState, isPageVisible]);
 
   // ── Config save ──
   const saveConfig = useCallback(async () => {

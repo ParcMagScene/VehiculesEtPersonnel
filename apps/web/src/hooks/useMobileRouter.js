@@ -4,6 +4,7 @@ import {
   MOBILE_ACTIVE_TAB_KEY as ACTIVE_TAB_STORAGE_KEY,
   MOBILE_BACK_TARGET as BACK_TARGET,
   MOBILE_QR_PATTERN,
+  MOBILE_QR_REF_PATTERN,
   MOBILE_REVERSE_ROUTES as REVERSE,
   MOBILE_ROUTES as ROUTES,
   MOBILE_TAB_SCREENS as TAB_SCREENS,
@@ -43,10 +44,21 @@ function parseHash(hash) {
   const params = qIndex >= 0 ? parseQuery(hash.slice(qIndex + 1)) : {};
 
   const qrMatch = pathPart.match(MOBILE_QR_PATTERN);
-  if (qrMatch) return { screen: 'qr-landing', qrUid: qrMatch[1], params };
+  if (qrMatch) return { screen: 'qr-landing', qrUid: qrMatch[1], qrRef: null, params };
+
+  const qrRefMatch = pathPart.match(MOBILE_QR_REF_PATTERN);
+  if (qrRefMatch) {
+    let ref = qrRefMatch[1];
+    try {
+      ref = decodeURIComponent(ref);
+    } catch {
+      /* keep raw */
+    }
+    return { screen: 'qr-ref-landing', qrUid: null, qrRef: ref, params };
+  }
 
   const path = pathPart.replace(/^#/, '') || '/mobile';
-  return { screen: REVERSE[path] || 'home', qrUid: null, params };
+  return { screen: REVERSE[path] || 'home', qrUid: null, qrRef: null, params };
 }
 
 /**
@@ -69,7 +81,7 @@ export default function useMobileRouter() {
           if (saved && TAB_SCREENS.has(saved) && saved !== 'home') {
             const path = ROUTES[saved];
             window.history.replaceState(null, '', '#' + path);
-            return { screen: saved, qrUid: null, params: {} };
+            return { screen: saved, qrUid: null, qrRef: null, params: {} };
           }
         } catch {
           /* localStorage indisponible — ignore */
@@ -78,7 +90,7 @@ export default function useMobileRouter() {
       return parsed;
     }
     window.history.replaceState(null, '', '#/mobile');
-    return { screen: 'home', qrUid: null, params: {} };
+    return { screen: 'home', qrUid: null, qrRef: null, params: {} };
   });
 
   useEffect(() => {
@@ -137,12 +149,13 @@ export default function useMobileRouter() {
     const target = BACK_TARGET[state.screen] || 'home';
     const path = ROUTES[target];
     window.history.replaceState(null, '', '#' + path);
-    setState({ screen: target, qrUid: null, params: {} });
+    setState({ screen: target, qrUid: null, qrRef: null, params: {} });
   }, [state.screen]);
 
   return {
     currentScreen: state.screen,
     qrUid: state.qrUid,
+    qrRef: state.qrRef,
     params: state.params,
     navigate,
     setParams,

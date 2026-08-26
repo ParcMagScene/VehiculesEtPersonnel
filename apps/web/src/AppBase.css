@@ -1,0 +1,38 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app.loading {
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-container {
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--theme-bg-tertiary);
+  border-top-color: var(--theme-primary);
+  border-radius: var(--radius-full);
+  animation: appBaseSpin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.loading-container p {
+  color: var(--theme-text-gray);
+  font-size: var(--font-md);
+  font-weight: 500;
+}
+
+@keyframes appBaseSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}

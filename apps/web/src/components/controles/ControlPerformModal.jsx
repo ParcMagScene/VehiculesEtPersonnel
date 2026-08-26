@@ -55,8 +55,10 @@ export default function ControlPerformModal({ control, onClose, onDone }) {
   return (
     <>
       <Modal open onClose={handleSafeClose} size="md">
-        <ModalHeader>
-          <CheckCircle2 size={18} className="ctrl-perform-header-icon" />
+        <ModalHeader
+          icon={<CheckCircle2 size={18} className="ctrl-perform-header-icon" />}
+          onClose={handleSafeClose}
+        >
           Effectuer le contrôle — {control?.type_name}
         </ModalHeader>
         <ModalBody>
@@ -92,7 +94,7 @@ export default function ControlPerformModal({ control, onClose, onDone }) {
           <Button variant="ghost" onClick={handleSafeClose} disabled={busy}>
             Annuler
           </Button>
-          <Button variant="primary" onClick={submit} disabled={busy || !date}>
+          <Button variant="success" onClick={submit} disabled={busy || !date}>
             {busy ? 'Enregistrement…' : 'Valider le contrôle'}
           </Button>
         </ModalFooter>

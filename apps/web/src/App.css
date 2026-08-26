@@ -104,11 +104,16 @@
   width: calc(250px - 2rem);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 0.5rem;
   flex-shrink: 0;
   height: 100%;
   margin-left: -10px;
-  padding-right: 0.5rem;
+  padding-right: 2rem;
+}
+
+.header-logo-area .header-logo {
+  margin-right: 0.5rem;
 }
 
 .header-logo {
@@ -118,34 +123,9 @@
   object-fit: contain;
 }
 
-/* Bouton aide stylisé */
-.help-trigger-btn {
-  background: linear-gradient(135deg, var(--theme-bg-hover), var(--theme-purple-bg));
-  border: 1px solid var(--theme-bg-indigo-lighter);
-  color: var(--theme-indigo);
-  padding: 0.3rem 0.65rem;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-  font-size: var(--font-sm);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.help-trigger-btn:hover {
-  background: linear-gradient(135deg, var(--theme-bg-indigo-light), var(--theme-purple-bg));
-  color: var(--theme-primary-dark);
-  border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px var(--accent-tint-vivid);
-}
-
-/* Bouton toggle thème (dark/light) */
+/* Boutons header unifiés : Aide / Imports / Mode S·L */
+.help-trigger-btn,
+.header-imports-btn,
 .theme-toggle-btn {
   background: var(--theme-bg-tertiary, var(--theme-bg-tertiary));
   border: 1px solid var(--theme-border-medium, var(--theme-border-medium));
@@ -160,12 +140,31 @@
   flex-shrink: 0;
 }
 
+.help-trigger-btn span {
+  display: none;
+}
+
+.help-trigger-btn {
+  color: var(--theme-indigo);
+}
+
+.help-trigger-btn:hover,
+.header-imports-btn:hover,
 .theme-toggle-btn:hover {
   background: var(--theme-bg-hover, var(--theme-bg-hover));
-  color: var(--theme-warning, var(--theme-warning));
   border-color: var(--theme-border-muted, var(--theme-border-muted));
   transform: translateY(-1px);
   box-shadow: 0 2px 8px var(--shadow-sm);
+}
+
+.help-trigger-btn:hover {
+  color: var(--theme-primary-dark);
+  border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
+  box-shadow: 0 2px 8px var(--accent-tint-vivid);
+}
+
+.theme-toggle-btn:hover {
+  color: var(--theme-warning, var(--theme-warning));
 }
 
 [data-theme='dark'] .theme-toggle-btn:hover {
@@ -467,6 +466,10 @@
   inset: 0;
   background: transparent;
   z-index: 1300;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: default;
 }
 
 .notifications-popup.notifications-popover {
@@ -728,6 +731,7 @@
 /* Actions dans les notifications */
 .notification-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
   padding-top: 10px;
@@ -736,6 +740,19 @@
 
 .notification-actions.reject-form {
   flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.notification-actions.reported-actions {
+  align-items: stretch;
+}
+
+.notification-actions.reported-actions .notif-action-btn {
+  flex: 1 1 180px;
+}
+
+.notification-actions.reported-actions .notif-action-btn:last-child {
+  flex-basis: 100%;
 }
 
 .reject-reason-input {
@@ -757,13 +774,16 @@
 .reject-form-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .notif-action-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 6px 12px;
+  min-height: 36px;
+  padding: 8px 12px;
   border: none;
   border-radius: var(--radius-sm);
   font-size: 0.78rem;
@@ -776,11 +796,31 @@
 .notif-action-btn.create-intervention {
   background: var(--theme-info);
   color: var(--theme-text-inverse);
-  flex: 1;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-info) 28%, transparent);
 }
 
 .notif-action-btn.create-intervention:hover {
   background: var(--theme-info-dark);
+}
+
+.notif-action-btn.delete-intervention {
+  background: var(--theme-danger);
+  color: var(--theme-text-inverse);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-danger) 28%, transparent);
+}
+
+.notif-action-btn.delete-intervention:hover {
+  background: var(--theme-danger-dark);
+}
+
+.notif-action-btn.close-signalement {
+  background: var(--theme-success-alt);
+  color: var(--theme-text-inverse);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-success-alt) 28%, transparent);
+}
+
+.notif-action-btn.close-signalement:hover {
+  background: var(--theme-success-text);
 }
 
 .notif-action-btn.approve {
@@ -806,7 +846,7 @@
 .notif-action-btn.confirm-reject {
   background: var(--theme-danger);
   color: var(--theme-text-inverse);
-  flex: 1;
+  flex: 1 1 180px;
 }
 
 .notif-action-btn.confirm-reject:hover {
@@ -822,10 +862,15 @@
 .notif-action-btn.dismiss {
   background: var(--theme-bg-tertiary);
   color: var(--theme-text-gray);
+  flex: 1 1 120px;
 }
 
 .notif-action-btn.dismiss:hover {
   background: var(--theme-border-medium);
+}
+
+.notif-action-btn svg {
+  flex-shrink: 0;
 }
 
 .notification-item.expanded {
@@ -1491,13 +1536,22 @@
 }
 
 /* Bouton poubelle sur les réservations */
-.reservation-delete-btn {
+.reservation-delete-btn-anchor {
   position: absolute;
   top: 50%;
   right: 4px;
   transform: translateY(-50%);
+  z-index: var(--z-dropdown);
+  pointer-events: all;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.reservation-delete-btn {
   width: 18px;
   height: 18px;
+  min-width: 18px;
+  min-height: 18px;
   border-radius: var(--radius-xs);
   background: var(--theme-danger-border);
   color: var(--theme-danger);
@@ -1507,15 +1561,11 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  z-index: var(--z-dropdown);
-  pointer-events: all;
-  opacity: 0;
-  transition:
-    opacity 0.15s,
-    background 0.15s;
+  position: static;
+  transition: background 0.15s;
 }
 
-.reservation:hover .reservation-delete-btn {
+.reservation:hover .reservation-delete-btn-anchor {
   opacity: 1;
 }
 
@@ -1720,11 +1770,6 @@
     padding: 0;
     justify-content: center;
     border-radius: var(--radius-full);
-  }
-
-  /* Aide responsive */
-  .help-trigger-btn span {
-    display: none;
   }
 }
 

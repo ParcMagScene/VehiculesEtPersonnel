@@ -7,7 +7,7 @@ import { ArrowDown, Clock, Navigation, RotateCcw, Ruler, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Polyline, useMap } from 'react-leaflet';
 
-import { Select } from '@/design-system';
+import { Button, Select } from '@/design-system';
 
 import { filterGeoLocations, haversineDistance, MAG_SCENE } from './map-utils';
 
@@ -150,7 +150,7 @@ export default function MapRouteControl({ locations }) {
     <>
       {/* Bouton toggle */}
       <div className="map-route-toggle">
-        <button
+        <Button
           type="button"
           className={`map-route-toggle-btn ${open ? 'active' : ''}`}
           onClick={() => setOpen(!open)}
@@ -158,7 +158,7 @@ export default function MapRouteControl({ locations }) {
           aria-label="Calcul de trajet"
         >
           <Navigation size={18} />
-        </button>
+        </Button>
       </div>
 
       {/* Panneau de configuration */}
@@ -166,7 +166,7 @@ export default function MapRouteControl({ locations }) {
         <div className="map-route-panel">
           <div className="map-route-panel-header">
             <span>Calculer un trajet</span>
-            <button
+            <Button
               type="button"
               onClick={() => {
                 setOpen(false);
@@ -175,7 +175,7 @@ export default function MapRouteControl({ locations }) {
               aria-label="Fermer"
             >
               <X size={16} />
-            </button>
+            </Button>
           </div>
 
           <div className="map-route-form">
@@ -197,9 +197,9 @@ export default function MapRouteControl({ locations }) {
               </Select>
             </div>
 
-            <button type="button" className="map-route-swap" onClick={handleSwap} title="Inverser">
+            <Button type="button" className="map-route-swap" onClick={handleSwap} title="Inverser">
               <ArrowDown size={14} />
-            </button>
+            </Button>
 
             <div className="map-route-field">
               <label>Arrivée</label>
@@ -220,18 +220,18 @@ export default function MapRouteControl({ locations }) {
             </div>
 
             <div className="map-route-actions">
-              <button
+              <Button
                 type="button"
                 className="map-route-calc-btn"
                 onClick={calculateRoute}
                 disabled={!origin || !destination || origin === destination || loading}
               >
                 {loading ? 'Calcul…' : 'Calculer'}
-              </button>
+              </Button>
               {route && (
-                <button type="button" className="map-route-reset-btn" onClick={handleReset}>
+                <Button type="button" className="map-route-reset-btn" onClick={handleReset}>
                   <RotateCcw size={14} /> Effacer
-                </button>
+                </Button>
               )}
             </div>
 

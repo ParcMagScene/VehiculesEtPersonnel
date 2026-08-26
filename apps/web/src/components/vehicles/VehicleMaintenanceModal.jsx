@@ -3,7 +3,16 @@ import './VehicleMaintenanceModal.css';
 import { Calendar, Gauge, Plus, Save, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { Button, FormField, Input, Modal, ModalBody, ModalHeader, Select } from '@/design-system';
+import {
+  Button,
+  FormField,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  Select,
+} from '@/design-system';
 
 import { STATUS_COLORS } from '../../constants/colors';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -311,7 +320,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
       </ModalHeader>
 
       <ModalBody>
-        <form onSubmit={handleSubmit} className="maintenance-form">
+        <form id="vehicle-maintenance-form" onSubmit={handleSubmit} className="maintenance-form">
           {/* Kilométrage */}
           <div className="form-section">
             <h3>
@@ -365,7 +374,10 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
                           <span>{formatDateSimple(controle.deadline)}</span>
                         </div>
                         {status && (
-                          <div className="controle-status" style={{ color: status.color }}>
+                          <div
+                            className="controle-status"
+                            style={{ '--controle-status-color': status.color }}
+                          >
                             {status.status === 'expired' && '⚠️ '}
                             {status.status === 'warning' && '⏰ '}
                             {status.status === 'ok' && '✅ '}
@@ -451,18 +463,19 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
             )}
           </div>
 
-          <div className="modal-actions">
-            {saveSuccess && <div className="save-success-message">✅ Sauvegardé avec succès !</div>}
-            <Button variant="ghost" onClick={handleSafeClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" type="submit">
-              <Save size={18} />
-              Enregistrer
-            </Button>
-          </div>
+          {saveSuccess && <div className="save-success-message">✅ Sauvegardé avec succès !</div>}
         </form>
       </ModalBody>
+
+      <ModalFooter>
+        <Button variant="ghost" onClick={handleSafeClose}>
+          Annuler
+        </Button>
+        <Button variant="success" type="submit" form="vehicle-maintenance-form">
+          <Save size={18} />
+          Enregistrer
+        </Button>
+      </ModalFooter>
 
       {ConfirmDialogRenderer}
     </Modal>

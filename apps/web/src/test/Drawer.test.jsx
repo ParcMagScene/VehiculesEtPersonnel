@@ -74,9 +74,18 @@ describe('Drawer', () => {
     expect(aside).toHaveClass('ui-drawer--left');
   });
 
-  it('role="complementary" sur l\'aside', async () => {
+  it('role="dialog" sur l\'aside modal par défaut', async () => {
     render(
       <Drawer open={true} onClose={() => {}}>
+        body
+      </Drawer>,
+    );
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('role="complementary" en mode inline', async () => {
+    render(
+      <Drawer open={true} inline={true} onClose={() => {}}>
         body
       </Drawer>,
     );

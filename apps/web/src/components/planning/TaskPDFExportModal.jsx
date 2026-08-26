@@ -407,6 +407,15 @@ function TaskPDFExportModal({
     return title || '-';
   };
 
+  const formatRolledBadgeDate = (rawDate) => {
+    if (!rawDate) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+      const [y, m, d] = rawDate.split('-');
+      return `${d}-${m}-${y}`;
+    }
+    return rawDate;
+  };
+
   // ── Rendu d'un item dans la liste de sélection ──
   const renderItemRow = (item) => {
     const checked = selectedIds.has(item.uid);
@@ -491,6 +500,20 @@ function TaskPDFExportModal({
 
       const assignments = getAssignments('task', task.id);
       const courseInfo = courseType ? EVENT_TYPES[courseType] : null;
+      const rolledFromMatch = String(task.notes || '').match(
+        /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
+      );
+      const rolledFrom = task.rolledFromDate || task.rolled_from_date || rolledFromMatch?.[1] || '';
+      const hasRolledFlag =
+        task.isRolled === 1 ||
+        task.isRolled === true ||
+        task.is_rolled === 1 ||
+        task.is_rolled === true ||
+        /\[report(?:e|ée)/i.test(String(task.notes || ''));
+      const rolledFromDisplay = formatRolledBadgeDate(rolledFrom);
+      const notesForTooltip = String(task.notes || '')
+        .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
+        .trim();
       return (
         <div
           key={item.uid}
@@ -534,13 +557,21 @@ function TaskPDFExportModal({
             title={[
               displayTitle,
               displayLocation && `📍 ${displayLocation}`,
-              task.notes && `📝 ${task.notes}`,
+              notesForTooltip && `📝 ${notesForTooltip}`,
             ]
               .filter(Boolean)
               .join('\n')}
           >
             {displayTitle}
           </span>
+          {(rolledFromDisplay || hasRolledFlag) && (
+            <span
+              className="task-cb-rolled-badge"
+              title={rolledFromDisplay ? `Reportée du ${rolledFromDisplay}` : 'Reportée'}
+            >
+              {rolledFromDisplay ? `Reportée du ${rolledFromDisplay}` : 'Reportée'}
+            </span>
+          )}
           {timeStr && (
             <span className="task-cb-time">
               <Clock size={10} /> {timeStr}

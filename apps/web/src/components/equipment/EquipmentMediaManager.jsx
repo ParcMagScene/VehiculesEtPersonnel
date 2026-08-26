@@ -8,7 +8,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { APP_BASE_URL, cleanName } from './equipmentConstants';
-import { matchPhotoToEquipment } from './equipmentUtils';
+import { matchPhotoToEquipment, toThumbUrl } from './equipmentUtils';
 
 const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) => {
   const toast = useToast();
@@ -197,7 +197,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
                     tabIndex={0}
                     onClick={() => setPreviewPhoto(p)}
                   >
-                    <img src={`/Photos/Matériel/${p}`} alt={p} loading="lazy" />
+                    <img src={toThumbUrl(`/Photos/Matériel/${p}`, 80)} alt={p} loading="lazy" />
                     <div className="eq-media-card-zoom">
                       <ZoomIn size={16} />
                     </div>
@@ -387,7 +387,7 @@ const EquipmentMediaManager = ({ photosList, logosList, equipment, onRefresh }) 
             <img
               src={
                 typeof previewPhoto === 'string'
-                  ? `/Photos/Matériel/${previewPhoto}`
+                  ? toThumbUrl(`/Photos/Matériel/${previewPhoto}`, 240)
                   : previewPhoto.src
               }
               alt={typeof previewPhoto === 'string' ? previewPhoto : previewPhoto.name}

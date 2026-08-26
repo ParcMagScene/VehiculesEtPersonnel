@@ -35,9 +35,35 @@ export function registerAffairesMethods(ApiClient) {
       return this.request(`/affaires/${id}`, { method: 'DELETE' });
     },
     async syncGoogleEventsToAffaires(events) {
-      return this.request('/affaires/sync-google-events', {
+      const eventList = Array.isArray(events) ? events : [];
+      if (eventList.length === 0) {
+        return { created: 0, linked: 0, results: [] };
+      }
+
+      if (!this._inFlightAffairesSync) this._inFlightAffairesSync = new Map();
+      const syncKey = eventList
+        .map((ev) => String(ev?.id || ''))
+        .filter(Boolean)
+        .sort()
+        .join(',');
+
+      if (syncKey) {
+        const existing = this._inFlightAffairesSync.get(syncKey);
+        if (existing) return existing;
+      }
+
+      const promise = this.request('/affaires/sync-google-events', {
         method: 'POST',
-        body: JSON.stringify({ events }),
+        body: JSON.stringify({ events: eventList }),
+      });
+
+      if (!syncKey) return promise;
+
+      this._inFlightAffairesSync.set(syncKey, promise);
+      return promise.finally(() => {
+        if (this._inFlightAffairesSync.get(syncKey) === promise) {
+          this._inFlightAffairesSync.delete(syncKey);
+        }
       });
     },
 

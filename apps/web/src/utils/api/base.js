@@ -200,6 +200,13 @@ export class ApiClient {
     this._initReady = this.user ? Promise.resolve() : this._recoverAuth();
     // Mutex : une seule tentative de refresh à la fois
     this._refreshPromise = null;
+    // Cooldown très court après un refresh réussi pour absorber les 401 en rafale
+    // provoqués par plusieurs pollings/concurrences au même instant.
+    this._lastRefreshAt = 0;
+    // Verrou anti-rafale: dès qu'une session est déclarée irrécupérable,
+    // on stoppe les nouvelles requêtes non-auth en attendant le reload.
+    this._sessionInvalid = false;
+    this._reloadScheduled = false;
   }
 
   /**
@@ -250,9 +257,25 @@ export class ApiClient {
   setAuth(user) {
     this.user = user;
     this.hasAuthHint = true;
+    this._sessionInvalid = false;
+    this._reloadScheduled = false;
     localStorage.setItem('auth_user', JSON.stringify(user));
     localStorage.setItem('auth_hint', '1');
     saveAuthToIDB(user).catch(() => {});
+  }
+
+  _scheduleReload() {
+    if (this._reloadScheduled) return;
+    this._reloadScheduled = true;
+    setTimeout(() => window.location.reload(), 50);
+  }
+
+  _markSessionInvalid(reason) {
+    if (this._sessionInvalid) return;
+    this._sessionInvalid = true;
+    console.warn(`[Auth] Session invalide: ${reason}`);
+    this.clearAuth();
+    this._scheduleReload();
   }
 
   clearAuth() {
@@ -304,6 +327,7 @@ export class ApiClient {
           const data = await response.json();
           if (data?.user) {
             this.setAuth(data.user);
+            this._lastRefreshAt = Date.now();
             console.warn('[Auth] Refresh réussi — session prolongée');
             return true;
           }
@@ -347,18 +371,43 @@ export class ApiClient {
       endpoint.match(/^\/users\/[^/]+\/reset-password$/);
     if (isAuthEndpoint) return false;
 
+    // Si un refresh vient tout juste de réussir, on réessaie directement la requête.
+    // Cela évite de relancer un nouveau refresh pour plusieurs 401 arrivant en rafale
+    // juste après la prolongation de session.
+    if (Date.now() - this._lastRefreshAt < 5000) {
+      return true;
+    }
+
     console.warn(`[Auth] 401 reçu sur ${endpoint} — tentative de refresh silencieux`);
     const refreshed = await this._tryRefreshToken();
     if (refreshed) return true; // le caller doit relancer la requête
 
     // Refresh échoué → déconnexion définitive
     console.warn('[Auth] Refresh échoué après 401 → déconnexion forcée');
-    this.clearAuth();
-    window.location.reload();
+    this._markSessionInvalid('refresh échoué après 401');
     throw new Error('Session expirée');
   }
 
   async request(endpoint, options = {}, _isRetry = false) {
+    const isAuthEndpoint =
+      endpoint === '/auth/login' ||
+      endpoint === '/auth/register' ||
+      endpoint === '/auth/force-login' ||
+      endpoint === '/auth/refresh' ||
+      endpoint === '/auth/forgot-password' ||
+      endpoint === '/auth/self-reset-password' ||
+      endpoint === '/auth/check-reset' ||
+      endpoint === '/auth/set-new-password' ||
+      endpoint === '/auth/change-password' ||
+      endpoint === '/admin/reset-password' ||
+      endpoint.match(/^\/users\/[^/]+\/reset-password$/);
+
+    if (this._sessionInvalid && !isAuthEndpoint) {
+      const error = new Error('Session expirée');
+      error.response = { status: 401, data: { error: 'Session expirée' } };
+      throw error;
+    }
+
     if (shouldShortCircuitRequest(endpoint, options)) {
       throw createServiceUnavailableError();
     }
@@ -375,20 +424,16 @@ export class ApiClient {
     //     headers custom, skipCamelCase (chacune peut différer entre callers).
     const method = (options.method || 'GET').toUpperCase();
     const canDedup =
-      method === 'GET' &&
-      !_isRetry &&
-      !options.body &&
-      !options.signal &&
-      !options.headers &&
-      !options.skipCamelCase;
+      method === 'GET' && !_isRetry && !options.body && !options.signal && !options.headers;
     if (canDedup) {
       if (!this._inFlightGets) this._inFlightGets = new Map();
-      const existing = this._inFlightGets.get(endpoint);
+      const dedupKey = `${endpoint}|skipCamel:${options.skipCamelCase ? '1' : '0'}`;
+      const existing = this._inFlightGets.get(dedupKey);
       if (existing) return existing;
       const promise = this._executeRequest(endpoint, options, _isRetry).finally(() => {
-        if (this._inFlightGets.get(endpoint) === promise) this._inFlightGets.delete(endpoint);
+        if (this._inFlightGets.get(dedupKey) === promise) this._inFlightGets.delete(dedupKey);
       });
-      this._inFlightGets.set(endpoint, promise);
+      this._inFlightGets.set(dedupKey, promise);
       return promise;
     }
 
@@ -455,8 +500,7 @@ export class ApiClient {
     }
     // 401 après retry → déconnexion
     if (response.status === 401 && !isAuthEndpoint && _isRetry) {
-      this.clearAuth();
-      window.location.reload();
+      this._markSessionInvalid('401 après retry');
       throw new Error('Session expirée');
     }
 
@@ -464,8 +508,7 @@ export class ApiClient {
       const data = await response.json().catch(() => ({}));
       // Token invalide = JWT corrompu ou secret changé → forcer re-login
       if (data.error === 'Token invalide') {
-        this.clearAuth();
-        window.location.reload();
+        this._markSessionInvalid('token invalide');
         throw new Error('Token invalide — reconnexion requise');
       }
       const error = new Error(data.error || 'Accès refusé');
@@ -575,8 +618,8 @@ export class ApiClient {
     });
   }
 
-  async selfResetPassword(email, newPassword, captchaToken) {
-    const body = { email, newPassword };
+  async selfResetPassword(email, captchaToken) {
+    const body = { email };
     if (captchaToken) body.captchaToken = captchaToken;
     return this.request('/auth/self-reset-password', {
       method: 'POST',
@@ -626,8 +669,7 @@ export class ApiClient {
         const canRetry = await this._handle401(endpoint);
         if (canRetry) return true;
       }
-      this.clearAuth();
-      window.location.reload();
+      this._markSessionInvalid('403 non récupérable');
       throw new Error('Accès refusé');
     }
     return false;

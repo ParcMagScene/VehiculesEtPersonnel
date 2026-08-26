@@ -159,14 +159,14 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
       message: 'Marquer cette intervention comme effectuée ?',
       onConfirm: async () => {
         try {
-          await onSave({
+          const success = await onSave({
             ...intervention,
             ...formData,
             status: STATUS.COMPLETED,
             cost: formData.cost ? parseFloat(formData.cost) : null,
             updatedAt: new Date().toISOString(),
           });
-          onClose();
+          if (success !== false) onClose();
         } catch (error) {
           console.error('❌ Erreur lors de la validation:', error);
           if (!error.message?.includes('Session expirée')) {
@@ -263,14 +263,18 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
               </Button>
             )}
             <div className="right-actions">
-              <Button variant="secondary" onClick={handleReschedule}>
-                <Clock size={18} />
-                Reporter
-              </Button>
-              <Button variant="success" onClick={handleMarkCompleted}>
-                <CheckCircle size={18} />
-                Effectuée
-              </Button>
+              {isAdmin && (
+                <Button variant="secondary" onClick={handleReschedule}>
+                  <Clock size={18} />
+                  Reporter
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="success" onClick={handleMarkCompleted}>
+                  <CheckCircle size={18} />
+                  Effectuée
+                </Button>
+              )}
               <Button variant="primary" type="submit" form="intervention-form">
                 <Save size={18} />
                 Enregistrer
@@ -351,6 +355,7 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
             <Select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              disabled={!isAdmin}
               required
             >
               <option value="">Sélectionner...</option>
@@ -360,6 +365,11 @@ const InterventionModal = ({ intervention, vehicle, onClose, onSave, onDelete, c
                 </option>
               ))}
             </Select>
+            {!isAdmin && (
+              <small className="form-hint">
+                Seuls les administrateurs peuvent modifier le statut.
+              </small>
+            )}
           </FormField>
 
           <FormField className="form-group" label="Description">

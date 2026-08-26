@@ -48,9 +48,11 @@ import {
 
 import { STATUS } from '../../constants';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
-import { openSanitizedPrintWindow } from '../../utils/safePrintWindow';
+import { sanitizePrintHtml } from '../../utils/safePrintWindow';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
 
 // ═══════════════════════════════════════
@@ -139,6 +141,8 @@ const AdminSignaturePad = ({ onSign, _value }) => {
 // ═══════════════════════════════════════
 
 const LeaveValidationPanel = ({ onClose, onRefresh }) => {
+  const printPreview = usePrintPreview();
+  const toast = useToast();
   const [tab, setTab] = useState('pending');
   const [requests, setRequests] = useState([]);
   const [conflicts, setConflicts] = useState([]);
@@ -154,20 +158,32 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
   const [modifiedEndDate, setModifiedEndDate] = useState('');
   const [adminSignature, setAdminSignature] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const currentYear = new Date().getFullYear();
 
-  // Charger les données
+  const handleSafeClose = () => {
+    if (processing) {
+      return;
+    }
+    onClose();
+  };
+
+  // Charger les données principales
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [pending, allLeaves, conflictsData, statsData] = await Promise.all([
-        api.getPendingLeaves(),
-        api.getAllLeaves(),
+      const leavesPromise =
+        tab === STATUS.PENDING
+          ? api.getPendingLeaves()
+          : tab === 'all'
+            ? api.getAllLeaves()
+            : Promise.resolve([]);
+
+      const [leavesData, conflictsData] = await Promise.all([
+        leavesPromise,
         api.getLeaveConflicts().catch(() => []),
-        api.getLeaveStats(new Date().getFullYear()).catch(() => null),
       ]);
-      setRequests(tab === STATUS.PENDING ? pending : allLeaves);
+      setRequests(leavesData || []);
       setConflicts(conflictsData || []);
-      setStats(statsData);
     } catch (err) {
       console.error('Erreur chargement:', err);
       setError('Impossible de charger les données');
@@ -176,12 +192,25 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
     }
   }, [tab]);
 
+  const loadStats = useCallback(async () => {
+    try {
+      const statsData = await api.getLeaveStats(currentYear).catch(() => null);
+      setStats(statsData);
+    } catch {
+      // Non bloquant : les stats sont purement informatives.
+    }
+  }, [currentYear]);
+
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    loadStats();
+  }, [loadData, loadStats]);
 
   // Auto-refresh quand des congés changent ailleurs (mobile, salarié, etc.)
-  useRefreshSubscription('leaves', loadData);
+  useRefreshSubscription('leaves', () => {
+    loadData();
+    loadStats();
+  });
 
   // Formatter date
   const fmtDate = (d) => {
@@ -233,11 +262,21 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
       setModifiedEndDate('');
       setAdminSignature(null);
       loadData();
+      if (action === 'accept') {
+        toast.success('Demande acceptée.');
+      } else if (action === 'refuse') {
+        toast.success('Demande refusée.');
+      } else {
+        toast.success('Demande modifiée.');
+      }
       if (onRefresh) onRefresh();
     } catch (err) {
-      setError(err.error || err.message || 'Erreur lors du traitement');
+      const message = err.error || err.message || 'Impossible de traiter la demande.';
+      setError(message);
+      toast.error(message);
     } finally {
       setProcessing(false);
+      loadStats();
     }
   };
 
@@ -246,26 +285,28 @@ const LeaveValidationPanel = ({ onClose, onRefresh }) => {
     try {
       const data = await api.getLeavePdf(id);
       if (data.html) {
-        const win = openSanitizedPrintWindow(data.html);
-        if (!win) {
-          setError('Popup bloquée');
-          return;
-        }
-        setTimeout(() => win.print(), 500);
+        printPreview.showHtml(sanitizePrintHtml(data.html), {
+          title: 'Demande de congés',
+          filename: `conge-${id}.html`,
+        });
       }
     } catch (err) {
-      setError('Erreur génération PDF');
+      setError('Impossible de générer le PDF.');
+      toast.error('Impossible de générer le PDF.');
     }
   };
 
   return (
-    <Modal open={true} onClose={onClose} size="lg" className="lvp-panel">
-      <ModalHeader icon={<Shield size={20} />} onClose={onClose}>
+    <Modal open={true} onClose={handleSafeClose} size="lg" className="lvp-panel">
+      <ModalHeader icon={<Shield size={20} />} onClose={handleSafeClose}>
         Validation des congés
         <Button
           variant="ghost"
           className="lvp-btn-refresh"
-          onClick={loadData}
+          onClick={() => {
+            loadData();
+            loadStats();
+          }}
           aria-label="Actualiser"
         >
           <RefreshCw size={16} />

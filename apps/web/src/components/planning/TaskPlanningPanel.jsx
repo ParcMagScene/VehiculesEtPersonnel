@@ -119,8 +119,6 @@ function TaskPlanningPanel({
     [icalLoading, setIcalLoading] = useState(false);
   const [linkingEvent, setLinkingEvent] = useState(null),
     [linkSearchQuery, setLinkSearchQuery] = useState('');
-  const [linkingTaskId, setLinkingTaskId] = useState(null),
-    [linkTaskSearchQuery, setLinkTaskSearchQuery] = useState('');
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
 
   // ═══ Data loading ═══
@@ -319,7 +317,7 @@ function TaskPlanningPanel({
       setRecurringForm(null);
       loadRecurringTasks();
     } catch {
-      toast.error('Erreur sauvegarde');
+      toast.error("Impossible d'enregistrer la tâche récurrente.");
     }
   };
 
@@ -333,7 +331,7 @@ function TaskPlanningPanel({
           toast.success('Supprimée');
           loadRecurringTasks();
         } catch {
-          toast.error('Erreur suppression');
+          toast.error('Impossible de supprimer la tâche récurrente.');
         }
       },
     });
@@ -354,7 +352,7 @@ function TaskPlanningPanel({
       await loadIcalCalendars();
       loadIcalEvents();
     } catch {
-      toast.error('Erreur sauvegarde');
+      toast.error("Impossible d'enregistrer le calendrier iCal.");
     }
   };
 
@@ -369,7 +367,7 @@ function TaskPlanningPanel({
           await loadIcalCalendars();
           loadIcalEvents();
         } catch {
-          toast.error('Erreur suppression');
+          toast.error('Impossible de supprimer le calendrier iCal.');
         }
       },
     });
@@ -391,7 +389,7 @@ function TaskPlanningPanel({
           refreshBus.publish('planning');
           loadTasks(true);
         } catch {
-          toast.error('Erreur report');
+          toast.error('Impossible de reporter les tâches.');
         }
       },
     });
@@ -408,7 +406,7 @@ function TaskPlanningPanel({
           refreshBus.publish('planning');
           loadTasks(true);
         } catch {
-          toast.error('Erreur suppression');
+          toast.error('Impossible de supprimer les tâches terminées.');
         }
       },
     });
@@ -677,7 +675,7 @@ function TaskPlanningPanel({
         const updated = await api.getPlanningAssignments();
         setPlanningAssignments(Array.isArray(updated) ? updated : []);
       } catch {
-        toast.error('Erreur affectation');
+        toast.error("Impossible de mettre à jour l'affectation.");
       }
     },
     [assignmentsByEntity, toast],
@@ -695,7 +693,7 @@ function TaskPlanningPanel({
         refreshBus.publish('planning');
         loadTasks(true);
       } catch {
-        toast.error('Erreur mise à jour');
+        toast.error('Impossible de mettre à jour la tâche.');
       }
     },
     [loadTasks, toast],
@@ -712,7 +710,7 @@ function TaskPlanningPanel({
             refreshBus.publish('planning');
             loadTasks(true);
           } catch {
-            toast.error('Erreur suppression');
+            toast.error('Impossible de supprimer la tâche.');
           }
         },
       }),
@@ -730,7 +728,7 @@ function TaskPlanningPanel({
             refreshBus.publish('planning');
             loadTasks(true);
           } catch {
-            toast.error('Erreur suppression');
+            toast.error("Impossible de retirer l'événement de la planification.");
           }
         },
       }),
@@ -743,7 +741,7 @@ function TaskPlanningPanel({
         refreshBus.publish('planning');
         loadTasks(true);
       } catch {
-        toast.error('Erreur toggle visibilité');
+        toast.error('Impossible de modifier la visibilité de la tâche.');
       }
     },
     [loadTasks, toast],
@@ -755,7 +753,7 @@ function TaskPlanningPanel({
         refreshBus.publish('planning');
         loadTasks(true);
       } catch {
-        toast.error('Erreur toggle visibilité');
+        toast.error("Impossible de modifier la visibilité de l'événement.");
       }
     },
     [loadTasks, toast],
@@ -767,7 +765,7 @@ function TaskPlanningPanel({
         refreshBus.publish('planning');
         loadTasks(true);
       } catch {
-        toast.error('Erreur mise à jour statut');
+        toast.error("Impossible de mettre à jour le statut de l'événement.");
       }
     },
     [loadTasks, toast],
@@ -780,7 +778,7 @@ function TaskPlanningPanel({
         refreshBus.publish('affaires');
         loadTasks(true);
       } catch {
-        toast.error('Erreur mise à jour statut affaire');
+        toast.error("Impossible de mettre à jour le statut de l'affaire.");
       }
     },
     [loadTasks, toast],
@@ -798,7 +796,7 @@ function TaskPlanningPanel({
             refreshBus.publish('affaires');
             loadTasks(true);
           } catch {
-            toast.error('Erreur masquage affaire');
+            toast.error('Impossible de masquer cette affaire de la planification.');
           }
         },
       }),
@@ -809,16 +807,80 @@ function TaskPlanningPanel({
     async (taskId, num) => {
       try {
         await api.updateTask(taskId, { affaire_num: num });
-        setLinkingTaskId(null);
-        setLinkTaskSearchQuery('');
         refreshBus.publish('planning');
         await loadTasks(true);
         toast.success(`Tâche liée à ${num}`);
       } catch {
-        toast.error('Erreur lors de la liaison');
+        toast.error("Impossible de lier la tâche à l'affaire.");
       }
     },
     [loadTasks, toast],
+  );
+
+  const handleLinkTaskToGoogleEvent = useCallback(
+    async (taskId, googleEvent) => {
+      try {
+        await api.updateTask(taskId, {
+          display_event_id: null,
+          source_type: googleEvent ? 'google_event' : 'manual',
+          source_id: googleEvent?.id || null,
+          google_event_title: googleEvent?.summary || null,
+        });
+        refreshBus.publish('planning');
+        await loadTasks(true);
+        toast.success(
+          googleEvent ? 'Tâche liée à un évènement Google' : 'Liaison évènement Google retirée',
+        );
+      } catch {
+        toast.error("Impossible de mettre à jour la liaison avec l'évènement Google.");
+      }
+    },
+    [loadTasks, toast],
+  );
+
+  const handleAssignTaskPerson = useCallback(
+    async (taskId, personId) => {
+      try {
+        await api.updateTask(taskId, { person_id: personId || null });
+        refreshBus.publish('planning');
+        await loadTasks(true);
+        toast.success(personId ? 'Personnel affecté' : 'Affectation retirée');
+      } catch {
+        toast.error("Impossible de mettre à jour l'affectation du personnel.");
+      }
+    },
+    [loadTasks, toast],
+  );
+
+  const handlePostponeTask = useCallback(
+    async (taskId, date, period) => {
+      try {
+        const currentTask = (tasks || []).find((t) => String(t.id) === String(taskId));
+        const payload = { date };
+        if (period) payload.period = period;
+
+        const prevDate = currentTask?.date || '';
+        if (prevDate && prevDate !== date) {
+          const currentNotes = String(currentTask?.notes || '');
+          const existingRolledMatch = currentNotes.match(
+            /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
+          );
+          const rolledOriginDate = existingRolledMatch?.[1] || prevDate;
+          const cleanNotes = currentNotes
+            .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
+            .trim();
+          payload.notes = `${cleanNotes}${cleanNotes ? ' ' : ''}[reportée depuis ${rolledOriginDate}]`;
+        }
+
+        await api.updateTask(taskId, payload);
+        refreshBus.publish('planning');
+        await loadTasks(true);
+        toast.success(`Tâche reportée au ${formatDateFr(date)}`);
+      } catch {
+        toast.error('Impossible de reporter la tâche.');
+      }
+    },
+    [loadTasks, tasks, toast],
   );
   const handleManualLink = useCallback(
     async (event, num) => {
@@ -835,7 +897,7 @@ function TaskPlanningPanel({
         await loadTasks(true);
         toast.success(`Événement lié à ${num}`);
       } catch {
-        toast.error('Erreur lors de la liaison');
+        toast.error("Impossible de lier l'événement à l'affaire.");
       }
     },
     [loadTasks, toast],
@@ -901,10 +963,11 @@ function TaskPlanningPanel({
         onToggleVisible={handleToggleTaskVisible}
         onEdit={openTaskEditModal}
         onLinkTask={handleLinkTaskToAffaire}
-        linkingTaskId={linkingTaskId}
-        setLinkingTaskId={setLinkingTaskId}
-        linkTaskSearchQuery={linkTaskSearchQuery}
-        setLinkTaskSearchQuery={setLinkTaskSearchQuery}
+        onLinkTaskToGoogleEvent={handleLinkTaskToGoogleEvent}
+        onAssignTaskPerson={handleAssignTaskPerson}
+        onPostponeTask={handlePostponeTask}
+        googleEvents={googleEvents}
+        persons={persons}
         affaires={affaires}
         selectedDate={selectedDate}
         renderMultiAssign={renderMultiAssign}
@@ -918,8 +981,11 @@ function TaskPlanningPanel({
       handleToggleTaskVisible,
       openTaskEditModal,
       handleLinkTaskToAffaire,
-      linkingTaskId,
-      linkTaskSearchQuery,
+      handleLinkTaskToGoogleEvent,
+      handleAssignTaskPerson,
+      handlePostponeTask,
+      googleEvents,
+      persons,
       affaires,
       selectedDate,
       renderMultiAssign,

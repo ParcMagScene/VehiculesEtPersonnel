@@ -36,6 +36,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import logger from '../../utils/logger';
+import { userHasPermission } from '../../utils/permissions';
 import { refreshBus } from '../../utils/refresh-bus';
 
 const fmt = (v) =>
@@ -412,8 +413,7 @@ export function ExternalProductsPanel({ currentUser }) {
   const [showQuote, setShowQuote] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
 
-  const isAdmin = currentUser?.isAdmin;
-  const canWrite = isAdmin || currentUser?.permissions?.canManageCatalog === true;
+  const canWrite = userHasPermission(currentUser, 'canManageCatalog');
 
   // ── Chargement liste ─────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -428,7 +428,8 @@ export function ExternalProductsPanel({ currentUser }) {
       setTotal(data.total || 0);
       setCategories(data.categories || []);
     } catch (e) {
-      setError(e.message);
+      setError('Impossible de charger les produits externes.');
+      toast.error('Impossible de charger les produits externes.');
     } finally {
       setLoading(false);
     }
@@ -476,7 +477,11 @@ export function ExternalProductsPanel({ currentUser }) {
       setEditProduct(null);
       load();
     } catch (e) {
-      toast.error(e.message || 'Erreur lors de la sauvegarde');
+      toast.error(
+        e?.message
+          ? `Impossible de sauvegarder le produit: ${e.message}`
+          : 'Impossible de sauvegarder le produit.',
+      );
     } finally {
       setFormLoading(false);
     }
@@ -497,7 +502,11 @@ export function ExternalProductsPanel({ currentUser }) {
       if (selected?.id === product.id) setSelected(null);
       load();
     } catch (e) {
-      toast.error(e.message);
+      toast.error(
+        e?.message
+          ? `Impossible de supprimer le produit: ${e.message}`
+          : 'Impossible de supprimer le produit.',
+      );
     }
   };
 
@@ -521,7 +530,11 @@ export function ExternalProductsPanel({ currentUser }) {
         setCompareData(data);
       }
     } catch (e) {
-      toast.error(e.message || 'Erreur');
+      toast.error(
+        e?.message
+          ? `Impossible de sauvegarder le fournisseur: ${e.message}`
+          : 'Impossible de sauvegarder le fournisseur.',
+      );
     } finally {
       setSupplierFormLoading(false);
     }
@@ -544,7 +557,11 @@ export function ExternalProductsPanel({ currentUser }) {
         setCompareData(data);
       }
     } catch (e) {
-      toast.error(e.message);
+      toast.error(
+        e?.message
+          ? `Impossible de retirer le fournisseur: ${e.message}`
+          : 'Impossible de retirer le fournisseur.',
+      );
     }
   };
 
@@ -577,7 +594,9 @@ export function ExternalProductsPanel({ currentUser }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      toast.error(e.message || 'Erreur génération PDF');
+      toast.error(
+        e?.message ? `Impossible de générer le PDF: ${e.message}` : 'Impossible de générer le PDF.',
+      );
     } finally {
       setQuoteLoading(false);
     }
@@ -814,12 +833,12 @@ export function ExternalProductsPanel({ currentUser }) {
     if (quoteItems.length === 0) return null;
     return (
       // FAB e-shop : style positionnel custom (fixed bottom-right) incompatible
-      // avec ui-btn ; on garde un <button> brut.
+      // avec ui-btn ; on garde un <Button> brut.
       // eslint-disable-next-line react/forbid-elements
-      <button className="eshop-quote-fab" onClick={() => setShowQuote(true)} title="Voir le devis">
+      <Button className="eshop-quote-fab" onClick={() => setShowQuote(true)} title="Voir le devis">
         <ShoppingCart size={18} />
         <span className="eshop-quote-fab-count">{quoteItems.length}</span>
-      </button>
+      </Button>
     );
   };
 

@@ -46,8 +46,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 38px;
-  min-height: 38px;
+  min-width: var(--tap-min);
+  min-height: var(--tap-min);
   transition: background 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -78,8 +78,8 @@
 }
 
 .mh-avatar {
-  width: 32px;
-  height: 32px;
+  width: var(--tap-min);
+  height: var(--tap-min);
   background: var(--close-btn-hover-bg);
   border: none;
   color: inherit;

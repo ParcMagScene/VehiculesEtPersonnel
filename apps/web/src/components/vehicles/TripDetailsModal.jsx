@@ -3,7 +3,15 @@ import './TripDetailsModal.css';
 import { ArrowDown, Clock, MapPin, Plus, Trash2, User } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
-import { Button, FormField, Input, Modal, ModalBody, ModalHeader } from '@/design-system';
+import {
+  Button,
+  FormField,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
@@ -626,14 +634,10 @@ const TripDetailsModal = ({
     }
   };
 
-  // Style pour les champs sauvegardés
-  const savedFieldStyle = isSaved
-    ? {
-        background: 'var(--theme-success-bg)',
-        borderColor: STATUS_COLORS.success,
-        borderWidth: '2px',
-      }
-    : {};
+  const isHeavyVehicle =
+    vehicle?.type?.toUpperCase().includes('PL') ||
+    vehicle?.type?.toUpperCase().includes('PORTEUR') ||
+    vehicle?.type?.toUpperCase().includes('SEMI');
 
   // Générer la timeline chronologique pour le mode combiné
   const renderCombinedTimeline = () => {
@@ -817,6 +821,14 @@ const TripDetailsModal = ({
               key={i}
               className={`timeline-step timeline-step--${step.type}`}
               onClick={() => setActiveTab(step.eventIdx)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setActiveTab(step.eventIdx);
+                }
+              }}
             >
               <div className="timeline-step-marker">
                 <span className="timeline-step-icon">{step.icon}</span>
@@ -883,33 +895,13 @@ const TripDetailsModal = ({
         {isCombinedMode ? 'Trajets liés' : 'Détails du trajet'}
         {/* Événement info (mode simple) */}
         {!isCombinedMode && (
-          <div
-            className="event-info"
-            style={{ margin: '0.5rem 0 0 0', background: 'transparent', padding: 0 }}
-          >
-            <h3 style={{ margin: 0, fontSize: '1rem' }}>{currentEvent.summary}</h3>
+          <div className="event-info trip-event-info-inline">
+            <h3 className="trip-event-title">{currentEvent.summary}</h3>
             <div className="u-flex-center u-flex-wrap u-gap-2 u-mt-1">
               {currentEvent.affaire && <span className="u-font-sm">{currentEvent.affaire}</span>}
               {vehicle && (
                 <span
-                  style={{
-                    padding: '0.25rem 0.5rem',
-                    background:
-                      vehicle.type?.toUpperCase().includes('PL') ||
-                      vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                      vehicle.type?.toUpperCase().includes('SEMI')
-                        ? 'var(--btn-warning-bg)'
-                        : 'var(--theme-info-bg-strong)',
-                    color:
-                      vehicle.type?.toUpperCase().includes('PL') ||
-                      vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                      vehicle.type?.toUpperCase().includes('SEMI')
-                        ? 'var(--theme-warning-text)'
-                        : 'var(--theme-info-text)',
-                    borderRadius: '0.25rem',
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                  }}
+                  className={`trip-vehicle-badge ${isHeavyVehicle ? 'trip-vehicle-badge-heavy' : 'trip-vehicle-badge-light'}`}
                 >
                   🚛 {vehicle.name} ({vehicle.type})
                 </span>
@@ -920,26 +912,7 @@ const TripDetailsModal = ({
         {/* Véhicule info (mode combiné) */}
         {isCombinedMode && vehicle && (
           <span
-            style={{
-              display: 'inline-flex',
-              padding: '0.25rem 0.5rem',
-              background:
-                vehicle.type?.toUpperCase().includes('PL') ||
-                vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                vehicle.type?.toUpperCase().includes('SEMI')
-                  ? 'var(--btn-warning-bg)'
-                  : 'var(--theme-info-bg-strong)',
-              color:
-                vehicle.type?.toUpperCase().includes('PL') ||
-                vehicle.type?.toUpperCase().includes('PORTEUR') ||
-                vehicle.type?.toUpperCase().includes('SEMI')
-                  ? 'var(--theme-warning-text)'
-                  : 'var(--theme-info-text)',
-              borderRadius: '0.25rem',
-              fontSize: '0.75rem',
-              fontWeight: '600',
-              marginTop: '0.375rem',
-            }}
+            className={`trip-vehicle-badge trip-vehicle-badge-compact ${isHeavyVehicle ? 'trip-vehicle-badge-heavy' : 'trip-vehicle-badge-light'}`}
           >
             🚛 {vehicle.name} ({vehicle.type})
           </span>
@@ -947,21 +920,8 @@ const TripDetailsModal = ({
         {/* Bandeau de confirmation si sauvegardé */}
         {isSaved && (
           <div
-            style={{
-              padding: '0.5rem 0.75rem',
-              background: 'var(--theme-success-bg)',
-              border: `2px solid ${STATUS_COLORS.success}`,
-              borderRadius: '0.375rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: 'var(--theme-success-text)',
-              fontWeight: '600',
-              fontSize: '0.75rem',
-              whiteSpace: 'nowrap',
-              marginLeft: '1rem',
-              alignSelf: 'flex-start',
-            }}
+            className="trip-saved-banner"
+            style={{ '--trip-saved-border-color': STATUS_COLORS.success }}
           >
             ✅ Détails du trajet enregistrés
           </div>
@@ -1031,14 +991,14 @@ const TripDetailsModal = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="trip-details-form">
+        <form id="trip-details-form" onSubmit={handleSubmit} className="trip-details-form">
           {/* Conducteur */}
           <div className="trip-row">
             <FormField
               className="form-group"
               label={
                 <>
-                  <User size={18} style={{ marginRight: '0.25rem' }} /> Conducteur pour ce trajet
+                  <User size={18} className="trip-driver-icon" /> Conducteur pour ce trajet
                 </>
               }
             >
@@ -1129,7 +1089,7 @@ const TripDetailsModal = ({
                   value={formData.departureDate}
                   onChange={handleChange}
                   required
-                  style={savedFieldStyle}
+                  className={isSaved ? 'trip-saved-field' : ''}
                 />
               </FormField>
               <FormField className="form-group" label="Heure">
@@ -1139,7 +1099,7 @@ const TripDetailsModal = ({
                   value={formData.departureTime}
                   onChange={handleChange}
                   required
-                  style={savedFieldStyle}
+                  className={isSaved ? 'trip-saved-field' : ''}
                 />
               </FormField>
             </div>
@@ -1148,20 +1108,10 @@ const TripDetailsModal = ({
             {pauses
               .filter((p) => p.pauseType === 'outbound')
               .map((pause) => {
-                const pauseStyle = pausesWithValidatedLocation.has(pause.id)
-                  ? {
-                      background: 'var(--theme-info-bg)',
-                      borderColor: 'var(--theme-primary)',
-                      borderWidth: '2px',
-                    }
-                  : {};
+                const isPauseValidated = pausesWithValidatedLocation.has(pause.id);
 
                 return (
-                  <div
-                    key={pause.id}
-                    className="trip-row"
-                    style={{ gridTemplateColumns: '2fr 1fr 1fr auto' }}
-                  >
+                  <div key={pause.id} className="trip-row trip-row-pause">
                     <FormField className="form-group" label="Pause">
                       <Input
                         id={`pause-location-${pause.id}`}
@@ -1170,7 +1120,7 @@ const TripDetailsModal = ({
                         value={pause.location}
                         onChange={(e) => updatePause(pause.id, 'location', e.target.value)}
                         list="locations-list"
-                        style={pauseStyle}
+                        className={isPauseValidated ? 'trip-pause-field' : ''}
                       />
                     </FormField>
                     <FormField className="form-group" label="Heure">
@@ -1178,7 +1128,7 @@ const TripDetailsModal = ({
                         type="time"
                         value={pause.startTime}
                         onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
-                        style={pauseStyle}
+                        className={isPauseValidated ? 'trip-pause-field' : ''}
                       />
                     </FormField>
                     <FormField className="form-group" label="Durée (min)">
@@ -1191,7 +1141,7 @@ const TripDetailsModal = ({
                         }
                         min="5"
                         step="5"
-                        style={pauseStyle}
+                        className={isPauseValidated ? 'trip-pause-field' : ''}
                       />
                     </FormField>
                     <FormField className="form-group" label="-">
@@ -1255,7 +1205,7 @@ const TripDetailsModal = ({
                   value={formData.arrivalDate}
                   onChange={handleChange}
                   required
-                  style={savedFieldStyle}
+                  className={isSaved ? 'trip-saved-field' : ''}
                 />
               </FormField>
               <FormField className="form-group" label="Heure">
@@ -1265,7 +1215,7 @@ const TripDetailsModal = ({
                   value={formData.arrivalTime}
                   onChange={handleChange}
                   required
-                  style={savedFieldStyle}
+                  className={isSaved ? 'trip-saved-field' : ''}
                 />
               </FormField>
             </div>
@@ -1345,7 +1295,7 @@ const TripDetailsModal = ({
                   value={formData.returnDepartureDate}
                   onChange={handleChange}
                   required
-                  style={savedFieldStyle}
+                  className={isSaved ? 'trip-saved-field' : ''}
                 />
               </FormField>
               <FormField className="form-group" label="Heure">
@@ -1355,7 +1305,7 @@ const TripDetailsModal = ({
                   value={formData.returnDepartureTime}
                   onChange={handleChange}
                   required
-                  style={savedFieldStyle}
+                  className={isSaved ? 'trip-saved-field' : ''}
                 />
               </FormField>
             </div>
@@ -1364,20 +1314,10 @@ const TripDetailsModal = ({
             {pauses
               .filter((p) => p.pauseType === 'return')
               .map((pause) => {
-                const pauseStyle = pausesWithValidatedLocation.has(pause.id)
-                  ? {
-                      background: 'var(--theme-info-bg)',
-                      borderColor: 'var(--theme-primary)',
-                      borderWidth: '2px',
-                    }
-                  : {};
+                const isPauseValidated = pausesWithValidatedLocation.has(pause.id);
 
                 return (
-                  <div
-                    key={pause.id}
-                    className="trip-row"
-                    style={{ gridTemplateColumns: '2fr 1fr 1fr auto' }}
-                  >
+                  <div key={pause.id} className="trip-row trip-row-pause">
                     <FormField className="form-group" label="Pause">
                       <Input
                         id={`pause-location-${pause.id}`}
@@ -1386,7 +1326,7 @@ const TripDetailsModal = ({
                         value={pause.location}
                         onChange={(e) => updatePause(pause.id, 'location', e.target.value)}
                         list="locations-list"
-                        style={pauseStyle}
+                        className={isPauseValidated ? 'trip-pause-field' : ''}
                       />
                     </FormField>
                     <FormField className="form-group" label="Heure">
@@ -1394,7 +1334,7 @@ const TripDetailsModal = ({
                         type="time"
                         value={pause.startTime}
                         onChange={(e) => updatePause(pause.id, 'startTime', e.target.value)}
-                        style={pauseStyle}
+                        className={isPauseValidated ? 'trip-pause-field' : ''}
                       />
                     </FormField>
                     <FormField className="form-group" label="Durée (min)">
@@ -1407,7 +1347,7 @@ const TripDetailsModal = ({
                         }
                         min="5"
                         step="5"
-                        style={pauseStyle}
+                        className={isPauseValidated ? 'trip-pause-field' : ''}
                       />
                     </FormField>
                     <FormField className="form-group" label="-">
@@ -1473,7 +1413,7 @@ const TripDetailsModal = ({
                   value={formData.returnArrivalDate}
                   onChange={handleChange}
                   required
-                  style={savedFieldStyle}
+                  className={isSaved ? 'trip-saved-field' : ''}
                 />
               </FormField>
               <FormField className="form-group" label="Heure">
@@ -1483,7 +1423,7 @@ const TripDetailsModal = ({
                   value={formData.returnArrivalTime}
                   onChange={handleChange}
                   required
-                  style={savedFieldStyle}
+                  className={isSaved ? 'trip-saved-field' : ''}
                 />
               </FormField>
             </div>
@@ -1523,15 +1463,6 @@ const TripDetailsModal = ({
             </div>
           </div>
 
-          <div className="modal-actions">
-            <Button variant="ghost" onClick={handleSafeClose}>
-              Annuler
-            </Button>
-            <Button variant="primary" type="submit">
-              Enregistrer
-            </Button>
-          </div>
-
           {/* Datalist pour suggestions de lieux */}
           <datalist id="locations-list">
             {allLocations.map((loc) => (
@@ -1542,6 +1473,15 @@ const TripDetailsModal = ({
           </datalist>
         </form>
       </ModalBody>
+
+      <ModalFooter>
+        <Button variant="ghost" onClick={handleSafeClose}>
+          Annuler
+        </Button>
+        <Button variant="success" type="submit" form="trip-details-form">
+          Enregistrer
+        </Button>
+      </ModalFooter>
 
       {/* Modal LocationDialog */}
       {isLocationDialogOpen && (

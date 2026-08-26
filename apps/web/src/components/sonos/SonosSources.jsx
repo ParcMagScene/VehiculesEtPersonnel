@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
+import { Button } from '@/design-system';
+
 const SERVICE_ICONS = {
   star: <Star size={16} />,
   'list-music': <ListMusic size={16} />,
@@ -70,7 +72,7 @@ function SonosSources({
     <div className="sonos-sources">
       {/* Tabs */}
       <div className="sonos-sources-tabs">
-        <button
+        <Button
           type="button"
           className={`sonos-sources-tab${tab === 'favorites' ? ' sonos-sources-tab-active' : ''}`}
           onClick={() => {
@@ -81,16 +83,16 @@ function SonosSources({
           <Star size={13} />
           Favoris
           {favorites.length > 0 && <span className="sonos-sources-badge">{favorites.length}</span>}
-        </button>
+        </Button>
         {isAdmin && (
-          <button
+          <Button
             type="button"
             className={`sonos-sources-tab${tab === 'sources' ? ' sonos-sources-tab-active' : ''}`}
             onClick={() => setTab('sources')}
           >
             <Radio size={13} />
             Sources
-          </button>
+          </Button>
         )}
       </div>
 
@@ -107,7 +109,7 @@ function SonosSources({
             </div>
           ) : (
             filteredFavorites.map((fav, i) => (
-              <button
+              <Button
                 type="button"
                 key={i}
                 className={`sonos-sources-item sonos-sources-playable${currentNowTitle === fav.title ? ' sonos-sources-active' : ''}`}
@@ -135,7 +137,7 @@ function SonosSources({
                     <span className="sonos-sources-item-artist">{fav.description}</span>
                   )}
                 </div>
-              </button>
+              </Button>
             ))
           )}
         </div>
@@ -147,14 +149,14 @@ function SonosSources({
           {/* Breadcrumb header when browsing */}
           {isBrowsing && (
             <div className="sonos-sources-head">
-              <button
+              <Button
                 type="button"
                 className="sonos-sources-back"
                 onClick={browseBack}
                 title="Retour"
               >
                 <ChevronLeft size={16} />
-              </button>
+              </Button>
               <span className="sonos-sources-breadcrumb">{currentTitle}</span>
             </div>
           )}
@@ -195,7 +197,7 @@ function ServiceList({ services, onBrowse, search }) {
   return (
     <div className="sonos-sources-list">
       {filtered.map((svc) => (
-        <button
+        <Button
           type="button"
           key={svc.id}
           className="sonos-sources-item"
@@ -207,7 +209,7 @@ function ServiceList({ services, onBrowse, search }) {
           <span className="sonos-sources-item-title">{svc.title}</span>
           {svc.childCount > 0 && <span className="sonos-sources-count">{svc.childCount}</span>}
           <ChevronRight size={14} className="sonos-sources-chevron" />
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -243,7 +245,7 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
   return (
     <div className="sonos-sources-list">
       {containers.map((c) => (
-        <button
+        <Button
           type="button"
           key={c.id}
           className="sonos-sources-item"
@@ -267,11 +269,11 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
           <span className="sonos-sources-item-title">{c.title}</span>
           {c.childCount > 0 && <span className="sonos-sources-count">{c.childCount}</span>}
           <ChevronRight size={14} className="sonos-sources-chevron" />
-        </button>
+        </Button>
       ))}
 
       {items.map((item, i) => (
-        <button
+        <Button
           type="button"
           key={i}
           className="sonos-sources-item sonos-sources-playable"
@@ -297,7 +299,7 @@ function BrowseContent({ data, onBrowse, onPlay, search }) {
             <span className="sonos-sources-item-title">{item.title}</span>
             {item.artist && <span className="sonos-sources-item-artist">{item.artist}</span>}
           </div>
-        </button>
+        </Button>
       ))}
     </div>
   );

@@ -5,6 +5,683 @@ Format : [Keep a Changelog](https://keepachangelog.com)
 
 ---
 
+## [2.28.0] — 2026-07-13
+
+### Added — SAV v2 panel pièces ticket (T-P1-07c)
+
+- **`apps/web/src/components/equipment/SavTicketPartsPanel.jsx`** :
+  panel React branché sur les 4 helpers T-P1-07b
+  (`fetchSavPartsUnified`, `addSavPartUnified`,
+  `updateSavPartStatusUnified`, `transitionSavTicketUnified`).
+  Formulaire d'ajout inline (`partName` requis, quantité > 0),
+  Select de changement statut par pièce, bloc de transition
+  ticket avec matrice `SAV_TICKET_TRANSITIONS` respectée.
+  Toast succès/erreur, refresh auto après chaque mutation.
+  Message "Namespace v2 SAV désactivé" si flag off /
+  FEATURE_DISABLED.
+- **`apps/web/src/components/equipment/SavTicketPartsPanel.css`** :
+  styles discrets (tokens `--space-*` / `--theme-*`).
+- **`apps/web/src/components/equipment/EquipmentSAV.jsx`** :
+  import + rendu du panel à la fin du `SavSlidePanel` (drawer
+  ticket). Aucun autre comportement modifié.
+- **`apps/web/src/utils/sav/v2Adapters.js`** : ajout matrice
+  `SAV_TICKET_TRANSITIONS` (miroir strict serveur) +
+  `getSavAllowedNext(from)` + `isSavTransitionAllowed(from, to)`.
+- **19 nouveaux tests unitaires** :
+  - 7 sur la matrice de transitions (open, resolved, closed,
+    sortie_sav, statut inconnu, auto-transition, cibles interdites
+    vs valides).
+  - 11 sur `SavTicketPartsPanel` (loading, v2 désactivé, liste
+    vide, affichage, validation, ajout, erreur, change statut,
+    transition matrice).
+  - 1 addition indirecte via re-count.
+
+Conditionné au flag `VITE_FEATURE_V2_SAV`. Zero régression pour
+les utilisateurs en prod (flag off par défaut). Le workflow v1
+legacy (`SavTicketFormModal`) reste actif.
+
+---
+
+## [2.27.1] — 2026-07-13
+
+### Fixed — Import affaires : respect du type choisi (prod hotfix)
+
+Les affaires importées via `BLImportModal` (`ImportsHub`, boutons "Importer BL") ou
+`AffaireImportModal` (depuis Google Calendar) apparaissaient systématiquement en
+type **Prestation** dans la liste, même quand l'utilisateur avait explicitement
+choisi **Location** ou un autre type au moment de l'import.
+
+**Root cause** : le parser PDF (`pdfParser.js#parseBonPreparation` L1183) force
+`info.type = 'Prestation'` par défaut pour tout Bon de Préparation sans
+mot-clé de type détecté. Ce défaut était appliqué par `setAffaireType(parsed.type)`
+(`BLImportModal.jsx` L362-363) et `setFormData({..., type: info.type || prev.type})`
+(`AffaireImportModal.jsx` L402 + L645), **écrasant silencieusement** le choix
+utilisateur. En mode batch multi-fichier, `resetCurrentDraft` ré-initialisait même
+le type entre chaque fichier de la queue.
+
+**Fix** :
+
+- `BLImportModal.jsx` : nouveau flag React `affaireTypeUserSet` (initialisé à
+  `true` si `defaultAffaireType` fourni). Passe à `true` dès que l'utilisateur
+  clique sur un bouton de type. `handleFileSelect` et `resetCurrentDraft`
+  respectent ce verrou : plus aucun écrasement automatique quand
+  `affaireTypeUserSet === true`.
+- `AffaireImportModal.jsx` : nouveau flag `typeUserSet` (initialisé à `false`).
+  Passe à `true` dès que l'utilisateur change le `Select`. `handleFileSelection`
+  et `handleSelectBatchResult` respectent ce verrou. `resetForm` réinitialise
+  le flag lors de la fermeture du modal.
+- `pdfParser.test.js` : nouveau fichier de tests de non-régression documentant
+  le comportement par défaut du parser (`Prestation`) — pour éviter toute
+  régression future du contrat sans mettre à jour les callers.
+
+**Impact utilisateur** : après ce fix, le type choisi dans l'UI d'import n'est
+plus jamais écrasé. Aucune migration DB nécessaire ; les affaires déjà mal
+typées peuvent être corrigées à la main via `AffaireDetailPanel`.
+
+---
+
+## [2.27.0] — 2026-07-13
+
+### Added — Conflicts v2 badge AssignmentDialog (T-P1-05c)
+
+- **`apps/web/src/components/personnel/AssignmentConflictBadge.jsx`** :
+  sous-composant non-bloquant branché sur `useConflictsPrecheck`.
+  4 états : invisible (available=false ou params incomplets),
+  loading (Spinner), succès (badge "Aucun conflit détecté"),
+  warning (liste conflits tronquée à 5 + ellipsis + hint).
+- **`apps/web/src/components/personnel/AssignmentDialog.jsx`** :
+  intégration du badge juste avant les alertes erreur/succès.
+  Passe `personId=selectedPersonId` + `startDate`/`endDate` +
+  `excludeMissionId=existingMission.id` en mode édition
+  (évite auto-conflit).
+- **`AssignmentDialog.css`** : styles discrets pour badge OK,
+  liste warning et loading.
+- **9 tests unitaires** (`AssignmentConflictBadge.test.jsx` :
+  invisibilité x3, loading, succès, warning + liste, ellipsis
+  au-delà de 5, exclude en édition, pas d'exclude en création).
+
+Choix explicite : **non-bloquant**. Le POST `createAssignment` v1
+reste seule source de vérité. Bloquage strict reporté en T-P1-05d.
+
+---
+
+## [2.26.0] — 2026-07-10
+
+### Added — Equipment UID v2 panel admin (T-P1-06c)
+
+- **`apps/web/src/components/admin/AdminEquipmentUidPanel.jsx`** :
+  premier composant consommateur des fondations T-P1-06b. UI
+  admin avec verdict, 4 KPI, tableau doublons `serial_number` +
+  tableau doublons `uid` avec bouton **Régénérer UID** (prompt
+  raison pour audit trail). Toast inline + refresh auto. Signal
+  "Namespace v2 désactivé" si flag off / FEATURE_DISABLED.
+- **`apps/web/src/components/management/ManagementPanel.jsx`** :
+  onglet **Diagnostics UID** ajouté **conditionnel au flag**
+  `VITE_FEATURE_V2_EQUIPMENT_UID`. Invisible en prod par défaut,
+  visible en dogfooding dev. Aucun impact sur les autres onglets.
+- **7 tests unitaires** (`AdminEquipmentUidPanel.test.jsx` :
+  loading, verdict OK, doublons, regenerate + confirm,
+  FEATURE_DISABLED, erreur réseau, bouton refresh).
+
+---
+
+## [2.25.0] — 2026-07-10
+
+### Added — Orders v2 fondations UI (T-P1-09b / T-P1-10b)
+
+- **`apps/web/src/utils/orders/v2Adapters.js`** :
+  - Matrices `ORDER_TRANSITIONS` (6 statuts) / `QUOTE_TRANSITIONS`
+    (5 statuts) dupliquées du backend pour validation UI côté
+    client.
+  - Helpers `getAllowedNext` / `isTransitionAllowed` pour
+    feedback immediat avant appel serveur.
+  - Adapters transition / reception (T-P1-10) / summary /
+    conversion.
+  - `isTransitionConflict` (détection 409),
+    `readOrdersV2ClientFlag`.
+- **`apps/web/src/utils/orders/fetchOrdersV2.js`** :
+  4 helpers unified (transition, reception, summary, convert)
+  avec contrat étendu `{ ok, data | conflict, error }` sur les
+  mutations pour distinguer le 409 CONFLICT.
+- **35 tests unitaires** (20 adapters + 15 helpers).
+
+Aucun composant modifié (`OrdersPanel`, `OrderDetailModal`,
+`QuoteForm` restent v1). Refactor UI reporté en T-P1-09c/10c.
+
+---
+
+## [2.24.0] — 2026-07-10
+
+### Added — Equipment Assignments v2 fondations UI (T-P1-08b)
+
+- **`apps/web/src/utils/equipmentAssignments/v2Adapters.js`** :
+  constantes `ASSIGNMENT_STATUSES` (3) / `ASSIGNMENT_EVENT_TYPES` (4),
+  adapters (assignment + history entry + mutation + list),
+  `isDoubleAssignConflict`, `readEquipmentAssignmentsV2ClientFlag`.
+- **`apps/web/src/utils/equipmentAssignments/fetchEquipmentAssignments.js`** :
+  `createEquipmentAssignmentUnified` (contrat étendu
+  `{ ok, assignment?, historyId?, conflict?, error? }` pour
+  distinguer double-assign 409 des autres erreurs),
+  `releaseEquipmentAssignmentUnified`,
+  `fetchAssignmentsHistoryUnified`.
+- **24 tests unitaires** (13 adapters + 11 helpers).
+
+Aucun composant modifié. Panel/hook consommateur reporté en
+T-P1-08c.
+
+---
+
+## [2.23.0] — 2026-07-10
+
+### Added — SAV v2 fondations UI (T-P1-07b)
+
+- **`apps/web/src/utils/sav/v2Adapters.js`** : constantes
+  `SAV_PART_STATUSES` / `SAV_TICKET_STATUSES`, adapters
+  `adaptSavPartV2ToV1`, `adaptV2SavPartsList`,
+  `adaptV2TicketTransitionResponse`, `readSavV2ClientFlag`.
+- **`apps/web/src/utils/sav/fetchSavParts.js`** : 4 helpers
+  unified pour list/add pièces + change statut + transition ticket.
+  Retour `null` quand indisponible.
+- **24 tests unitaires** (12 adapters + 12 helpers).
+
+Aucun composant modifié (`EquipmentSAV.jsx` reste sur v1). Panel
+enrichi reporté en T-P1-07c.
+
+---
+
+## [2.22.0] — 2026-07-10
+
+### Added — Equipment UID v2 fondations UI admin (T-P1-06b)
+
+- **`apps/web/src/utils/equipmentUid/v2Adapters.js`** :
+  `adaptDuplicateEntryV2ToV1`, `adaptV2AuditResponse` (audit
+  complet camelCase : totals, doublons serial/uid, verdict),
+  `adaptV2RegenerateResponse`, `readEquipmentUidV2ClientFlag`.
+- **`apps/web/src/utils/equipmentUid/fetchEquipmentUidAudit.js`** :
+  `fetchEquipmentUidAuditUnified(api, { useV2 })` +
+  `regenerateEquipmentUidUnified(api, id, { reason, useV2 })`.
+  Retour `null` quand indisponible (v1 sans endpoint standalone
+  equivalent).
+- **21 tests unitaires** (10 adapters + 11 helpers).
+
+Aucun composant existant modifié. Panel admin dédié prévu en
+T-P1-06c. Distinct de "T-P1-06b renforcement UNIQUE" DB (reporté).
+
+---
+
+## [2.21.0] — 2026-07-10
+
+### Added — Conflicts v2 fondations UI pre-check (T-P1-05b)
+
+- **`apps/web/src/utils/conflicts/v2Adapters.js`** :
+  `adaptConflictV2ToV1`, `adaptV2ConflictsResponse`,
+  `readConflictsV2ClientFlag`.
+- **`apps/web/src/utils/conflicts/checkPersonConflicts.js`** :
+  `checkPersonConflictsUnified(api, params, { useV2 })`. Retourne
+  `null` si pré-check indisponible.
+- **`apps/web/src/hooks/useConflictsPrecheck.js`** : hook React
+  autonome (debounce 300ms) exposant `{ conflicts, hasConflict,
+  count, loading, available }`.
+- **21 tests unitaires** (7 adapters + 9 helper + 5 hook).
+
+Aucune modification des composants existants dans ce ticket. La
+consommation UI (badge conflits dans AssignmentDialog) est portée
+par T-P1-05c à venir.
+
+---
+
+## [2.20.0] — 2026-07-10
+
+### Added — Leaves v2 dogfooding UI calcul (T-P1-04b)
+
+- **`apps/web/src/utils/leaves/v2Adapters.js`** :
+  `readLeavesV2ClientFlag(env)` + `adaptV2CalculationToV1`
+  (identity passthrough, le service v2 retourne déjà camelCase).
+- **`apps/web/src/utils/leaves/fetchLeaveCalculation.js`** :
+  `fetchLeaveCalculationUnified(api, data, { useV2 })` avec
+  fallback silencieux v1 sur `FEATURE_DISABLED` ou erreur réseau.
+- **`apps/web/src/components/leaves/LeaveRequestForm.jsx`** :
+  bascule sur `v2CalculateLeaves` quand `VITE_FEATURE_V2_LEAVES=1`.
+  Shape retourné identique (camelCase `workingDays`, `warnings`,
+  `holidaysInPeriod`, `referencePeriod`).
+- **12 tests unitaires** (`v2Adapters.test.js` +
+  `fetchLeaveCalculation.test.js`).
+
+Périmètre strict : uniquement le calcul jours ouvrables est
+dogfoodé. Les soldes restent sur v1 (composants déjà tolerants).
+Aucune modification du flow POST demande.
+
+---
+
+## [2.19.0] — 2026-07-10
+
+### Added — Affaires v2 dogfooding UI lecture (T-P0-09b)
+
+- **`apps/web/src/utils/affaires/v2Adapters.js`** : nouveaux
+  adapters shape v2 snake_case → v1 camelCase
+  (`adaptAffaireV2ToV1`, `adaptAffairesListV2ToV1`,
+  `adaptHistoryEntryV2ToV1`, `adaptHistoryListV2ToV1`) et lecture
+  du flag client `readAffairesV2ClientFlag`.
+- **`apps/web/src/utils/affaires/fetchAffairesV2.js`** : fetcher
+  paginant qui itère les pages `cursor` du `v2ListAffaires`
+  jusqu'à `has_more=false` (garde-fou `MAX_PAGES=100`).
+- **`apps/web/src/utils/affairesLoader.js`** : appelle v2 en amont
+  quand `VITE_FEATURE_V2_AFFAIRES=1`, fallback silencieux v1
+  sur `FEATURE_DISABLED` (404) ou erreur réseau. Aucun changement
+  du shape retourné aux composants existants (`AffairesPanel`,
+  `useAffairesList`, `MobileAffaires`, `ReportsPanel`,
+  `DashboardTasksSidebar`).
+- **25 tests unitaires** (`v2Adapters.test.js` +
+  `fetchAffairesV2.test.js` + `affairesLoader.test.js`).
+
+Aucune modification des routes v1 ni du PATCH. Phase suivante
+(T-P0-09c) : dogfooder le PATCH audité via `v2PatchAffaire` depuis
+`AffaireDetailPanel`.
+
+---
+
+## [2.18.0] — 2026-07-10
+
+### Added — Orders v2 client API : réception + conversion (T-P1-10)
+
+- **`apps/web/src/utils/api/v2/orders.js`** : ajout 3 méthodes
+  `v2RecordOrderReception(orderId, data)`,
+  `v2GetOrderReceptionsSummary(orderId)`,
+  `v2ConvertQuoteToOrder(quoteId)`.
+
+---
+
+## [2.17.0] — 2026-07-10
+
+### Added — Orders v2 client API (T-P1-09)
+
+- **`apps/web/src/utils/api/v2/orders.js`** (nouveau) : 3
+  méthodes `v2OrdersProtocol`, `v2TransitionOrder(orderId,
+  status)`, `v2TransitionQuote(quoteId, status)`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement client
+  Orders (après Equipment Assignments).
+
+---
+
+## [2.16.0] — 2026-07-10
+
+### Added — Equipment Assignments v2 client API (T-P1-08)
+
+- **`apps/web/src/utils/api/v2/equipmentAssignments.js`** (nouveau) :
+  4 méthodes `v2EquipmentAssignmentsProtocol`,
+  `v2CreateEquipmentAssignment(equipmentId, data)`,
+  `v2ReleaseEquipmentAssignment(assignmentId, data?)`,
+  `v2GetEquipmentAssignmentsHistory(equipmentId, {limit?})`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement client
+  Equipment Assignments sur le singleton (après SAV).
+
+---
+
+## [2.15.0] — 2026-07-10
+
+### Added — SAV v2 client API (T-P1-07)
+
+- **`apps/web/src/utils/api/v2/sav.js`** (nouveau) : 5 méthodes
+  `v2SavProtocol`, `v2ListSavParts`, `v2AddSavPart`,
+  `v2UpdateSavPartStatus`, `v2TransitionSavTicket`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement client
+  SAV sur le singleton (après Equipment UID).
+
+---
+
+## [2.14.0] — 2026-07-10
+
+### Added — Equipment UID v2 client API (T-P1-06)
+
+- **`apps/web/src/utils/api/v2/equipmentUid.js`** (nouveau) : 3
+  méthodes `v2EquipmentUidProtocol`, `v2EquipmentUidAudit`,
+  `v2RegenerateEquipmentUid(equipmentId, {reason?})`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement client
+  Equipment UID sur le singleton (après Conflicts).
+
+---
+
+## [2.13.0] — 2026-07-10
+
+### Added — Conflicts v2 client API (T-P1-05)
+
+- **`apps/web/src/utils/api/v2/conflicts.js`** (nouveau) : 2
+  méthodes `v2ConflictsProtocol()`, `v2CheckConflicts(body)`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement du client
+  Conflicts sur le singleton (après Leaves).
+
+Aucun composant UI refactoré. La méthode `v2CheckConflicts` sera
+consommée en pré-check par les formulaires v2 de création
+d'availability / mission / task après dogfooding
+(`FEATURE_V2_CONFLICTS=1`).
+
+---
+
+## [2.12.0] — 2026-07-10
+
+### Added — Leaves v2 client API (T-P1-04)
+
+- **`apps/web/src/utils/api/v2/leaves.js`** (nouveau) : 4 méthodes
+  `v2LeavesProtocol()`, `v2CalculateLeaves(data)`,
+  `v2GetMyLeaveBalance({year, type})`,
+  `v2GetLeaveBalance(personId, {year, type})`. Toutes avec
+  `skipCamelCase: true`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement des
+  méthodes v2 Leaves sur le singleton (après Affaires v2).
+
+Aucun composant UI refactoré. Le refactor `LeaveRequestForm` /
+`LeaveBalancesPanel` pour consommer les endpoints v2 est reporté à
+T-P1-04b après dogfooding via `FEATURE_V2_LEAVES=1`.
+
+---
+
+## [2.11.0] — 2026-07-10
+
+### Added — Client `ReconnectingWebSocket` (T-P1-02)
+
+- **`apps/web/src/utils/ws/reconnectingWebSocket.js`** (nouveau) :
+  client WebSocket avec reconnexion exponentielle bornée
+  (`initialRetryMs=500`, `backoffFactor=2`, `maxRetryMs=30_000`,
+  `jitterRatio=0.2`), queue de messages (`maxQueueSize=100`),
+  événements `open`/`message`/`close`/`error`/`reconnect`.
+  Zéro dépendance externe. Injection possible du constructor
+  WebSocket via `webSocketFactory` (tests unitaires).
+- **`apps/web/src/utils/ws/reconnectingWebSocket.test.js`** (nouveau)
+  : 12 tests unitaires (jitter, backoff, queue, reconnexion,
+  close volontaire, off).
+
+Aucun composant UI n'utilise encore la classe. Elle sera consommée
+par le refactor `MessagingPanel` et par un futur `DisplayLiveStatus`
+en T-P1-02b.
+
+---
+
+## [2.10.0] — 2026-07-10
+
+### Added — API v2 core : client `v2Meta()` (T-P1-01)
+
+- **`apps/web/src/utils/api/v2/meta.js`** (nouveau) :
+  `registerV2MetaMethods(ApiClient)` avec la méthode `v2Meta()`
+  (GET `/api/v2/meta` — public, `skipCamelCase: true`).
+- **`apps/web/src/utils/api/index.js`** : enregistrement de la
+  méthode meta sur le singleton (après Affaires v2).
+
+Aucun composant UI n'utilise encore `v2Meta()` — la méthode est mise
+à disposition pour un pilotage centralisé des flags client
+`flags.v2<Domaine>` en fonction de l'état réel du flag serveur (à
+implémenter dans un ticket UI dédié).
+
+---
+
+## [2.9.0] — 2026-07-10
+
+### Added — Affaires v2 client API (T-P0-09)
+
+- **`apps/web/src/utils/api/v2/affaires.js`** (nouveau) :
+  enregistrement sur `ApiClient.prototype` de 5 méthodes v2 :
+  `v2AffairesProtocol()`, `v2ListAffaires({cursor, limit, type,
+  client})`, `v2GetAffaire(numeroAffaire)`,
+  `v2GetAffaireHistory(numeroAffaire, {limit})`,
+  `v2PatchAffaire(numeroAffaire, patch)`. Toutes avec
+  `skipCamelCase: true`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement des
+  méthodes v2 Affaires sur le singleton ApiClient (après Locations
+  v2).
+
+Aucun composant UI refactoré dans ce commit. Le refactor
+`AffairesPanel` / `AffaireDetailDrawer` pour consommer les hooks
+v2 (au lieu de `/api/affaires/*` v1) est reporté à un ticket dédié
+T-P0-09b après validation qualitative du contrat v2 (dogfooding via
+`FEATURE_V2_AFFAIRES=1` en dev).
+
+---
+
+## [2.8.0] — 2026-07-10
+
+### Added — EquipmentPanel : bascule v1/v2 via flag client (T-P0-12b)
+
+- **`apps/web/src/utils/locations/v2Adapters.js`** (nouveau) :
+  - `adaptDepotV2ToV1(depotV2)` : convertit un dépôt v2
+    (`{depot_id, svg_width, svg_height, ...}`) vers le shape v1
+    (`{depotId, svgWidth, svgHeight, ...}`) consommé par `DepotMap`.
+  - `adaptDepotsListV2ToV1(listV2)` : conversion de la liste
+    compacte.
+- **`apps/web/src/utils/locations/fetchDepotZones.js`** (nouveau) :
+  - `fetchDepotZones(api, {useV2, depotId})` : bascule
+    v1 (`api.getEquipmentDepotZones`) / v2
+    (`api.v2GetDepot` + adaptation). Fallback strict v1 en cas
+    d'erreur ou de 404 `FEATURE_DISABLED`.
+  - `fetchAllDepotZones(api, {useV2})` : combinateur
+    `v2ListDepots` + `v2GetDepot` (n appels parallèles) ou
+    `api.getAllDepotZones` v1. Fallback strict v1 si un détail
+    manque.
+  - `readLocationsV2ClientFlag(env?)` : lit
+    `VITE_FEATURE_V2_LOCATIONS` (1/true/on/yes) → bool.
+- **`apps/web/src/components/equipment/useEquipment.js`** :
+  `loadData` remplace les deux appels v1 par les nouveaux
+  helpers, en lisant le flag client à chaque exécution
+  (rechargement immédiat après bascule sans reload de page).
+
+Coexistence stricte : off par défaut, aucun changement fonctionnel.
+Aucun refactor de `DepotMap`, `EquipmentGrid` ou `InventoryPanel`
+(inventaire = table `locations` legacy, hors périmètre T-P0-10).
+Le PATCH `/api/v2/equipment/:id/location` reste consommé côté
+frontend uniquement via la méthode `api.v2PatchEquipmentLocation`
+livrée en T-P0-12 (aucun appelant UI dans ce commit).
+
+### Tests
+
+- `apps/web/src/utils/locations/v2Adapters.test.js` : 6 tests
+  (mapping, defaults, tableaux invalides).
+- `apps/web/src/utils/locations/fetchDepotZones.test.js` : 11 tests
+  (bascule v1/v2, fallback FEATURE_DISABLED, fallback erreur
+  arbitraire, defaults, flag parsing).
+
+---
+
+## [2.7.0] — 2026-07-10
+
+### Added — Locations v2 client API + hooks (T-P0-12 backend & client)
+
+- **`apps/web/src/utils/api/v2/locations.js`** (nouveau) :
+  enregistrement sur `ApiClient.prototype` de 4 méthodes v2 :
+  `v2LocationsProtocol()`, `v2ListDepots()`, `v2GetDepot(depotId)`,
+  `v2PatchEquipmentLocation(equipmentId, patch)`. Toutes utilisent
+  `skipCamelCase: true` pour préserver la casse snake_case des
+  réponses v2.
+- **`apps/web/src/hooks/v2/useLocationsV2.js`** (nouveau) :
+  - `useV2DepotsList()` : liste compacte des dépôts, expose
+    `{ depots, loading, error, featureDisabled, refresh }`.
+  - `useV2DepotDetail(depotId)` : détail complet, no-op si
+    `depotId` falsy, distingue `featureDisabled` (404
+    FEATURE_DISABLED serveur) de `error` réseau/404 dépôt
+    inexistant.
+- **`apps/web/src/utils/api/index.js`** : enregistrement des méthodes
+  v2 Locations sur le singleton ApiClient (après Planning v2).
+
+Aucun composant UI refactoré dans ce commit. Le refactor de
+`EquipmentPanel.jsx` (1080 lignes) + `InventoryPanel.jsx` (946 lignes)
+pour consommer les hooks v2 (au lieu de charger `depot-zones.json`
+statique) est reporté à un ticket T-P0-12b dédié.
+
+---
+
+## [2.6.0] — 2026-07-09
+
+### Added — TV-client v2 (T-P0-16)
+
+- **`apps/tv-client/v2/index.html`** (nouveau) : HTML minimaliste,
+  styles inline autonomes (aucun import de `apps/tv-client/styles.css`
+  v1). Layout deux colonnes : playlist active + signaux (welcome
+  message + liste de messages).
+- **`apps/tv-client/v2/main.js`** (nouveau, ~260 lignes vanilla JS
+  sans dépendance) :
+  - Discovery `GET /api/v2/display/protocol` au boot.
+  - Bootstrap `GET /api/v2/display/config?screen_id=<id>`.
+  - Chargement conditionnel `GET /api/v2/display/content?playlist_id=
+    <id>` selon capability `playlist-content-v1`.
+  - **`EventSource`** sur `/api/v2/display/signals/stream` si
+    capability `screen-signals-stream-v1`, sinon fallback polling
+    `/signals` toutes les 10 s (capability `screen-signals-v1`).
+  - Auto-reconnexion SSE après 3 s en cas d'erreur.
+  - Application dynamique des couleurs `appearance.*` via CSS custom
+    properties (`--tvv2-accent`, `--tvv2-bg`, `--tvv2-fg`,
+    `--tvv2-font`).
+  - Rétro-compat TV-token : lu depuis URL (`?token=…`) ou
+    `localStorage['tv-token']`. En-tête `X-TV-Token` sur toutes les
+    requêtes API.
+  - Banner d'erreur rouge si feature flag off ou reconnexion en cours.
+- **Accès** : `/tv-client/v2/index.html?screen_id=<id>&token=<tv-token>`.
+  Lien retour vers v1 dans le footer.
+
+Le TV-client v1 (`apps/tv-client/index.html`, 735 lignes vanilla JS,
+55+ endpoints `/api/display/*`) reste actif et inchangé. Aucune
+redirection automatique n'est configurée : le TV-client v2 est
+strictement opt-in via URL.
+
+### Reference
+
+- `docs/05-Specs/DISPLAY_V2.md` §5 — spec TV-client v2.
+- `docs/api/v2/display.md` — SSE contrat + exemple `EventSource`.
+- `EXECUTION_PLAN_EMAG_3_0.md` — T-P0-16 · TV-client v2 (client nouveau).
+
+---
+
+## [2.5.2] — 2026-07-09
+
+### Added — Planning v2 client web (events + affaires) — T-P0-05 étendu
+
+- **`apps/web/src/utils/api/v2/planning.js`** : ajout des méthodes
+  `listV2Events`, `listV2PlanningAffaires`, `createV2TasksBatch`,
+  `clearV2CompletedTasks`, `rolloverV2Tasks` sur `ApiClient.prototype`.
+- **`apps/web/src/hooks/v2/usePlanningEventsV2.js`** : hook cursor-based
+  miroir de `usePlanningTasksV2` (loadMore, refresh, hasMore,
+  featureDisabled).
+- **`apps/web/src/hooks/v2/usePlanningAffairesV2.js`** : hook
+  offset-based (`total`, `hasMore`, incrément offset). Support
+  `includeHidden`.
+- Aucun composant UI livré à ce stade — dialogs et panels events
+  seront traités par un ticket ultérieur.
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05
+(étendu).
+
+---
+
+## [2.5.1] — 2026-07-09
+
+### Added — Planning v2 UI mutations — T-P0-05b
+
+- **`apps/web/src/components/planning-v2/planningV2Constants.js`** :
+  constantes miroir côté client (`TASK_SECTIONS`, `TASK_STATUSES`, labels FR).
+- **`apps/web/src/components/planning-v2/TaskFormDialog.jsx`** : modale
+  create/edit unifiée sur Design System (`Modal`, `FormField`, `Input`,
+  `Select`, `Textarea`, `Button`). Champs : date (requise),
+  period (AM/PM), section (20 valeurs), title, notes, status,
+  affaire_num, person_id, visible. Validation locale minimale
+  (date required) — la validation Zod backend reste la source de vérité.
+  Payload nettoyé (trim, coerce int, `null` explicite pour vider un
+  champ en mode edit).
+- **`apps/web/src/components/planning-v2/TasksPanelV2.jsx`** :
+  - Bouton « Nouvelle tâche » dans le header.
+  - Colonne « Actions » avec boutons « Modifier » / « Supprimer » par
+    ligne (aria-labels détaillés).
+  - `Dialog` de confirmation destructive pour DELETE.
+  - Extraction propre des erreurs API v2 (`meta.issues[]`, `error`,
+    `message`) via `extractApiError()`.
+  - Refresh automatique après chaque mutation réussie.
+- **`apps/web/src/components/planning-v2/TasksPanelV2.css`** : styles
+  `__row-actions` et `__checkbox` (tokens DS).
+
+### Tests Vitest — 10 assertions additionnelles
+
+- `apps/web/src/test/planning-v2/TaskFormDialog.test.jsx` :
+  rendu create / edit, validation locale, payload propre, affichage
+  erreur backend.
+- `apps/web/src/test/planning-v2/TasksPanelV2.mutations.test.jsx` :
+  intégration Create → refresh, Edit → refresh, Delete → refresh,
+  gestion erreur backend.
+
+### Coexistence
+
+- Aucune intégration à `ModuleHost` / `App.jsx` (réservé T-P0-06).
+- `FEATURE_V2_PLANNING` off côté serveur ⇒ bannière info dégradation
+  gracieuse.
+- Aucune modification v1 (`planningRoutes.js`, `TaskPlanningPanel.jsx`).
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05b.
+
+---
+
+## [2.5.0] — 2026-07-08
+
+### Added — Planning v2 UI (lecture) — T-P0-05
+
+- **`apps/web/src/utils/api/v2/planning.js`** : registrar `registerPlanningV2Methods`
+  qui expose sur `ApiClient.prototype` les méthodes `listV2Tasks`, `getV2Task`,
+  `createV2Task`, `updateV2Task`, `deleteV2Task`.
+- **`apps/web/src/utils/api/index.js`** : enregistrement de `PlanningV2Methods`
+  après tous les registrars v1.
+- **`apps/web/src/router/featureFlags.js`** : détection client des flags v2 :
+  - Query string `?v=2` sur le module correspondant.
+  - `localStorage.emag_flag_<name>` = `"1"`.
+  - Hook React `useFeatureFlag(name)` réactif (popstate + storage event).
+- **`apps/web/src/hooks/v2/usePlanningTasksV2.js`** : hook cursor-based
+  (`loadMore`, `refresh`, `hasMore`, `featureDisabled`, `error`). Détecte
+  automatiquement le 404 `FEATURE_DISABLED` côté serveur.
+- **`apps/web/src/components/planning-v2/TasksPanelV2.jsx`** + `.css` :
+  composant lecture minimal (table Design System, Loader, InlineAlert),
+  dégradation gracieuse si feature flag off.
+- Aucune intégration à `ModuleHost` / `App.jsx` à ce stade : la bascule
+  est réservée à T-P0-06 après `P0-DECISION-1`.
+
+### Tests
+
+- `apps/web/src/test/planning-v2/featureFlags.test.jsx` : 6 assertions
+  (URL, localStorage, hook réactif).
+- `apps/web/src/test/planning-v2/TasksPanelV2.smoke.test.jsx` : 3 scénarios
+  (FEATURE_DISABLED, succès + rangs, has_more + bouton "Charger plus").
+
+Voir aussi : [../api/v2/planning.md](../api/v2/planning.md),
+[EXECUTION_PLAN_EMAG_3_0.md](../../EXECUTION_PLAN_EMAG_3_0.md) T-P0-05.
+
+---
+
+## [2.4.0] — 2026-06-XX
+
+### Added
+- **Auth éphémère par action** côté frontend (compagnon backend `1.3.0`) :
+  - `contexts/AuthContext.jsx` : détection compte Équipe via
+    `isTeamAccountEmail(email)` (`VITE_TEAM_ACCOUNT_EMAIL`).
+  - `components/auth/PersonalActionDialog.jsx` : modal PIN/mot de passe,
+    accepte une prop `title` (défaut « Authentification personnelle »).
+  - `hooks/usePersonalActionGuard.js` : hook décidant entre appel API
+    direct (compte perso) et ouverture de la modal (compte Équipe).
+    Callback `onCancel` pour rollback côté appelant si PIN annulé.
+  - `utils/api/personalActions.js` : client `personalActions.perform()`.
+- Wiring dans 3 composants existants :
+  - `LeaveRequestForm` → `request_leave` (compte Équipe : PIN avant POST congé).
+  - `PeriodCalendarModal` → `declare_unavailability`.
+  - `AssignmentDialog` → `create_assignment`. Compte Équipe : crée d'abord
+    la mission (action neutre), puis PIN éphémère pour l'affectation.
+    Rollback `deleteMission` si annulé. Multi-affectation bloquée depuis
+    le compte Équipe (PIN authentifie une seule personne).
+- Tests : `usePersonalActionGuard.test.jsx` (7), `isTeamAccountEmail.test.js` (3).
+  Suite frontend : 653/653.
+
+### Notes
+- Coexiste avec la **session personnelle** historique
+  (`PersonalAuthContext` / `PersonalSuiviWrapper` / `PersonalPlanningWrapper`)
+  utilisée pour la consultation/modification libre du Suivi et du Planning
+  par un personnel sur tablette compte Équipe. Cas d'usage différents :
+  l'auth éphémère est par action ponctuelle, la session est persistante.
+- `MobileLeaves` n'est volontairement pas câblé sur l'auth éphémère
+  (mobile = compte personnel typiquement, pas la tablette Équipe).
+
+---
+
 ## [2.3.0] — 2026-04-11
 
 ### Added

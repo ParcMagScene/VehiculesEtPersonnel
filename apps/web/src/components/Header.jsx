@@ -1,6 +1,5 @@
 import './Header.css';
 
-import { format } from 'date-fns';
 import { HelpCircle, Moon, Sun, Upload } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 
@@ -27,6 +26,7 @@ const Header = ({
   maintenances = [],
   vehicles = [],
   onOpenMaintenance,
+  onScheduleMaintenance,
   reservations = [],
   currentUser,
   onLogout,
@@ -67,6 +67,8 @@ const Header = ({
   // pour grouper les requêtes (compteur demandes interventions/réservations + compteur
   // demandes d'accès admin). Évite un timer redondant et déclenche les 2 fetch en parallèle.
   useEffect(() => {
+    let interval = null;
+
     const loadAdminBadges = async () => {
       if (!currentUser?.isAdmin) return;
       if (isApiCoolingDown()) return;
@@ -87,17 +89,57 @@ const Header = ({
       // Erreurs silencieuses : valeurs initiales conservées (badges = 0)
     };
 
+    const startPolling = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        loadAdminBadges();
+      }, 30000);
+    };
+
+    const stopPolling = () => {
+      if (!interval) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
+    const refreshOnVisible = () => {
+      if (document.visibilityState !== 'visible') {
+        stopPolling();
+        return;
+      }
+      loadAdminBadges();
+      startPolling();
+    };
+
+    const refreshOnFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      loadAdminBadges();
+      startPolling();
+    };
+
     loadAdminBadges();
-    const interval = setInterval(loadAdminBadges, 30000);
-    return () => clearInterval(interval);
-  }, [currentUser, maintenances]);
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+    document.addEventListener('visibilitychange', refreshOnVisible);
+    window.addEventListener('focus', refreshOnFocus);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', refreshOnVisible);
+      window.removeEventListener('focus', refreshOnFocus);
+    };
+  }, [currentUser?.isAdmin]);
 
   // Badge onglet Contrôles : rechargé à l'ouverture, périodiquement, et sur
   // événement refreshBus('controls') publié après création/édition/effectuation.
   useEffect(() => {
     let cancelled = false;
+    let interval = null;
+
     const loadControlsBadge = async () => {
-      if (!currentUser) return;
+      if (!currentUser?.id) return;
       if (isApiCoolingDown()) return;
       try {
         const r = await api.getControlsDashboard();
@@ -111,31 +153,67 @@ const Header = ({
         // silencieux : badge inchangé
       }
     };
+
+    const startPolling = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        loadControlsBadge();
+      }, 60000);
+    };
+
+    const stopPolling = () => {
+      if (!interval) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
+    const refreshOnVisible = () => {
+      if (document.visibilityState !== 'visible') {
+        stopPolling();
+        return;
+      }
+      loadControlsBadge();
+      startPolling();
+    };
+
+    const refreshOnFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      loadControlsBadge();
+      startPolling();
+    };
+
     loadControlsBadge();
-    const interval = setInterval(loadControlsBadge, 60000);
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+    document.addEventListener('visibilitychange', refreshOnVisible);
+    window.addEventListener('focus', refreshOnFocus);
     const unsub = refreshBus.subscribe('controls', loadControlsBadge);
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      stopPolling();
+      document.removeEventListener('visibilitychange', refreshOnVisible);
+      window.removeEventListener('focus', refreshOnFocus);
       unsub();
     };
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   // Charger les demandes de réservation en attente (au démarrage + quand un popup s'ouvre)
   useEffect(() => {
     const loadPendingReservations = async () => {
-      if (currentUser?.isAdmin) {
-        if (isApiCoolingDown()) return;
-        try {
-          const data = await api.getPendingReservationRequests();
-          setPendingReservationRequests(data);
-        } catch {
-          // Silencieux : liste vide conservée
-        }
+      if (!currentUser?.isAdmin) return;
+      if (!showRequestsPopup && !showNotificationsPopup) return;
+      if (isApiCoolingDown()) return;
+      try {
+        const data = await api.getPendingReservationRequests();
+        setPendingReservationRequests(data);
+      } catch {
+        // Silencieux : liste vide conservée
       }
     };
     loadPendingReservations();
-  }, [showRequestsPopup, showNotificationsPopup, currentUser]);
+  }, [showRequestsPopup, showNotificationsPopup, currentUser?.isAdmin]);
 
   // Fonction pour détecter les conflits entre une intervention et les réservations
   const getMaintenanceConflicts = (maintenance) => {
@@ -188,71 +266,38 @@ const Header = ({
     ...overdueInterventions,
   ];
 
-  // Handlers pour les interventions en retard
-  const handleMarkCompleted = async (intervention) => {
+  const handleDeleteSignalement = async (intervention) => {
     try {
-      await onUpdateMaintenance(intervention.id, {
+      await api.deleteMaintenance(intervention.id);
+      if (onRefreshMaintenances) {
+        await onRefreshMaintenances();
+      }
+      refreshBus.publish('planning');
+      toast.success('Signalement supprimé');
+    } catch (error) {
+      console.error('Erreur lors de la suppression du signalement:', error);
+      toast.error('Impossible de supprimer le signalement');
+      throw error;
+    }
+  };
+
+  const handleCloseSignalement = async (intervention, description) => {
+    try {
+      await onUpdateMaintenance({
         ...intervention,
         status: STATUS.COMPLETED,
+        notes: (intervention.notes ? `${intervention.notes}\n\n` : '') + `[Clôturé] ${description}`,
       });
       if (onRefreshMaintenances) {
         await onRefreshMaintenances();
       }
+      refreshBus.publish('planning');
+      toast.success('Signalement clôturé');
     } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
-      toast.error("Erreur lors de la mise à jour de l'intervention");
+      console.error('Erreur lors de la clôture du signalement:', error);
+      toast.error('Impossible de clôturer le signalement');
+      throw error;
     }
-  };
-
-  const handleMarkNotCompleted = async (intervention, reason) => {
-    try {
-      await onUpdateMaintenance(intervention.id, {
-        ...intervention,
-        status: STATUS.CANCELLED,
-        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[Annulée] ${reason}`,
-      });
-      if (onRefreshMaintenances) {
-        await onRefreshMaintenances();
-      }
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
-      toast.error("Erreur lors de la mise à jour de l'intervention");
-    }
-  };
-
-  const handleMarkPending = async (intervention, reason) => {
-    try {
-      await onUpdateMaintenance(intervention.id, {
-        ...intervention,
-        status: STATUS.PENDING,
-        notes: (intervention.notes ? intervention.notes + '\n\n' : '') + `[En attente] ${reason}`,
-      });
-      if (onRefreshMaintenances) {
-        await onRefreshMaintenances();
-      }
-    } catch (error) {
-      console.error('Erreur lors de la mise en attente:', error);
-      toast.error("Erreur lors de la mise en attente de l'intervention");
-    }
-  };
-
-  const handleReschedule = async (intervention) => {
-    try {
-      await onUpdateMaintenance(intervention.id, {
-        ...intervention,
-        status: 'rescheduled',
-        notes:
-          (intervention.notes ? intervention.notes + '\n\n' : '') +
-          `[Reportée] Intervention reportée le ${format(new Date(), 'dd/MM/yyyy')}`,
-      });
-      if (onRefreshMaintenances) {
-        await onRefreshMaintenances();
-      }
-    } catch (error) {
-      console.error('Erreur lors du report:', error);
-      toast.error("Erreur lors du report de l'intervention");
-    }
-    setSelectedOverdueIntervention(null);
   };
 
   return (
@@ -376,6 +421,9 @@ const Header = ({
             activeInterventions={activeInterventions}
             vehicles={vehicles}
             onOpenMaintenance={onOpenMaintenance}
+            onDeleteSignalement={handleDeleteSignalement}
+            onCloseSignalement={handleCloseSignalement}
+            onScheduleMaintenance={onScheduleMaintenance}
             currentUser={currentUser}
             pendingReservationRequests={pendingReservationRequests}
             setPendingReservationRequests={setPendingReservationRequests}
@@ -415,10 +463,9 @@ const Header = ({
           intervention={selectedOverdueIntervention.intervention}
           vehicle={selectedOverdueIntervention.vehicle}
           onClose={() => setSelectedOverdueIntervention(null)}
-          onMarkCompleted={handleMarkCompleted}
-          onMarkNotCompleted={handleMarkNotCompleted}
-          onMarkPending={handleMarkPending}
-          onReschedule={handleReschedule}
+          onPlanIntervention={onScheduleMaintenance}
+          onDeleteSignalement={handleDeleteSignalement}
+          onCloseSignalement={handleCloseSignalement}
         />
       )}
 

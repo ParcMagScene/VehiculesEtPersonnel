@@ -4,7 +4,7 @@ import { Calendar, ClipboardList, Loader2, Pencil, Plus, Save, Trash2 } from 'lu
 import { forwardRef, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
-import { Input, Select, Textarea } from '@/design-system';
+import { Button, Input, Select, Textarea } from '@/design-system';
 
 // [PERF Phase 4.G2] Composants Virtuoso pour la liste des tickets de la semaine.
 // Definis au module pour eviter remount a chaque render du parent.
@@ -27,7 +27,6 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
-import Button from '../ui/Button';
 import EntityCombobox from '../ui/EntityCombobox';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '../ui/Modal';
 
@@ -591,7 +590,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
                 // entre le mode <ul>.map() (petit jeu) et le mode Virtuoso (grand jeu).
                 const renderTicketInner = (t) => (
                   <>
-                    <button
+                    <Button
                       type="button"
                       className="si-ticket-pick"
                       onClick={() => startEditingTicket(t)}
@@ -604,7 +603,7 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
                           : `${t.affaire_num} — ${t.affaire_name || t.affaire_num}`}
                       </span>
                       <span>{Array.isArray(t.incidents) ? t.incidents.length : 0} incident(s)</span>
-                    </button>
+                    </Button>
                     <div className="si-ticket-row-actions">
                       <Button
                         variant="ghost"
@@ -666,24 +665,24 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
 
           <div className="si-synth-controls">
             <div className="si-mode-tabs">
-              <button
+              <Button
                 className={synthMode === 'semaine' ? 'active' : ''}
                 onClick={() => setSynthMode('semaine')}
               >
                 Semaine
-              </button>
-              <button
+              </Button>
+              <Button
                 className={synthMode === 'mois' ? 'active' : ''}
                 onClick={() => setSynthMode('mois')}
               >
                 Mois
-              </button>
-              <button
+              </Button>
+              <Button
                 className={synthMode === 'annee' ? 'active' : ''}
                 onClick={() => setSynthMode('annee')}
               >
                 Année
-              </button>
+              </Button>
             </div>
 
             {synthMode === 'semaine' && (
@@ -789,20 +788,20 @@ function IncidentsSuiviPanel({ currentUser: _currentUser }) {
           <div className="si-field-row">
             <label>Type</label>
             <div className="si-mode-toggle">
-              <button
+              <Button
                 type="button"
                 className={ticketMode === 'affaire' ? 'active' : ''}
                 onClick={() => handleTicketModeChange('affaire')}
               >
                 Affaire
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className={ticketMode === 'contexte' ? 'active' : ''}
                 onClick={() => handleTicketModeChange('contexte')}
               >
                 Contexte
-              </button>
+              </Button>
             </div>
           </div>
 

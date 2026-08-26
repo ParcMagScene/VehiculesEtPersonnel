@@ -32,6 +32,7 @@ const DashboardPanel = ({
   const today = useMemo(() => startOfDay(new Date()), []);
   const weekStart = useMemo(() => startOfWeek(today, { weekStartsOn: 1 }), [today]);
   const weekEnd = useMemo(() => endOfWeek(today, { weekStartsOn: 1 }), [today]);
+  const isAdmin = currentUser?.role === ROLES.ADMIN;
 
   // Charger les données complémentaires
   useEffect(() => {
@@ -40,9 +41,11 @@ const DashboardPanel = ({
       try {
         const results = await Promise.allSettled([
           api.request('/stock/articles?low_stock=true').catch(() => []),
-          api.getPendingRequestsCount().catch(() => ({ count: 0 })),
-          api.request('/orders').catch(() => []),
-          api.request('/affaires').catch(() => []),
+          isAdmin
+            ? api.getPendingRequestsCount().catch(() => ({ count: 0 }))
+            : Promise.resolve(null),
+          api.getOrdersStats().catch(() => null),
+          api.request('/affaires?limit=1').catch(() => null),
         ]);
 
         // Stock alerts
@@ -54,24 +57,32 @@ const DashboardPanel = ({
         }
 
         // Pending requests
-        const pendingData = results[1].status === 'fulfilled' ? results[1].value : { count: 0 };
-        setPendingRequests(pendingData?.count || pendingData?.total || 0);
+        if (isAdmin) {
+          const pendingData = results[1].status === 'fulfilled' ? results[1].value : { count: 0 };
+          setPendingRequests(pendingData?.count || pendingData?.total || 0);
+        }
 
         // Orders
-        const ordersData = results[2].status === 'fulfilled' ? results[2].value : [];
-        if (Array.isArray(ordersData)) {
+        const ordersStatsData = results[2].status === 'fulfilled' ? results[2].value : null;
+        const ordersStats = ordersStatsData?.orders;
+        if (ordersStats && typeof ordersStats === 'object') {
+          const draft = Number(ordersStats.draft || 0);
+          const sent = Number(ordersStats.sent || 0);
+          const confirmed = Number(ordersStats.confirmed || 0);
+          const explicitPending = Number(ordersStats.pending || ordersStats.en_attente || 0);
           setOrdersCount({
-            pending: ordersData.filter(
-              (o) => o.status === STATUS.PENDING || o.status === 'en_attente',
-            ).length,
-            total: ordersData.length,
+            pending: explicitPending || draft + sent + confirmed,
+            total: Number(ordersStats.total || 0),
           });
         }
 
         // Affaires count
-        const affairesData = results[3].status === 'fulfilled' ? results[3].value : [];
+        const affairesData = results[3].status === 'fulfilled' ? results[3].value : null;
         if (Array.isArray(affairesData)) {
           setAffairesCount(affairesData.length);
+        } else if (affairesData && typeof affairesData === 'object') {
+          if (typeof affairesData.total === 'number') setAffairesCount(affairesData.total);
+          else if (Array.isArray(affairesData.data)) setAffairesCount(affairesData.data.length);
         }
       } catch (err) {
         logger.log('Dashboard: erreur chargement données complémentaires', err);
@@ -81,7 +92,7 @@ const DashboardPanel = ({
     };
 
     loadDashboardData();
-  }, []);
+  }, [isAdmin]);
 
   // ─── KPIs calculés ───
 

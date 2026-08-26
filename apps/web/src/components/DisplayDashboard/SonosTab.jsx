@@ -120,7 +120,7 @@ function PlaybackControls({
         </div>
       )}
       <div className="dtv-sonos-transport">
-        <button
+        <Button
           type="button"
           className={`dtv-sonos-btn dtv-sonos-btn-sm${shuffleActive ? ' dtv-sonos-active' : ''}`}
           onClick={() => exec(() => api.sonosShuffle(zone, !shuffleActive), 'shuffle')}
@@ -128,8 +128,8 @@ function PlaybackControls({
           title="Aléatoire"
         >
           <Shuffle size={14} />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className="dtv-sonos-btn"
           onClick={() => exec(() => api.sonosPrevious(zone), 'previous')}
@@ -137,9 +137,9 @@ function PlaybackControls({
           title="Précédent"
         >
           <SkipBack size={16} />
-        </button>
+        </Button>
         {state === 'playing' ? (
-          <button
+          <Button
             type="button"
             className="dtv-sonos-btn dtv-sonos-btn-main"
             onClick={() => exec(() => api.sonosPause(zone), 'pause')}
@@ -147,9 +147,9 @@ function PlaybackControls({
             title="Pause"
           >
             <Pause size={20} />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             type="button"
             className="dtv-sonos-btn dtv-sonos-btn-main"
             onClick={() => exec(() => api.sonosPlay(zone), 'play')}
@@ -157,9 +157,9 @@ function PlaybackControls({
             title="Lecture"
           >
             <Play size={20} />
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
           className="dtv-sonos-btn"
           onClick={() => exec(() => api.sonosNext(zone), 'next')}
@@ -167,8 +167,8 @@ function PlaybackControls({
           title="Suivant"
         >
           <SkipForward size={16} />
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           className={`dtv-sonos-btn dtv-sonos-btn-sm${repeatMode && repeatMode !== 'none' ? ' dtv-sonos-active' : ''}`}
           onClick={() => exec(() => api.sonosRepeat(zone, nextRepeatMode()), 'repeat')}
@@ -176,10 +176,10 @@ function PlaybackControls({
           title={`Répétition : ${repeatMode || 'off'}`}
         >
           {repeatMode === 'one' ? <Repeat1 size={14} /> : <Repeat size={14} />}
-        </button>
+        </Button>
       </div>
       <div className="dtv-sonos-volume">
-        <button
+        <Button
           type="button"
           className={`dtv-sonos-btn dtv-sonos-btn-sm${isMuted ? ' dtv-sonos-muted' : ''}`}
           onClick={() => {
@@ -191,7 +191,7 @@ function PlaybackControls({
           title={isMuted ? 'Réactiver le son' : 'Couper le son'}
         >
           {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-        </button>
+        </Button>
         <input
           type="range"
           min={0}
@@ -211,7 +211,7 @@ function PlaybackControls({
 // ── Sous-composant : Carte zone ──
 function ZoneCard({ zone, isActive, onClick }) {
   return (
-    <button
+    <Button
       type="button"
       className={`dtv-sonos-zone${isActive ? ' dtv-sonos-zone-active' : ''}`}
       onClick={() => onClick(zone.coordinator)}
@@ -221,7 +221,7 @@ function ZoneCard({ zone, isActive, onClick }) {
       <span className="dtv-sonos-zone-members">
         {zone.members?.length || 1} enceinte{(zone.members?.length || 1) > 1 ? 's' : ''}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -238,7 +238,7 @@ function FavoritesList({ zone, isAdmin }) {
       const data = await api.getSonosFavorites();
       setFavorites(data.favorites || []);
     } catch {
-      toast.error('Erreur chargement favoris');
+      toast.error('Impossible de charger les favoris Sonos.');
     } finally {
       setLoading(false);
     }
@@ -254,7 +254,7 @@ function FavoritesList({ zone, isAdmin }) {
         await api.sonosPlayFavorite(zone, fav.uri, fav.title);
         toast.success(`Lecture : ${fav.title}`);
       } catch {
-        toast.error('Erreur lecture favori');
+        toast.error('Impossible de lancer ce favori Sonos.');
       }
     },
     [zone, toast],
@@ -264,7 +264,7 @@ function FavoritesList({ zone, isAdmin }) {
 
   return (
     <div className="dtv-sonos-favorites">
-      <button
+      <Button
         type="button"
         className="dtv-sonos-fav-toggle"
         onClick={() => setOpen((o) => !o)}
@@ -273,7 +273,7 @@ function FavoritesList({ zone, isAdmin }) {
         <Heart size={14} />
         <span>Favoris Sonos</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </button>
+      </Button>
       {open && (
         <div className="dtv-sonos-fav-list">
           {loading ? (
@@ -282,7 +282,7 @@ function FavoritesList({ zone, isAdmin }) {
             <span className="dtv-sonos-fav-empty">Aucun favori Sonos configuré</span>
           ) : (
             favorites.map((fav, i) => (
-              <button
+              <Button
                 type="button"
                 key={i}
                 className="dtv-sonos-fav-item"
@@ -303,7 +303,7 @@ function FavoritesList({ zone, isAdmin }) {
                   <Music size={14} />
                 )}
                 <span className="dtv-sonos-fav-title">{fav.title}</span>
-              </button>
+              </Button>
             ))
           )}
         </div>
@@ -335,7 +335,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
       const data = await api.getSonosConfig();
       setSonosIP(data.sonosIP || '');
     } catch {
-      toast.error('Erreur chargement config Sonos');
+      toast.error('Impossible de charger la configuration Sonos.');
     } finally {
       setLoading(false);
     }
@@ -402,7 +402,7 @@ function SonosTab({ currentUser, _currentUser, refreshKey }) {
       toast.success('Configuration Sonos enregistrée');
       if (sonosIP) loadZones();
     } catch {
-      toast.error('Erreur enregistrement');
+      toast.error("Impossible d'enregistrer la configuration Sonos.");
     }
   }, [sonosIP, toast, loadZones]);
 

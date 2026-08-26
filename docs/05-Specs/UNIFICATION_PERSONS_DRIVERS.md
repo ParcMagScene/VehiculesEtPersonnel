@@ -1,7 +1,20 @@
 # Design — Unification persons / drivers
 
-> Phase 4.5 — Document de conception  
-> Statut : PLANIFIÉ (implémentation Phase 6+)
+> **Version** : 0.3.0 (audit T-P1-03 livré 2026-07-10)
+> **Statut** : Table `drivers` **vide en production** (0 lignes,
+> 0 driver orphelin, 0 person avec `driver_id` renseigné). Endpoint
+> `/api/drivers` déprécié depuis Phase 6 (retourne `[]` + headers
+> `Deprecation`). Sunset destructif (DROP TABLE + DROP COLUMN
+> `persons.driver_id`) prêt techniquement, en attente de décision
+> utilisateur explicite (analogue P0-DECISION-2).
+
+## 0. Historique du ticket
+
+| Date | Étape | Détail |
+|------|-------|--------|
+| — | **Phase 6+** | CRUD `/api/drivers` retiré, table conservée en compat. |
+| 2026-07-10 | **T-P1-03** | Script d'audit dry-run `scripts/personnel-v2-drivers-audit.mjs` + tests + doc de statut. Constat : sunset safe (0 orphan). |
+| _à venir_ | **T-P1-03b** | Sunset destructif : DROP TABLE `drivers` + DROP COLUMN `persons.driver_id` + suppression `driversRoutes.js` + suppression store IndexedDB. Nécessite décision utilisateur (analogue P0-DECISION-2). |
 
 ## 1. Constat
 

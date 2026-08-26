@@ -412,6 +412,7 @@
 .legend-dot {
   width: 8px;
   height: 8px;
+  background: var(--legend-dot-color, var(--chip-color));
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }

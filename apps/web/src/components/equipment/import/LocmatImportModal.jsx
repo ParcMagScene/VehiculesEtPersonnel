@@ -419,7 +419,7 @@ export default function LocmatImportModal({ onDone, onClose }) {
                 const n = counts?.[t.key] ?? 0;
                 const Icon = t.icon;
                 return (
-                  <button
+                  <Button
                     key={t.key}
                     type="button"
                     role="tab"
@@ -428,7 +428,7 @@ export default function LocmatImportModal({ onDone, onClose }) {
                     onClick={() => setActiveTab(t.key)}
                   >
                     <Icon size={14} /> {t.label} <span className="locmat-tab-count">{n}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

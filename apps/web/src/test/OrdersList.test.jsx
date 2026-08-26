@@ -70,10 +70,10 @@ describe('OrdersList', () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();
     const order = makeOrder();
-    render(<OrdersList {...defaultProps} orders={[order]} onEdit={onEdit} />);
-    const editBtns = screen.getAllByRole('button');
+    const { container } = render(<OrdersList {...defaultProps} orders={[order]} onEdit={onEdit} />);
+    const actionBtns = container.querySelectorAll('.actions-cell button');
     // Le premier bouton dans actions-cell est Modifier
-    await user.click(editBtns[0]);
+    await user.click(actionBtns[0]);
     expect(onEdit).toHaveBeenCalledWith(order);
   });
 
@@ -81,10 +81,12 @@ describe('OrdersList', () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
     const order = makeOrder();
-    render(<OrdersList {...defaultProps} orders={[order]} onDelete={onDelete} />);
-    const btns = screen.getAllByRole('button');
+    const { container } = render(
+      <OrdersList {...defaultProps} orders={[order]} onDelete={onDelete} />,
+    );
+    const actionBtns = container.querySelectorAll('.actions-cell button');
     // Le 2e bouton est Supprimer
-    await user.click(btns[1]);
+    await user.click(actionBtns[1]);
     expect(onDelete).toHaveBeenCalledWith(order);
   });
 

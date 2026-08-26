@@ -20,10 +20,12 @@ const STATUS_MAP = {
  * Sous-écrans : list | detail | add
  * Navigation interne via state (pas de routes hash supplémentaires).
  */
-function MobileSuivi({ currentUser }) {
+function MobileSuivi({ currentUser, initialDate = null, initialPersonId = null }) {
   const [view, setView] = useState('list'); // list | detail | add
   const [loading, setLoading] = useState(true);
-  const [personId, setPersonId] = useState(null);
+  const [personId, setPersonId] = useState(
+    initialPersonId ? Number(initialPersonId) || null : null,
+  );
   const [sheet, setSheet] = useState(null);
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -34,10 +36,15 @@ function MobileSuivi({ currentUser }) {
   const [addTime, setAddTime] = useState('');
   const [addComment, setAddComment] = useState('');
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Date à charger : QR > aujourd'hui (validée YYYY-MM-DD)
+  const targetDate =
+    initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)
+      ? initialDate
+      : new Date().toISOString().slice(0, 10);
 
-  // Résoudre le person_id lié au user courant
+  // Résoudre le person_id lié au user courant si pas fourni explicitement
   useEffect(() => {
+    if (initialPersonId) return; // déjà fixé par le QR
     if (!currentUser) return;
     (async () => {
       try {
@@ -48,19 +55,19 @@ function MobileSuivi({ currentUser }) {
         console.error('Erreur résolution personne:', e);
       }
     })();
-  }, [currentUser]);
+  }, [currentUser, initialPersonId]);
 
   const loadSheet = useCallback(async () => {
     if (!personId) return;
     setLoading(true);
     try {
-      const data = await api.getSuiviSheet(personId, today);
+      const data = await api.getSuiviSheet(personId, targetDate);
       setSheet(data);
     } catch (e) {
       console.error('Erreur chargement fiche suivi:', e);
     }
     setLoading(false);
-  }, [personId, today]);
+  }, [personId, targetDate]);
 
   useEffect(() => {
     loadSheet();
@@ -101,10 +108,10 @@ function MobileSuivi({ currentUser }) {
           period: addPeriod,
           time_spent: addTime ? parseInt(addTime, 10) : 0,
           comment: addComment.trim(),
-          completed: 0,
+          completed: 1,
         },
       ];
-      await api.updateSuiviSheet(personId, today, {
+      await api.updateSuiviSheet(personId, targetDate, {
         status: sheet?.status || 'draft',
         notes: sheet?.notes || '',
         entries,
@@ -246,7 +253,7 @@ function MobileSuivi({ currentUser }) {
       {sheet && (
         <div className="ms-sheet-status">
           <FileText size={16} />
-          <span>Fiche du {today}</span>
+          <span>Fiche du {targetDate}</span>
           <span className="ms-sheet-badge" style={{ color: sheetStatus?.color }}>
             {sheetStatus?.label}
           </span>

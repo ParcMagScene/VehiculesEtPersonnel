@@ -4,6 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 import './SuiviPanel.css';
+import '../../styles/person-sidebar.css';
 
 import {
   AlertTriangle,
@@ -23,13 +24,13 @@ import {
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Input, SearchBar } from '@/design-system';
+import { Button, Input, SearchBar } from '@/design-system';
 
 import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import api from '../../utils/api/index.js';
 import { refreshBus } from '../../utils/refresh-bus';
-import Button from '../ui/Button';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import FicheSuivi from './FicheSuivi';
 import IncidentsSuiviPanel from './IncidentsSuiviPanel';
 import SynthesesPanel from './SynthesesPanel';
@@ -64,6 +65,7 @@ function SuiviPanel({
   isPersonalMode = false,
   onPersonalDataSaved = null,
 }) {
+  const printPreview = usePrintPreview();
   const [activeTab, setActiveTab] = useState('fiches');
   const [personnel, setPersonnel] = useState([]);
   const [selectedPerson, setSelectedPerson] = useState(null);
@@ -157,6 +159,12 @@ function SuiviPanel({
     });
     return count;
   }, [visibleKeys, selectedSheetIds]);
+
+  // Ne retenir que la sélection correspondant au jour affiché.
+  const selectedKeysForDate = useMemo(
+    () => [...selectedSheetIds].filter((key) => key.endsWith(`__${selectedDate}`)),
+    [selectedSheetIds, selectedDate],
+  );
 
   // Charger la liste du personnel
   useEffect(() => {
@@ -298,7 +306,8 @@ function SuiviPanel({
         key={p.id}
         className={`suivi-person-item ${selectedPerson?.id === p.id ? 'selected' : ''}`}
       >
-        <button
+        <Button
+          variant="ghost"
           type="button"
           className={`suivi-person-fav${isFavorite(p.id) ? ' active' : ''}`}
           onClick={(e) => {
@@ -308,8 +317,13 @@ function SuiviPanel({
           title={isFavorite(p.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
           aria-label={isFavorite(p.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
         >
-          <Star size={12} fill={isFavorite(p.id) ? 'currentColor' : 'none'} />
-        </button>
+          <Star
+            size={14}
+            strokeWidth={2.25}
+            className="suivi-person-fav-icon"
+            fill={isFavorite(p.id) ? 'currentColor' : 'none'}
+          />
+        </Button>
         <Input
           type="checkbox"
           className="suivi-person-check"
@@ -384,16 +398,16 @@ function SuiviPanel({
   // Résoudre les IDs de fiches à partir de la sélection
   const resolveSheetIds = useCallback(async () => {
     const sheetIds = [];
-    for (const key of selectedSheetIds) {
+    for (const key of selectedKeysForDate) {
       const [personId, date] = key.split('__');
       const data = await api.getSuiviSheet(personId, date);
       if (data?.id) sheetIds.push(data.id);
     }
     return sheetIds;
-  }, [selectedSheetIds]);
+  }, [selectedKeysForDate]);
 
   const handleBatchExportPdf = useCallback(async () => {
-    if (selectedSheetIds.size === 0) return;
+    if (selectedKeysForDate.length === 0) return;
     setBatchExporting(true);
     setError(null);
     try {
@@ -403,21 +417,22 @@ function SuiviPanel({
         return;
       }
       const blob = await api.exportSuiviBatchPdf(sheetIds);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `fiches-suivi-${selectedDate}-${sheetIds.length}fiches.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      printPreview.showPdf(
+        { blob },
+        {
+          title: `Fiches de suivi — ${selectedDate} (${sheetIds.length})`,
+          filename: `fiches-suivi-${selectedDate}-${sheetIds.length}fiches.pdf`,
+        },
+      );
     } catch {
       setError('Erreur export PDF batch');
     } finally {
       setBatchExporting(false);
     }
-  }, [selectedSheetIds, selectedDate, resolveSheetIds]);
+  }, [selectedKeysForDate, selectedDate, resolveSheetIds, printPreview]);
 
   const handleBatchPrint = useCallback(async () => {
-    if (selectedSheetIds.size === 0) return;
+    if (selectedKeysForDate.length === 0) return;
     setBatchPrinting(true);
     setError(null);
     try {
@@ -427,14 +442,19 @@ function SuiviPanel({
         return;
       }
       const blob = await api.printSuiviBatch(sheetIds);
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      printPreview.showPdf(
+        { blob },
+        {
+          title: `Impression fiches de suivi — ${selectedDate}`,
+          filename: `fiches-suivi-impression-${selectedDate}.pdf`,
+        },
+      );
     } catch {
       setError('Erreur impression batch');
     } finally {
       setBatchPrinting(false);
     }
-  }, [selectedSheetIds, resolveSheetIds]);
+  }, [selectedKeysForDate, selectedDate, resolveSheetIds, printPreview]);
 
   const handleStartGroupResize = useCallback(
     (e) => {
@@ -504,7 +524,7 @@ function SuiviPanel({
             {/* Sélection de la personne */}
             <div className="suivi-team-person-list">
               {sortPersonsByFavorites(personnel).map((p) => (
-                <button
+                <Button
                   key={p.id}
                   type="button"
                   className={`suivi-team-person-item ${teamSelectedPerson?.id === p.id ? 'selected' : ''}`}
@@ -522,27 +542,27 @@ function SuiviPanel({
                   <span className={`suivi-person-type suivi-type-${p.type || 'permanent'}`}>
                     {TYPE_LABELS[p.type] || p.type}
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
 
             {teamSelectedPerson && (
               <>
                 <div className="suivi-team-auth-mode-toggle">
-                  <button
+                  <Button
                     type="button"
                     className={`suivi-auth-mode-btn ${teamAuthMode === 'pin' ? 'active' : ''}`}
                     onClick={() => setTeamAuthMode('pin')}
                   >
                     Code PIN
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     className={`suivi-auth-mode-btn ${teamAuthMode === 'password' ? 'active' : ''}`}
                     onClick={() => setTeamAuthMode('password')}
                   >
                     Mot de passe
-                  </button>
+                  </Button>
                 </div>
 
                 {teamAuthMode === 'pin' ? (
@@ -580,14 +600,14 @@ function SuiviPanel({
 
             {teamAuthError && <div className="suivi-team-auth-error">{teamAuthError}</div>}
 
-            <button
+            <Button
               type="submit"
               className="suivi-team-auth-submit"
               disabled={!teamSelectedPerson || teamAuthLoading}
             >
               <Lock size={16} />
               {teamAuthLoading ? 'Vérification...' : 'Accéder à mon suivi'}
-            </button>
+            </Button>
           </form>
         </div>
       </div>
@@ -704,7 +724,7 @@ function SuiviPanel({
                         <span>Favoris seulement</span>
                       </label>
                     </div>
-                    {selectedSheetIds.size > 0 && (
+                    {selectedKeysForDate.length > 0 && (
                       <div className="suivi-batch-actions">
                         <Button
                           variant="secondary"
@@ -712,7 +732,7 @@ function SuiviPanel({
                           className="suivi-btn suivi-btn-batch-pdf"
                           onClick={handleBatchExportPdf}
                           disabled={batchExporting}
-                          title={`Exporter ${selectedSheetIds.size} fiche(s) en PDF`}
+                          title={`Exporter ${selectedKeysForDate.length} fiche(s) en PDF`}
                         >
                           {batchExporting ? (
                             <Loader2 size={13} className="animate-spin" />
@@ -727,7 +747,7 @@ function SuiviPanel({
                           className="suivi-btn suivi-btn-batch-print"
                           onClick={handleBatchPrint}
                           disabled={batchPrinting}
-                          title={`Imprimer ${selectedSheetIds.size} fiche(s) recto-verso`}
+                          title={`Imprimer ${selectedKeysForDate.length} fiche(s) recto-verso`}
                         >
                           {batchPrinting ? (
                             <Loader2 size={13} className="animate-spin" />

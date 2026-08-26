@@ -88,8 +88,8 @@
   color: var(--theme-info);
 }
 .tem-badge.google {
-  background: #ea433520;
-  color: #ea4335;
+  background: color-mix(in srgb, var(--plan-google-red, #ea4335) 13%, transparent);
+  color: var(--plan-google-red, #ea4335);
   font-weight: 700;
   font-size: 0.7rem;
 }
@@ -309,17 +309,17 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  background: #4285f415;
+  background: color-mix(in srgb, var(--plan-google-blue, #4285f4) 8%, transparent);
   color: var(--interactive-primary);
-  border: 1px solid #4285f430;
+  border: 1px solid color-mix(in srgb, var(--plan-google-blue, #4285f4) 19%, transparent);
   flex-shrink: 0;
   transition:
     background 0.15s,
     border-color 0.15s;
 }
 .tem-maps-link:hover {
-  background: #4285f425;
-  border-color: #4285f460;
+  background: color-mix(in srgb, var(--plan-google-blue, #4285f4) 15%, transparent);
+  border-color: color-mix(in srgb, var(--plan-google-blue, #4285f4) 38%, transparent);
 }
 
 /* ═══ Lieux enregistrés (dropdown surligné) ═══ */

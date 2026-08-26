@@ -54,6 +54,7 @@ import {
   authLimiter,
   generalLimiter,
   googleCalendarLimiter,
+  personalActionsLimiter,
   sensitiveEndpointLimiter,
 } from './config/rateLimiter.js';
 import { setupConfigRoutes } from './configRoutes.js';
@@ -101,6 +102,7 @@ import {
   setupSupplierDocumentsRoutes,
   setupSuppliersRoutes,
 } from './ordersRoutes.js';
+import { setupPersonalActionsRoutes } from './personalActionsRoutes.js';
 import {
   setupAssignmentsRoutes,
   setupAvailabilitiesRoutes,
@@ -116,6 +118,7 @@ import { setupPvImportRoutes } from './pvImportRoutes.js';
 import { setupSavRoutes } from './savRoutes.js';
 import { logSecurityEvent } from './securityLog.js';
 import { startControlesScheduler, stopControlesScheduler } from './services/controlesScheduler.js';
+import { registerDefaultPersonalActionHandlers } from './services/personalActionHandlers.js';
 import { setupSonosRoutes } from './sonosRoutes.js';
 import {
   setupStockCategoriesRoutes,
@@ -127,8 +130,20 @@ import {
 import { setupSuiviRoutes } from './suiviRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
+import { setupAffairesV2Routes } from './v2/affairesRoutes.js';
+import { setupConflictsV2Routes } from './v2/conflictsRoutes.js';
+import { setupDisplayV2Routes } from './v2/displayRoutes.js';
+import { setupEquipmentAssignmentsV2Routes } from './v2/equipmentAssignmentsRoutes.js';
+import { setupEquipmentUidV2Routes } from './v2/equipmentUidRoutes.js';
+import { setupLeavesV2Routes } from './v2/leavesRoutes.js';
+import { setupLocationsV2Routes } from './v2/locationsRoutes.js';
+import { setupV2MetaRoutes } from './v2/metaRoutes.js';
+import { setupOrdersV2Routes } from './v2/ordersRoutes.js';
+import { setupPlanningV2Routes } from './v2/planningRoutes.js';
+import { setupSavV2Routes } from './v2/savRoutes.js';
 import { setupVehicleRoutes } from './vehicleRoutes.js';
 import { setupVideoRoutes } from './videoRoutes.js';
+import { attachWebSocketServer } from './ws/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -229,23 +244,6 @@ app.get('/api/health', (req, res) => {
 // Renvoie les IPv4 LAN du serveur (utilisé par l'écran "Accès mobile"
 // pour générer un QR code utilisable depuis un téléphone, même quand
 // l'admin consulte l'app via http://localhost).
-app.get('/api/network-info', (req, res) => {
-  try {
-    const ifaces = os.networkInterfaces();
-    const ips = [];
-    for (const name of Object.keys(ifaces)) {
-      for (const info of ifaces[name] || []) {
-        if (info.family === 'IPv4' && !info.internal) {
-          ips.push({ iface: name, address: info.address });
-        }
-      }
-    }
-    res.json({ success: true, ips });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 // [SEC PHASE 3] Endpoint de réception des rapports CSP (Report-Only).
 // Accepte les deux formats : application/csp-report (legacy) et application/json.
 // Pas de PII collectée ici, juste la directive violée + l'URL bloquée.
@@ -276,21 +274,45 @@ app.use('/api/auth/force-login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 // [SEC PHASE 2] Bruteforce PIN : limite stricte (PIN = 4 chiffres, brute trivial sans rate-limit)
 app.use('/api/auth/login-pin', authLimiter);
+app.use('/api/auth/forgot-password', sensitiveEndpointLimiter);
 // [SEC PHASE 2] Auth personnelle (PIN/password vérifié côté serveur) sur /suivi/personal-auth
 app.use('/api/suivi/personal-auth', authLimiter);
+// Auth éphémère (compte Equipe → actions personnelles)
+app.use('/api/personal-actions', personalActionsLimiter);
 // [SEC-9.1] Rate limiters sur endpoints sensibles publics
-// [CWE-640 MITIGATION] Le reset-password accepte un flow direct (email+newPassword
-// sans OTP) — acceptation de risque utilisateur. On compense par un rate-limit
-// agressif (3 tentatives / 15 min / IP) pour ralentir une attaque par énumération.
-app.use('/api/auth/self-reset-password', authLimiter);
-// NOTE: les autres endpoints de réinitialisation (verify-reset-otp, set-new-password)
-// restent sans rate-limit dédié — protégés par OTP 6 chiffres + expiration 15 min.
+// [CWE-640 MITIGATION] Le reset direct a été retiré : self-reset-password ne fait
+// plus que demander un OTP (flow par code obligatoire côté API).
+// On applique un rate-limit qui compte aussi les succès sur tout le flow public
+// de réinitialisation pour réduire l'énumération et l'abus de déclenchements OTP.
+app.use('/api/auth/self-reset-password', sensitiveEndpointLimiter);
+app.use('/api/auth/check-reset', sensitiveEndpointLimiter);
+app.use('/api/auth/set-new-password', sensitiveEndpointLimiter);
 // Les GET /api/access-requests/* sont protégés par authenticateToken+requireAdmin
 app.post('/api/access-requests', sensitiveEndpointLimiter);
 app.post('/api/access-requests/check-email', sensitiveEndpointLimiter);
 
 // Créer le middleware d'authentification avec le secret JWT
 const authenticateToken = createAuthenticateToken(JWT_SECRET);
+
+// Renvoie les IPv4 LAN du serveur (utilisé par l'écran "Accès mobile"
+// pour générer un QR code utilisable depuis un téléphone, même quand
+// l'admin consulte l'app via http://localhost).
+app.get('/api/network-info', authenticateToken, requireAdmin, (req, res) => {
+  try {
+    const ifaces = os.networkInterfaces();
+    const ips = [];
+    for (const name of Object.keys(ifaces)) {
+      for (const info of ifaces[name] || []) {
+        if (info.family === 'IPv4' && !info.internal) {
+          ips.push({ iface: name, address: info.address });
+        }
+      }
+    }
+    res.json({ success: true, ips });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // [SEC] Fichiers statiques sensibles — protégés par authentification
 const attachmentsPath = path.join(__dirname, '..', '..', 'public', 'attachments');
@@ -423,10 +445,8 @@ setupEquipmentRoutes(app, authenticateToken, requireAdmin);
 setupEquipmentAssignmentsRoutes(app, authenticateToken);
 setupSavTicketsRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess);
 // Module SAV unifié (Phase 3 — synchro LocMat)
-setupSavRoutes(app, authenticateToken, requireAdmin);
+setupSavRoutes(app, authenticateToken, requireAdmin, requireEquipmentMaintenanceAccess);
 setupEquipmentListsRoutes(app, authenticateToken, requireAdmin);
-// Vignettes WebP à la volée pour /Photos/ (cache disque)
-setupPhotoThumbRoutes(app);
 // Vignettes WebP à la volée pour /Photos/ (cache disque)
 setupPhotoThumbRoutes(app);
 
@@ -458,6 +478,61 @@ setupStockStatsRoutes(app, authenticateToken);
 // Routes Module Planning (Affichage dynamique + Planification + Import BL)
 setupPlanningRoutes(app, authenticateToken, requireAdmin);
 
+// [Planning v2 — T-P0-03] Namespace API v2 lecture. Protégé par
+// FEATURE_V2_PLANNING (404 si off). Coexistence stricte v1/v2.
+setupPlanningV2Routes(app, authenticateToken);
+
+// [Display v2 — T-P0-14] Namespace API v2 protocol + skeleton. Protégé
+// par FEATURE_V2_DISPLAY (404 si off). Coexistence stricte avec v1.
+setupDisplayV2Routes(app, authenticateToken);
+
+// [Locations v2 — T-P0-12] Namespace API v2 (depots + PATCH equipment
+// location). Protégé par FEATURE_V2_LOCATIONS (404 si off). Coexistence
+// stricte avec les endpoints inventaire v1.
+setupLocationsV2Routes(app, authenticateToken, requireAdmin);
+
+// [Affaires v2 — T-P0-09] Namespace API v2 (list cursor + detail + history
+// + PATCH audite via affaire_history). Protégé par FEATURE_V2_AFFAIRES
+// (404 si off). Coexistence stricte avec /api/affaires v1.
+setupAffairesV2Routes(app, authenticateToken);
+
+// [API v2 core — T-P1-01] Discovery global GET /api/v2/meta. Public
+// (pas d'auth). Agrege les protocoles des 4 namespaces v2 avec l'etat
+// reel de chaque feature flag serveur.
+setupV2MetaRoutes(app);
+
+// [Leaves v2 — T-P1-04] Namespace API v2 (calculate + balance mine +
+// balance admin). Protégé par FEATURE_V2_LEAVES (404 si off).
+// Coexistence stricte avec /api/leaves v1.
+setupLeavesV2Routes(app, authenticateToken, requireAdmin);
+
+// [Conflicts v2 — T-P1-05] Namespace API v2 (check des conflits
+// agenda pour une personne). Protégé par FEATURE_V2_CONFLICTS
+// (404 si off). Aucune ecriture, aucun bloquage sur les mutations
+// v1 (availabilities, mission_assignments, task_assignments).
+setupConflictsV2Routes(app, authenticateToken);
+
+// [Equipment UID v2 — T-P1-06] Namespace API v2 (audit + regenerate
+// UID). Protégé par FEATURE_V2_EQUIPMENT_UID (404 si off).
+// Coexistence stricte avec /api/equipment* v1.
+setupEquipmentUidV2Routes(app, authenticateToken, requireAdmin);
+
+// [SAV v2 — T-P1-07] Namespace API v2 (parts + machine d'etat).
+// Protégé par FEATURE_V2_SAV (404 si off). Coexistence stricte avec
+// /api/sav* v1.
+setupSavV2Routes(app, authenticateToken);
+
+// [Equipment Assignments v2 — T-P1-08] Namespace API v2 (create
+// safe + release + audit history + double-assignment blocked).
+// Protégé par FEATURE_V2_EQUIPMENT_ASSIGNMENTS (404 si off).
+// Coexistence stricte avec /api/equipment-assignments v1.
+setupEquipmentAssignmentsV2Routes(app, authenticateToken);
+
+// [Orders v2 — T-P1-09] Namespace API v2 (transitions ordres +
+// devis avec matrices strictes). Protégé par FEATURE_V2_ORDERS
+// (404 si off). Coexistence stricte avec /api/orders /api/quotes v1.
+setupOrdersV2Routes(app, authenticateToken);
+
 // Routes Module Dashboard — Affichage Dynamique (écrans, playlists, médias, messages, templates, logs)
 setupDisplayRoutes(app, authenticateToken, requireAdmin);
 
@@ -476,6 +551,8 @@ setupAnnuaireMatchingRoutes(app, authenticateToken, requireAdmin);
 
 // Routes extraites de server.js — Phase 2 Refactoring
 setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY_DAYS, isDev });
+setupPersonalActionsRoutes(app, authenticateToken);
+registerDefaultPersonalActionHandlers();
 setupVehicleRoutes(
   app,
   authenticateToken,
@@ -608,6 +685,11 @@ if (hasSSL) {
   const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
   const httpsServer = https.createServer(sslOptions, app);
 
+  // [WebSocket core — T-P1-02] Attache le serveur WS sur l'upgrade
+  // HTTP du serveur HTTPS principal. Gate par FEATURE_V2_WEBSOCKET
+  // (aucun upgrade traite si off).
+  attachWebSocketServer(httpsServer, { jwtSecret: JWT_SECRET, db });
+
   // S1-02 — Démarrage HTTPS résilient : retry sur EADDRINUSE puis fallback HTTP-only
   const MAX_HTTPS_ATTEMPTS = Number(process.env.HTTPS_MAX_RETRIES) || 3;
   let httpsAttempts = 0;
@@ -675,6 +757,9 @@ if (hasSSL) {
     logger.info(`📡 Accessible depuis le réseau sur http://${SERVER_HOST}:${PORT}`);
     bootBackgroundJobs();
   });
+  // [WebSocket core — T-P1-02] Attache le serveur WS sur l'upgrade HTTP.
+  // Gate par FEATURE_V2_WEBSOCKET (aucun upgrade traite si off).
+  attachWebSocketServer(httpServer, { jwtSecret: JWT_SECRET, db });
   httpServer.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       logger.error(`❌ Port HTTP :${PORT} occupé — abandon (process exit 1)`);

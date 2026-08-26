@@ -126,12 +126,15 @@
   --modal-header-color: white;
   --modal-header-border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 
-  /* ─── Close button (semi-transparent sur header gradient) ─── */
-  --close-btn-bg: rgba(255, 255, 255, 0.15);
-  --close-btn-border: rgba(255, 255, 255, 0.25);
+  /* ─── Close button (style transparent générique) ───
+     Le X du Design System (.ui-modal-close) redéfinit à rouge dans Modal.css.
+     Ces variables restent translucides pour les autres composants (bannières,
+     panneaux header) qui les réutilisent comme fond « glass ». */
+  --close-btn-bg: var(--glass-light);
+  --close-btn-border: var(--glass-medium);
   --close-btn-color: white;
-  --close-btn-hover-bg: rgba(255, 255, 255, 0.3);
-  --close-btn-hover-border: rgba(255, 255, 255, 0.4);
+  --close-btn-hover-bg: var(--glass-medium);
+  --close-btn-hover-border: var(--glass);
   --close-btn-radius: 8px;
   --close-btn-size: 36px;
 
@@ -221,6 +224,12 @@
   --sec-color: var(--theme-info);
   --sec-text: var(--theme-text-primary);
 
+  /* Alias manquants (utilisés par SuiviPanel & autres modules) */
+  --accent-color: var(--theme-primary);
+  --accent-bg: var(--theme-bg-indigo-light);
+  --text-muted: var(--theme-text-muted);
+  --btn-warning-text: var(--theme-warning);
+
   /* ─── [AUDIT] Design Tokens — Spacing Scale ─── */
   --space-0: 0;
   --space-px: 1px;
@@ -284,6 +293,15 @@
      lg: 1024px   — tablette paysage / desktop petit
      xl: 1200px   — desktop large (calendrier)
      Exception: 380px — MobileApp ultra-petit
+     
+     MUST USE THESE VALUES FOR ALL @media queries:
+     @media (max-width: 480px)  — xs breakpoint
+     @media (max-width: 640px)  — sm breakpoint
+     @media (max-width: 768px)  — md breakpoint
+     @media (max-width: 1024px) — lg breakpoint
+     
+     PROHIBITED: 760px, 900px, 1100px, 1200px in @media queries.
+     USE: 768px for tablet portrait, 1024px for desktop small.
   ─── */
 
   /* ─── [AUDIT] Shadow Scale ─── */
@@ -1110,91 +1128,15 @@
    Shared Utility Classes
    ═══════════════════════════════════════════════════════ */
 
-/* ─── Pattern A: Slide Panel ─── */
-.shared-slide-panel,
-.personnel-slide-panel,
-.affaire-slide-panel,
-.eq-slide-panel,
-.vehicle-slide-panel,
-.stock-slide-panel {
-  width: 0;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--theme-bg-page);
-  border-left: 0px solid var(--theme-border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition:
-    width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-    min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-    border-left-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s ease;
-  opacity: 0;
-  border-radius: var(--radius-md-lg) 0 0 var(--radius-md-lg);
-}
-
-.shared-slide-panel > *,
-.personnel-slide-panel > *,
-.affaire-slide-panel > *,
-.eq-slide-panel > *,
-.vehicle-slide-panel > *,
-.stock-slide-panel > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition:
-    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.25s ease;
-}
-
-.shared-slide-panel.open,
-.personnel-slide-panel.open,
-.affaire-slide-panel.open,
-.eq-slide-panel.open,
-.vehicle-slide-panel.open,
-.stock-slide-panel.open {
-  border-left: 1px solid var(--theme-border);
-  opacity: 1;
-  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
-}
-
-.shared-slide-panel.open > *,
-.personnel-slide-panel.open > *,
-.affaire-slide-panel.open > *,
-.eq-slide-panel.open > *,
-.vehicle-slide-panel.open > *,
-.stock-slide-panel.open > * {
-  transform: translateX(0);
-  opacity: 1;
-  transition:
-    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.35s ease 0.05s;
-}
-
-.shared-slide-panel.closing,
-.personnel-slide-panel.closing,
-.affaire-slide-panel.closing,
-.eq-slide-panel.closing,
-.vehicle-slide-panel.closing,
-.stock-slide-panel.closing {
-  width: 0;
-  min-width: 0;
-  border-left: 0px solid var(--theme-border);
-  opacity: 0;
-}
-
-.shared-slide-panel.closing > *,
-.personnel-slide-panel.closing > *,
-.affaire-slide-panel.closing > *,
-.eq-slide-panel.closing > *,
-.vehicle-slide-panel.closing > *,
-.stock-slide-panel.closing > * {
-  transform: translateX(60px);
-  opacity: 0;
-  transition:
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s ease;
-}
+/* ─── Pattern A: Slide Panel (LEGACY) ─────────────────────────────────────
+   Bug prod 2026-05-27 (réintroduit par 13421788, re-corrigé) : ces règles
+   forçaient width:0/opacity:0 sur les slide-panels migrés vers <Drawer>
+   (DS-P2). Le Drawer pilote sa visibilité via .ui-drawer--open (pas .open),
+   donc les panneaux restaient invisibles (volets vides côté Équipements,
+   Personnel, Affaires, Véhicules, Stock).
+   Supprimé : Drawer gère désormais layout + animation. Les classes
+   .X-slide-panel sont conservées comme marqueurs pour les sélecteurs
+   descendants (.X-slide-panel .sub) encore référencés dans les CSS dédiés. */
 
 /* ─── Pattern B: Close Button ─── */
 .shared-close-btn,

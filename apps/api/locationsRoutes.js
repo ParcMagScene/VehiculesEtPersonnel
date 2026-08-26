@@ -3,6 +3,8 @@
 import { browserRevalidate, cacheMiddleware, listCache } from './cache.js';
 import db, { addToHistory } from './database.js';
 import logger from './logger.js';
+import { locationSchema, validate } from './schemas/imports.js';
+import { numericIdSchema } from './schemas/paramsSchema.js';
 
 function normalizeLocationText(value) {
   return String(value || '')
@@ -73,7 +75,7 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
     },
   );
 
-  app.post('/api/locations', authenticateToken, (req, res) => {
+  app.post('/api/locations', authenticateToken, validate(locationSchema), (req, res) => {
     try {
       const location = normalizeLocationPayload(req.body);
 
@@ -126,70 +128,82 @@ export function setupLocationsRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
-  app.put('/api/locations/:id', authenticateToken, (req, res) => {
-    try {
-      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
-      const exists = db.prepare('SELECT id FROM locations WHERE id = ?').get(req.params.id);
-      if (!exists) return res.status(404).json({ success: false, error: 'Lieu non trouvé' });
+  app.put(
+    '/api/locations/:id',
+    authenticateToken,
+    validate(numericIdSchema),
+    validate(locationSchema),
+    (req, res) => {
+      try {
+        // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+        const exists = db.prepare('SELECT id FROM locations WHERE id = ?').get(req.params.id);
+        if (!exists) return res.status(404).json({ success: false, error: 'Lieu non trouvé' });
 
-      const location = normalizeLocationPayload(req.body);
-      const existing = findExistingLocationDuplicate(location, Number(req.params.id));
-      if (existing) {
-        return res.status(409).json({ success: false, error: 'Un lieu équivalent existe déjà' });
-      }
+        const location = normalizeLocationPayload(req.body);
+        const existing = findExistingLocationDuplicate(location, Number(req.params.id));
+        if (existing) {
+          return res.status(409).json({ success: false, error: 'Un lieu équivalent existe déjà' });
+        }
 
-      const stmt = db.prepare(`
+        const stmt = db.prepare(`
         UPDATE locations 
         SET name = ?, address = ?, lat = ?, lng = ?, place_id = ?, type = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
 
-      stmt.run(
-        location.name,
-        location.address,
-        location.lat,
-        location.lng,
-        location.place_id,
-        location.type || 'Salle de spectacle',
-        req.user.id,
-        req.params.id,
-      );
+        stmt.run(
+          location.name,
+          location.address,
+          location.lat,
+          location.lng,
+          location.place_id,
+          location.type || 'Salle de spectacle',
+          req.user.id,
+          req.params.id,
+        );
 
-      listCache.invalidate('locations');
-      addToHistory('location', req.params.id, 'updated', location, req.user.id, req.user.name);
+        listCache.invalidate('locations');
+        addToHistory('location', req.params.id, 'updated', location, req.user.id, req.user.name);
 
-      // Renvoyer l'objet complet
-      const updatedLocation = {
-        id: parseInt(req.params.id),
-        name: location.name,
-        address: location.address,
-        lat: location.lat,
-        lng: location.lng,
-        place_id: location.place_id,
-        type: location.type || 'Salle de spectacle',
-      };
+        // Renvoyer l'objet complet
+        const updatedLocation = {
+          id: parseInt(req.params.id),
+          name: location.name,
+          address: location.address,
+          lat: location.lat,
+          lng: location.lng,
+          place_id: location.place_id,
+          type: location.type || 'Salle de spectacle',
+        };
 
-      res.json(updatedLocation);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json(updatedLocation);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
-  app.delete('/api/locations/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
-      const result = db.prepare('DELETE FROM locations WHERE id = ?').run(req.params.id);
-      if (result.changes === 0)
-        return res.status(404).json({ success: false, error: 'Lieu non trouvé' });
+  app.delete(
+    '/api/locations/:id',
+    authenticateToken,
+    requireAdmin,
+    validate(numericIdSchema),
+    (req, res) => {
+      try {
+        // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)
+        const result = db.prepare('DELETE FROM locations WHERE id = ?').run(req.params.id);
+        if (result.changes === 0)
+          return res.status(404).json({ success: false, error: 'Lieu non trouvé' });
 
-      listCache.invalidate('locations');
-      addToHistory('location', req.params.id, 'deleted', null, req.user.id, req.user.name);
+        listCache.invalidate('locations');
+        addToHistory('location', req.params.id, 'deleted', null, req.user.id, req.user.name);
 
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 }

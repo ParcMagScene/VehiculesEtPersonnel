@@ -1,11 +1,14 @@
 import './EquipmentLabelPrint.css';
 
-import { Download, Printer, Tag } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Download, Printer, Tag } from 'lucide-react';
 import QRCode from 'qrcode';
 import { QRCodeSVG } from 'qrcode.react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { Button, Input, Modal, ModalBody, ModalFooter, ModalHeader } from '@/design-system';
+
+import { APP_BASE_URL } from './equipmentConstants';
+import { analyzeQrBaseUrl } from './qrSafety';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -18,8 +21,6 @@ const LABEL_FORMATS = [
 ];
 
 const EXPORT_FORMATS = ['SVG', 'PNG', 'JPG'];
-
-const APP_BASE_URL = window.location.origin;
 
 const escSvg = (s) =>
   String(s)
@@ -36,6 +37,10 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   const [showLogo, setShowLogo] = useState(true);
   const [exportFormat, setExportFormat] = useState('PNG');
   const svgRef = useRef(null);
+
+  // Verrou sécurité : URL embarquée doit être publique HTTPS (pas localhost / IP privée).
+  // Calculé AVANT tout early return pour respecter les rules-of-hooks.
+  const qrSafety = useMemo(() => analyzeQrBaseUrl(APP_BASE_URL), []);
 
   if (!equipment) return null;
 
@@ -119,11 +124,23 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
   };
 
   const handleExport = () => {
+    if (!qrSafety.safe) {
+      // eslint-disable-next-line no-alert
+      window.alert(`⛔ Export bloqué — URL non publique : ${APP_BASE_URL}\n\n${qrSafety.reason}`);
+      return;
+    }
     if (exportFormat === 'SVG') handleExportSVG();
     else handleExportRaster(exportFormat);
   };
 
   const handlePrint = async () => {
+    if (!qrSafety.safe) {
+      // eslint-disable-next-line no-alert
+      window.alert(
+        `⛔ Impression bloquée — URL non publique : ${APP_BASE_URL}\n\n${qrSafety.reason}`,
+      );
+      return;
+    }
     const labels = [];
     const qrSize = Math.round(format.height - 4);
     const qrDataUrl = qrUrl ? await QRCode.toDataURL(qrUrl, { width: 200, margin: 1 }) : null;
@@ -222,6 +239,30 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
       </ModalHeader>
 
       <ModalBody>
+        <div className={`elp-qr-safety ${qrSafety.safe ? 'ok' : 'danger'}`}>
+          {qrSafety.safe ? (
+            <>
+              <CheckCircle2 size={14} aria-hidden="true" />
+              <span>
+                QR &rarr;{' '}
+                <code>
+                  {APP_BASE_URL}/#/mobile/equipment/{eq.uid || '<UID>'}
+                </code>
+              </span>
+            </>
+          ) : (
+            <>
+              <AlertTriangle size={16} aria-hidden="true" />
+              <div>
+                <strong>⛔ Bloqué — URL non publique</strong>
+                <div>{qrSafety.reason}</div>
+                <div>
+                  Ouvrez <code>https://magsav.duckdns.org</code> avant d'imprimer/exporter.
+                </div>
+              </div>
+            </>
+          )}
+        </div>
         <div className="elp-preview-container">
           <h4>Aperçu</h4>
           <div
@@ -366,11 +407,21 @@ const EquipmentLabelPrint = ({ equipment, onClose }) => {
         <Button variant="ghost" onClick={onClose}>
           Annuler
         </Button>
-        <Button variant="secondary" onClick={handleExport}>
+        <Button
+          variant="secondary"
+          onClick={handleExport}
+          disabled={!qrSafety.safe}
+          title={qrSafety.safe ? undefined : qrSafety.reason}
+        >
           <Download size={16} />
           {exportFormat}
         </Button>
-        <Button variant="primary" onClick={handlePrint}>
+        <Button
+          variant="primary"
+          onClick={handlePrint}
+          disabled={!qrSafety.safe}
+          title={qrSafety.safe ? undefined : qrSafety.reason}
+        >
           <Printer size={16} />
           Imprimer {quantity > 1 ? '(' + quantity + ')' : ''}
         </Button>

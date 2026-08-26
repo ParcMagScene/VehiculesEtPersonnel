@@ -359,6 +359,19 @@
   margin-top: 1rem;
 }
 
+.management-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.management-field label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--theme-text-muted);
+  letter-spacing: 0.02em;
+}
+
 .add-form input {
   padding: 0.75rem;
   border: 2px solid var(--theme-border-medium);
@@ -459,6 +472,10 @@
   border-color: var(--theme-bg-dark);
   box-shadow: 0 4px 8px var(--shadow-xl);
   transform: scale(1.1);
+}
+
+.color-option-direct {
+  background: var(--management-color-option-bg, transparent);
 }
 
 .add-button {
@@ -755,6 +772,16 @@
   gap: 0.75rem;
 }
 
+.management-field--compact {
+  gap: 0.25rem;
+}
+
+.management-direct-edit {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-2) 0;
+}
+
 .edit-form input {
   padding: 0.5rem;
   border: 2px solid var(--theme-border-medium);
@@ -762,7 +789,20 @@
   font-size: var(--font-base);
 }
 
+.edit-form select {
+  padding: 0.5rem;
+  border: 2px solid var(--theme-border-medium);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  background: var(--theme-bg-card);
+}
+
 .edit-form input:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+}
+
+.edit-form select:focus {
   outline: none;
   border-color: var(--theme-primary);
 }

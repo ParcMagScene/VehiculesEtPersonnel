@@ -18,6 +18,8 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
   const eventSourceRef = useRef(null);
   const fallbackIntervalRef = useRef(null);
   const retriesRef = useRef(0);
+  const reconnectTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   const handleUnreadUpdate = useCallback(
     (newCount) => {
@@ -45,7 +47,7 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
         }
       }
       prevUnreadRef.current = newCount;
-      setUnreadMsgCount(newCount);
+      if (isMountedRef.current) setUnreadMsgCount(newCount);
     },
     [userPrefsRef, showMessagingRef, toast],
   );
@@ -75,6 +77,7 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
     if (!currentUser) return;
 
     requestNotificationPermission();
+    let cancelled = false;
 
     const connectSSE = () => {
       if (eventSourceRef.current) {
@@ -104,7 +107,7 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
         eventSourceRef.current = null;
         retriesRef.current++;
         if (retriesRef.current <= 3) {
-          setTimeout(connectSSE, retriesRef.current * 2000);
+          reconnectTimeoutRef.current = setTimeout(connectSSE, retriesRef.current * 2000);
         } else {
           startPolling();
         }
@@ -113,14 +116,48 @@ export function useMessagingPolling({ currentUser, userPrefsRef, showMessagingRe
 
     connectSSE();
 
+    const bootstrap = async () => {
+      try {
+        const data = await api.getUnreadCount();
+        if (cancelled) return;
+        handleUnreadUpdate(data.unread || 0);
+      } catch {
+        if (!cancelled) {
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            eventSourceRef.current = null;
+          }
+          startPolling();
+        }
+      }
+    };
+
+    bootstrap();
+
     return () => {
+      cancelled = true;
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
       stopPolling();
     };
   }, [currentUser, handleUnreadUpdate, startPolling, stopPolling]);
+
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    },
+    [],
+  );
 
   return { unreadMsgCount };
 }

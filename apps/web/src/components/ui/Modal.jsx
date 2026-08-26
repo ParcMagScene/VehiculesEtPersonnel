@@ -29,9 +29,10 @@ function Modal({
   className = '',
   overlayClassName = '',
   disableBackdropBlur = false,
-  closeOnBackdrop = true,
+  closeOnBackdrop = false,
   ariaLabel,
   ariaLabelledBy,
+  ariaDescribedBy,
   children,
 }) {
   // Filet de sécurité : si un caller passe `isOpen` au lieu de `open` (bug
@@ -90,7 +91,7 @@ function Modal({
         const modal = overlayRef.current?.querySelector('[role="dialog"]');
         if (!modal) return;
         const focusable = modal.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [role="button"], [role="link"], [role="menuitem"], [contenteditable]:not([contenteditable="false"])',
         );
         if (focusable.length === 0) return;
         const first = focusable[0];
@@ -117,7 +118,7 @@ function Modal({
     if (!open) return;
     const modal = overlayRef.current?.querySelector('[role="dialog"]');
     const firstFocusable = modal?.querySelector(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [role="button"], [role="link"], [role="menuitem"], [contenteditable]:not([contenteditable="false"])',
     );
     firstFocusable?.focus();
   }, [open]);
@@ -164,6 +165,7 @@ function Modal({
         aria-modal="true"
         aria-label={ariaLabel || undefined}
         aria-labelledby={!ariaLabel ? titleId : undefined}
+        aria-describedby={ariaDescribedBy || undefined}
         style={{ zIndex: z.dialog, position: 'relative' }}
       >
         <ModalTitleIdContext.Provider value={titleId}>{children}</ModalTitleIdContext.Provider>

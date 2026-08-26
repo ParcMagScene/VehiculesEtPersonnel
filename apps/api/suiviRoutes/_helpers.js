@@ -8,6 +8,12 @@ import crypto from 'crypto';
 
 import db from '../database.js';
 
+const trackingIncidentColumns = db
+  .prepare('PRAGMA table_info(tracking_incident_entries)')
+  .all()
+  .map((c) => c.name);
+const hasTrackingIncidentVehicleIdText = trackingIncidentColumns.includes('vehicle_id_text');
+
 // ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
@@ -195,6 +201,28 @@ export function isPastPeriod(dateStr, period) {
   return false;
 }
 
+function normalizeNonRenseigneLabel(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function isNonRenseigneePlaceholderEntry(entry) {
+  const minutes = Number(entry?.time_spent) || 0;
+  if (minutes !== 0) return false;
+  const label = normalizeNonRenseigneLabel(entry?.task);
+  return label === 'non renseigne' || label === 'non renseignee';
+}
+
+export function isUnreportedPeriodEntries(entries) {
+  const list = Array.isArray(entries) ? entries : [];
+  if (list.length === 0) return true;
+  return list.every((entry) => isNonRenseigneePlaceholderEntry(entry));
+}
+
 // Retourne true si la fiche a un contexte d'occupation (congé, mission, présence entreprise)
 export function hasOccupationContext(sheet) {
   const ctx = sheet.day_context || {};
@@ -204,6 +232,14 @@ export function hasOccupationContext(sheet) {
     ctx.has_mission ||
     ctx.has_enterprise_presence
   );
+}
+
+// Contexte exonérant le "Non renseigné" : indisponibilités métier
+// (congé, formation, maladie, etc.), mission ou affaire assignée.
+// Le seul contexte "Entreprise" ne doit PAS exonérer.
+export function hasExcusingContextForUnreported(sheet) {
+  const ctx = sheet?.day_context || {};
+  return !!(ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_planning_affaire);
 }
 
 export const AVAILABILITY_TYPE_LABELS = {
@@ -535,6 +571,28 @@ export function getAffaireIncidentBase(affaireNum) {
 }
 
 export function computeIncidentSynthese(periodStart, periodEnd) {
+  const toIsoWeekKey = (dateStr) => {
+    const d = new Date(`${dateStr}T12:00:00`);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  };
+
+  const enumerateDates = (start, end) => {
+    const dates = [];
+    const cur = new Date(`${start}T12:00:00`);
+    const limit = new Date(`${end}T12:00:00`);
+    if (Number.isNaN(cur.getTime()) || Number.isNaN(limit.getTime())) return dates;
+    while (cur <= limit) {
+      dates.push(cur.toISOString().slice(0, 10));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+  };
+
   const tickets = db
     .prepare(
       `SELECT *
@@ -551,11 +609,23 @@ export function computeIncidentSynthese(periodStart, periodEnd) {
     const placeholders = ticketIds.map(() => '?').join(',');
     entries = db
       .prepare(
-        `SELECT ie.*, p.first_name, p.last_name
-         FROM tracking_incident_entries ie
-         LEFT JOIN persons p ON p.id = ie.reporter_person_id
-         WHERE ie.ticket_id IN (${placeholders})
-         ORDER BY ie.created_at ASC`,
+        hasTrackingIncidentVehicleIdText
+          ? `SELECT ie.*, p.first_name, p.last_name,
+                    COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT)) AS resolved_vehicle_id_text,
+                    v.name AS resolved_vehicle_name
+             FROM tracking_incident_entries ie
+             LEFT JOIN persons p ON p.id = ie.reporter_person_id
+             LEFT JOIN vehicles v ON v.id = COALESCE(NULLIF(TRIM(ie.vehicle_id_text), ''), CAST(ie.vehicle_id AS TEXT))
+             WHERE ie.ticket_id IN (${placeholders})
+             ORDER BY ie.created_at ASC`
+          : `SELECT ie.*, p.first_name, p.last_name,
+                    CASE WHEN ie.vehicle_id IS NULL THEN NULL ELSE CAST(ie.vehicle_id AS TEXT) END AS resolved_vehicle_id_text,
+                    v.name AS resolved_vehicle_name
+             FROM tracking_incident_entries ie
+             LEFT JOIN persons p ON p.id = ie.reporter_person_id
+             LEFT JOIN vehicles v ON v.id = CAST(ie.vehicle_id AS TEXT)
+             WHERE ie.ticket_id IN (${placeholders})
+             ORDER BY ie.created_at ASC`,
       )
       .all(...ticketIds);
   }
@@ -565,6 +635,10 @@ export function computeIncidentSynthese(periodStart, periodEnd) {
     if (!entriesByTicket.has(e.ticket_id)) entriesByTicket.set(e.ticket_id, []);
     entriesByTicket.get(e.ticket_id).push({
       ...e,
+      vehicle_id_text: String(e.resolved_vehicle_id_text || '').trim() || null,
+      vehicle_name_snapshot:
+        String(e.vehicle_name_snapshot || '').trim() ||
+        String(e.resolved_vehicle_name || '').trim(),
       reporter_name:
         [e.first_name, e.last_name].filter(Boolean).join(' ').trim() ||
         e.reporter_name_snapshot ||
@@ -589,6 +663,7 @@ export function computeIncidentSynthese(periodStart, periodEnd) {
         incident_type: ie.incident_type || '',
         description: ie.description || '',
         reporter_name: ie.reporter_name || '',
+        vehicle_id_text: ie.vehicle_id_text || null,
         vehicle_name_snapshot: ie.vehicle_name_snapshot || '',
         created_at: ie.created_at || null,
       })),
@@ -627,13 +702,49 @@ export function computeIncidentSynthese(periodStart, periodEnd) {
     w.incidents += tEntries.length;
   }
 
+  // Incidents automatiques: périodes AM/PM non renseignées dans les fiches suivi.
+  const rangeDates = enumerateDates(periodStart, periodEnd);
+  let autoUnreportedIncidents = 0;
+  const autoWeeksCount = new Map();
+  if (rangeDates.length > 0) {
+    const suiviSynthese = buildSynthese(rangeDates);
+    for (const anomaly of suiviSynthese.summary?.anomalies || []) {
+      const parts = Array.isArray(anomaly.unreported_periods) ? anomaly.unreported_periods : [];
+      if (parts.length === 0) continue;
+      autoUnreportedIncidents += parts.length;
+      const wk = toIsoWeekKey(anomaly.date);
+      if (wk) autoWeeksCount.set(wk, (autoWeeksCount.get(wk) || 0) + parts.length);
+    }
+  }
+
+  for (const [wk, count] of autoWeeksCount.entries()) {
+    if (!byWeek.has(wk)) {
+      byWeek.set(wk, { week_key: wk, tickets: 0, incidents: 0 });
+    }
+    byWeek.get(wk).incidents += count;
+  }
+
+  if (autoUnreportedIncidents > 0) {
+    byAffaire.set('__SUIVI_NON_RENSEIGNE__', {
+      affaire_num: 'SUIVI-NON-RENSEIGNE',
+      affaire_name: 'Suivi - Non renseigne',
+      tickets: 0,
+      incidents: autoUnreportedIncidents,
+      weeks: new Set(autoWeeksCount.keys()),
+      is_tournee: false,
+    });
+    incidentTypeCounts.unreported_period =
+      (incidentTypeCounts.unreported_period || 0) + autoUnreportedIncidents;
+  }
+
   return {
     period: { start: periodStart, end: periodEnd },
     summary: {
       total_tickets: tickets.length,
-      total_incidents: entries.length,
+      total_incidents: entries.length + autoUnreportedIncidents,
       affaires_count: byAffaire.size,
       incident_type_counts: incidentTypeCounts,
+      auto_unreported_incidents: autoUnreportedIncidents,
     },
     by_affaire: Array.from(byAffaire.values())
       .map((a) => ({ ...a, weeks: Array.from(a.weeks).sort() }))
@@ -700,28 +811,27 @@ export function buildSynthese(dates, personId) {
 
     const amEntries = sheetEntries.filter((e) => e.period === 'AM');
     const pmEntries = sheetEntries.filter((e) => e.period === 'PM');
-    const unreportedAm = amEntries.length === 0 && isPastPeriod(s.date, 'AM');
-    const unreportedPm = pmEntries.length === 0 && isPastPeriod(s.date, 'PM');
+    const rawUnreportedAm = isUnreportedPeriodEntries(amEntries);
+    const rawUnreportedPm = isUnreportedPeriodEntries(pmEntries);
+    // Enrichir avec le contexte avant de qualifier les anomalies
+    const enriched = enrichSheetWithDayContext({ ...s, person_id: s.person_id, date: s.date });
+    const ctx = enriched.day_context || {};
+    const hasExcusingContext = hasExcusingContextForUnreported({ day_context: ctx });
+    const unreportedAm = hasExcusingContext ? false : rawUnreportedAm;
+    const unreportedPm = hasExcusingContext ? false : rawUnreportedPm;
     const unreportedParts = [];
     if (unreportedAm) unreportedParts.push('AM');
     if (unreportedPm) unreportedParts.push('PM');
 
-    // Enrichir avec le contexte avant de qualifier les anomalies
-    const enriched = enrichSheetWithDayContext({ ...s, person_id: s.person_id, date: s.date });
-    const ctx = enriched.day_context || {};
-    const hasContext =
-      ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
-
-    // Les périodes non renseignées ne sont pas des anomalies si la personne est en indispo ou en mission
-    const anomalyUnreportedParts = hasContext ? [] : unreportedParts;
-
-    if ((notDone > 0 && s.status !== 'draft') || anomalyUnreportedParts.length > 0) {
+    // Les périodes non renseignées (vide ou "Non renseigné" à 0 min) sont
+    // toujours remontées comme incident/anomalie de suivi.
+    if ((notDone > 0 && s.status !== 'draft') || unreportedParts.length > 0) {
       anomalies.push({
         date: s.date,
         person: `${s.first_name} ${s.last_name}`,
         person_id: s.person_id,
         not_done: notDone,
-        unreported_periods: anomalyUnreportedParts,
+        unreported_periods: unreportedParts,
       });
     }
 

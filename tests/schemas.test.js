@@ -7,49 +7,10 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { equipmentImportSchema, personnelImportSchema, affaireSchema } from '../apps/api/schemas/imports.js';
+import { personnelImportSchema, affaireSchema } from '../apps/api/schemas/imports.js';
 
-// ══════════════════════════════════════════
-// equipmentImportSchema
-// ══════════════════════════════════════════
-describe('equipmentImportSchema', () => {
-  it('accepte un import minimal valide', () => {
-    const result = equipmentImportSchema.safeParse({
-      data: [{ nom: 'Micro SM58' }],
-      mode: 'preview',
-    });
-    assert.ok(result.success, `Erreurs: ${JSON.stringify(result.error?.errors)}`);
-  });
-
-  it('accepte un import complet', () => {
-    const result = equipmentImportSchema.safeParse({
-      data: [{ code_libre: 'EQ001', nom: 'DXR12', famille: 'Son', sous_famille: 'Enceintes', categorie: 'Sono', zone: 'A1', stock: 4, marque: 'Yamaha', numero_serie: 'SN123' }],
-      mode: 'import',
-    });
-    assert.ok(result.success);
-  });
-
-  it('rejette si data vide', () => {
-    const result = equipmentImportSchema.safeParse({ data: [], mode: 'preview' });
-    assert.ok(!result.success);
-  });
-
-  it('rejette si mode invalide', () => {
-    const result = equipmentImportSchema.safeParse({ data: [{ nom: 'X' }], mode: 'invalid' });
-    assert.ok(!result.success);
-  });
-
-  it('rejette si nom manquant', () => {
-    const result = equipmentImportSchema.safeParse({ data: [{ code_libre: 'EQ001' }], mode: 'preview' });
-    assert.ok(!result.success);
-  });
-
-  it('rejette si data > 10000 éléments', () => {
-    const bigData = Array.from({ length: 10001 }, (_, i) => ({ nom: `Item ${i}` }));
-    const result = equipmentImportSchema.safeParse({ data: bigData, mode: 'preview' });
-    assert.ok(!result.success);
-  });
-});
+// Note : equipmentImportSchema retiré avec la suppression de la route
+// /api/equipment/import-csv (remplacée par l'import Locmat dual CSV).
 
 // ══════════════════════════════════════════
 // personnelImportSchema

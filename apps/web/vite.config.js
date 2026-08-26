@@ -75,8 +75,16 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Supprimer console.log et debugger en production
-    minify: 'esbuild',
-    target: 'es2020',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        passes: 2,
+      },
+      format: {
+        comments: false,
+      },
+    },
+    target: 'es2022',
     chunkSizeWarningLimit: 600,
     // Source maps pour le debugging production
     sourcemap: false, // [AUDIT FIX] Désactivé en production pour ne pas exposer le code source
@@ -117,9 +125,9 @@ export default defineConfig(({ mode }) => ({
     }
   },
   preview: {
-    // MODE PROD — proxy vers le backend PROD sur port 3002
-    host: '0.0.0.0',
-    port: 4173,
+    // MODE PROD — servi en interne (loopback), Caddy publie en HTTPS sur :443 et :4173
+    host: '127.0.0.1',
+    port: 4273,
     allowedHosts: true,
     headers: {
       'Pragma': 'no-cache',
@@ -151,9 +159,6 @@ export default defineConfig(({ mode }) => ({
         secure: false
       }
     }
-  },
-  optimizeDeps: {
-    include: ['pdfjs-dist']
   },
   resolve: {
     alias: {

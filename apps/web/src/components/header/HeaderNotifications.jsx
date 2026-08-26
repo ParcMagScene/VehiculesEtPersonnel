@@ -24,6 +24,7 @@ import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
 import { getModalRoot } from '../../utils/modalManager';
+import { userHasPermission } from '../../utils/permissions';
 
 // ─── Shared internal card for reservation requests (used in both popups) ───
 // [PERF Phase 4.G] Memo : la card est rendue par .map() x N (jusqu'à ~20
@@ -133,11 +134,13 @@ const ReservationRequestCard = React.memo(
           <span className="notification-registration">{request.registration}</span>
         )}
         {isRejecting ? (
-          <div className="notification-actions reject-form" onClick={(e) => e.stopPropagation()}>
+          <div className="notification-actions reject-form">
             <Textarea
+              size="md"
               className="reject-reason-input"
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
+              onClick={(event) => event.stopPropagation()}
               placeholder="Motif du refus..."
               aria-label="Motif du refus"
               rows={2}
@@ -148,26 +151,46 @@ const ReservationRequestCard = React.memo(
                 variant="ghost"
                 className="notif-action-btn confirm-reject"
                 disabled={!rejectionReason.trim()}
-                onClick={onConfirmReject}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onConfirmReject();
+                }}
               >
                 {confirmRejectIcon && <X size={14} />} Confirmer le refus
               </Button>
               <Button
                 variant="ghost"
                 className={`notif-action-btn ${cancelRejectClassName}`}
-                onClick={onCancelReject}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCancelReject();
+                }}
               >
                 Annuler
               </Button>
             </div>
           </div>
         ) : (
-          <div className="notification-actions" onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" className="notif-action-btn approve" onClick={onApprove}>
+          <div className="notification-actions">
+            <Button
+              variant="ghost"
+              className="notif-action-btn approve"
+              onClick={(event) => {
+                event.stopPropagation();
+                onApprove();
+              }}
+            >
               <Check size={14} />
               {approveLabel}
             </Button>
-            <Button variant="ghost" className="notif-action-btn reject" onClick={onReject}>
+            <Button
+              variant="ghost"
+              className="notif-action-btn reject"
+              onClick={(event) => {
+                event.stopPropagation();
+                onReject();
+              }}
+            >
               <X size={14} />
               Refuser
             </Button>
@@ -195,6 +218,9 @@ const HeaderNotifications = ({
   immobilizedVehicles: _immobilizedVehicles,
   vehicles,
   onOpenMaintenance,
+  onScheduleMaintenance,
+  onDeleteSignalement,
+  onCloseSignalement,
   currentUser,
   pendingReservationRequests,
   setPendingReservationRequests,
@@ -208,11 +234,21 @@ const HeaderNotifications = ({
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
   const [expandedReportedId, setExpandedReportedId] = useState(null);
+  const [closingReportedId, setClosingReportedId] = useState(null);
+  const [closureDescription, setClosureDescription] = useState('');
   const [rejectingRequestId, setRejectingRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [popoverStyle, setPopoverStyle] = useState({});
+  const canManageVehicleMaintenance = userHasPermission(currentUser, 'canManageVehicleMaintenance');
 
   const isAnyPopupOpen = showNotificationsPopup || showRequestsPopup;
+
+  const handleActivateWithKeyboard = useCallback((event, callback) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      callback();
+    }
+  }, []);
 
   const updatePopoverPosition = useCallback(() => {
     const anchor = document.querySelector('.header-notification-badges');
@@ -247,6 +283,11 @@ const HeaderNotifications = ({
       width: `${width}px`,
       maxHeight: `${Math.max(220, window.innerHeight - top - 12)}px`,
     });
+  }, []);
+
+  const getMaintenanceId = useCallback((maintenance) => {
+    const id = maintenance?.id ?? maintenance?.maintenanceId ?? maintenance?.maintenance_id;
+    return id == null ? '' : String(id).trim();
   }, []);
 
   useEffect(() => {
@@ -306,6 +347,15 @@ const HeaderNotifications = ({
           setShowNotificationsPopup(false);
           setShowRequestsPopup(false);
         }}
+        onKeyDown={(event) =>
+          handleActivateWithKeyboard(event, () => {
+            setShowNotificationsPopup(false);
+            setShowRequestsPopup(false);
+          })
+        }
+        role="button"
+        tabIndex={0}
+        aria-label="Fermer les notifications"
       />
 
       {/* Popup des notifications */}
@@ -313,7 +363,6 @@ const HeaderNotifications = ({
         <div
           className="notifications-popup notifications-popover"
           style={popoverStyle}
-          onMouseDown={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="false"
           aria-label="Notifications"
@@ -331,14 +380,14 @@ const HeaderNotifications = ({
                       ? 'Demandes de réservation'
                       : 'Notifications'}
             </h3>
-            <button
+            <Button
               type="button"
               className="close-popup-button"
               onClick={() => setShowNotificationsPopup(false)}
               aria-label="Fermer"
             >
               <X size={18} />
-            </button>
+            </Button>
           </div>
           <div className="notifications-popup-content">
             {(notificationFilter === 'reported' && reportedMaintenances.length === 0) ||
@@ -358,6 +407,7 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {overdueInterventions.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId);
                           const daysOverdue = Math.floor(
                             (today - new Date(maintenance.endDate)) / (1000 * 60 * 60 * 24),
@@ -365,15 +415,34 @@ const HeaderNotifications = ({
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className="notification-item overdue"
                               onClick={() => {
+                                if (!maintenanceId) {
+                                  toast.error("Identifiant d'intervention introuvable");
+                                  return;
+                                }
                                 setShowNotificationsPopup(false);
                                 setSelectedOverdueIntervention({
-                                  intervention: maintenance,
+                                  intervention: { ...maintenance, id: maintenanceId },
                                   vehicle,
                                 });
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () => {
+                                  if (!maintenanceId) {
+                                    toast.error("Identifiant d'intervention introuvable");
+                                    return;
+                                  }
+                                  setShowNotificationsPopup(false);
+                                  setSelectedOverdueIntervention({
+                                    intervention: { ...maintenance, id: maintenanceId },
+                                    vehicle,
+                                  });
+                                })
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -410,6 +479,7 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {scheduledMaintenances.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId) || {
                             id: maintenance.vehicleId,
                             name: maintenance.vehicleName || 'Véhicule inconnu',
@@ -417,14 +487,32 @@ const HeaderNotifications = ({
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className="notification-item"
                               onClick={() => {
+                                if (!maintenanceId) {
+                                  toast.error("Identifiant d'intervention introuvable");
+                                  return;
+                                }
                                 setShowNotificationsPopup(false);
                                 if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
+                                  onOpenMaintenance(vehicle, maintenanceId);
                                 }
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () => {
+                                  if (!maintenanceId) {
+                                    toast.error("Identifiant d'intervention introuvable");
+                                    return;
+                                  }
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenanceId);
+                                  }
+                                })
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -463,6 +551,7 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {inProgressMaintenances.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId) || {
                             id: maintenance.vehicleId,
                             name: maintenance.vehicleName || 'Véhicule inconnu',
@@ -470,14 +559,32 @@ const HeaderNotifications = ({
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className="notification-item"
                               onClick={() => {
+                                if (!maintenanceId) {
+                                  toast.error("Identifiant d'intervention introuvable");
+                                  return;
+                                }
                                 setShowNotificationsPopup(false);
                                 if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
+                                  onOpenMaintenance(vehicle, maintenanceId);
                                 }
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () => {
+                                  if (!maintenanceId) {
+                                    toast.error("Identifiant d'intervention introuvable");
+                                    return;
+                                  }
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenanceId);
+                                  }
+                                })
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -514,6 +621,7 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {pendingMaintenances.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId) || {
                             id: maintenance.vehicleId,
                             name: maintenance.vehicleName || 'Véhicule inconnu',
@@ -521,14 +629,32 @@ const HeaderNotifications = ({
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className="notification-item"
                               onClick={() => {
+                                if (!maintenanceId) {
+                                  toast.error("Identifiant d'intervention introuvable");
+                                  return;
+                                }
                                 setShowNotificationsPopup(false);
                                 if (onOpenMaintenance) {
-                                  onOpenMaintenance(vehicle, maintenance.id);
+                                  onOpenMaintenance(vehicle, maintenanceId);
                                 }
                               }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () => {
+                                  if (!maintenanceId) {
+                                    toast.error("Identifiant d'intervention introuvable");
+                                    return;
+                                  }
+                                  setShowNotificationsPopup(false);
+                                  if (onOpenMaintenance) {
+                                    onOpenMaintenance(vehicle, maintenanceId);
+                                  }
+                                })
+                              }
                             >
                               <div className="notification-item-header">
                                 <span className="notification-vehicle-name">
@@ -558,15 +684,25 @@ const HeaderNotifications = ({
                       </h4>
                       <div className="notifications-list">
                         {reportedMaintenances.map((maintenance) => {
+                          const maintenanceId = getMaintenanceId(maintenance);
                           const vehicle = vehicles.find((v) => v.id === maintenance.vehicleId);
-                          const isExpanded = expandedReportedId === maintenance.id;
+                          const isExpanded = expandedReportedId === maintenanceId;
+                          const isClosing = closingReportedId === maintenanceId;
 
                           return (
                             <div
-                              key={maintenance.id}
+                              key={maintenanceId || maintenance.vehicleId || maintenance.endDate}
                               className={`notification-item ${isExpanded ? 'expanded' : ''}`}
                               onClick={() =>
-                                setExpandedReportedId(isExpanded ? null : maintenance.id)
+                                setExpandedReportedId(isExpanded ? null : maintenanceId)
+                              }
+                              role="button"
+                              tabIndex={0}
+                              aria-expanded={isExpanded}
+                              onKeyDown={(event) =>
+                                handleActivateWithKeyboard(event, () =>
+                                  setExpandedReportedId(isExpanded ? null : maintenanceId),
+                                )
                               }
                             >
                               <div className="notification-item-header">
@@ -591,25 +727,149 @@ const HeaderNotifications = ({
                                   {vehicle.registration}
                                 </span>
                               )}
-                              <div
-                                className="notification-actions"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Button
-                                  variant="ghost"
-                                  className="notif-action-btn create-intervention"
-                                  onClick={() => {
-                                    setShowNotificationsPopup(false);
-                                    setExpandedReportedId(null);
-                                    if (onOpenMaintenance && vehicle) {
-                                      onOpenMaintenance(vehicle, maintenance.id);
-                                    }
-                                  }}
-                                >
-                                  <Wrench size={14} />
-                                  Créer une intervention
-                                </Button>
-                              </div>
+                              {isExpanded && (
+                                <div className="notification-actions reported-actions">
+                                  {canManageVehicleMaintenance ? (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        className="notif-action-btn create-intervention"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          setShowNotificationsPopup(false);
+                                          setExpandedReportedId(null);
+                                          if (onScheduleMaintenance && vehicle) {
+                                            onScheduleMaintenance(vehicle);
+                                          } else if (
+                                            onOpenMaintenance &&
+                                            vehicle &&
+                                            maintenanceId
+                                          ) {
+                                            onOpenMaintenance(vehicle, maintenanceId);
+                                          } else if (!maintenanceId) {
+                                            toast.error("Identifiant d'intervention introuvable");
+                                          }
+                                        }}
+                                      >
+                                        <Wrench size={14} />
+                                        Planifier une intervention
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        className="notif-action-btn delete-intervention"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          confirm({
+                                            title: 'Supprimer le signalement',
+                                            message: 'Supprimer ce signalement de panne ?',
+                                            confirmLabel: 'Supprimer',
+                                            variant: 'danger',
+                                            onConfirm: async () => {
+                                              try {
+                                                if (onDeleteSignalement) {
+                                                  await onDeleteSignalement({
+                                                    ...maintenance,
+                                                    id: maintenanceId,
+                                                  });
+                                                }
+                                                setExpandedReportedId(null);
+                                                setShowNotificationsPopup(false);
+                                              } catch {
+                                                // toast déjà géré par le handler parent
+                                              }
+                                            },
+                                          });
+                                        }}
+                                      >
+                                        <XCircle size={14} />
+                                        Supprimer
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        className="notif-action-btn close-signalement"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          if (!maintenanceId) {
+                                            toast.error("Identifiant d'intervention introuvable");
+                                            return;
+                                          }
+                                          setClosingReportedId(isClosing ? null : maintenanceId);
+                                          setClosureDescription('');
+                                        }}
+                                      >
+                                        <Clock size={14} />
+                                        Clôturer le signalement
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <span className="notification-hint">
+                                      Droits requis pour planifier ou clôturer un signalement.
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {isClosing && canManageVehicleMaintenance && (
+                                <div className="notification-actions reject-form">
+                                  <Textarea
+                                    size="md"
+                                    className="reject-reason-input"
+                                    value={closureDescription}
+                                    onChange={(e) => setClosureDescription(e.target.value)}
+                                    onClick={(event) => event.stopPropagation()}
+                                    onKeyDown={(event) => event.stopPropagation()}
+                                    placeholder="Description de l'intervention..."
+                                    aria-label="Description de l'intervention"
+                                    rows={3}
+                                    autoFocus
+                                  />
+                                  <div className="reject-form-buttons">
+                                    <Button
+                                      variant="ghost"
+                                      className="notif-action-btn confirm-reject"
+                                      disabled={!closureDescription.trim()}
+                                      onClick={async (event) => {
+                                        event.stopPropagation();
+                                        if (!onCloseSignalement) return;
+                                        if (!canManageVehicleMaintenance) {
+                                          toast.error(
+                                            "Vous n'avez pas les droits pour clôturer ce signalement",
+                                          );
+                                          return;
+                                        }
+                                        if (!maintenanceId) {
+                                          toast.error("Identifiant d'intervention introuvable");
+                                          return;
+                                        }
+                                        try {
+                                          await onCloseSignalement(
+                                            { ...maintenance, id: maintenanceId },
+                                            closureDescription.trim(),
+                                          );
+                                          setClosingReportedId(null);
+                                          setExpandedReportedId(null);
+                                          setShowNotificationsPopup(false);
+                                          setClosureDescription('');
+                                        } catch {
+                                          // toast déjà géré par le handler parent
+                                        }
+                                      }}
+                                    >
+                                      <Check size={14} /> Confirmer la clôture
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="notif-action-btn dismiss"
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setClosingReportedId(null);
+                                        setClosureDescription('');
+                                      }}
+                                    >
+                                      Annuler
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -679,7 +939,7 @@ const HeaderNotifications = ({
                                 setRejectingRequestId(null);
                                 setRejectionReason('');
                                 api.rejectReservationRequest(request.id, reason).catch(() => {
-                                  toast.error('Erreur lors du refus de la demande');
+                                  toast.error('Impossible de refuser la demande de réservation.');
                                 });
                               }}
                             />
@@ -699,7 +959,6 @@ const HeaderNotifications = ({
         <div
           className="notifications-popup notifications-popover"
           style={popoverStyle}
-          onMouseDown={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="false"
           aria-label="Demandes de réservation"
@@ -709,14 +968,14 @@ const HeaderNotifications = ({
               <CalendarCheck size={20} strokeWidth={2.5} className="popup-icon" />
               Demandes de réservation
             </h3>
-            <button
+            <Button
               type="button"
               className="close-popup-button"
               onClick={() => setShowRequestsPopup(false)}
               aria-label="Fermer"
             >
               <X size={18} />
-            </button>
+            </Button>
           </div>
           <div className="notifications-popup-content">
             {pendingReservationRequests.length === 0 ? (
@@ -763,7 +1022,7 @@ const HeaderNotifications = ({
                                   }));
                                   toast.success('Demande approuvée ! La réservation a été créée.');
                                   api.approveReservationRequest(request.id).catch(() => {
-                                    toast.error('Erreur lors de la validation');
+                                    toast.error('Impossible de valider la demande de réservation.');
                                   });
                                 },
                               });
@@ -789,7 +1048,7 @@ const HeaderNotifications = ({
                               setRejectingRequestId(null);
                               setRejectionReason('');
                               api.rejectReservationRequest(request.id, reason).catch(() => {
-                                toast.error('Erreur lors du refus');
+                                toast.error('Impossible de refuser la demande de réservation.');
                               });
                             }}
                           />

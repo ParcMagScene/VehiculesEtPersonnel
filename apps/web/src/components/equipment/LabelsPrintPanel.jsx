@@ -330,14 +330,14 @@ export default function LabelsPrintPanel() {
                           onBlur={() => onMagBlur(it.serial_id)}
                         />
                         {hasSuggestion && (
-                          <button
+                          <Button
                             type="button"
                             className="lpp-mag-apply"
                             onClick={applySuggestion}
                             title={`Appliquer la suggestion : ${it.suggested_mag}`}
                           >
                             ✓ {it.suggested_mag}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>

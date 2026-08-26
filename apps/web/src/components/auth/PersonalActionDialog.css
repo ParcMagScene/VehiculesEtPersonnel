@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════
+   PersonalActionDialog.css
+   Styles de la modal d'auth éphémère « actions personnelles »
+   Réutilise les tokens de design-system, pas de couleurs en dur.
+   ═══════════════════════════════════════════════════════════════ */
+
+.personal-action-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  padding: var(--space-2, 8px) 0;
+}
+
+.pad-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+.pad-label {
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 500;
+  color: var(--color-text-muted, var(--color-text));
+}
+
+.pad-selected-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  font-size: var(--font-size-sm, 13px);
+  color: var(--color-text);
+  background: var(--color-bg-subtle, rgba(0, 0, 0, 0.04));
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* ── Onglets PIN / Mot de passe ─────────────────────────────── */
+.pad-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--color-bg-subtle, rgba(0, 0, 0, 0.04));
+  border-radius: var(--radius-md, 6px);
+}
+
+.pad-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm, 13px);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 120ms,
+    color 120ms;
+}
+
+.pad-tab:hover:not(:disabled) {
+  background: var(--color-bg, #fff);
+}
+
+.pad-tab--active {
+  background: var(--color-bg, #fff);
+  color: var(--color-text);
+  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.06));
+}
+
+.pad-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Champ password avec toggle œil ─────────────────────────── */
+.pad-password-wrap {
+  position: relative;
+}
+
+.pad-password-wrap input {
+  padding-right: 36px;
+}
+
+.pad-password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.pad-password-toggle:hover {
+  color: var(--color-text);
+}
+
+.pad-password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Erreur ─────────────────────────────────────────────────── */
+.pad-error {
+  padding: 8px 12px;
+  font-size: var(--font-size-sm, 13px);
+  color: var(--color-danger, #b00020);
+  background: var(--color-danger-soft, rgba(176, 0, 32, 0.08));
+  border: 1px solid var(--color-danger, #b00020);
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* ── Actions ────────────────────────────────────────────────── */
+.pad-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2, 8px);
+  margin-top: var(--space-2, 8px);
+}
+
+/* ── Info bas de modal ──────────────────────────────────────── */
+.pad-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-2, 8px);
+  padding: 6px 8px;
+  font-size: var(--font-size-xs, 12px);
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle, rgba(0, 0, 0, 0.04));
+  border-radius: var(--radius-sm, 4px);
+}

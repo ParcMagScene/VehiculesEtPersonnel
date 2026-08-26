@@ -202,8 +202,11 @@ export default function LocationSelector({ zones, depots, value, onChange }) {
 
       {/* Preview couleur zone */}
       {selectedZone && (
-        <div className="location-selector-preview" style={{ borderLeftColor: selectedZone.color }}>
-          <span className="location-dot" style={{ backgroundColor: selectedZone.color }} />
+        <div
+          className="location-selector-preview"
+          style={{ '--location-zone-color': selectedZone.color }}
+        >
+          <span className="location-dot" />
           {selectedDepot && <span className="location-depot-badge">D{depot}</span>}
           <span>{selectedZone.label}</span>
           {floor && <span className="location-floor-badge">{floor}</span>}

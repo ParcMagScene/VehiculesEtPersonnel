@@ -5,12 +5,14 @@
 import { ChevronDown, ChevronUp, Speaker } from 'lucide-react';
 import { memo } from 'react';
 
+import { Button } from '@/design-system';
+
 function SonosZoneSelector({ zones, activeZone, onZoneSelect, zonesOpen, setZonesOpen }) {
   if (!zones.length) return null;
 
   return (
     <div className="sonos-zones">
-      <button
+      <Button
         type="button"
         className="sonos-zones-toggle"
         onClick={() => setZonesOpen((o) => !o)}
@@ -22,11 +24,11 @@ function SonosZoneSelector({ zones, activeZone, onZoneSelect, zonesOpen, setZone
           <span className="sonos-zones-count">{zones.length}</span>
         </span>
         {zonesOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-      </button>
+      </Button>
       {zonesOpen && (
         <div className="sonos-zones-list">
           {zones.map((z, i) => (
-            <button
+            <Button
               type="button"
               key={i}
               className={`sonos-zones-item${activeZone === z.coordinator ? ' sonos-zones-active' : ''}`}
@@ -37,7 +39,7 @@ function SonosZoneSelector({ zones, activeZone, onZoneSelect, zonesOpen, setZone
               {z.members?.length > 1 && (
                 <span className="sonos-zones-members">+{z.members.length - 1}</span>
               )}
-            </button>
+            </Button>
           ))}
         </div>
       )}

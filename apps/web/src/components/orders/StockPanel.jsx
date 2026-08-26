@@ -41,6 +41,8 @@ import {
   Tag,
   Textarea,
   Tooltip,
+  useResizableColumns,
+  useSortableData,
 } from '@/design-system';
 
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
@@ -129,6 +131,7 @@ function StockPanel({
   const isAdmin = currentUser?.isAdmin === true;
   const clickTimerRef = useRef(null);
   const debounceRef = useRef(null);
+  const ancillaryLoadRef = useRef(null);
 
   // Debounce search (300ms)
   useEffect(() => {
@@ -145,29 +148,42 @@ function StockPanel({
       if (categoryFilter) params.category_id = categoryFilter;
       if (lowStockFilter) params.low_stock = 'true';
 
-      const [itemsData, catsData, statsData, suppData, zonesData, allZonesData] = await Promise.all(
-        [
-          api.getStockItems(params),
-          api.getStockCategories(),
-          api.getStockStats({ stock_type: stockType }),
-          api.getSuppliers({}).catch(() => []),
-          api.getEquipmentDepotZones().catch(() => null),
-          api.getAllDepotZones().catch(() => null),
-        ],
-      );
+      const [itemsData, catsData, statsData] = await Promise.all([
+        api.getStockItems(params),
+        api.getStockCategories(),
+        api.getStockStats({ stock_type: stockType }),
+      ]);
       setItems(itemsData);
       setCategories(catsData);
       setStats(statsData);
-      setSuppliers(suppData);
-      setDepotZones(zonesData);
-      setAllDepotZones(allZonesData);
     } catch (error) {
       console.error('Erreur chargement stock:', error);
-      toast.error('Erreur de chargement du stock');
+      toast.error('Impossible de charger le stock.');
     } finally {
       setLoading(false);
     }
   }, [stockType, debouncedSearch, categoryFilter, lowStockFilter, toast]);
+
+  const ensureAncillaryData = useCallback(async () => {
+    if (ancillaryLoadRef.current) return ancillaryLoadRef.current;
+    if (suppliers.length > 0 && depotZones && allDepotZones) return null;
+
+    ancillaryLoadRef.current = Promise.all([
+      suppliers.length > 0 ? Promise.resolve(null) : api.getSuppliers({}).catch(() => []),
+      depotZones ? Promise.resolve(null) : api.getEquipmentDepotZones().catch(() => null),
+      allDepotZones ? Promise.resolve(null) : api.getAllDepotZones().catch(() => null),
+    ])
+      .then(([suppData, zonesData, allZonesData]) => {
+        if (suppData) setSuppliers(suppData);
+        if (zonesData) setDepotZones(zonesData);
+        if (allZonesData) setAllDepotZones(allZonesData);
+      })
+      .finally(() => {
+        ancillaryLoadRef.current = null;
+      });
+
+    return ancillaryLoadRef.current;
+  }, [allDepotZones, depotZones, suppliers.length]);
 
   const loadMovements = useCallback(async (itemId) => {
     try {
@@ -183,6 +199,11 @@ function StockPanel({
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!showItemForm && !selectedItem && !dialogItem) return;
+    ensureAncillaryData();
+  }, [dialogItem, ensureAncillaryData, selectedItem, showItemForm]);
 
   // Auto-refresh quand le stock change ailleurs
   useRefreshSubscription('stock', loadData);
@@ -207,7 +228,11 @@ function StockPanel({
       refreshBus.publish('stock');
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer l'article: ${error.message}`
+          : "Impossible d'enregistrer l'article.",
+      );
     }
   };
 
@@ -222,7 +247,11 @@ function StockPanel({
           refreshBus.publish('stock');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer l'article: ${error.message}`
+              : "Impossible de supprimer l'article.",
+          );
         }
       },
     });
@@ -241,7 +270,11 @@ function StockPanel({
       refreshBus.publish('stock');
       loadData();
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer la catégorie: ${error.message}`
+          : "Impossible d'enregistrer la catégorie.",
+      );
     }
   };
 
@@ -255,7 +288,11 @@ function StockPanel({
           refreshBus.publish('stock');
           loadData();
         } catch (error) {
-          toast.error('Erreur: ' + error.message);
+          toast.error(
+            error?.message
+              ? `Impossible de supprimer la catégorie: ${error.message}`
+              : 'Impossible de supprimer la catégorie.',
+          );
         }
       },
     });
@@ -279,7 +316,11 @@ function StockPanel({
         loadMovements(dialogItem.id);
       }
     } catch (error) {
-      toast.error('Erreur: ' + error.message);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer le mouvement: ${error.message}`
+          : "Impossible d'enregistrer le mouvement.",
+      );
     }
   };
 
@@ -723,6 +764,17 @@ function _DashboardView({ stats, _items, onSelectItem }) {
 // ═══════════════════════════════════════════════════════════════
 // Liste des Articles
 // ═══════════════════════════════════════════════════════════════
+const STOCK_COLS = {
+  ref: 110,
+  article: 240,
+  category: 160,
+  qty: 80,
+  unit: 80,
+  pu_buy: 110,
+  pu_sell: 110,
+  value: 120,
+  location: 160,
+};
 function ItemsListView({
   items,
   categories,
@@ -741,6 +793,17 @@ function ItemsListView({
   stats,
   onOpenManagement,
 }) {
+  const { getColProps, getResizerProps } = useResizableColumns('stock-items-list', STOCK_COLS);
+  const { sorted, getThProps, getSortIndicator } = useSortableData(items, {
+    initialCol: 'reference',
+    getValue: (row, col) => {
+      if (col === 'quantity') return Number(row.quantity) || 0;
+      if (col === 'unit_price_buy') return Number(row.unit_price_buy) || 0;
+      if (col === 'unit_price_sell') return Number(row.unit_price_sell) || 0;
+      if (col === 'value') return (Number(row.unit_price_buy) || 0) * (Number(row.quantity) || 0);
+      return row[col];
+    },
+  });
   return (
     <div className="stock-items-view">
       {/* Toolbar */}
@@ -816,22 +879,54 @@ function ItemsListView({
         />
       ) : (
         <div className="stock-table-container">
-          <Table className="stock-table">
+          <Table className="stock-table app-data-table">
+            <colgroup>
+              {Object.keys(STOCK_COLS).map((k) => (
+                <col key={k} {...getColProps(k)} />
+              ))}
+            </colgroup>
             <thead>
               <tr>
-                <th>Réf.</th>
-                <th>Article</th>
-                <th>Catégorie</th>
-                <th>Stock</th>
-                <th>Unité</th>
-                <th>P.U. Achat</th>
-                <th>P.U. Vente</th>
-                <th>Valeur</th>
+                <th {...getThProps('reference')}>
+                  Réf.<span className="app-sort-indicator">{getSortIndicator('reference')}</span>
+                  <span {...getResizerProps('ref')} />
+                </th>
+                <th {...getThProps('name')}>
+                  Article<span className="app-sort-indicator">{getSortIndicator('name')}</span>
+                  <span {...getResizerProps('article')} />
+                </th>
+                <th {...getThProps('category_name')}>
+                  Catégorie
+                  <span className="app-sort-indicator">{getSortIndicator('category_name')}</span>
+                  <span {...getResizerProps('category')} />
+                </th>
+                <th {...getThProps('quantity')} className="app-sortable is-center">
+                  Stock<span className="app-sort-indicator">{getSortIndicator('quantity')}</span>
+                  <span {...getResizerProps('qty')} />
+                </th>
+                <th {...getThProps('unit')}>
+                  Unité<span className="app-sort-indicator">{getSortIndicator('unit')}</span>
+                  <span {...getResizerProps('unit')} />
+                </th>
+                <th {...getThProps('unit_price_buy')} className="app-sortable is-numeric">
+                  P.U. Achat
+                  <span className="app-sort-indicator">{getSortIndicator('unit_price_buy')}</span>
+                  <span {...getResizerProps('pu_buy')} />
+                </th>
+                <th {...getThProps('unit_price_sell')} className="app-sortable is-numeric">
+                  P.U. Vente
+                  <span className="app-sort-indicator">{getSortIndicator('unit_price_sell')}</span>
+                  <span {...getResizerProps('pu_sell')} />
+                </th>
+                <th {...getThProps('value')} className="app-sortable is-numeric">
+                  Valeur<span className="app-sort-indicator">{getSortIndicator('value')}</span>
+                  <span {...getResizerProps('value')} />
+                </th>
                 <th>Emplacement</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => {
+              {sorted.map((item) => {
                 const isLow = item.min_quantity > 0 && item.quantity <= item.min_quantity;
                 const isOut = item.quantity === 0;
                 const isSelected = selectedItemId === item.id;
@@ -2028,7 +2123,11 @@ function ImportStockModal({ onDone, onClose }) {
       resetDirty();
       onDone();
     } catch (e) {
-      setError('Erreur import: ' + (e.message || 'erreur serveur'));
+      setError(
+        e?.message
+          ? `Impossible d'importer le stock: ${e.message}`
+          : "Impossible d'importer le stock.",
+      );
       setStep('preview');
     }
   };
@@ -2207,7 +2306,7 @@ function ImportStockModal({ onDone, onClose }) {
 
               {/* Aperçu */}
               <div className="stock-import-preview">
-                <Table className="stock-table">
+                <Table className="stock-table app-data-table is-compact">
                   <thead>
                     <tr>
                       <th>Réf.</th>

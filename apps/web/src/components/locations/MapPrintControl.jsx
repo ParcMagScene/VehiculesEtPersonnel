@@ -5,11 +5,15 @@
 import { Printer } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { exportMapPNG, printMap } from './map-print-utils';
+import { Button } from '@/design-system';
+
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
+import { buildMapPrintHtml, exportMapPNG } from './map-print-utils';
 
 export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g', onDualPrint }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  const printPreview = usePrintPreview();
 
   // Fermer le menu au clic extérieur
   useEffect(() => {
@@ -21,12 +25,17 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const handlePrint = (format, orientation) => {
+  const handlePrint = async (format, orientation) => {
     const container = mapContainerRef?.current?.querySelector('.emag-leaflet-map');
-    if (container) {
-      printMap(container, { format, orientation, title });
-    }
     setOpen(false);
+    if (!container) return;
+    const result = await buildMapPrintHtml(container, { format, orientation, title });
+    if (result) {
+      printPreview.showHtml(result.html, {
+        title: result.title,
+        filename: result.filename,
+      });
+    }
   };
 
   const handleExport = () => {
@@ -39,7 +48,7 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
 
   return (
     <div className="map-print-control" ref={menuRef}>
-      <button
+      <Button
         type="button"
         className="map-print-btn"
         onClick={() => setOpen(!open)}
@@ -48,30 +57,30 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
         aria-expanded={open}
       >
         <Printer size={18} />
-      </button>
+      </Button>
 
       {open && (
         <div className="map-print-menu" role="menu">
           <div className="map-print-menu-title">Imprimer</div>
-          <button type="button" role="menuitem" onClick={() => handlePrint('A4', 'landscape')}>
+          <Button type="button" role="menuitem" onClick={() => handlePrint('A4', 'landscape')}>
             A4 Paysage
-          </button>
-          <button type="button" role="menuitem" onClick={() => handlePrint('A4', 'portrait')}>
+          </Button>
+          <Button type="button" role="menuitem" onClick={() => handlePrint('A4', 'portrait')}>
             A4 Portrait
-          </button>
-          <button type="button" role="menuitem" onClick={() => handlePrint('A3', 'landscape')}>
+          </Button>
+          <Button type="button" role="menuitem" onClick={() => handlePrint('A3', 'landscape')}>
             A3 Paysage
-          </button>
+          </Button>
           <div className="map-print-menu-divider" />
           <div className="map-print-menu-title">Exporter</div>
-          <button type="button" role="menuitem" onClick={handleExport}>
+          <Button type="button" role="menuitem" onClick={handleExport}>
             PNG haute résolution
-          </button>
+          </Button>
           {onDualPrint && (
             <>
               <div className="map-print-menu-divider" />
               <div className="map-print-menu-title">Double carte</div>
-              <button
+              <Button
                 type="button"
                 role="menuitem"
                 onClick={() => {
@@ -80,7 +89,7 @@ export default function MapPrintControl({ mapContainerRef, title = 'Carte eM@g',
                 }}
               >
                 Générale + Locale
-              </button>
+              </Button>
             </>
           )}
         </div>

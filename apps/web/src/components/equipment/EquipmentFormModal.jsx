@@ -1,7 +1,7 @@
 import { Camera, Map, MapPin, Search, X } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { Button, Input, ModalLayout, Select, Textarea, Tooltip } from '@/design-system';
+import { Button, FormField, Input, ModalLayout, Select, Textarea, Tooltip } from '@/design-system';
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
@@ -15,7 +15,7 @@ import DepotMap from '../vehicles/DepotMap';
 import LocationSelector from '../vehicles/LocationSelector';
 import CategoryCascadePicker from './CategoryCascadePicker';
 import { EQUIPMENT_STATUS } from './equipmentConstants';
-import { getCategoryHierarchy, matchPhotoToEquipment } from './equipmentUtils';
+import { getCategoryHierarchy, matchPhotoToEquipment, toThumbUrl } from './equipmentUtils';
 
 const EquipmentFormModal = ({
   equipment: eq,
@@ -123,7 +123,7 @@ const EquipmentFormModal = ({
       const [groupKey, key] = form.photo.slice(8).split('/');
       return GENERIC_IMAGES[groupKey]?.[key] || null;
     }
-    return `/Photos/Matériel/${form.photo}`;
+    return toThumbUrl(`/Photos/Matériel/${form.photo}`, 240);
   }, [form.photo, autoMatchedPhoto]);
 
   const resolvedCat = useMemo(() => {
@@ -195,8 +195,7 @@ const EquipmentFormModal = ({
       >
         <form id="equipment-form" onSubmit={handleSubmit} className="eq-modal-body">
           <div className="eq-form-grid">
-            <div className="eq-form-field eq-form-full">
-              <label>Nom *</label>
+            <FormField className="eq-form-field eq-form-full" label="Nom" required>
               <Input
                 type="text"
                 value={form.name}
@@ -204,17 +203,17 @@ const EquipmentFormModal = ({
                 placeholder="Ex: Enceinte 2 voies 8XT"
                 autoFocus
               />
-            </div>
+            </FormField>
 
             {/* Photo picker */}
-            <div className="eq-form-field eq-form-full">
-              <label>Photo</label>
+            <FormField className="eq-form-field eq-form-full" label="Photo">
               <div className="eq-photo-picker">
-                <div
+                <button
+                  type="button"
                   className="eq-photo-picker-preview"
-                  role="button"
-                  tabIndex={0}
                   onClick={() => setShowPhotoPicker(!showPhotoPicker)}
+                  aria-expanded={showPhotoPicker}
+                  aria-label="Choisir une photo"
                 >
                   {currentPhotoUrl ? (
                     <img src={currentPhotoUrl} alt="Aperçu de l'équipement" loading="lazy" />
@@ -238,7 +237,7 @@ const EquipmentFormModal = ({
                           : 'Choisir une photo'}
                   </span>
                   <Camera size={16} />
-                </div>
+                </button>
                 {form.photo && (
                   <Tooltip content="Retirer la photo">
                     <Button
@@ -283,7 +282,8 @@ const EquipmentFormModal = ({
                     </Button>
                   </div>
                   <div className="eq-photo-picker-grid">
-                    <div
+                    <button
+                      type="button"
                       className={`eq-photo-picker-item${!form.photo ? ' selected' : ''}`}
                       onClick={() => {
                         setForm((f) => ({ ...f, photo: '' }));
@@ -293,10 +293,11 @@ const EquipmentFormModal = ({
                     >
                       <span className="eq-photo-picker-item-icon">{defaultIcon}</span>
                       <span className="eq-photo-picker-item-label">Aucune photo</span>
-                    </div>
+                    </button>
                     {pickerTab === 'photos' &&
                       filteredPickerPhotos.map((p) => (
-                        <div
+                        <button
+                          type="button"
                           key={p}
                           className={`eq-photo-picker-item${form.photo === p ? ' selected' : ''}`}
                           onClick={() => {
@@ -306,11 +307,15 @@ const EquipmentFormModal = ({
                           }}
                           title={p}
                         >
-                          <img src={`/Photos/Matériel/${p}`} alt={p} loading="lazy" />
+                          <img
+                            src={toThumbUrl(`/Photos/Matériel/${p}`, 80)}
+                            alt={p}
+                            loading="lazy"
+                          />
                           <span className="eq-photo-picker-item-label">
                             {p.replace(/\.[^.]+$/, '')}
                           </span>
-                        </div>
+                        </button>
                       ))}
                     {pickerTab === 'generic' &&
                       (() => {
@@ -323,7 +328,8 @@ const EquipmentFormModal = ({
                               {showHeader && (
                                 <div className="eq-photo-picker-group-header">{g.group}</div>
                               )}
-                              <div
+                              <button
+                                type="button"
                                 className="eq-photo-picker-item eq-generic-item"
                                 onClick={() => {
                                   setForm((f) => ({
@@ -337,7 +343,7 @@ const EquipmentFormModal = ({
                               >
                                 <img src={g.path} alt={g.label} loading="lazy" />
                                 <span className="eq-photo-picker-item-label">{g.label}</span>
-                              </div>
+                              </button>
                             </React.Fragment>
                           );
                         });
@@ -351,35 +357,31 @@ const EquipmentFormModal = ({
                   </div>
                 </div>
               )}
-            </div>
-            <div className="eq-form-field">
-              <label>Référence / Code</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Référence / Code">
               <Input
                 type="text"
                 value={form.reference}
                 onChange={(e) => setForm({ ...form, reference: e.target.value })}
                 placeholder="Ex: MTD108-8XT"
               />
-            </div>
-            <div className="eq-form-field">
-              <label>N° de série</label>
+            </FormField>
+            <FormField className="eq-form-field" label="N° de série">
               <Input
                 type="text"
                 value={form.serial_number}
                 onChange={(e) => setForm({ ...form, serial_number: e.target.value })}
               />
-            </div>
-            <div className="eq-form-field">
-              <label>Numéro MAG</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Numéro MAG">
               <Input
                 type="text"
                 value={form.numero_mag}
                 onChange={(e) => setForm({ ...form, numero_mag: e.target.value })}
                 placeholder="N° libre interne (ex: MAG-042)"
               />
-            </div>
-            <div className="eq-form-field">
-              <label>Marque</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Marque">
               <Input
                 type="text"
                 list="eq-brands-list"
@@ -392,18 +394,16 @@ const EquipmentFormModal = ({
                   <option key={b.id} value={b.name} />
                 ))}
               </datalist>
-            </div>
-            <div className="eq-form-field">
-              <label>Quantité / Stock</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Quantité / Stock">
               <Input
                 type="number"
                 min="1"
                 value={form.stock_quantity}
                 onChange={(e) => setForm({ ...form, stock_quantity: e.target.value })}
               />
-            </div>
-            <div className="eq-form-field eq-form-full">
-              <label>Catégorie</label>
+            </FormField>
+            <FormField className="eq-form-field eq-form-full" label="Catégorie">
               <CategoryCascadePicker
                 families={families}
                 subfamilies={subfamilies}
@@ -417,9 +417,8 @@ const EquipmentFormModal = ({
                   setForm((f) => ({ ...f, family_id, subfamily_id, category_id }))
                 }
               />
-            </div>
-            <div className="eq-form-field">
-              <label>Statut</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Statut">
               <Select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
@@ -430,9 +429,9 @@ const EquipmentFormModal = ({
                   </option>
                 ))}
               </Select>
-            </div>
+            </FormField>
             {(depotZones || allDepotZones) && (
-              <div className="eq-form-field eq-form-full">
+              <FormField className="eq-form-field eq-form-full" label="Localisation">
                 <LocationSelector
                   zones={depotZones}
                   depots={allDepotZones}
@@ -554,53 +553,48 @@ const EquipmentFormModal = ({
                       </ModalLayout>
                     );
                   })()}
-              </div>
+              </FormField>
             )}
             {!depotZones && !allDepotZones && (
-              <div className="eq-form-field">
-                <label>Localisation / Zone</label>
+              <FormField className="eq-form-field" label="Localisation / Zone">
                 <Input
                   type="text"
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
                   placeholder="Ex: Dépôt A, Étagère 3"
                 />
-              </div>
+              </FormField>
             )}
-            <div className="eq-form-field">
-              <label>Date d'achat</label>
+            <FormField className="eq-form-field" label="Date d'achat">
               <Input
                 type="date"
                 value={form.purchase_date}
                 onChange={(e) => setForm({ ...form, purchase_date: e.target.value })}
               />
-            </div>
-            <div className="eq-form-field">
-              <label>Prix d'achat (€)</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Prix d'achat (€)">
               <Input
                 type="number"
                 step="0.01"
                 value={form.purchase_price}
                 onChange={(e) => setForm({ ...form, purchase_price: e.target.value })}
               />
-            </div>
-            <div className="eq-form-field">
-              <label>Fin de garantie</label>
+            </FormField>
+            <FormField className="eq-form-field" label="Fin de garantie">
               <Input
                 type="date"
                 value={form.warranty_end}
                 onChange={(e) => setForm({ ...form, warranty_end: e.target.value })}
               />
-            </div>
-            <div className="eq-form-field eq-form-full">
-              <label>Notes</label>
+            </FormField>
+            <FormField className="eq-form-field eq-form-full" label="Notes">
               <Textarea
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 rows={3}
                 placeholder="Remarques, accessoires inclus..."
               />
-            </div>
+            </FormField>
           </div>
         </form>
       </ModalLayout>

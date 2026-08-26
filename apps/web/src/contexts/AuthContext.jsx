@@ -13,6 +13,19 @@ import { requestNotificationPermission, setVolume } from '../utils/notificationS
 
 const AuthContext = createContext(null);
 
+// Compte partagé « Equipe » : son adresse email déclenche le mode
+// « actions personnelles avec auth éphémère » (assignment, congés, indispos
+// validés par PIN/mot de passe du personnel concerné sans changement de session).
+// Surchargeable via VITE_TEAM_ACCOUNT_EMAIL pour les environnements de test.
+const TEAM_ACCOUNT_EMAIL = (import.meta.env?.VITE_TEAM_ACCOUNT_EMAIL || 'commun@magsav.com')
+  .trim()
+  .toLowerCase();
+
+export function isTeamAccountEmail(email) {
+  if (!email) return false;
+  return String(email).trim().toLowerCase() === TEAM_ACCOUNT_EMAIL;
+}
+
 const VALID_TABS = [
   'vehicles',
   'personnel',
@@ -165,6 +178,7 @@ export function AuthProvider({ children }) {
       isAuthenticated,
       currentUser,
       isAuthLoading,
+      isTeamAccount: isTeamAccountEmail(currentUser?.email),
       login,
       loginPin,
       logout,

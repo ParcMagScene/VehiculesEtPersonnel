@@ -25,8 +25,11 @@ import { TIMING } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useGoogleSync } from '../../hooks/useGoogleSync';
 import { useToast } from '../../hooks/useToast';
+import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
 import { capitalizeText } from '../../utils/dateUtils';
+import { computeGridColumnsCss } from '../../utils/planningGridColumns';
+import AffaireBadge from '../AffaireBadge';
 import EventDetailsModal from '../planning/EventDetailsModal';
 
 // Code splitting - Lazy loading
@@ -81,7 +84,11 @@ function GoogleCalendarBanner({
   onNewReservation,
   onNewAssignment,
   onNewAffaire,
-  onNavigateToAffaire,
+  // [NavigationContext] Le badge AffaireBadge utilise useNavigation() pour ouvrir
+  // directement la fiche via setGlobalAffaireDialog. La prop onNavigateToAffaire
+  // (qui basculait sur le module Affaires) est conservée pour compat parent mais
+  // n'est plus utilisée ici.
+  onNavigateToAffaire: _onNavigateToAffaire,
 }) {
   const toast = useToast();
   const cachedState = useMemo(() => loadGoogleStateFromStorage(), []);
@@ -103,6 +110,9 @@ function GoogleCalendarBanner({
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [eventFormMode, setEventFormMode] = useState('create'); // 'create' | 'edit'
   const [eventFormEvent, setEventFormEvent] = useState(null);
+
+  // Largeur fenetre pour computeGridColumnsCss (responsive minmax)
+  const windowWidth = useWindowWidth();
 
   // ── Synchronisation intelligente via useGoogleSync ──
   const {
@@ -192,21 +202,17 @@ function GoogleCalendarBanner({
   useEffect(() => {
     const loadGoogleStatus = async () => {
       try {
-        const [configuredData, calendarIdData, statusData] = await Promise.all([
-          api.getGoogleOAuthConfigured(),
-          api.getGoogleCalendarId(),
-          api.getGoogleOAuthStatus(),
-        ]);
-        setGoogleConfigured(configuredData?.configured || false);
-        setGoogleCalendarId(calendarIdData?.value || null);
-        if (statusData?.connected) {
+        const statusData = await api.getCalendarServiceStatus();
+        setGoogleConfigured(!!statusData?.configured);
+        setGoogleCalendarId(statusData?.calendarId || null);
+        if (statusData?.configured) {
           setIsSignedIn(true);
           setGoogleEmail(statusData.email || null);
           // Persister pour éviter le flash au prochain chargement
           saveGoogleStateToStorage({
             isSignedIn: true,
             email: statusData.email || null,
-            calendarId: calendarIdData?.value || null,
+            calendarId: statusData?.calendarId || null,
           });
         } else {
           setIsSignedIn(false);
@@ -277,64 +283,77 @@ function GoogleCalendarBanner({
 
   // Synchroniser les largeurs avec le calendrier principal (ou le planning personnel)
   useEffect(() => {
+    let retryTimer = null;
+    let rafId = null;
+
     const syncWidths = () => {
       // Chercher la grille principale : Calendar (.calendar-grid) ou PersonnelPanel (.pp-grid)
-      const calendarGrid =
-        document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+      const calendarGrid = document.querySelector('.calendar-grid, .pp-grid');
       const bannerGrid = document.querySelector('.banner-grid');
-      const bannerScrollArea = document.querySelector('.banner-scroll-area');
 
-      if (calendarGrid && bannerGrid && bannerScrollArea) {
-        // Copier les colonnes calculées du calendrier pour toutes les vues
+      if (calendarGrid && bannerGrid) {
+        // Copier les colonnes calculées du calendrier pour toutes les vues.
+        // On évite les writes inutiles pour limiter le layout thrash.
         const gridComputedStyle = window.getComputedStyle(calendarGrid);
         const gridColumns = gridComputedStyle.gridTemplateColumns;
-        const columnWidths = gridColumns.split(' ').map((width) => width);
-        bannerGrid.style.gridTemplateColumns = columnWidths.join(' ');
+
+        if (gridColumns && bannerGrid.style.gridTemplateColumns !== gridColumns) {
+          bannerGrid.style.gridTemplateColumns = gridColumns;
+        }
+      } else if (!retryTimer) {
+        // Lazy mounts (module/tab) : retenter brièvement si la grille n'est pas encore prête.
+        retryTimer = setTimeout(() => {
+          retryTimer = null;
+          syncWidths();
+        }, 80);
       }
     };
 
-    // Attendre que le DOM soit complètement rendu après changement de vue
-    const timer1 = setTimeout(syncWidths, 50);
-    const timer2 = setTimeout(syncWidths, 150);
-    const timer3 = setTimeout(syncWidths, TIMING.DEBOUNCE_SEARCH);
-    const timer4 = setTimeout(syncWidths, TIMING.PRINT_DELAY);
+    const scheduleSync = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(syncWidths);
+    };
+
+    // Attendre le paint initial + un second passage court post-layout.
+    scheduleSync();
+    const afterLayoutTimer = setTimeout(scheduleSync, 150);
 
     // Observer les changements de taille du calendrier ou du planning personnel
-    const calendarGrid =
-      document.querySelector('.calendar-grid') || document.querySelector('.pp-grid');
+    const calendarGrid = document.querySelector('.calendar-grid, .pp-grid');
     let resizeObserver;
 
     if (calendarGrid) {
-      resizeObserver = new ResizeObserver(syncWidths);
+      resizeObserver = new ResizeObserver(scheduleSync);
       resizeObserver.observe(calendarGrid);
     }
 
     // Synchroniser lors du resize de la fenêtre
-    window.addEventListener('resize', syncWidths);
+    window.addEventListener('resize', scheduleSync);
 
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timer4);
+      clearTimeout(afterLayoutTimer);
+      if (retryTimer) clearTimeout(retryTimer);
+      if (rafId) cancelAnimationFrame(rafId);
       if (resizeObserver) resizeObserver.disconnect();
-      window.removeEventListener('resize', syncWidths);
+      window.removeEventListener('resize', scheduleSync);
     };
-  }, [view, currentDate, events.length]);
+  }, [activeModule, view, currentDate, events.length]);
 
   // Synchroniser le scroll entre le calendrier et le banner
   useEffect(() => {
     let cleanupFn = null;
+    let attachTimer = null;
+    let disposed = false;
 
     const attachScrollListeners = () => {
+      if (disposed) return;
+
       // Chercher la zone de scroll principale : Calendar ou PersonnelPanel
-      const calendarScrollArea =
-        document.querySelector('.calendar-scroll-area') ||
-        document.querySelector('.pp-scroll-area');
+      const calendarScrollArea = document.querySelector('.calendar-scroll-area, .pp-scroll-area');
       const bannerScrollArea = document.querySelector('.banner-scroll-area');
 
       if (!calendarScrollArea || !bannerScrollArea) {
-        setTimeout(attachScrollListeners, 50);
+        attachTimer = setTimeout(attachScrollListeners, 80);
         return;
       }
 
@@ -369,10 +388,11 @@ function GoogleCalendarBanner({
       };
     };
 
-    const timer = setTimeout(attachScrollListeners, 100);
+    attachTimer = setTimeout(attachScrollListeners, 100);
 
     return () => {
-      clearTimeout(timer);
+      disposed = true;
+      if (attachTimer) clearTimeout(attachTimer);
       if (cleanupFn) cleanupFn();
     };
   }, [events.length, view]);
@@ -607,7 +627,11 @@ function GoogleCalendarBanner({
   }, [view, currentDate]);
 
   const eventBlocks = useMemo(() => {
-    const isPersonnelMode = activeModule === 'personnel';
+    // [fix banner alignment] Le module Personnel utilise activeModule='planning'
+    // (cf. routes.config.js id:'planning'). Pas de subdivision AM/PM en mode
+    // planning : 1 colonne par jour, comme .pp-grid (computeGridColumnsCss).
+    const isPlanningMode = activeModule === 'planning';
+    const isPersonnelMode = isPlanningMode;
     const eventBlocks = [];
     const processedEvents = new Set();
 
@@ -827,14 +851,14 @@ function GoogleCalendarBanner({
                 onClick={
                   activeModule === 'affaires'
                     ? onNewAffaire
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? onNewAssignment
                       : onNewReservation
                 }
                 title={
                   activeModule === 'affaires'
                     ? 'Nouvelle affaire'
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? 'Nouvelle affectation'
                       : 'Nouvelle réservation'
                 }
@@ -843,7 +867,7 @@ function GoogleCalendarBanner({
                 <span>
                   {activeModule === 'affaires'
                     ? 'Nouvelle affaire'
-                    : activeModule === 'personnel'
+                    : activeModule === 'planning'
                       ? 'Nouvelle affectation'
                       : 'Nouvelle réservation'}
                 </span>
@@ -869,13 +893,23 @@ function GoogleCalendarBanner({
             onScroll={handleScroll}
             style={displayMode === 'compact' ? { height: `${bannerHeight}px` } : undefined}
           >
-            <div className={`banner-grid ${view}-view`}>
+            <div
+              className={`banner-grid ${view}-view`}
+              style={{
+                gridTemplateColumns: computeGridColumnsCss({
+                  view,
+                  days,
+                  module: activeModule === 'planning' ? 'planning' : 'vehicles',
+                  windowWidth,
+                }),
+              }}
+            >
               {/* Lignes de séparation alignées sur les colonnes */}
               <div className="banner-grid-lines">
                 {view === 'week' &&
                   days.flatMap((day, dayIndex) => {
                     const dayIsToday = isToday(day);
-                    if (activeModule === 'personnel') {
+                    if (activeModule === 'planning') {
                       return [
                         <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />,
                       ];
@@ -894,7 +928,7 @@ function GoogleCalendarBanner({
                 {view === 'month' &&
                   days.flatMap((day, dayIndex) => {
                     const dayIsToday = isToday(day);
-                    if (activeModule === 'personnel') {
+                    if (activeModule === 'planning') {
                       return [
                         <div key={dayIndex} className={`grid-line ${dayIsToday ? 'today' : ''}`} />,
                       ];
@@ -1005,21 +1039,7 @@ function GoogleCalendarBanner({
                             </span>
                           )}
                         {eventBlock.affaire && (
-                          <span
-                            className="event-affaire"
-                            style={{
-                              cursor: onNavigateToAffaire ? 'pointer' : 'default',
-                              textDecoration: 'underline',
-                            }}
-                            onClick={(e) => {
-                              if (onNavigateToAffaire) {
-                                e.stopPropagation();
-                                onNavigateToAffaire(eventBlock.affaire);
-                              }
-                            }}
-                          >
-                            {eventBlock.affaire}
-                          </span>
+                          <AffaireBadge numero={eventBlock.affaire} size="sm" />
                         )}
                         {eventBlock.time && <span className="event-time">{eventBlock.time}</span>}
                       </div>

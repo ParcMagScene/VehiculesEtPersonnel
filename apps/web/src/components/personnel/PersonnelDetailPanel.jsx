@@ -86,7 +86,13 @@ const LEAVE_APPROVAL_COLORS = {
 };
 
 const PersonnelDetailContent = ({ person, positions = [], _skills = [], onRequestLeave }) => {
-  if (!person) return null;
+  if (!person || !person.id) {
+    return (
+      <div className="pdp-section" style={{ textAlign: 'center', padding: '20px' }}>
+        <p style={{ color: 'var(--theme-text-muted)' }}>Aucune donnée à afficher</p>
+      </div>
+    );
+  }
 
   // Parser les postes par défaut
   let defaultPositions = [];
@@ -105,11 +111,16 @@ const PersonnelDetailContent = ({ person, positions = [], _skills = [], onReques
       <section className="pdp-section">
         <div className="pdp-identity">
           <div className="pdp-avatar-large">
-            <Avatar name={`${person.firstName} ${person.lastName}`} size="xl" />
+            <Avatar
+              name={`${person.firstName || person.first_name || 'P'} ${person.lastName || person.last_name || 'N'}`}
+              size="xl"
+            />
           </div>
           <div className="pdp-identity-info">
             <div className="pdp-fullname">
-              {person.firstName} {person.lastName}
+              {(person.firstName || person.first_name || 'Prénom') +
+                ' ' +
+                (person.lastName || person.last_name || 'Nom')}
             </div>
             <div className="pdp-type-row">
               <Tag color={person.type === 'permanent' ? 'primary' : 'amber'} size="sm">
@@ -337,22 +348,20 @@ const PersonnelSlidePanel = ({
   onRequestLeave,
 }) => {
   const currentPerson = person || {};
+  const firstName = currentPerson.firstName || currentPerson.first_name || '';
+  const lastName = currentPerson.lastName || currentPerson.last_name || '';
+  const fullName = (firstName + ' ' + lastName).trim() || 'Personnel';
 
   return (
     <Drawer
       open={!!person}
       onClose={onClose}
-      side="right"
-      width={420}
-      inline
       overlay={false}
       className="personnel-slide-panel"
-      icon={<Avatar name={`${currentPerson.firstName} ${currentPerson.lastName}`} size="xs" />}
+      icon={<Avatar name={fullName} size="xs" />}
       title={
         <span className="pdp-slide-title-info">
-          <span className="pdp-slide-name">
-            {currentPerson.firstName} {currentPerson.lastName}
-          </span>
+          <span className="pdp-slide-name">{fullName}</span>
           <span className="pdp-slide-badges">
             <Tag color={currentPerson.type === 'permanent' ? 'primary' : 'amber'} size="sm">
               {currentPerson.type === 'permanent' ? 'Permanent' : 'Contractuel'}

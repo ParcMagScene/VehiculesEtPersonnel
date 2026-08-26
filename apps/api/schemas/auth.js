@@ -106,3 +106,24 @@ export const suiviPersonalAuthSchema = z.object({
     .optional(),
   password: password.optional(),
 });
+
+// ── Auth éphémère pour actions personnelles via compte Equipe ──
+// Le compte commun@magsav.com authentifie ponctuellement un personnel
+// (PIN ou mot de passe) pour exécuter une action en son nom, sans
+// changer de session.
+export const personalActionPerformSchema = z
+  .object({
+    personId: z.number().int().positive(),
+    pin: z
+      .string()
+      .length(4)
+      .regex(/^\d{4}$/)
+      .optional(),
+    password: password.optional(),
+    actionType: z.enum(['create_assignment', 'request_leave', 'declare_unavailability']),
+    payload: z.record(z.string(), z.unknown()),
+  })
+  .refine((data) => Boolean(data.pin) || Boolean(data.password), {
+    message: 'Code PIN ou mot de passe requis',
+    path: ['pin'],
+  });

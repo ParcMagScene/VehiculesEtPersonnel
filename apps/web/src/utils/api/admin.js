@@ -1,5 +1,7 @@
 // API — Administration, Config, Utilisateurs, Accès, Pièces jointes, Google Config
 
+const PENDING_COUNTERS_CACHE_TTL_MS = 5000;
+
 export function registerAdminMethods(ApiClient) {
   Object.assign(ApiClient.prototype, {
     // Configuration
@@ -164,19 +166,50 @@ export function registerAdminMethods(ApiClient) {
       });
     },
     async createAccessRequest(data) {
-      return this.request('/access-requests', { method: 'POST', body: JSON.stringify(data) });
+      const result = await this.request('/access-requests', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      this._shortLivedCountersCache?.delete('pending-access-requests-count');
+      this._shortLivedCountersCache?.delete('pending-requests-count');
+      return result;
     },
     async updateAccessRequest(requestId, status, isAdmin = false) {
-      return this.request(`/access-requests/${requestId}`, {
+      const result = await this.request(`/access-requests/${requestId}`, {
         method: 'PATCH',
         body: JSON.stringify({ status, is_admin: isAdmin }),
       });
+      this._shortLivedCountersCache?.delete('pending-access-requests-count');
+      this._shortLivedCountersCache?.delete('pending-requests-count');
+      return result;
     },
     async getPendingAccessRequestsCount() {
-      return this.request('/access-requests/count/pending');
+      if (!this._shortLivedCountersCache) this._shortLivedCountersCache = new Map();
+      const cacheKey = 'pending-access-requests-count';
+      const cached = this._shortLivedCountersCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.data;
+      }
+      const data = await this.request('/access-requests/count/pending');
+      this._shortLivedCountersCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + PENDING_COUNTERS_CACHE_TTL_MS,
+      });
+      return data;
     },
     async getPendingRequestsCount() {
-      return this.request('/pending-requests-count');
+      if (!this._shortLivedCountersCache) this._shortLivedCountersCache = new Map();
+      const cacheKey = 'pending-requests-count';
+      const cached = this._shortLivedCountersCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.data;
+      }
+      const data = await this.request('/pending-requests-count');
+      this._shortLivedCountersCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + PENDING_COUNTERS_CACHE_TTL_MS,
+      });
+      return data;
     },
     async getPendingReservationRequests() {
       return this.request('/reservation-requests/pending');

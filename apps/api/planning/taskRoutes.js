@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
 
 import db from '../database.js';
 import logger from '../logger.js';
@@ -19,6 +20,35 @@ function isValidDate(str) {
 }
 function isValidTime(str) {
   return typeof str === 'string' && TIME_RE.test(str);
+}
+
+/**
+ * Construit l'URL absolue de la vue mobile "Tâches du jour" pour une date.
+ * Le hash router mobile gère la query string : `#/mobile/tasks?date=YYYY-MM-DD`.
+ * La vue MobileTasks ne permet que de cocher/décocher le statut (effectué).
+ */
+function buildTasksDayUrl(date) {
+  const root = (process.env.API_BASE_URL || 'http://localhost:4173').replace(/\/+$/, '');
+  return `${root}/#/mobile/tasks?date=${encodeURIComponent(date)}`;
+}
+
+/**
+ * Pré-génère le buffer PNG du QR code pour une date donnée.
+ * Retourne null en cas d'échec (le PDF est rendu sans QR).
+ */
+async function generateTasksDayQrBuffer(date) {
+  try {
+    return await QRCode.toBuffer(buildTasksDayUrl(date), {
+      errorCorrectionLevel: 'M',
+      type: 'png',
+      margin: 1,
+      width: 256,
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+  } catch (e) {
+    logger.warn(`[tasks-pdf] QR generation failed: ${e?.message || e}`);
+    return null;
+  }
 }
 
 export function setupTaskRoutes(app, authenticateToken) {
@@ -44,7 +74,43 @@ export function setupTaskRoutes(app, authenticateToken) {
              v.registration AS reservation_vehicle_reg,
              r.start_date AS reservation_start,
              r.end_date AS reservation_end,
-             r.driver_name AS reservation_driver
+             r.driver_name AS reservation_driver,
+             EXISTS (
+               SELECT 1
+               FROM task_assignments prev
+               WHERE prev.deleted_at IS NOT NULL
+                 AND (
+                   lower(prev.notes) LIKE '%[reportée]%'
+                   OR lower(prev.notes) LIKE '%[reportée %'
+                   OR lower(prev.notes) LIKE '%[reportee]%'
+                   OR lower(prev.notes) LIKE '%[reportee %'
+                 )
+                 AND prev.date < ta.date
+                 AND prev.section = ta.section
+                 AND prev.title = ta.title
+                 AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                 AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                 AND COALESCE(prev.source_id, '') = COALESCE(ta.source_id, '')
+                 AND COALESCE(prev.time, '') = COALESCE(ta.time, '')
+             ) AS is_rolled,
+             (
+               SELECT MAX(prev.date)
+               FROM task_assignments prev
+               WHERE prev.deleted_at IS NOT NULL
+                 AND (
+                   lower(prev.notes) LIKE '%[reportée]%'
+                   OR lower(prev.notes) LIKE '%[reportée %'
+                   OR lower(prev.notes) LIKE '%[reportee]%'
+                   OR lower(prev.notes) LIKE '%[reportee %'
+                 )
+                 AND prev.date < ta.date
+                 AND prev.section = ta.section
+                 AND prev.title = ta.title
+                 AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                 AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                 AND COALESCE(prev.source_id, '') = COALESCE(ta.source_id, '')
+                 AND COALESCE(prev.time, '') = COALESCE(ta.time, '')
+             ) AS rolled_from_date
       FROM task_assignments ta
       LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
       LEFT JOIN persons p ON ta.person_id = p.id
@@ -97,7 +163,7 @@ export function setupTaskRoutes(app, authenticateToken) {
   // EXPORT PDF — Fiche journalière complète
   // ═══════════════════════════════════════════════
 
-  const handleExportPdf = (req, res) => {
+  const handleExportPdf = async (req, res) => {
     try {
       const { date, taskIds, eventIds } = req.query;
       const gcalEvents = req.body?.gcalEvents || [];
@@ -143,6 +209,38 @@ export function setupTaskRoutes(app, authenticateToken) {
              dde.client AS event_client,
              dde.location AS event_location,
              dde.status AS event_status,
+             EXISTS(
+               SELECT 1
+               FROM task_assignments prev
+               WHERE prev.deleted_at IS NOT NULL
+                 AND prev.date < ta.date
+                 AND COALESCE(prev.section, '') = COALESCE(ta.section, '')
+                 AND COALESCE(prev.title, '') = COALESCE(ta.title, '')
+                 AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                 AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                 AND (
+                   lower(prev.notes) LIKE '%[reportée]%'
+                   OR lower(prev.notes) LIKE '%[reportée %'
+                   OR lower(prev.notes) LIKE '%[reportee]%'
+                   OR lower(prev.notes) LIKE '%[reportee %'
+                 )
+             ) AS is_rolled,
+             (
+               SELECT MAX(prev.date)
+               FROM task_assignments prev
+               WHERE prev.deleted_at IS NOT NULL
+                 AND prev.date < ta.date
+                 AND COALESCE(prev.section, '') = COALESCE(ta.section, '')
+                 AND COALESCE(prev.title, '') = COALESCE(ta.title, '')
+                 AND COALESCE(prev.affaire_num, '') = COALESCE(ta.affaire_num, '')
+                 AND COALESCE(prev.person_id, -1) = COALESCE(ta.person_id, -1)
+                 AND (
+                   lower(prev.notes) LIKE '%[reportée]%'
+                   OR lower(prev.notes) LIKE '%[reportée %'
+                   OR lower(prev.notes) LIKE '%[reportee]%'
+                   OR lower(prev.notes) LIKE '%[reportee %'
+                 )
+             ) AS rolled_from_date,
              p.first_name AS person_first_name,
              p.last_name AS person_last_name
       FROM task_assignments ta
@@ -524,6 +622,10 @@ export function setupTaskRoutes(app, authenticateToken) {
       });
 
       // ── Générer le PDF (tout sur 1 page) ──
+      // QR code pré-généré (async) avant d'ouvrir le pipe : permet d'embarquer
+      // le PNG directement dans le header sans attente côté stream.
+      const qrBuffer = await generateTasksDayQrBuffer(date);
+
       const doc = new PDFDocument({
         size: 'A4',
         margins: { top: 25, bottom: 20, left: 25, right: 25 },
@@ -549,7 +651,8 @@ export function setupTaskRoutes(app, authenticateToken) {
       );
       const totalSections = nonEmptySections.length;
       const FREE_LINES = Math.max(2, Math.min(5, 6 - Math.floor(totalItems / 12)));
-      const HEADER_H = 38;
+      // HEADER_H inclut titre + date + total + QR code (60x60) + caption + marges.
+      const HEADER_H = 78;
       const FOOTER_H = 12;
       const BANNER_H = 15;
       const SECTION_GAP = 2;
@@ -595,18 +698,58 @@ export function setupTaskRoutes(app, authenticateToken) {
       };
 
       // ── EN-TÊTE (compact) ──
-      doc.fontSize(16).font('Helvetica-Bold').text('Fiche du jour', { align: 'center' });
+      const headerStartY = doc.y;
+
+      // QR code en haut à droite (renvoie vers /#/mobile/tasks?date=...)
+      const QR_SIZE = 60;
+      const qrX = leftX + pageW - QR_SIZE;
+      const qrY = headerStartY;
+      if (qrBuffer) {
+        try {
+          doc.image(qrBuffer, qrX, qrY, { width: QR_SIZE, height: QR_SIZE });
+          doc
+            .fontSize(5.5)
+            .fillColor('#666666')
+            .text('Scanner pour cocher', qrX, qrY + QR_SIZE + 1, {
+              width: QR_SIZE,
+              align: 'center',
+              lineBreak: false,
+            });
+          doc.fillColor('#000000');
+        } catch (e) {
+          logger.warn(`[tasks-pdf] QR draw failed: ${e?.message || e}`);
+        }
+      }
+
+      // Réinitialiser le curseur après le QR (doc.image le déplace).
+      // Centrer titre/date/éléments dans la zone gauche (hors QR).
+      const titleAreaW = pageW - QR_SIZE - 8;
+      doc.x = leftX;
+      doc.y = headerStartY;
+      doc
+        .fontSize(16)
+        .font('Helvetica-Bold')
+        .text('Fiche du jour', leftX, headerStartY, { width: titleAreaW, align: 'center' });
       doc.moveDown(0.15);
       doc
         .fontSize(10)
         .font('Helvetica')
-        .text(dateFr.charAt(0).toUpperCase() + dateFr.slice(1), { align: 'center' });
+        .text(dateFr.charAt(0).toUpperCase() + dateFr.slice(1), leftX, doc.y, {
+          width: titleAreaW,
+          align: 'center',
+        });
       doc.moveDown(0.1);
       doc
         .fontSize(7)
         .fillColor('#999999')
-        .text(`${totalItems} élément${totalItems > 1 ? 's' : ''}`, { align: 'center' });
+        .text(`${totalItems} élément${totalItems > 1 ? 's' : ''}`, leftX, doc.y, {
+          width: titleAreaW,
+          align: 'center',
+        });
       doc.fillColor('#000000');
+      // S'assurer que la barre de séparation passe sous le QR code.
+      const qrBottom = qrY + QR_SIZE + 8;
+      if (doc.y < qrBottom) doc.y = qrBottom;
       doc.moveDown(0.3);
       doc
         .moveTo(leftX, doc.y)
@@ -769,6 +912,27 @@ export function setupTaskRoutes(app, authenticateToken) {
               const badgeW = drawBadge(ct.label, titleX, rowY, ct.color);
               titleX += badgeW;
             }
+            const rolledFromMatch = String(t.notes || '').match(
+              /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
+            );
+            const rolledFromRaw = t.rolled_from_date || rolledFromMatch?.[1] || '';
+            const hasRolledFlag =
+              t.is_rolled === 1 ||
+              t.is_rolled === true ||
+              /\[report(?:e|ée)/i.test(String(t.notes || ''));
+            if (rolledFromRaw || hasRolledFlag) {
+              const rolledFromLabel = /^\d{4}-\d{2}-\d{2}$/.test(rolledFromRaw)
+                ? (() => {
+                    const [yy, mm, dd] = rolledFromRaw.split('-');
+                    return `${dd}-${mm}-${yy}`;
+                  })()
+                : rolledFromRaw;
+              const rolledBadgeText = rolledFromLabel
+                ? `Reportée du ${rolledFromLabel}`
+                : 'Reportée';
+              const badgeW = drawBadge(rolledBadgeText, titleX, rowY, '#f59e0b');
+              titleX += badgeW;
+            }
             // Titre
             const rightInfoW =
               timeColW + (showClient ? 65 : showLocation ? 55 : 0) + personColW + 8;
@@ -789,7 +953,9 @@ export function setupTaskRoutes(app, authenticateToken) {
                 .stroke();
             }
             // Notes (en italique après le titre) — seulement si différent du titre affiché
-            const notesText = (t.notes || '').trim();
+            const notesText = String(t.notes || '')
+              .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
+              .trim();
             const notesLower = notesText.toLowerCase();
             if (
               notesText &&

@@ -1161,10 +1161,33 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
     let count = 0;
     for (const t of pending) {
-      // Vérifier pas de doublon (même titre + section + date cible, y compris soft-deleted)
+      // Vérifier pas de doublon ACTIF sur la date cible.
+      // ⚠️ Le check (date, section, title) seul est INSUFFISANT : plusieurs
+      // préparations distinctes (affaires différentes, personnes différentes)
+      // peuvent partager exactement le même titre (ex. « 🔧 Préparation »).
+      // Sans person_id/source_id/affaire_num dans le check, le 1er rollover
+      // crée une ligne et les suivants la voient comme un doublon → tous les
+      // autres se font silencieusement soft-delete sans report.
+      // On exclut aussi les soft-deleted (sinon d'anciennes copies bloquent).
       const dup = db
-        .prepare('SELECT 1 FROM task_assignments WHERE date = ? AND section = ? AND title = ?')
-        .get(nextDate, t.section, t.title);
+        .prepare(
+          `SELECT 1 FROM task_assignments
+             WHERE date = ?
+               AND section = ?
+               AND title = ?
+               AND COALESCE(person_id, -1) = COALESCE(?, -1)
+               AND COALESCE(source_id, '') = COALESCE(?, '')
+               AND COALESCE(affaire_num, '') = COALESCE(?, '')
+               AND deleted_at IS NULL`,
+        )
+        .get(
+          nextDate,
+          t.section,
+          t.title,
+          t.person_id ?? null,
+          t.source_id ?? null,
+          t.affaire_num ?? null,
+        );
       if (dup) {
         // Doublon trouvé : soft-delete l'originale quand même
         markRolledStmt.run(t.id);
@@ -1391,10 +1414,29 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
         `);
 
         for (const t of pending) {
-          // Pas de doublon : même titre + section + date cible (y compris soft-deleted)
+          // Même check enrichi qu'au rollover normal : exclure soft-deleted +
+          // distinguer par person_id / source_id / affaire_num pour ne pas
+          // perdre les tâches qui partagent un même titre (ex. plusieurs
+          // préparations d'affaires distinctes).
           const dup = db
-            .prepare('SELECT 1 FROM task_assignments WHERE date = ? AND section = ? AND title = ?')
-            .get(todayStr, t.section, t.title);
+            .prepare(
+              `SELECT 1 FROM task_assignments
+                 WHERE date = ?
+                   AND section = ?
+                   AND title = ?
+                   AND COALESCE(person_id, -1) = COALESCE(?, -1)
+                   AND COALESCE(source_id, '') = COALESCE(?, '')
+                   AND COALESCE(affaire_num, '') = COALESCE(?, '')
+                   AND deleted_at IS NULL`,
+            )
+            .get(
+              todayStr,
+              t.section,
+              t.title,
+              t.person_id ?? null,
+              t.source_id ?? null,
+              t.affaire_num ?? null,
+            );
           if (dup) {
             // Doublon trouvé : soft-delete l'originale quand même
             markRolledStmt.run(t.id);

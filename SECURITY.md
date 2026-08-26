@@ -77,6 +77,29 @@ Nous nous engageons à :
 - 56 tests : 21 unit + 17 schémas Zod + 18 DB init
 - CI GitHub Actions : `npm test` avant build (`protect-prod.yml`)
 
+### Authentification éphémère « actions personnelles »
+
+Endpoint `POST /api/personal-actions/perform` — voir [docs/api/personal-actions.md](docs/api/personal-actions.md).
+
+**Invariant de sécurité (forcé côté handlers serveur) :**
+
+> Tous les handlers d'actions personnelles forcent `person_id` depuis le contexte
+> d'authentification PIN. Le `payload` ne peut **jamais** surcharger cette valeur.
+
+Conséquence : un opérateur sur le compte Équipe ne peut pas créer un congé, déclarer
+une indispo ou s'auto-affecter à une mission au nom d'un autre membre du personnel.
+
+Mesures associées :
+- Vérification stricte que le compte appelant est `TEAM_ACCOUNT_EMAIL`.
+- PIN/mot de passe vérifiés via `services/personalAuth.js` (verrouillage compte
+  après tentatives, message d'erreur générique pour brute-force).
+- Comptes en lecture seule rejetés (`READ_ONLY`).
+- Rate limit dédié (`personalActionsLimiter`).
+- Audit obligatoire dans `personal_actions_log` (succès **et** échec) avec
+  `context_user_id`, `personal_user_id`, `person_id`, `action_type`, `error_code`,
+  `ip`, `user_agent`. Les payloads sont tronqués à 1000 chars et expurgés des
+  champs sensibles (`pin`, `password`, `password_hash`).
+
 ## Vulnérabilités connues
 
 Voir [SECURITY_AUDIT.md](docs/02-Securite/SECURITY_AUDIT.md) pour le rapport complet.

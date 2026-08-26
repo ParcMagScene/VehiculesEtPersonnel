@@ -48,7 +48,7 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
       const data = await api.getDisplayColorRules();
       setRules(data.rules || []);
     } catch {
-      toast.error('Erreur chargement règles');
+      toast.error('Impossible de charger les règles de couleurs.');
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ function ColorRulesTab({ _currentUser, refreshKey, onPreviewChange }) {
       refreshBus.publish('display');
       toast.success('Règles de couleurs enregistrées');
     } catch {
-      toast.error('Erreur enregistrement');
+      toast.error("Impossible d'enregistrer les règles de couleurs.");
     } finally {
       setSaving(false);
     }

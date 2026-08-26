@@ -118,8 +118,8 @@
 .mobile-login .toggle-mode-button {
   padding: 14px;
   background: transparent;
-  color: var(--theme-primary);
-  border: 2px solid var(--theme-primary);
+  color: var(--theme-primary-dark);
+  border: 2px solid var(--theme-primary-dark);
   border-radius: var(--radius-xl);
   font-size: var(--font-base);
   font-weight: 700;
@@ -129,7 +129,7 @@
 }
 
 .mobile-login .toggle-mode-button:hover {
-  background: var(--theme-primary);
+  background: var(--theme-primary-dark);
   color: var(--theme-text-inverse);
 }
 
@@ -159,8 +159,8 @@
 .mobile-login .forgot-password-button {
   padding: 14px;
   background: transparent;
-  color: var(--theme-warning-dark);
-  border: 1px solid var(--btn-warning-hover-bg);
+  color: var(--theme-warning-text);
+  border: 1px solid var(--theme-warning-dark);
   border-radius: var(--radius-xl);
   font-size: var(--font-base);
   cursor: pointer;
@@ -175,7 +175,7 @@
 
 .mobile-login .forgot-password-button:hover {
   background: var(--theme-warning-bg);
-  border-color: var(--theme-warning);
+  border-color: var(--theme-warning-dark);
 }
 
 /* AccessRequestModal → bottom-sheet sur mobile */

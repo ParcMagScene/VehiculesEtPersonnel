@@ -61,6 +61,9 @@ function MobileQRLanding({ uid, onGoToEquipment, onGoHome }) {
             <>
               <div className="qr-landing-uid">{uid}</div>
               <div className="qr-landing-name">{equipment.name}</div>
+              {equipment.reference && (
+                <div className="qr-landing-reference">Réf : {equipment.reference}</div>
+              )}
               {equipment.brand && (
                 <div className="qr-landing-detail">
                   {equipment.brand}

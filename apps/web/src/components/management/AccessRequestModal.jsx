@@ -1,6 +1,6 @@
 import './AccessRequestModal.css';
 
-import { ArrowLeft, CheckCircle, Clock, Lock, Mail, Send, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, KeyRound, Lock, Mail, Send, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button, FormField, InlineAlert, Input, ModalLayout } from '@/design-system';
@@ -10,20 +10,32 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 
+// Politique mot de passe (alignée avec le backend) :
+// majuscules + minuscules + chiffres, pas de longueur minimale
+function validatePasswordClient(pw) {
+  if (!pw) return 'Mot de passe requis';
+  if (!/[A-Z]/.test(pw)) return 'Le mot de passe doit contenir au moins une majuscule';
+  if (!/[a-z]/.test(pw)) return 'Le mot de passe doit contenir au moins une minuscule';
+  if (!/[0-9]/.test(pw)) return 'Le mot de passe doit contenir au moins un chiffre';
+  return null;
+}
+
 function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
-  const [step, setStep] = useState('request'); // 'request' | 'create-password' | 'pending'
+  const [step, setStep] = useState('request'); // 'request' | 'create-password' | 'define-pin' | 'pending'
   const [formData, setFormData] = useState({
     email: prefillEmail || '',
     name: '',
   });
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const { resetDirty, guardClose } = useDirtyForm(
-    { name: formData.name, email: formData.email, password, confirmPassword },
+    { name: formData.name, email: formData.email, password, confirmPassword, pin, confirmPin },
     { confirmer: confirm },
   );
   const handleSafeClose = guardClose(onClose);
@@ -87,23 +99,48 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
       return;
     }
 
-    if (password.length < 10) {
-      setError(
-        'Le mot de passe doit contenir au moins 10 caractères (1 majuscule, 1 chiffre, 1 spécial)',
-      );
+    const pwError = validatePasswordClient(password);
+    if (pwError) {
+      setError(pwError);
       return;
     }
 
     setLoading(true);
     try {
       await api.register(formData.email, formData.name, password);
+      // Login direct pour ouvrir une session authentifiée → étape PIN
       await api.login(formData.email, password);
+      setStep('define-pin');
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la création du compte');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDefinePin = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!/^\d{4}$/.test(pin)) {
+      setError('Le code PIN doit contenir exactement 4 chiffres');
+      return;
+    }
+    if (pin !== confirmPin) {
+      setError('Les codes PIN ne correspondent pas');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Premier setup : la session JWT suffit, pas besoin de currentPassword
+      await api.setPin(pin);
       resetDirty();
       onSuccess?.();
       onClose();
       window.location.reload();
     } catch (err) {
-      setError(err.message || 'Erreur lors de la création du compte');
+      setError(err.message || 'Erreur lors de la définition du code PIN');
     } finally {
       setLoading(false);
     }
@@ -215,7 +252,9 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                 variant="primary"
                 type="submit"
                 form="ar-create-form"
-                disabled={loading || password.length < 10}
+                disabled={
+                  loading || !!validatePasswordClient(password) || password !== confirmPassword
+                }
               >
                 <CheckCircle size={18} />
                 {loading ? 'Création...' : 'Créer mon compte'}
@@ -291,8 +330,7 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                     setError('');
                   }}
                   required
-                  placeholder="Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial"
-                  minLength={10}
+                  placeholder="Lettres maj. + min. + chiffres"
                   autoFocus
                   autoComplete="new-password"
                 />
@@ -318,7 +356,6 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
                   }}
                   required
                   placeholder="Retapez votre mot de passe"
-                  minLength={10}
                   autoComplete="new-password"
                 />
               </FormField>
@@ -352,16 +389,110 @@ function AccessRequestModal({ onClose, onSuccess, prefillEmail }) {
             <Clock size={48} />
             <h3>Votre demande a été transmise</h3>
             <p>
-              Un email d'activation vous sera envoyé après validation par un administrateur. Vous
-              recevrez un lien pour créer votre mot de passe.
+              Votre demande sera examinée par un administrateur. Une fois validée, vous pourrez vous
+              connecter avec votre adresse email pour définir votre mot de passe et votre code PIN.
             </p>
-            <div className="pending-email-info">
-              <Mail size={16} />
-              <span>{formData.email}</span>
-            </div>
           </div>
         </div>
       </ModalLayout>
+    );
+  }
+
+  // ===== ÉTAPE 3 : DÉFINITION DU CODE PIN =====
+  if (step === 'define-pin') {
+    return (
+      <>
+        <ModalLayout
+          open
+          onClose={handleSafeClose}
+          title="Définir votre code PIN"
+          icon={<KeyRound size={20} />}
+          size="md"
+          className="access-request-modal"
+          footer={
+            <Button
+              variant="primary"
+              type="submit"
+              form="ar-pin-form"
+              disabled={loading || !/^\d{4}$/.test(pin) || pin !== confirmPin}
+            >
+              <CheckCircle size={18} />
+              {loading ? 'Enregistrement...' : 'Activer mon compte'}
+            </Button>
+          }
+        >
+          <div className="access-request-content">
+            <div className="success-banner">
+              <CheckCircle size={24} />
+              <div>
+                <strong>Compte créé !</strong>
+                <p>
+                  Définissez maintenant un code PIN à 4 chiffres pour la connexion rapide depuis les
+                  bornes et l'application mobile.
+                </p>
+              </div>
+            </div>
+
+            {error && <InlineAlert>{error}</InlineAlert>}
+
+            <form id="ar-pin-form" onSubmit={handleDefinePin}>
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <KeyRound size={18} /> Code PIN (4 chiffres)
+                  </>
+                }
+                htmlFor="ar-pin"
+                required
+              >
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  id="ar-pin"
+                  value={pin}
+                  onChange={(e) => {
+                    setPin(e.target.value.replace(/\D/g, '').slice(0, 4));
+                    setError('');
+                  }}
+                  required
+                  placeholder="0000"
+                  maxLength={4}
+                  autoFocus
+                  autoComplete="off"
+                />
+              </FormField>
+
+              <FormField
+                className="form-group"
+                label={
+                  <>
+                    <KeyRound size={18} /> Confirmer le code PIN
+                  </>
+                }
+                htmlFor="ar-confirm-pin"
+                required
+              >
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  id="ar-confirm-pin"
+                  value={confirmPin}
+                  onChange={(e) => {
+                    setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4));
+                    setError('');
+                  }}
+                  required
+                  placeholder="0000"
+                  maxLength={4}
+                  autoComplete="off"
+                />
+              </FormField>
+            </form>
+          </div>
+        </ModalLayout>
+        {ConfirmDialogRenderer}
+      </>
     );
   }
 

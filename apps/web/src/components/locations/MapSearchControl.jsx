@@ -6,7 +6,7 @@ import { Globe, MapPin, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
 
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 import { filterGeoLocations } from './map-utils';
 
@@ -138,14 +138,14 @@ export default function MapSearchControl({ locations }) {
           autoComplete="off"
         />
         {query && (
-          <button
+          <Button
             type="button"
             className="map-search-clear"
             onClick={handleClear}
             aria-label="Effacer"
           >
             <X size={14} />
-          </button>
+          </Button>
         )}
       </div>
 

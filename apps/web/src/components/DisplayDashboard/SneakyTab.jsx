@@ -35,7 +35,7 @@ function SneakyTab({ _currentUser, refreshKey }) {
       const data = await api.getDisplaySneakyPhotoStatus();
       setStatus(data);
     } catch {
-      toast.error('Erreur chargement statut');
+      toast.error('Impossible de charger le statut de la photo furtive.');
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ function SneakyTab({ _currentUser, refreshKey }) {
       const data = await api.getDisplaySneakyPhotoStatus();
       setStatus(data);
     } catch {
-      toast.error('Erreur activation');
+      toast.error("Impossible d'activer la photo furtive.");
     }
   }, [selectedFile, duration, toast]);
 
@@ -81,7 +81,7 @@ function SneakyTab({ _currentUser, refreshKey }) {
       toast.success('Photo furtive désactivée');
       setStatus({ active: false });
     } catch {
-      toast.error('Erreur désactivation');
+      toast.error('Impossible de désactiver la photo furtive.');
     }
   }, [toast]);
 

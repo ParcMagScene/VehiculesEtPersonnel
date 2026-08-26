@@ -18,6 +18,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Button,
   EntityCombobox,
+  FormField,
   Input,
   Modal,
   ModalBody,
@@ -39,6 +40,12 @@ import { formatCurrency, formatDateSimple as formatDate } from '../../utils/form
 import AddressAutocomplete from '../AddressAutocomplete';
 import PhoneInput from '../PhoneInput';
 import { DESTINATIONS, DOC_TYPES, ORDER_STATUS, REQUEST_PRIORITY } from './ordersConstants';
+
+function triggerOnEnterSpace(event, callback) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  callback();
+}
 
 // ═══ Modal fournisseur (création / édition) ═══
 export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
@@ -78,56 +85,49 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
       </ModalHeader>
       <ModalBody>
         <div className="form-grid">
-          <div className="form-field">
-            <label>Nom *</label>
+          <FormField className="form-field" label="Nom" required>
             <Input
               type="text"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               required
             />
-          </div>
-          <div className="form-field">
-            <label>Contact</label>
+          </FormField>
+          <FormField className="form-field" label="Contact">
             <Input
               type="text"
               value={form.contact_name}
               onChange={(e) => setForm((f) => ({ ...f, contact_name: e.target.value }))}
             />
-          </div>
-          <div className="form-field">
-            <label>Email</label>
+          </FormField>
+          <FormField className="form-field" label="Email">
             <Input
               type="email"
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             />
-          </div>
-          <div className="form-field">
-            <label>Téléphone</label>
+          </FormField>
+          <FormField className="form-field" label="Téléphone">
             <PhoneInput
               value={form.phone}
               onChange={(val) => setForm((f) => ({ ...f, phone: val }))}
             />
-          </div>
-          <div className="form-field full-width">
-            <label>Adresse</label>
+          </FormField>
+          <FormField className="form-field full-width" label="Adresse">
             <AddressAutocomplete
               value={form.address}
               onChange={(val) => setForm((f) => ({ ...f, address: val }))}
             />
-          </div>
-          <div className="form-field full-width">
-            <label>Site web e-shop</label>
+          </FormField>
+          <FormField className="form-field full-width" label="Site web e-shop">
             <Input
               type="url"
               value={form.website}
               onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
               placeholder="https://..."
             />
-          </div>
-          <div className="form-field">
-            <label>Port forfait (EUR)</label>
+          </FormField>
+          <FormField className="form-field" label="Port forfait (EUR)">
             <Input
               type="number"
               min="0"
@@ -136,9 +136,8 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
               onChange={(e) => setForm((f) => ({ ...f, shipping_flat_rate: e.target.value }))}
               placeholder="ex: 6.90"
             />
-          </div>
-          <div className="form-field">
-            <label>Seuil franco (EUR)</label>
+          </FormField>
+          <FormField className="form-field" label="Seuil franco (EUR)">
             <Input
               type="number"
               min="0"
@@ -147,24 +146,22 @@ export const SupplierFormModal = React.memo(({ supplier, onSave, onClose }) => {
               onChange={(e) => setForm((f) => ({ ...f, shipping_free_threshold: e.target.value }))}
               placeholder="ex: 150"
             />
-          </div>
-          <div className="form-field full-width">
-            <label>Notes livraison/port</label>
+          </FormField>
+          <FormField className="form-field full-width" label="Notes livraison/port">
             <Textarea
               value={form.shipping_notes}
               onChange={(e) => setForm((f) => ({ ...f, shipping_notes: e.target.value }))}
               rows={2}
               placeholder="Ex: expédition 24/48h, franco hors volumineux..."
             />
-          </div>
-          <div className="form-field full-width">
-            <label>Notes</label>
+          </FormField>
+          <FormField className="form-field full-width" label="Notes">
             <Textarea
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               rows={3}
             />
-          </div>
+          </FormField>
         </div>
       </ModalBody>
       <ModalFooter>
@@ -666,17 +663,15 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
       </ModalHeader>
       <ModalBody className="modal-body">
         <div className="form-grid">
-          <div className="form-field">
-            <label>Fournisseur (optionnel)</label>
+          <FormField className="form-field" label="Fournisseur (optionnel)">
             <EntityCombobox
               value={common.supplier_id}
               onChange={(val) => handleSupplierChange(val)}
               options={suppliers}
               placeholder="— Non spécifié —"
             />
-          </div>
-          <div className="form-field">
-            <label>Priorité</label>
+          </FormField>
+          <FormField className="form-field" label="Priorité">
             <Select
               value={common.priority}
               onChange={(e) => setCommon((c) => ({ ...c, priority: e.target.value }))}
@@ -687,18 +682,16 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
                 </option>
               ))}
             </Select>
-          </div>
-          <div className="form-field">
-            <label>Affaire (optionnel)</label>
+          </FormField>
+          <FormField className="form-field" label="Affaire (optionnel)">
             <Input
               type="text"
               value={common.affaire_id}
               onChange={(e) => setCommon((c) => ({ ...c, affaire_id: e.target.value }))}
               placeholder="ex: AF32844"
             />
-          </div>
-          <div className="form-field">
-            <label>Destination</label>
+          </FormField>
+          <FormField className="form-field" label="Destination">
             <Select
               value={common.destination}
               onChange={(e) => setCommon((c) => ({ ...c, destination: e.target.value }))}
@@ -709,27 +702,25 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
                 </option>
               ))}
             </Select>
-          </div>
+          </FormField>
           {common.destination === 'Autre' && (
-            <div className="form-field">
-              <label>Préciser la destination</label>
+            <FormField className="form-field" label="Préciser la destination">
               <Input
                 type="text"
                 value={common.destination_other}
                 onChange={(e) => setCommon((c) => ({ ...c, destination_other: e.target.value }))}
                 placeholder="Destination..."
               />
-            </div>
+            </FormField>
           )}
-          <div className="form-field full-width">
-            <label>Notes / Commentaires</label>
+          <FormField className="form-field full-width" label="Notes / Commentaires">
             <Textarea
               value={common.notes}
               onChange={(e) => setCommon((c) => ({ ...c, notes: e.target.value }))}
               rows={2}
               placeholder="Informations supplémentaires..."
             />
-          </div>
+          </FormField>
         </div>
 
         <div className="material-request-lines">
@@ -744,8 +735,7 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
           {lines.map((line, idx) => (
             <div key={idx} className="material-request-line">
               <div className="material-request-line__row">
-                <div className="form-field" style={{ flex: 2 }}>
-                  <label>Article *</label>
+                <FormField className="form-field" label="Article" required style={{ flex: 2 }}>
                   <div className="article-input-group">
                     <Input
                       type="text"
@@ -764,25 +754,23 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
                       </Button>
                     </Tooltip>
                   </div>
-                </div>
-                <div className="form-field" style={{ flex: 1 }}>
-                  <label>Réf. article</label>
+                </FormField>
+                <FormField className="form-field" label="Réf. article" style={{ flex: 1 }}>
                   <Input
                     type="text"
                     value={line.ref_code}
                     onChange={(e) => updateLine(idx, { ref_code: e.target.value })}
                     placeholder="Référence"
                   />
-                </div>
-                <div className="form-field" style={{ width: 110 }}>
-                  <label>Quantité</label>
+                </FormField>
+                <FormField className="form-field" label="Quantité" style={{ width: 110 }}>
                   <Input
                     type="number"
                     min="1"
                     value={line.quantity}
                     onChange={(e) => updateLine(idx, { quantity: parseInt(e.target.value) || 1 })}
                   />
-                </div>
+                </FormField>
                 {lines.length > 1 && (
                   <div className="form-field" style={{ width: 'auto', alignSelf: 'flex-end' }}>
                     <Button
@@ -842,7 +830,11 @@ export const SupplierDetailModal = React.memo(
         setUploadingDoc(null);
         onReload();
       } catch (error) {
-        toast.error('Erreur: ' + error.message);
+        toast.error(
+          error?.message
+            ? `Impossible d'enregistrer le document: ${error.message}`
+            : "Impossible d'enregistrer le document.",
+        );
       }
     };
 
@@ -1003,6 +995,12 @@ export const SupplierDetailModal = React.memo(
                             onClose();
                             onViewOrder(order);
                           }}
+                          onKeyDown={(e) =>
+                            triggerOnEnterSpace(e, () => {
+                              onClose();
+                              onViewOrder(order);
+                            })
+                          }
                         >
                           <Hash size={14} /> {order.reference}
                         </span>

@@ -14,8 +14,9 @@ export default {
       env: {
         NODE_ENV: 'production',
         ALLOWED_ORIGINS:
-          'http://localhost:4173,http://127.0.0.1:4173,http://magsav.duckdns.org:4173,https://magsav.duckdns.org:3443,http://magsav.duckdns.org:3002,https://magsav.duckdns.org',
-        COOKIE_SECURE: 'false',
+          'http://localhost:4173,http://127.0.0.1:4173,http://localhost:4273,http://127.0.0.1:4273,http://magsav.duckdns.org:4173,https://magsav.duckdns.org:4173,https://magsav.duckdns.org:3443,http://magsav.duckdns.org:3002,https://magsav.duckdns.org',
+        COOKIE_SECURE: 'true',
+        HSTS_ENABLED: 'false',
       },
       // Logs structurés
       error_file: './apps/api/logs/backend-error.log',
@@ -31,7 +32,7 @@ export default {
     {
       name: 'vehicules',
       script: 'npx',
-      args: ['vite', 'preview', '--host', '0.0.0.0', '--port', '4173', '--strictPort'],
+      args: ['vite', 'preview', '--host', '127.0.0.1', '--port', '4273', '--strictPort'],
       cwd: './apps/web',
       instances: 1,
       autorestart: true,

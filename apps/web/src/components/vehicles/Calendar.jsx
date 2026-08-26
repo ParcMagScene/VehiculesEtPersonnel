@@ -51,6 +51,7 @@ const Calendar = ({
   onReservationEditComplete,
   onVehicleClick,
   onVehicleDoubleClick,
+  onVehicleContextMenu,
   onMaintenanceClick,
   onRequestViewEvent,
   currentUser,
@@ -327,20 +328,26 @@ const Calendar = ({
   }, [vehicles, view, reservations, collapsedSections]);
 
   // ═══ HANDLERS ═══
-  const handleSaveReservation = (reservationData) => {
+  const handleSaveReservation = async (reservationData) => {
     let success = false;
-    if (selectedReservation) success = onUpdateReservation(selectedReservation.id, reservationData);
-    else success = onAddReservation(reservationData);
+    if (selectedReservation) {
+      success = await onUpdateReservation(selectedReservation.id, reservationData);
+    } else {
+      success = await onAddReservation(reservationData);
+    }
+
     if (success !== false) {
       setSelectedSlot(null);
       setSelectedReservation(null);
     }
   };
 
-  const handleDeleteReservation = () => {
+  const handleDeleteReservation = async () => {
     if (selectedReservation) {
-      onDeleteReservation(selectedReservation.id);
-      setSelectedReservation(null);
+      const success = await onDeleteReservation(selectedReservation.id);
+      if (success !== false) {
+        setSelectedReservation(null);
+      }
     }
   };
 
@@ -509,6 +516,8 @@ const Calendar = ({
             maintenances={maintenances}
             onVehicleClick={onVehicleClick}
             onVehicleDoubleClick={onVehicleDoubleClick}
+            onVehicleContextMenu={onVehicleContextMenu}
+            onMaintenanceClick={onMaintenanceClick}
           />
 
           <div className="calendar-scroll-area" onScroll={handleScroll}>

@@ -4,8 +4,15 @@
 // ═══════════════════════════════════════════════════════════════
 
 import PDFDocument from 'pdfkit';
+import QRCode from 'qrcode';
 
-import { decToHM, formatDateFR, hasOccupationContext, isPastPeriod } from './_helpers.js';
+import {
+  decToHM,
+  formatDateFR,
+  hasExcusingContextForUnreported,
+  isUnreportedPeriodEntries,
+} from './_helpers.js';
+import { attachPdfSanitizer } from './_pdf-sanitize.js';
 
 export const PDF_MARGIN = 40;
 export const PDF_TABLE_LEFT = 40;
@@ -17,6 +24,68 @@ export const PDF_TEXT_PADDING_X = 4;
 export const PDF_TEXT_PADDING_Y = 5;
 export const PDF_TABLE_BOTTOM = 760;
 export const PDF_WATERMARK_COLOR = '#b0b8c4';
+export const PDF_QR_SIZE = 70;
+
+// ─── Helpers métadonnées personnel & URL ───
+
+const PERSON_TYPE_LABELS = {
+  permanent: 'Permanent',
+  contractuel: 'Contractuel',
+  stagiaire: 'Stagiaire',
+  apprenti: 'Apprenti',
+};
+
+/**
+ * Convertit `persons.type` (+ contract_type éventuel) en libellé lisible.
+ * Fallback : Title Case de la valeur brute.
+ */
+export function getPersonTypeLabel(person) {
+  if (!person) return '';
+  const raw = String(person.type || '').toLowerCase();
+  if (PERSON_TYPE_LABELS[raw]) return PERSON_TYPE_LABELS[raw];
+  if (!raw) return '';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+/**
+ * Construit l'URL absolue de remplissage de fiche pour un personnel donné.
+ * Utilise API_BASE_URL (env) avec fallback dev. Le hash router mobile gère
+ * la query string : `#/mobile/suivi?date=...&person=...`.
+ */
+export function buildSuiviSheetUrl(sheet) {
+  const root = (process.env.API_BASE_URL || 'http://localhost:4173').replace(/\/+$/, '');
+  const params = new URLSearchParams();
+  if (sheet?.date) params.set('date', sheet.date);
+  if (sheet?.person?.id) params.set('person', String(sheet.person.id));
+  const qs = params.toString();
+  return `${root}/#/mobile/suivi${qs ? `?${qs}` : ''}`;
+}
+
+/**
+ * Pré-génère un buffer PNG pour le QR de chaque fiche et l'attache à
+ * `sheet._qrBuffer`. À appeler avant le rendu PDF (drawPdfHeader est sync).
+ */
+export async function ensureSheetQrBuffers(sheets) {
+  const list = Array.isArray(sheets) ? sheets : [sheets];
+  await Promise.all(
+    list.map(async (sheet) => {
+      if (!sheet || sheet._qrBuffer) return;
+      try {
+        const url = buildSuiviSheetUrl(sheet);
+        sheet._qrBuffer = await QRCode.toBuffer(url, {
+          errorCorrectionLevel: 'M',
+          type: 'png',
+          margin: 1,
+          width: 256,
+          color: { dark: '#000000', light: '#ffffff' },
+        });
+      } catch (e) {
+        console.warn('[suivi-pdf] QR generation failed:', e?.message || e);
+        sheet._qrBuffer = null;
+      }
+    }),
+  );
+}
 
 // ─── Helpers PDF communs ───
 
@@ -25,35 +94,96 @@ export function drawPdfHeader(doc, sheet, subtitle) {
   const personName = sheet.person
     ? `${sheet.person.first_name} ${sheet.person.last_name}`
     : 'Personnel';
+  const personTypeLabel = getPersonTypeLabel(sheet.person);
+
+  // Réserver l'espace en haut à droite pour le QR (largeur PDF_QR_SIZE)
+  const qrX = PDF_TABLE_LEFT + PDF_TABLE_WIDTH - PDF_QR_SIZE;
+  const qrY = PDF_MARGIN;
+  if (sheet._qrBuffer) {
+    try {
+      doc.image(sheet._qrBuffer, qrX, qrY, { width: PDF_QR_SIZE, height: PDF_QR_SIZE });
+      // Légende sous le QR
+      doc.fontSize(6).font('Helvetica').fillColor('#64748b');
+      doc.text('Scanner pour remplir en ligne', qrX - 4, qrY + PDF_QR_SIZE + 2, {
+        width: PDF_QR_SIZE + 8,
+        align: 'center',
+        lineBreak: false,
+      });
+    } catch (e) {
+      console.warn('[suivi-pdf] QR image embed failed:', e?.message || e);
+    }
+  }
 
   // Date en haut à gauche
   doc.fontSize(12).font('Helvetica-Bold').fillColor('#334155');
   doc.text(dateStr, PDF_TABLE_LEFT, PDF_MARGIN, { lineBreak: false });
 
-  // Nom du personnel en titre principal centré
+  // Nom du personnel en titre principal — centré sur toute la largeur du tableau
+  // (le QR reste superposé en haut à droite, le centrage page reste visuel)
   doc.fontSize(18).font('Helvetica-Bold').fillColor('#1e3a5f');
   doc.text(personName.toUpperCase(), PDF_TABLE_LEFT, PDF_MARGIN + 18, {
     width: PDF_TABLE_WIDTH,
     align: 'center',
   });
 
-  // Sous-titre Matin/Après-midi si présent
-  if (subtitle) {
-    doc.moveDown(0.2);
-    doc.fontSize(13).font('Helvetica-Bold').fillColor('#334155');
-    doc.text(subtitle, { align: 'center' });
+  // Type de personnel sous le nom — centré sur toute la largeur
+  if (personTypeLabel) {
+    doc.fontSize(10).font('Helvetica').fillColor('#475569');
+    doc.text(personTypeLabel, PDF_TABLE_LEFT, PDF_MARGIN + 40, {
+      width: PDF_TABLE_WIDTH,
+      align: 'center',
+      lineBreak: false,
+    });
   }
 
-  // Affaires planning du jour
-  const affaires = sheet.day_context?.planning_affaires || [];
+  // Calage Y minimum pour ne pas chevaucher le QR
+  const headerBottom = Math.max(
+    PDF_MARGIN + 40 + (personTypeLabel ? 14 : 0),
+    qrY + PDF_QR_SIZE + 12, // sous le QR + sa légende
+  );
+  doc.y = headerBottom;
+
+  // Sous-titre Matin/Après-midi si présent
+  if (subtitle) {
+    doc.fontSize(13).font('Helvetica-Bold').fillColor('#334155');
+    doc.text(subtitle, PDF_TABLE_LEFT, doc.y, { width: PDF_TABLE_WIDTH, align: 'center' });
+  }
+
+  // Contexte du jour (toujours affiché)
+  const ctx = sheet.day_context || {};
+  const contextParts = [];
+  if (Array.isArray(ctx.availabilities) && ctx.availabilities.length > 0) {
+    const labels = [
+      ...new Set(ctx.availabilities.map((a) => a?.type_label || a?.type).filter(Boolean)),
+    ];
+    if (labels.length > 0) contextParts.push(`Disponibilites: ${labels.join(', ')}`);
+  }
+  if (Array.isArray(ctx.missions) && ctx.missions.length > 0) {
+    contextParts.push(`Missions: ${ctx.missions.length}`);
+  }
+  const affaires = Array.isArray(ctx.planning_affaires) ? ctx.planning_affaires : [];
   if (affaires.length > 0) {
+    const labels = affaires
+      .map((a) => {
+        const num = String(a?.affaire_num || '').trim();
+        const label = String(a?.affaire_label || '').trim();
+        if (!num && !label) return '';
+        if (!label || label.toLowerCase() === num.toLowerCase()) return num || label;
+        return `${num} (${label})`;
+      })
+      .filter(Boolean);
+    if (labels.length > 0) contextParts.push(`Affaires: ${labels.join(', ')}`);
+  }
+  if (contextParts.length === 0) contextParts.push('Aucun contexte declare');
+
+  {
     doc.moveDown(0.4);
     const blockX = PDF_TABLE_LEFT;
     const blockW = PDF_TABLE_WIDTH;
     const blockY = doc.y;
     const labelH = 16;
-    const rowH = 15;
-    const totalH = labelH + affaires.length * rowH + 4;
+    const rowH = 13;
+    const totalH = labelH + contextParts.length * rowH + 4;
 
     // Fond bleu pâle
     doc.rect(blockX, blockY, blockW, totalH).fillColor('#eef4fb').fill();
@@ -61,16 +191,13 @@ export function drawPdfHeader(doc, sheet, subtitle) {
 
     // Étiquette
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e40af');
-    doc.text('Affaire(s) du planning :', blockX + 6, blockY + 4, { lineBreak: false });
+    doc.text('Contexte du jour :', blockX + 6, blockY + 4, { lineBreak: false });
 
-    // Ligne par affaire
+    // Lignes contexte
     doc.font('Helvetica').fillColor('#1e3a5f');
-    affaires.forEach((a, idx) => {
+    contextParts.forEach((text, idx) => {
       const rowY = blockY + labelH + idx * rowH;
-      const label = a.affaire_label || a.affaire_num;
-      const client = a.affaire_client ? ` — ${a.affaire_client}` : '';
-      const type = a.affaire_type ? ` [${a.affaire_type}]` : '';
-      doc.fontSize(8).text(`• ${label}${client}${type}`, blockX + 12, rowY, {
+      doc.fontSize(8).text(`• ${text}`, blockX + 12, rowY, {
         width: blockW - 18,
         lineBreak: false,
         ellipsis: true,
@@ -100,14 +227,14 @@ export function drawPdfTableHeader(doc, y) {
 
 export function drawPdfNonRenseigneeNotice(doc, y) {
   const noticeH = 26;
-  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, noticeH).fillColor('#fef9c3').fill();
+  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, noticeH).fillColor('#fee2e2').fill();
   doc
     .rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, noticeH)
     .lineWidth(0.5)
-    .strokeColor('#fbbf24')
+    .strokeColor('#ef4444')
     .stroke();
-  doc.fontSize(9).font('Helvetica-Oblique').fillColor('#92400e');
-  doc.text('Activite non-renseignee a ce jour pour cette periode', PDF_TABLE_LEFT + 8, y + 8, {
+  doc.fontSize(9).font('Helvetica-Bold').fillColor('#991b1b');
+  doc.text('Non renseignee pour cette periode', PDF_TABLE_LEFT + 8, y + 8, {
     width: PDF_TABLE_WIDTH - 16,
     lineBreak: false,
   });
@@ -237,25 +364,83 @@ export function drawPdfFooter(doc, entries, _label) {
     },
   );
 
-  doc.fontSize(8).font('Helvetica').fillColor('#475569');
-  doc.text('Signature / Visa :', PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.55, 760, {
-    width: PDF_TABLE_WIDTH * 0.45,
-    align: 'right',
-    lineBreak: false,
-  });
-  doc
-    .lineWidth(0.5)
-    .strokeColor('#94a3b8')
-    .moveTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.7, 777)
-    .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, 777)
-    .stroke();
-
   doc.fontSize(6).font('Helvetica').fillColor('#999999');
   doc.text(`Genere par eM@g -- ${new Date().toLocaleString('fr-FR')}`, PDF_TABLE_LEFT, 790, {
     align: 'center',
     width: PDF_TABLE_WIDTH,
     lineBreak: false,
   });
+}
+
+/**
+ * Rend une grille "Entrées SAV" en bas de page (6 lignes vides).
+ */
+export function drawPdfSavEntriesSection(doc, topY) {
+  const SECTION_H = 126;
+  const HEADER_H = 20;
+  const COL_H = 18;
+  const ROW_H = 14;
+  const ROWS = 6;
+  const COLS = [32, 165, 230, 88]; // N. | Équipement | Panne | N° Série/eMag
+  const HEADERS = ['N.', 'Équipement', 'Panne', 'N° Série/eMag'];
+
+  const y = topY;
+
+  // Bande titre
+  doc.rect(PDF_TABLE_LEFT, y, PDF_TABLE_WIDTH, HEADER_H).fillColor('#1e3a5f').fill();
+  doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff');
+  doc.text('Entrées SAV', PDF_TABLE_LEFT + 8, y + 6, {
+    width: PDF_TABLE_WIDTH - 16,
+    lineBreak: false,
+  });
+
+  // En-tete colonnes
+  const colY = y + HEADER_H;
+  doc.rect(PDF_TABLE_LEFT, colY, PDF_TABLE_WIDTH, COL_H).fillColor('#e2e8f0').fill();
+  doc.lineWidth(0.6).strokeColor('#94a3b8');
+  doc.rect(PDF_TABLE_LEFT, colY, PDF_TABLE_WIDTH, COL_H + ROWS * ROW_H).stroke();
+
+  doc.fontSize(8).font('Helvetica-Bold').fillColor('#0f172a');
+  let x = PDF_TABLE_LEFT;
+  for (let i = 0; i < HEADERS.length; i++) {
+    const cw = COLS[i];
+    doc.text(HEADERS[i], x + 4, colY + 5, {
+      width: cw - 8,
+      align: i === 0 ? 'center' : 'left',
+      lineBreak: false,
+      ellipsis: true,
+    });
+    x += cw;
+    if (i < HEADERS.length - 1) {
+      doc
+        .moveTo(x, colY)
+        .lineTo(x, colY + COL_H + ROWS * ROW_H)
+        .stroke();
+    }
+  }
+
+  // Lignes vides + numerotation
+  doc.font('Helvetica').fontSize(8).fillColor('#334155');
+  for (let r = 0; r < ROWS; r++) {
+    const ry = colY + COL_H + r * ROW_H;
+    doc
+      .moveTo(PDF_TABLE_LEFT, ry)
+      .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, ry)
+      .stroke();
+    doc.text(String(r + 1), PDF_TABLE_LEFT + 2, ry + 3, {
+      width: COLS[0] - 4,
+      align: 'center',
+      lineBreak: false,
+    });
+  }
+
+  // Bas du tableau
+  doc
+    .moveTo(PDF_TABLE_LEFT, colY + COL_H + ROWS * ROW_H)
+    .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, colY + COL_H + ROWS * ROW_H)
+    .stroke();
+
+  return y + SECTION_H;
 }
 
 // ─── MODE NORMAL : AM + PM sur les memes pages, pas de filigrane ───
@@ -279,6 +464,12 @@ export function generateNormalSheetPdf(sheet, doc) {
   const allEntries = sheet.entries || [];
   const amEntries = allEntries.filter((e) => e.period === 'AM');
   const pmEntries = allEntries.filter((e) => e.period === 'PM');
+  const maxRowsPerPeriod = 7;
+  const amEntriesForLayout = amEntries.slice(0, maxRowsPerPeriod);
+  const pmEntriesForLayout = pmEntries.slice(0, maxRowsPerPeriod);
+  const hasExcusingContext = hasExcusingContextForUnreported(sheet);
+  const unreportedAm = !hasExcusingContext && isUnreportedPeriodEntries(amEntries);
+  const unreportedPm = !hasExcusingContext && isUnreportedPeriodEntries(pmEntries);
 
   drawPdfHeader(doc, sheet, null);
 
@@ -287,9 +478,10 @@ export function generateNormalSheetPdf(sheet, doc) {
   doc.text('MATIN (AM)', PDF_TABLE_LEFT, doc.y);
   doc.moveDown(0.3);
   let y = drawPdfTableHeader(doc, doc.y);
-  y = renderNormalEntries(doc, amEntries, y);
-  if (amEntries.length === 0 && isPastPeriod(sheet.date, 'AM') && !hasOccupationContext(sheet)) {
+  if (unreportedAm) {
     y = drawPdfNonRenseigneeNotice(doc, y);
+  } else {
+    y = renderNormalEntries(doc, amEntriesForLayout, y);
   }
 
   // Section Apres-midi
@@ -303,10 +495,14 @@ export function generateNormalSheetPdf(sheet, doc) {
   doc.text('APRES-MIDI (PM)', PDF_TABLE_LEFT, y);
   doc.moveDown(0.3);
   y = drawPdfTableHeader(doc, doc.y);
-  y = renderNormalEntries(doc, pmEntries, y);
-  if (pmEntries.length === 0 && isPastPeriod(sheet.date, 'PM') && !hasOccupationContext(sheet)) {
+  if (unreportedPm) {
     y = drawPdfNonRenseigneeNotice(doc, y);
+  } else {
+    y = renderNormalEntries(doc, pmEntriesForLayout, y);
   }
+
+  // Bloc fixe en bas pour la saisie papier SAV
+  drawPdfSavEntriesSection(doc, 628);
 
   // Notes
   if (sheet.notes) {
@@ -320,7 +516,7 @@ export function generateNormalSheetPdf(sheet, doc) {
     doc.text(`Notes : ${sheet.notes}`, PDF_TABLE_LEFT, y, { width: PDF_TABLE_WIDTH });
   }
 
-  drawPdfFooter(doc, allEntries, 'Total');
+  drawPdfFooter(doc, [...amEntriesForLayout, ...pmEntriesForLayout], 'Total');
 }
 
 // ─── MODE IMPRESSION : recto unique, Matin (haut) + Apres-midi (bas), lignes filigrane ───
@@ -344,31 +540,26 @@ export function renderPrintHalfSection(doc, sheet, entries, label, period, top, 
   // Reserver une bande basse pour le mini-total de la section
   const FOOTER_RESERVE = 14;
   const entriesBottom = bottom - FOOTER_RESERVE;
+  // En mode impression, on affiche toujours les lignes disponibles,
+  // sans bandeau "Non renseignée" (fiches vides = lignes filigrane vides).
+  const maxRowsPerPeriod = 7;
+  const entriesForPrint = entries.slice(0, maxRowsPerPeriod);
 
-  for (let i = 0; i < entries.length; i++) {
-    const rowHeight = getPdfEntryRowHeight(doc, entries[i]);
+  for (let i = 0; i < entriesForPrint.length; i++) {
+    const rowHeight = getPdfEntryRowHeight(doc, entriesForPrint[i]);
     if (y + rowHeight > entriesBottom) break;
-    drawPdfEntryRow(doc, entries[i], i + 1, y, rowHeight);
+    drawPdfEntryRow(doc, entriesForPrint[i], i + 1, y, rowHeight);
     y += rowHeight;
-  }
-
-  if (
-    entries.length === 0 &&
-    period &&
-    isPastPeriod(sheet.date, period) &&
-    !hasOccupationContext(sheet)
-  ) {
-    y = drawPdfNonRenseigneeNotice(doc, y);
   }
 
   drawPdfWatermarkRows(doc, y, entriesBottom);
 
   // Mini-total de section
-  const totalTime = entries.reduce((s, e) => s + (e.time_spent || 0), 0);
-  const totalDone = entries.filter((e) => e.completed === 1).length;
+  const totalTime = entriesForPrint.reduce((s, e) => s + (e.time_spent || 0), 0);
+  const totalDone = entriesForPrint.filter((e) => e.completed === 1).length;
   doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e3a5f');
   doc.text(
-    `${label} — ${totalDone}/${entries.length} effectuee(s) — ${decToHM(totalTime)}`,
+    `${label} — ${totalDone}/${entriesForPrint.length} effectuee(s) — ${decToHM(totalTime)}`,
     PDF_TABLE_LEFT,
     bottom - 11,
     {
@@ -388,7 +579,9 @@ export function renderPrintFullDayPage(doc, sheet) {
   drawPdfHeader(doc, sheet, null);
 
   const startY = doc.y;
-  const FOOTER_TOP = 758; // au-dessus de la zone signature/genere
+  const SAV_SECTION_TOP = 628;
+  const SAV_SECTION_BOTTOM = drawPdfSavEntriesSection(doc, SAV_SECTION_TOP);
+  const FOOTER_TOP = SAV_SECTION_TOP - 10;
   const SECTION_GAP = 10;
   const totalArea = FOOTER_TOP - startY;
   const halfHeight = (totalArea - SECTION_GAP) / 2;
@@ -426,26 +619,18 @@ export function renderPrintFullDayPage(doc, sheet) {
     bottomSectionBottom,
   );
 
-  // Pied de page partage (signature + horodatage)
-  doc.fontSize(8).font('Helvetica').fillColor('#475569');
-  doc.text('Signature / Visa :', PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.55, 765, {
-    width: PDF_TABLE_WIDTH * 0.45,
-    align: 'right',
-    lineBreak: false,
-  });
-  doc
-    .lineWidth(0.5)
-    .strokeColor('#94a3b8')
-    .moveTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH * 0.7, 780)
-    .lineTo(PDF_TABLE_LEFT + PDF_TABLE_WIDTH, 780)
-    .stroke();
-
+  // Pied de page partage (horodatage uniquement)
   doc.fontSize(6).font('Helvetica').fillColor('#999999');
-  doc.text(`Genere par eM@g -- ${new Date().toLocaleString('fr-FR')}`, PDF_TABLE_LEFT, 792, {
-    align: 'center',
-    width: PDF_TABLE_WIDTH,
-    lineBreak: false,
-  });
+  doc.text(
+    `Genere par eM@g -- ${new Date().toLocaleString('fr-FR')}`,
+    PDF_TABLE_LEFT,
+    SAV_SECTION_BOTTOM + 2,
+    {
+      align: 'center',
+      width: PDF_TABLE_WIDTH,
+      lineBreak: false,
+    },
+  );
 }
 
 // ─── Fonctions de generation finales ───
@@ -464,10 +649,13 @@ export function safePdfFilename(value) {
 }
 
 /**
- * PDF normal individuel (AM+PM ensemble, pas de filigrane)
+ * PDF normal individuel (AM+PM ensemble, pas de filigrane).
+ * Async : pré-génère le QR avant rendu.
  */
-export function generateSheetPdf(sheet, res) {
+export async function generateSheetPdf(sheet, res) {
+  await ensureSheetQrBuffers(sheet);
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
+  attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
   const safeName = safePdfFilename(sheet.person?.last_name || 'personnel');
   const safeDate = safePdfFilename(sheet.date);
@@ -482,12 +670,21 @@ export function generateSheetPdf(sheet, res) {
 }
 
 /**
- * PDF normal multi-fiches (export batch)
+ * PDF normal multi-fiches (export batch).
+ * Async : pré-génère les QR avant rendu.
  */
-export function generateBatchPdf(sheets, res) {
+export async function generateBatchPdf(sheets, res) {
+  await ensureSheetQrBuffers(sheets);
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
+  attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', 'attachment; filename="fiches-suivi-batch.pdf"');
+  const firstDate = safePdfFilename(sheets?.[0]?.date || new Date().toISOString().slice(0, 10));
+  const count = Array.isArray(sheets) ? sheets.length : 0;
+  const fname = `fiches-suivi-${firstDate}-${count}fiches.pdf`;
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${fname}"; filename*=UTF-8''${encodeURIComponent(fname)}`,
+  );
   doc.pipe(res);
 
   for (let s = 0; s < sheets.length; s++) {
@@ -501,9 +698,12 @@ export function generateBatchPdf(sheets, res) {
 /**
  * PDF impression multi-fiches : une seule page (recto) par fiche,
  * coupee en deux dans la hauteur (Matin haut / Apres-midi bas), lignes filigrane.
+ * Async : pré-génère les QR avant rendu.
  */
-export function generateBatchPrintPdf(sheets, res) {
+export async function generateBatchPrintPdf(sheets, res) {
+  await ensureSheetQrBuffers(sheets);
   const doc = new PDFDocument({ size: 'A4', margin: PDF_MARGIN });
+  attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'inline; filename="fiches-suivi-impression.pdf"');
   doc.pipe(res);
@@ -529,6 +729,7 @@ export function generateBatchPrintPdf(sheets, res) {
 
 export function generateSynthesePdf(synthese, title, res) {
   const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
+  attachPdfSanitizer(doc);
   res.setHeader('Content-Type', 'application/pdf');
   const fname = `synthese-${safePdfFilename(title)}.pdf`;
   res.setHeader(
@@ -610,12 +811,7 @@ export function generateSynthesePdf(synthese, title, res) {
     const totDone = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.done || 0), 0);
     const totTasks = pg.sheets.reduce((acc, sh) => acc + (sh.stats?.total || 0), 0);
     const hasWarning = pg.sheets.some((sh) => {
-      const c = sh.day_context || {};
-      const hasCtx =
-        c.has_unavailability || c.has_leave || c.has_mission || c.has_enterprise_presence;
-      return (
-        sh.stats?.not_done > 0 || (!hasCtx && (sh.stats?.unreported_am || sh.stats?.unreported_pm))
-      );
+      return sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm;
     });
 
     ensureSpace(46 + pg.sheets.length * 14);
@@ -642,15 +838,8 @@ export function generateSynthesePdf(synthese, title, res) {
     let odd = false;
     const sortedSheets = [...pg.sheets].sort((a, b) => a.date.localeCompare(b.date));
     for (const sh of sortedSheets) {
-      const shCtx = sh.day_context || {};
-      const shHasContext =
-        shCtx.has_unavailability ||
-        shCtx.has_leave ||
-        shCtx.has_mission ||
-        shCtx.has_enterprise_presence;
       const rowBg =
-        sh.stats?.not_done > 0 ||
-        (!shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm))
+        sh.stats?.not_done > 0 || sh.stats?.unreported_am || sh.stats?.unreported_pm
           ? '#fef2f2'
           : odd
             ? '#f8fafc'
@@ -663,22 +852,18 @@ export function generateSynthesePdf(synthese, title, res) {
       const pmTime = pmEntries.reduce((acc, e) => acc + (e.time_spent || 0), 0);
 
       const ctx = sh.day_context || {};
-      const hasContext =
-        ctx.has_unavailability || ctx.has_leave || ctx.has_mission || ctx.has_enterprise_presence;
 
-      const amCell =
-        sh.stats?.unreported_am && !hasContext
-          ? '⚠ Non renseignée'
-          : `${amEntries.length} tâche(s) — ${decToHM(amTime)}`;
-      const pmCell =
-        sh.stats?.unreported_pm && !hasContext
-          ? '⚠ Non renseignée'
-          : `${pmEntries.length} tâche(s) — ${decToHM(pmTime)}`;
+      const amCell = sh.stats?.unreported_am
+        ? '⚠ Non renseignée'
+        : `${amEntries.length} tâche(s) — ${decToHM(amTime)}`;
+      const pmCell = sh.stats?.unreported_pm
+        ? '⚠ Non renseignée'
+        : `${pmEntries.length} tâche(s) — ${decToHM(pmTime)}`;
 
       const alertParts = [];
       if (sh.stats?.not_done > 0) alertParts.push(`${sh.stats.not_done} non faite(s)`);
-      if (sh.stats?.unreported_am && !hasContext) alertParts.push('AM non-renseignée');
-      if (sh.stats?.unreported_pm && !hasContext) alertParts.push('PM non-renseignée');
+      if (sh.stats?.unreported_am) alertParts.push('AM non-renseignée');
+      if (sh.stats?.unreported_pm) alertParts.push('PM non-renseignée');
       // Contexte : indisponibilités + missions
       for (const av of ctx.availabilities || []) {
         alertParts.push(av.type_label || av.type);
@@ -708,10 +893,7 @@ export function generateSynthesePdf(synthese, title, res) {
       ];
 
       doc.rect(LEFT, y, USABLE_W, 14).fillColor(rowBg).fill();
-      const textColor =
-        !shHasContext && (sh.stats?.unreported_am || sh.stats?.unreported_pm)
-          ? '#991b1b'
-          : '#111111';
+      const textColor = sh.stats?.unreported_am || sh.stats?.unreported_pm ? '#991b1b' : '#111111';
       doc.fillColor(textColor);
       let x = LEFT;
       for (let i = 0; i < rowVals.length; i++) {

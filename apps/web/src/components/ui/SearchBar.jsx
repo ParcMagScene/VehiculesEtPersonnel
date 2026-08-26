@@ -65,6 +65,7 @@ const SearchBar = forwardRef(
     }, [onChange]);
 
     const iconSize = size === 'sm' ? 14 : 16;
+    const ariaLabel = props['aria-label'] || props['aria-labelledby'] ? undefined : placeholder;
 
     return (
       <div className={`ui-search-bar ui-search-bar--${size} ${className}`}>
@@ -76,6 +77,7 @@ const SearchBar = forwardRef(
           value={debounce > 0 ? localValue : value}
           onChange={handleChange}
           placeholder={placeholder}
+          aria-label={ariaLabel}
           {...props}
         />
         {(debounce > 0 ? localValue : value) && (

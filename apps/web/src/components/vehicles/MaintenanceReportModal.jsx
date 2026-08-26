@@ -24,6 +24,7 @@ import { Button, Modal, ModalBody, ModalHeader, Select, Table, Tooltip } from '@
 import { STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
 import { formatDateSimple, formatDateTime } from '../../utils/formatUtils';
+import { usePrintPreview } from '../ui/PrintPreviewProvider';
 
 const PERIOD_MODES = [
   { value: 'day', label: 'Journalier' },
@@ -49,6 +50,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const printRef = useRef(null);
+  const printPreview = usePrintPreview();
 
   const { start, end, label } = useMemo(() => {
     const d = anchorDate;
@@ -136,8 +138,7 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
     const printContent = printRef.current;
     if (!printContent) return;
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
+    const html = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -163,16 +164,15 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
         ${printContent.innerHTML}
       </body>
       </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+    `;
+
+    printPreview.showHtml(html, {
+      title: `Rapport Maintenance — ${label}`,
+      filename: `rapport-maintenance-${label.replace(/\s+/g, '-').toLowerCase()}.html`,
+    });
   };
 
-  // Export PDF (téléchargement réel via backend PDFKit)
+  // Export PDF (aperçu via PrintPreviewProvider, bouton Télécharger dans le modal)
   const [exporting, setExporting] = useState(false);
   const handleExportPDF = async () => {
     setExporting(true);
@@ -180,14 +180,13 @@ export default function MaintenanceReportModal({ isOpen, onClose }) {
       const startStr = format(start, 'yyyy-MM-dd');
       const endStr = format(end, 'yyyy-MM-dd');
       const blob = await api.exportSavReportPdf(startStr, endStr, reportType);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `rapport-maintenance-${startStr}-${endStr}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      printPreview.showPdf(
+        { blob },
+        {
+          title: `Rapport Maintenance — ${label}`,
+          filename: `rapport-maintenance-${startStr}-${endStr}.pdf`,
+        },
+      );
     } catch (err) {
       console.error('Erreur export PDF:', err);
     } finally {

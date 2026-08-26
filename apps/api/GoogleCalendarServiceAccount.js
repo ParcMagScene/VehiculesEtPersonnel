@@ -4,6 +4,12 @@ import { google } from 'googleapis';
 import db from './database.js';
 
 const CALENDAR_READ_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+const EVENTS_LIST_FIELDS =
+  'nextPageToken,items(id,status,summary,description,location,start,end,updated,htmlLink,recurringEventId,colorId,creator(email,displayName),organizer(email,displayName),attendees(email,displayName,responseStatus),conferenceData,attachments)';
+
+let cachedCredentialsCacheKey = null;
+let cachedCredentials = null;
+let cachedJwtClient = null;
 
 function parseServiceAccountJsonFromEnv() {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -43,11 +49,33 @@ function parseServiceAccountJsonFromFile() {
 }
 
 function resolveServiceAccountCredentials() {
+  const envRaw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  const filePath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH;
+  const cacheKey = envRaw
+    ? `env:${envRaw}`
+    : filePath
+      ? (() => {
+          const stats = fs.statSync(filePath);
+          return `file:${filePath}:${stats.mtimeMs}:${stats.size}`;
+        })()
+      : 'none';
+
+  if (cacheKey === cachedCredentialsCacheKey) {
+    return cachedCredentials;
+  }
+
   const fromEnv = parseServiceAccountJsonFromEnv();
-  if (fromEnv) return fromEnv;
+  if (fromEnv) {
+    cachedCredentialsCacheKey = cacheKey;
+    cachedCredentials = fromEnv;
+    cachedJwtClient = null;
+    return fromEnv;
+  }
   const fromFile = parseServiceAccountJsonFromFile();
-  if (fromFile) return fromFile;
-  return null;
+  cachedCredentialsCacheKey = cacheKey;
+  cachedCredentials = fromFile;
+  cachedJwtClient = null;
+  return fromFile;
 }
 
 function resolveCalendarId(overrideCalendarId) {
@@ -78,6 +106,10 @@ export function getGoogleServiceAccountStatus() {
 }
 
 function buildJwtClient() {
+  if (cachedJwtClient) {
+    return cachedJwtClient;
+  }
+
   const creds = resolveServiceAccountCredentials();
   if (!creds) {
     throw new Error(
@@ -85,11 +117,13 @@ function buildJwtClient() {
     );
   }
 
-  return new google.auth.JWT({
+  cachedJwtClient = new google.auth.JWT({
     email: creds.client_email,
     key: String(creds.private_key).replace(/\\n/g, '\n'),
     scopes: [CALENDAR_READ_SCOPE],
   });
+
+  return cachedJwtClient;
 }
 
 export async function getEvents({
@@ -115,6 +149,7 @@ export async function getEvents({
     orderBy,
     q,
     pageToken,
+    fields: EVENTS_LIST_FIELDS,
   });
 
   return response.data;

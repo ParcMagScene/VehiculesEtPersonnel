@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import L from 'leaflet';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Circle,
   MapContainer,
@@ -14,7 +14,7 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 
-import { Input } from '@/design-system';
+import { Button, Input } from '@/design-system';
 
 import {
   filterNearby,
@@ -24,6 +24,7 @@ import {
   TILE_DARK,
   TILE_LIGHT,
 } from './map-utils';
+import { computeLabelPlacements } from './map-label-placement';
 import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapOffScreenIndicators from './MapOffScreenIndicators';
 import MapPopup from './MapPopup';
@@ -101,7 +102,19 @@ function ViewportSync({ onViewChange }) {
   return null;
 }
 
-function LabelCollisionManager({ locations, getDirection, offsets, onChange }) {
+function sameMap(a, b) {
+  if (a === b) return true;
+  if (a.size !== b.size) return false;
+  for (const [key, value] of a) {
+    const other = b.get(key);
+    if (!other) return false;
+    if (other.dir !== value.dir) return false;
+    if (other.offset[0] !== value.offset[0] || other.offset[1] !== value.offset[1]) return false;
+  }
+  return true;
+}
+
+function LabelPlacementManager({ locations, preferredDirections, onChange }) {
   const map = useMap();
   const [revision, setRevision] = useState(0);
 
@@ -112,50 +125,14 @@ function LabelCollisionManager({ locations, getDirection, offsets, onChange }) {
   });
 
   useEffect(() => {
-    const bounds = map.getBounds();
-    const size = map.getSize();
-    const occupied = [];
-    const visible = new Set();
-
-    const intersects = (a, b) =>
-      !(a.x + a.w + 6 < b.x || b.x + b.w + 6 < a.x || a.y + a.h + 4 < b.y || b.y + b.h + 4 < a.y);
-
-    locations.forEach((loc, index) => {
-      if (!bounds.contains([loc.lat, loc.lng])) return;
-
-      const pt = map.latLngToContainerPoint([loc.lat, loc.lng]);
-      const dir = getDirection(loc, index);
-      const [ox, oy] = offsets[dir] || [0, -24];
-      const width = Math.min(260, Math.max(88, (loc.name?.length || 0) * 8 + 24));
-      const height = 28;
-
-      let x = pt.x;
-      let y = pt.y;
-      if (dir === 'top') {
-        x = pt.x + ox - width / 2;
-        y = pt.y + oy - height;
-      } else if (dir === 'bottom') {
-        x = pt.x + ox - width / 2;
-        y = pt.y + oy;
-      } else if (dir === 'right') {
-        x = pt.x + ox;
-        y = pt.y + oy - height / 2;
-      } else {
-        x = pt.x + ox - width;
-        y = pt.y + oy - height / 2;
-      }
-
-      const box = { x, y, w: width, h: height };
-
-      if (box.x < 0 || box.y < 0 || box.x + box.w > size.x || box.y + box.h > size.y) return;
-      if (occupied.some((other) => intersects(box, other))) return;
-
-      occupied.push(box);
-      visible.add(loc.id);
+    const placements = computeLabelPlacements({
+      map,
+      locations,
+      preferredDirections,
+      frameInset: 32,
     });
-
-    onChange(visible);
-  }, [map, locations, getDirection, offsets, onChange, revision]);
+    onChange(placements);
+  }, [map, locations, preferredDirections, onChange, revision]);
 
   return null;
 }
@@ -236,7 +213,7 @@ export default function MapLocal({
     () => [...nearbyLocations].sort((a, b) => b.lat - a.lat),
     [nearbyLocations],
   );
-  const [visibleLabelIds, setVisibleLabelIds] = useState(() => new Set());
+  const [labelPlacements, setLabelPlacements] = useState(() => new Map());
   const labelDirections = useMemo(() => {
     const dirs = {};
     sortedNearby.forEach((loc, i) => {
@@ -245,10 +222,9 @@ export default function MapLocal({
     return dirs;
   }, [sortedNearby]);
 
-  const resolveDirection = useMemo(
-    () => (loc, i) => labelDirections[loc.id] || DIRECTIONS[i % DIRECTIONS.length],
-    [labelDirections],
-  );
+  const handlePlacementsChange = useCallback((nextPlacements) => {
+    setLabelPlacements((prev) => (sameMap(prev, nextPlacements) ? prev : nextPlacements));
+  }, []);
 
   const formatRadius = (r) => {
     if (r < 1000) return `${Math.round(r)} m`;
@@ -275,14 +251,14 @@ export default function MapLocal({
         />
         <div className="map-radius-presets">
           {RADIUS_PRESETS.map((km) => (
-            <button
+            <Button
               type="button"
               key={km}
               className={`map-radius-preset ${radius === km * 1000 ? 'active' : ''}`}
               onClick={() => applyZoneChange(zoneCenter, km * 1000)}
             >
               {km} km
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -310,11 +286,10 @@ export default function MapLocal({
         <MapSearchControl locations={locations} />
         <MapRouteControl locations={locations} />
         <MapOffScreenIndicators locations={nearbyLocations} />
-        <LabelCollisionManager
+        <LabelPlacementManager
           locations={sortedNearby}
-          getDirection={resolveDirection}
-          offsets={DIR_OFFSETS}
-          onChange={setVisibleLabelIds}
+          preferredDirections={labelDirections}
+          onChange={handlePlacementsChange}
         />
 
         <Circle
@@ -388,19 +363,19 @@ export default function MapLocal({
           />
         </Marker>
 
-        {sortedNearby.map((loc, i) => {
-          const dir = labelDirections[loc.id] || DIRECTIONS[i % DIRECTIONS.length];
+        {sortedNearby.map((loc) => {
+          const placement = labelPlacements.get(loc.id);
           return (
             <Marker
               key={loc.id}
               position={[loc.lat, loc.lng]}
               icon={loc.isCompanyLocation ? createHQIcon() : createLocationIcon(loc.type)}
             >
-              {visibleLabelIds.has(loc.id) && (
+              {placement && (
                 <Tooltip
                   permanent
-                  direction={dir}
-                  offset={DIR_OFFSETS[dir]}
+                  direction={placement.dir}
+                  offset={placement.offset}
                   className={`map-name-tooltip map-name-tooltip--${getLocationTypeClass(loc.type, { isCompanyLocation: loc.isCompanyLocation })}`}
                 >
                   {loc.name}

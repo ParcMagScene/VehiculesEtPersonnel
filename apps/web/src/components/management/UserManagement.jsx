@@ -37,6 +37,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
+import { hasPermissionFlag, setPermissionFlag } from '../../utils/permissions';
 import ProfileEditModal from '../auth/ProfileEditModal';
 
 const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
@@ -64,31 +65,9 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
   });
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
 
-  useEffect(() => {
-    loadData();
-
-    // Rafraîchir les données toutes les 30 secondes
-    const interval = setInterval(() => {
-      loadData(true);
-    }, 30000);
-
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadData = async (silent = false) => {
+  const loadPersonsMap = async () => {
     try {
-      if (!silent) setIsLoading(true);
-      const [emailsData, usersData, requestsData, personsData] = await Promise.all([
-        api.getAuthorizedEmails(),
-        api.getUsers(),
-        api.getAccessRequests(),
-        api.getPersons().catch(() => []),
-      ]);
-      setAuthorizedEmails(emailsData);
-      setUsers(usersData);
-      setAccessRequests(requestsData);
-      // Construire la map user_id -> person
+      const personsData = await api.getPersons().catch(() => []);
       const pMap = {};
       if (Array.isArray(personsData)) {
         for (const p of personsData) {
@@ -96,6 +75,77 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         }
       }
       setPersonsMap(pMap);
+    } catch {
+      // Non bloquant : la colonne Personnel se mettra à jour au prochain refresh.
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    loadPersonsMap();
+
+    let interval = null;
+
+    const refreshSilent = () => {
+      loadData(true);
+      loadPersonsMap();
+    };
+
+    const startPolling = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        if (document.visibilityState !== 'visible') return;
+        refreshSilent();
+      }, 30000);
+    };
+
+    const stopPolling = () => {
+      if (!interval) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') {
+        stopPolling();
+        return;
+      }
+      refreshSilent();
+      startPolling();
+    };
+
+    const onFocus = () => {
+      if (document.visibilityState !== 'visible') return;
+      refreshSilent();
+      startPolling();
+    };
+
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const loadData = async (silent = false) => {
+    try {
+      if (!silent) setIsLoading(true);
+      const [emailsData, usersData, requestsData] = await Promise.all([
+        api.getAuthorizedEmails(),
+        api.getUsers(),
+        api.getAccessRequests(),
+      ]);
+      setAuthorizedEmails(emailsData);
+      setUsers(usersData);
+      setAccessRequests(requestsData);
     } catch (error) {
       console.error('Erreur chargement données:', error);
       toast.error('Erreur lors du chargement des données');
@@ -112,6 +162,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
       await api.addAuthorizedEmail(newEmail);
       setNewEmail('');
       loadData(true);
+      loadPersonsMap();
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
     }
@@ -127,6 +178,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         try {
           await api.removeAuthorizedEmail(id);
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -146,6 +198,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           await api.updateUser(userId, { isAdmin: !currentIsAdmin });
           toast.success('Droits modifiés avec succès');
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -155,8 +208,8 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
   const handleTogglePermission = async (userId, permissionKey, currentPermissions) => {
     const perms = currentPermissions || {};
-    const newValue = !perms[permissionKey];
-    const updatedPerms = { ...perms, [permissionKey]: newValue };
+    const newValue = !hasPermissionFlag(perms, permissionKey);
+    const updatedPerms = setPermissionFlag(perms, permissionKey, newValue);
 
     // Optimistic update — immediately reflect in UI
     setUsers((prev) =>
@@ -166,6 +219,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     try {
       await api.updateUser(userId, { permissions: updatedPerms });
       loadData(true);
+      loadPersonsMap();
     } catch (error) {
       // Revert on error
       setUsers((prev) =>
@@ -186,6 +240,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           await api.deleteUser(userId);
           toast.success('Utilisateur supprimé avec succès');
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -211,6 +266,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
             `Réinitialisation demandée L'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`,
           );
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -238,6 +294,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           await api.updateUser(userId, { isBlocked: !currentlyBlocked });
           toast.success(`Utilisateur ${currentlyBlocked ? 'débloqué' : 'bloqué'} avec succès`);
           loadData(true);
+          loadPersonsMap();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
         }
@@ -276,6 +333,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
       setApproveModal(null);
       loadData(true);
+      loadPersonsMap();
       onAccessRequestChange?.();
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
@@ -293,6 +351,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
           await api.updateAccessRequest(requestId, 'rejected');
           toast.success('Demande rejetée');
           loadData(true);
+          loadPersonsMap();
           onAccessRequestChange?.();
         } catch (error) {
           toast.error(`Erreur: ${error.message}`);
@@ -331,6 +390,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
         canManageTrucks: false,
       });
       loadData(true);
+      loadPersonsMap();
     } catch (error) {
       toast.error(`Erreur: ${error.message}`);
     }
@@ -498,11 +558,10 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={
-                                  user.permissions?.canManageVehicleMaintenance ||
-                                  user.permissions?.canManageMaintenance ||
-                                  false
-                                }
+                                checked={hasPermissionFlag(
+                                  user.permissions,
+                                  'canManageVehicleMaintenance',
+                                )}
                                 onChange={() =>
                                   handleTogglePermission(
                                     user.id,
@@ -520,7 +579,10 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={user.permissions?.canManageEquipmentMaintenance || false}
+                                checked={hasPermissionFlag(
+                                  user.permissions,
+                                  'canManageEquipmentMaintenance',
+                                )}
                                 onChange={() =>
                                   handleTogglePermission(
                                     user.id,
@@ -538,7 +600,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={user.permissions?.canManageCatalog || false}
+                                checked={hasPermissionFlag(user.permissions, 'canManageCatalog')}
                                 onChange={() =>
                                   handleTogglePermission(
                                     user.id,
@@ -556,7 +618,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={user.permissions?.canManageTrucks || false}
+                                checked={hasPermissionFlag(user.permissions, 'canManageTrucks')}
                                 onChange={() =>
                                   handleTogglePermission(
                                     user.id,
@@ -574,7 +636,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
                           >
                             <label className="permission-checkbox">
                               <Checkbox
-                                checked={user.permissions?.readOnly || false}
+                                checked={hasPermissionFlag(user.permissions, 'readOnly')}
                                 onChange={() =>
                                   handleTogglePermission(user.id, 'readOnly', user.permissions)
                                 }

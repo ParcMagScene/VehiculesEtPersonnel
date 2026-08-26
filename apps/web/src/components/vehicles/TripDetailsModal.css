@@ -61,6 +61,75 @@
   margin-bottom: 1.5rem;
 }
 
+.trip-event-info-inline {
+  margin: 0.5rem 0 0 0;
+  background: transparent;
+  padding: 0;
+}
+
+.trip-event-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.trip-driver-icon {
+  margin-right: 0.25rem;
+}
+
+.trip-vehicle-badge {
+  display: inline-flex;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.trip-vehicle-badge-compact {
+  margin-top: 0.375rem;
+}
+
+.trip-vehicle-badge-heavy {
+  background: var(--btn-warning-bg);
+  color: var(--theme-warning-text);
+}
+
+.trip-vehicle-badge-light {
+  background: var(--theme-info-bg-strong);
+  color: var(--theme-info-text);
+}
+
+.trip-saved-banner {
+  padding: 0.5rem 0.75rem;
+  background: var(--theme-success-bg);
+  border: 2px solid var(--trip-saved-border-color, var(--theme-success-border));
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--theme-success-text);
+  font-weight: 600;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  margin-left: 1rem;
+  align-self: flex-start;
+}
+
+.trip-saved-field {
+  background: var(--theme-success-bg);
+  border-color: var(--theme-success-border);
+  border-width: 2px;
+}
+
+.trip-row-pause {
+  grid-template-columns: 2fr 1fr 1fr auto;
+}
+
+.trip-pause-field {
+  background: var(--theme-info-bg);
+  border-color: var(--theme-primary);
+  border-width: 2px;
+}
+
 .event-info h3 {
   margin: 0 0 0.5rem 0;
   color: var(--theme-text-heading);

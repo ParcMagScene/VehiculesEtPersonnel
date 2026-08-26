@@ -10,11 +10,11 @@ import {
   Download,
   Info,
   Layers,
+  Maximize2,
   Printer,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/design-system';
@@ -22,8 +22,19 @@ import { Button, Modal, ModalBody, ModalFooter, ModalHeader, Tooltip } from '@/d
 import { AVATAR_COLORS } from '../../constants/colors';
 import { FAMILY_COLORS } from '../../utils/bpAnnotationEngine';
 
-if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+let pdfjsLibRef = null;
+let pdfjsLibPromise = null;
+
+async function getPdfJs() {
+  if (pdfjsLibRef) return pdfjsLibRef;
+  if (!pdfjsLibPromise) {
+    pdfjsLibPromise = import('pdfjs-dist').then((mod) => {
+      mod.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+      pdfjsLibRef = mod;
+      return mod;
+    });
+  }
+  return pdfjsLibPromise;
 }
 
 const SCALE_MIN = 0.5;
@@ -43,7 +54,9 @@ function groupTextIntoLines(textItems, viewport) {
 
   const positioned = textItems
     .map((item) => {
-      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      const tx = pdfjsLibRef?.Util?.transform
+        ? pdfjsLibRef.Util.transform(viewport.transform, item.transform)
+        : item.transform;
       const isMainFont = (item.fontName || '') === mainFont;
       const rawT = item.transform;
       const hasShear = Math.abs(rawT[1]) > 0.01 || Math.abs(rawT[2]) > 0.01;
@@ -121,6 +134,13 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
   }
 
   const margin = 10;
+
+  // Décalage horizontal du surlignage : demandé côté métier pour
+  // aligner les rectangles colorés avec les colonnes "Nom" du BP.
+  // 6 mm en points PDF (1 pt = 1/72 inch, 1 inch = 25.4 mm), mis à
+  // l'échelle du viewport courant.
+  const HIGHLIGHT_OFFSET_MM = 6;
+  const highlightOffsetPx = (HIGHLIGHT_OFFSET_MM / 25.4) * 72 * (viewport.scale || 1);
 
   // Fonction : la ligne est-elle un header de kit ?
   function isKitHeader(text) {
@@ -234,7 +254,7 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
 
     const rectH = isSection ? line.height + 8 : line.height + 4;
     const rectY = line.y - rectH + 2 + 6;
-    const rectX = margin;
+    const rectX = margin - highlightOffsetPx;
     const rectW = viewport.width - 2 * margin - 20;
 
     ctx.fillRect(rectX, rectY, rectW, rectH);
@@ -255,7 +275,7 @@ function drawAnnotations(ctx, lines, viewport, annotationData) {
     const lastLine = lines[kb.endIdx];
     const color = kb.color;
 
-    const rectX = margin;
+    const rectX = margin - highlightOffsetPx;
     const rectW = viewport.width - 2 * margin - 20;
     const topY = firstLine.y - firstLine.height - 2 + 6;
     const bottomY = lastLine.y + 6 + 6;
@@ -354,18 +374,110 @@ function _roundRect(ctx, x, y, w, h, r) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Sous-composant : rend UNE page PDF + son overlay d'annotations
+// (2 canvas empilés). Utilisé dans la pile verticale du visualiseur.
+// ═══════════════════════════════════════════════════════════════
+function PdfPage({ pageNum, pdfDoc, scale, data, showInfo, affaire, infoLines, onWrapperRef }) {
+  const pdfCanvasRef = useRef(null);
+  const overlayCanvasRef = useRef(null);
+  const wrapperRef = useRef(null);
+  const renderTaskRef = useRef(null);
+
+  // Expose le wrapper au parent (IntersectionObserver + scroll programmatique).
+  useEffect(() => {
+    if (wrapperRef.current && onWrapperRef) {
+      onWrapperRef(pageNum, wrapperRef.current);
+    }
+    return () => {
+      if (onWrapperRef) onWrapperRef(pageNum, null);
+    };
+  }, [pageNum, onWrapperRef]);
+
+  useEffect(() => {
+    if (!pdfDoc || !pdfCanvasRef.current || !overlayCanvasRef.current) return undefined;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        if (renderTaskRef.current) {
+          renderTaskRef.current.cancel();
+          renderTaskRef.current = null;
+        }
+        const page = await pdfDoc.getPage(pageNum);
+        const rotation = page.rotate || 0;
+        const viewport = page.getViewport({ scale, rotation });
+
+        const canvas = pdfCanvasRef.current;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+
+        const renderTask = page.render({ canvasContext: ctx, viewport });
+        renderTaskRef.current = renderTask;
+        await renderTask.promise;
+        renderTaskRef.current = null;
+        if (cancelled) return;
+
+        const overlay = overlayCanvasRef.current;
+        overlay.width = viewport.width;
+        overlay.height = viewport.height;
+        const octx = overlay.getContext('2d');
+        octx.clearRect(0, 0, overlay.width, overlay.height);
+
+        const textContent = await page.getTextContent();
+        const textItems = textContent.items.filter((i) => i.str.trim());
+        const lines = groupTextIntoLines(textItems, viewport);
+
+        drawAnnotations(octx, lines, viewport, data);
+
+        if (pageNum === 1 && showInfo && infoLines.length > 0) {
+          drawInfoBlock(octx, viewport.width, infoLines, affaire, scale);
+        }
+      } catch (err) {
+        if (err.name !== 'RenderingCancelledException') {
+          console.error('Erreur rendu page', pageNum, err);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
+    };
+  }, [pdfDoc, pageNum, scale, data, showInfo, infoLines, affaire]);
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="bp-page-wrapper"
+      data-page-num={pageNum}
+      aria-label={`Page ${pageNum}`}
+    >
+      <div className="bp-page-label-overlay">Page {pageNum}</div>
+      <div className="bp-canvas-wrapper">
+        <canvas ref={pdfCanvasRef} className="bp-canvas-pdf" />
+        <canvas ref={overlayCanvasRef} className="bp-canvas-overlay" />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Composant principal
 // ═══════════════════════════════════════════════════════════════
 export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }) {
-  const canvasRef = useRef(null);
-  const overlayCanvasRef = useRef(null);
   const containerRef = useRef(null);
-  const renderTaskRef = useRef(null);
+  const scrollRef = useRef(null);
+  const pageRefsRef = useRef(new Map());
 
   const [pdfDoc, setPdfDoc] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(null); // null = auto-fit
+  const [autoScale, setAutoScale] = useState(1.25);
   const [showLegend, setShowLegend] = useState(true);
   const [showInfo, setShowInfo] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -381,6 +493,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
     setLoading(true);
     (async () => {
       try {
+        const pdfjsLib = await getPdfJs();
         const resp = await fetch(pdfUrl);
         const buf = await resp.arrayBuffer();
         const doc = await pdfjsLib.getDocument({ data: buf }).promise;
@@ -400,100 +513,90 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
     };
   }, [pdfUrl]);
 
-  // ─── Calculer l'échelle auto-fit ───
+  // ─── Echelle auto-fit : la page doit tenir dans la HAUTEUR du modal ───
   const computeAutoScale = useCallback(async () => {
-    if (!pdfDoc || !containerRef.current) return 1.5;
+    if (!pdfDoc || !containerRef.current) return 1.25;
     try {
-      const page = await pdfDoc.getPage(currentPage);
+      const page = await pdfDoc.getPage(1);
       const vp = page.getViewport({ scale: 1, rotation: page.rotate || 0 });
       const container = containerRef.current;
       const legendW = showLegend ? 200 : 0;
       const cw = container.clientWidth - legendW - 40;
       const ch = container.clientHeight - 40;
+      // On contraint à la fois par largeur et hauteur ; la hauteur est
+      // la contrainte principale demandée par l'utilisateur (la page tient
+      // dans le modal), la largeur sert de garde-fou si la légende est large.
       return Math.max(0.8, Math.min(cw / vp.width, ch / vp.height, SCALE_MAX));
     } catch {
-      return 1.5;
+      return 1.25;
     }
-  }, [pdfDoc, currentPage, showLegend]);
+  }, [pdfDoc, showLegend]);
 
-  // ─── Pipeline de rendu unique ───
+  // Recalcule autoScale quand pdfDoc / légende / resize change.
   useEffect(() => {
-    if (!pdfDoc || !canvasRef.current || !overlayCanvasRef.current) return;
     let cancelled = false;
-
     (async () => {
-      const effectiveScale = scale ?? (await computeAutoScale());
-      if (cancelled) return;
-
-      // Annuler le rendu précédent
-      if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-        renderTaskRef.current = null;
-      }
-
-      try {
-        const page = await pdfDoc.getPage(currentPage);
-        const rotation = page.rotate || 0;
-        const viewport = page.getViewport({ scale: effectiveScale, rotation });
-
-        // 1. Rendre le PDF sur le canvas principal
-        const canvas = canvasRef.current;
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const ctx = canvas.getContext('2d');
-
-        const renderTask = page.render({ canvasContext: ctx, viewport });
-        renderTaskRef.current = renderTask;
-        await renderTask.promise;
-        renderTaskRef.current = null;
-
-        if (cancelled) return;
-
-        // 2. Configurer l'overlay
-        const overlay = overlayCanvasRef.current;
-        overlay.width = viewport.width;
-        overlay.height = viewport.height;
-        const octx = overlay.getContext('2d');
-        octx.clearRect(0, 0, overlay.width, overlay.height);
-
-        // 3. Extraire le texte et regrouper en lignes
-        const textContent = await page.getTextContent();
-        const textItems = textContent.items.filter((i) => i.str.trim());
-        const lines = groupTextIntoLines(textItems, viewport);
-
-        // 4. Dessiner les annotations
-        drawAnnotations(octx, lines, viewport, data);
-
-        // 5. Bloc info affaire (dans le cadre existant du BP)
-        if (showInfo && infoLines.length > 0) {
-          drawInfoBlock(octx, viewport.width, infoLines, affaire, effectiveScale);
-        }
-      } catch (err) {
-        if (err.name !== 'RenderingCancelledException') {
-          console.error('Erreur rendu page:', err);
-        }
-      }
+      const s = await computeAutoScale();
+      if (!cancelled) setAutoScale(s);
     })();
-
+    const onResize = async () => {
+      const s = await computeAutoScale();
+      if (!cancelled) setAutoScale(s);
+    };
+    window.addEventListener('resize', onResize);
     return () => {
       cancelled = true;
-      if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-        renderTaskRef.current = null;
-      }
+      window.removeEventListener('resize', onResize);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    pdfDoc,
-    currentPage,
-    scale,
-    showInfo,
-    showLegend,
-    data,
-    computeAutoScale,
-    infoLines,
-    affaire,
-  ]);
+  }, [computeAutoScale]);
+
+  // Echelle effective utilisée pour le rendu de toutes les pages.
+  const effectiveScale = scale ?? autoScale;
+
+  // ─── Suivre la page la plus visible via IntersectionObserver ───
+  useEffect(() => {
+    if (!scrollRef.current || numPages === 0) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let bestPage = null;
+        let bestRatio = 0;
+        for (const entry of entries) {
+          if (entry.intersectionRatio > bestRatio) {
+            bestRatio = entry.intersectionRatio;
+            const num = Number(entry.target.dataset.pageNum);
+            if (Number.isFinite(num)) bestPage = num;
+          }
+        }
+        if (bestPage) setCurrentPage(bestPage);
+      },
+      {
+        root: scrollRef.current,
+        rootMargin: '-30% 0px -50% 0px',
+        threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
+      },
+    );
+    for (const el of pageRefsRef.current.values()) {
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [numPages, pdfDoc]);
+
+  // Enregistre la ref d'un wrapper de page (depuis le sous-composant PdfPage).
+  const registerPageRef = useCallback((pageNum, el) => {
+    if (el) {
+      pageRefsRef.current.set(pageNum, el);
+    } else {
+      pageRefsRef.current.delete(pageNum);
+    }
+  }, []);
+
+  // Scrolle vers une page donnée (depuis les boutons précédent/suivant).
+  const scrollToPage = useCallback((pageNum) => {
+    const el = pageRefsRef.current.get(pageNum);
+    if (el && el.scrollIntoView) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   // ─── Rendre une page donnée avec annotations sur un canvas temporaire ───
   const renderPageToCanvas = useCallback(
@@ -531,7 +634,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
   // ─── Impression multi-pages ───
   const handlePrint = useCallback(async () => {
     if (!pdfDoc) return;
-    const printScale = scale ?? (await computeAutoScale());
+    const printScale = effectiveScale;
     const images = [];
 
     for (let p = 1; p <= numPages; p++) {
@@ -566,12 +669,12 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
       );
       win.document.close();
     }
-  }, [pdfDoc, numPages, scale, computeAutoScale, renderPageToCanvas]);
+  }, [pdfDoc, numPages, effectiveScale, renderPageToCanvas]);
 
   // ─── Téléchargement (page courante avec annotations) ───
   const handleDownload = useCallback(async () => {
     if (!pdfDoc) return;
-    const dlScale = scale ?? (await computeAutoScale());
+    const dlScale = effectiveScale;
     const canvas = await renderPageToCanvas(currentPage, dlScale);
     if (!canvas) return;
 
@@ -584,27 +687,28 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
       a.click();
       URL.revokeObjectURL(url);
     }, 'image/png');
-  }, [pdfDoc, affaire, currentPage, scale, computeAutoScale, renderPageToCanvas]);
+  }, [pdfDoc, affaire, currentPage, effectiveScale, renderPageToCanvas]);
 
   // ─── Zoom ───
-  const zoomIn = () => setScale((s) => Math.min(SCALE_MAX, (s ?? 1.5) + SCALE_STEP));
-  const zoomOut = () => setScale((s) => Math.max(SCALE_MIN, (s ?? 1.5) - SCALE_STEP));
+  const zoomIn = () => setScale((s) => Math.min(SCALE_MAX, (s ?? autoScale) + SCALE_STEP));
+  const zoomOut = () => setScale((s) => Math.max(SCALE_MIN, (s ?? autoScale) - SCALE_STEP));
   const zoomFit = () => setScale(null);
 
   // ─── Raccourcis clavier ───
   useEffect(() => {
     const handle = (e) => {
       if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft') setCurrentPage((p) => Math.max(1, p - 1));
-      if (e.key === 'ArrowRight') setCurrentPage((p) => Math.min(numPages, p + 1));
+      if (e.key === 'ArrowLeft') scrollToPage(Math.max(1, currentPage - 1));
+      if (e.key === 'ArrowRight') scrollToPage(Math.min(numPages, currentPage + 1));
       if (e.key === '+' || e.key === '=') zoomIn();
       if (e.key === '-') zoomOut();
     };
     window.addEventListener('keydown', handle);
     return () => window.removeEventListener('keydown', handle);
-  }, [numPages, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numPages, onClose, currentPage]);
 
-  const displayScale = scale ?? 1.5;
+  const displayScale = effectiveScale;
 
   // ─── Rendu ───
   return (
@@ -628,7 +732,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
           </Tooltip>
           <Tooltip content="Ajuster">
             <Button variant="ghost" iconOnly size="sm" onClick={zoomFit} aria-label="Ajuster">
-              🔍
+              <Maximize2 size={16} />
             </Button>
           </Tooltip>
           <div className="bp-toolbar-sep" />
@@ -636,7 +740,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
             variant="ghost"
             iconOnly
             size="sm"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onClick={() => scrollToPage(Math.max(1, currentPage - 1))}
             disabled={currentPage <= 1}
             aria-label="Page précédente"
           >
@@ -649,7 +753,7 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
             variant="ghost"
             iconOnly
             size="sm"
-            onClick={() => setCurrentPage((p) => Math.min(numPages, p + 1))}
+            onClick={() => scrollToPage(Math.min(numPages, currentPage + 1))}
             disabled={currentPage >= numPages}
             aria-label="Page suivante"
           >
@@ -706,20 +810,40 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
           {showLegend && (
             <div className="bp-legend">
               <div className="bp-legend-title">Familles</div>
-              {sections
-                .filter((s) => s.color && s.items.length > 0)
-                .map((sec) => (
-                  <div key={sec.name} className="bp-legend-item">
+              {(() => {
+                // Dédupliquer la légende : plusieurs sections internes peuvent
+                // partager la même famille métier (ex. deux passes "Éclairage"
+                // distinctes côté annotation). On regroupe par libellé affiché
+                // et on additionne les compteurs d'items.
+                const grouped = new Map();
+                for (const sec of sections) {
+                  if (!sec.color || !sec.items?.length) continue;
+                  const key = sec.color.label || sec.name;
+                  const existing = grouped.get(key);
+                  if (existing) {
+                    existing.count += sec.items.length;
+                  } else {
+                    grouped.set(key, {
+                      key,
+                      color: sec.color,
+                      name: sec.name,
+                      count: sec.items.length,
+                    });
+                  }
+                }
+                return Array.from(grouped.values()).map((g) => (
+                  <div key={g.key} className="bp-legend-item">
                     <span
                       className="bp-legend-swatch"
-                      style={{ background: sec.color.bg, borderColor: sec.color.border }}
+                      style={{ background: g.color.bg, borderColor: g.color.border }}
                     />
                     <span>
-                      {sec.color.emoji} {sec.color.label || sec.name}
+                      {g.color.emoji} {g.color.label || g.name}
                     </span>
-                    <span className="bp-legend-count">{sec.items.length}</span>
+                    <span className="bp-legend-count">{g.count}</span>
                   </div>
-                ))}
+                ));
+              })()}
               {stats.kitsCount > 0 && (
                 <div className="bp-legend-item">
                   <span className="bp-legend-swatch bp-legend-kit" />
@@ -730,13 +854,24 @@ export default function BPAnnotationViewer({ annotationResult, pdfUrl, onClose }
             </div>
           )}
 
-          {/* Canvas */}
-          <div className="bp-canvas-scroll">
+          {/* Liste verticale des pages — scroll vertical natif (molette + scrollbar) */}
+          <div ref={scrollRef} className="bp-canvas-scroll">
             {loading && <div className="bp-rendering-indicator">Chargement du PDF...</div>}
-            <div className="bp-canvas-wrapper">
-              <canvas ref={canvasRef} className="bp-canvas-pdf" />
-              <canvas ref={overlayCanvasRef} className="bp-canvas-overlay" />
-            </div>
+            {!loading &&
+              pdfDoc &&
+              Array.from({ length: numPages }, (_, idx) => idx + 1).map((p) => (
+                <PdfPage
+                  key={p}
+                  pageNum={p}
+                  pdfDoc={pdfDoc}
+                  scale={effectiveScale}
+                  data={data}
+                  showInfo={showInfo}
+                  affaire={affaire}
+                  infoLines={infoLines}
+                  onWrapperRef={registerPageRef}
+                />
+              ))}
           </div>
         </div>
       </ModalBody>

@@ -4,28 +4,9 @@ import { z } from 'zod';
 const str = (max = 255) => z.string().max(max).trim();
 const optStr = (max = 255) => str(max).optional().or(z.literal(''));
 
-// ── Equipment Import CSV ──
-export const equipmentImportSchema = z.object({
-  data: z
-    .array(
-      z
-        .object({
-          code_libre: optStr(100),
-          nom: str(255),
-          famille: optStr(100),
-          sous_famille: optStr(100),
-          categorie: optStr(100),
-          zone: optStr(100),
-          stock: z.coerce.number().nonnegative().optional(),
-          marque: optStr(100),
-          numero_serie: optStr(100),
-        })
-        .passthrough(),
-    )
-    .min(1)
-    .max(10000),
-  mode: z.enum(['preview', 'import']),
-});
+// ── Equipment Import CSV (legacy: route removed, kept only if needed for tests) ──
+// Removed: equipmentImportSchema was used by the legacy /api/equipment/import-csv
+// route which has been replaced by the Locmat dual-CSV import.
 
 // ── Personnel Import CSV ──
 export const personnelImportSchema = z.object({
@@ -289,10 +270,155 @@ export const locmatConfirmSchema = z.object({
   collisions: z.array(z.any()).optional().default([]),
 });
 
+// ── Location (Lieu/Venue) ──
+export const locationSchema = z
+  .object({
+    name: optStr(255),
+    address: optStr(500),
+    type: optStr(50),
+    place_id: optStr(255),
+    lat: z.number().nullable().optional(),
+    lng: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+// ── Client (Annuaire) ──
+export const clientSchema = z
+  .object({
+    name: str(255),
+    code_libre: optStr(50),
+    email: optStr(255),
+    phone: optStr(30),
+    phone2: optStr(30),
+    address: optStr(500),
+    postal_code: optStr(10),
+    city: optStr(100),
+    country: optStr(100),
+    type: optStr(50),
+    legal_structure: optStr(100),
+    siret: optStr(20),
+    tva_intra: optStr(20),
+    website: optStr(255),
+    activity_sector: optStr(255),
+    service_types: optStr(500),
+    notes: optStr(5000),
+    is_active: z.boolean().optional(),
+  })
+  .passthrough();
+
+// ── Supplier (Annuaire) ──
+export const supplierSchema = z
+  .object({
+    name: str(255),
+    code_libre: optStr(50),
+    email: optStr(255),
+    phone: optStr(30),
+    phone2: optStr(30),
+    address: optStr(500),
+    postal_code: optStr(10),
+    city: optStr(100),
+    country: optStr(100),
+    type: optStr(50),
+    website: optStr(255),
+    product_categories: optStr(500),
+    notes: optStr(5000),
+    is_active: z.boolean().optional(),
+  })
+  .passthrough();
+
+// ── Contact (Annuaire - person within client/supplier) ──
+export const contactSchema = z
+  .object({
+    name: str(255),
+    code_libre: optStr(50),
+    email: optStr(255),
+    phone: optStr(30),
+    phone2: optStr(30),
+    position: optStr(100),
+    type: optStr(50),
+    notes: optStr(5000),
+    is_active: z.boolean().optional(),
+  })
+  .passthrough();
+
 // ── Middleware factory de validation Zod ──
-export function validate(schema) {
+export function validate(schemaOrConfig) {
+  // Support both: validate(schema) and validate({ params: schema, body: schema })
+  const isConfig = schemaOrConfig && typeof schemaOrConfig === 'object' && !schemaOrConfig._type;
+
+  if (!isConfig) {
+    // Legacy: single schema for body validation
+    const schema = schemaOrConfig;
+    return (req, res, next) => {
+      const result = schema.safeParse(req.body);
+      if (!result.success) {
+        const zodIssues = Array.isArray(result.error?.issues)
+          ? result.error.issues
+          : Array.isArray(result.error?.errors)
+            ? result.error.errors
+            : [];
+        const errors = zodIssues.map(
+          (e) => `${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
+        );
+        return res
+          .status(400)
+          .json({ success: false, error: 'Données invalides', details: errors });
+      }
+      req.body = result.data;
+      next();
+    };
+  }
+
+  // New: object config with { params, body }
   return (req, res, next) => {
-    const result = schema.safeParse(req.body);
+    const { params: paramsSchema, body: bodySchema } = schemaOrConfig;
+
+    // Validate params if schema provided
+    if (paramsSchema) {
+      const paramsResult = paramsSchema.safeParse(req.params);
+      if (!paramsResult.success) {
+        const zodIssues = Array.isArray(paramsResult.error?.issues)
+          ? paramsResult.error.issues
+          : Array.isArray(paramsResult.error?.errors)
+            ? paramsResult.error.errors
+            : [];
+        const errors = zodIssues.map(
+          (e) => `params.${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
+        );
+        return res
+          .status(400)
+          .json({ success: false, error: 'Paramètres invalides', details: errors });
+      }
+      req.params = paramsResult.data;
+    }
+
+    // Validate body if schema provided
+    if (bodySchema) {
+      const bodyResult = bodySchema.safeParse(req.body);
+      if (!bodyResult.success) {
+        const zodIssues = Array.isArray(bodyResult.error?.issues)
+          ? bodyResult.error.issues
+          : Array.isArray(bodyResult.error?.errors)
+            ? bodyResult.error.errors
+            : [];
+        const errors = zodIssues.map(
+          (e) => `${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
+        );
+        return res
+          .status(400)
+          .json({ success: false, error: 'Données invalides', details: errors });
+      }
+      req.body = bodyResult.data;
+    }
+
+    next();
+  };
+}
+
+// ── Middleware factory de validation Zod pour req.params ──
+export function validateParams(schema) {
+  return (req, res, next) => {
+    const result = schema.safeParse(req.params);
     if (!result.success) {
       const zodIssues = Array.isArray(result.error?.issues)
         ? result.error.issues
@@ -302,9 +428,11 @@ export function validate(schema) {
       const errors = zodIssues.map(
         (e) => `${Array.isArray(e.path) ? e.path.join('.') : ''}: ${e.message}`,
       );
-      return res.status(400).json({ success: false, error: 'Données invalides', details: errors });
+      return res
+        .status(400)
+        .json({ success: false, error: 'Paramètres invalides', details: errors });
     }
-    req.body = result.data;
+    req.params = result.data;
     next();
   };
 }

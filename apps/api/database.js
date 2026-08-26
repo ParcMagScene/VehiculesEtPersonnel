@@ -1139,6 +1139,12 @@ function initializeDatabase() {
       db.prepare('ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0').run();
       logger.info('✅ Colonne is_blocked ajoutée à users');
     }
+    // Migration: ajouter pin_hash dans users (auth personnel par PIN)
+    const hasPinHash = userColumns.some((col) => col.name === 'pin_hash');
+    if (!hasPinHash) {
+      db.prepare('ALTER TABLE users ADD COLUMN pin_hash TEXT').run();
+      logger.info('✅ Colonne pin_hash ajoutée à users');
+    }
   } catch (_error) {
     logger.info('Info: Colonnes avatar/preferences déjà présentes');
   }
@@ -2214,7 +2220,11 @@ function initializeDatabase() {
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
-    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_reservation ON task_assignments(reservation_id)');
+    // NB : idx_ta_reservation deplace apres le bloc ALTER TABLE ADD COLUMN
+    // reservation_id plus bas — sur une DB fresh (CI), la colonne n'existe
+    // pas encore a ce stade et CREATE INDEX throw "no such column", ce qui
+    // interrompt tout le bloc try{...} et empeche la creation des tables
+    // planning_hidden_affaires / planning_affaire_status / etc.
     db.exec('CREATE INDEX IF NOT EXISTS idx_ta_source ON task_assignments(source_type, source_id)');
 
     // Table planning_hidden_affaires: affaires masquées de la planification
@@ -2288,6 +2298,9 @@ function initializeDatabase() {
       );
       logger.info('  + task_assignments.reservation_id');
     }
+    // idx_ta_reservation cree ici apres l'ADD COLUMN, garantissant que la
+    // colonne existe (a la fois sur DB fresh CI et sur DB deja migree).
+    db.exec('CREATE INDEX IF NOT EXISTS idx_ta_reservation ON task_assignments(reservation_id)');
     if (!taColNames.includes('location_address')) {
       db.exec('ALTER TABLE task_assignments ADD COLUMN location_address TEXT');
       logger.info('  + task_assignments.location_address');
@@ -2299,6 +2312,14 @@ function initializeDatabase() {
     if (!taColNames.includes('location_lng')) {
       db.exec('ALTER TABLE task_assignments ADD COLUMN location_lng REAL');
       logger.info('  + task_assignments.location_lng');
+    }
+    if (!taColNames.includes('all_day')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN all_day INTEGER DEFAULT 0');
+      logger.info('  + task_assignments.all_day');
+    }
+    if (!taColNames.includes('client_name')) {
+      db.exec('ALTER TABLE task_assignments ADD COLUMN client_name TEXT');
+      logger.info('  + task_assignments.client_name');
     }
 
     // Migration : corriger le CHECK constraint section pour inclure rdv et prep_installations
@@ -2567,19 +2588,29 @@ function initializeDatabase() {
       logger.warn('Migration section installation:', migErr4.message);
     }
 
-    // Migration : ajout section 'intervention' dans task_assignments
+    // Migration : ajout section 'intervention' dans task_assignments.
+    // [HYGIÈNE 2026-07] La détection se fait via lecture du SQL de
+    // définition (sqlite_master.sql) au lieu d'un INSERT-test qui
+    // laissait fuir des warnings "CHECK constraint failed" au boot
+    // même quand la migration était en réalité un no-op.
     try {
-      // Vérifie si 'intervention' est déjà dans le CHECK via tentative d'insert
-      const testId = '__check_intervention__';
-      try {
-        db.prepare(
-          `INSERT INTO task_assignments (id, date, section) VALUES (?, '2000-01-01', 'intervention')`,
-        ).run(testId);
-        db.prepare('DELETE FROM task_assignments WHERE id = ?').run(testId);
-        logger.info('✅ Section intervention déjà supportée');
-      } catch {
-        // CHECK constraint rejecte 'intervention' → recréer la table
+      const tableDef = db
+        .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='task_assignments'")
+        .get();
+      const alreadySupported =
+        tableDef && typeof tableDef.sql === 'string' && /'intervention'/.test(tableDef.sql);
+
+      if (alreadySupported) {
+        // no-op silencieux, aucun test INSERT (évite bruit logs boot).
+      } else {
+        // CHECK réel ne contient pas 'intervention' → recréer la table
         db.exec('BEGIN TRANSACTION');
+        // La vue v_db_audit_task_assignments_reservation_orphans (créée par
+        // migrations/versioned/0009_add_db_audit_views.sql) référence
+        // task_assignments et bloque le DROP TABLE. On la supprime le
+        // temps de la migration ; elle sera recréée par 0009 au prochain
+        // boot (CREATE VIEW IF NOT EXISTS).
+        db.exec('DROP VIEW IF EXISTS v_db_audit_task_assignments_reservation_orphans');
         db.exec(`
           CREATE TABLE task_assignments_new (
             id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -2591,6 +2622,7 @@ function initializeDatabase() {
             end_time TEXT,
             section TEXT NOT NULL DEFAULT 'manual' CHECK(section IN (
               'rdv', 'prep_locations', 'prep_prestations', 'prep_ventes', 'prep_installations',
+              'prep_tournees',
               'chargement', 'depart', 'enlevement', 'retour', 'recuperation', 'installation',
               'evenements', 'taches_prioritaires', 'taches_secondaires', 'courses', 'manual',
               'montage', 'demontage', 'intervention'
@@ -2627,6 +2659,14 @@ function initializeDatabase() {
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_display ON task_assignments(display_event_id)');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_section ON task_assignments(section)');
         db.exec('CREATE INDEX IF NOT EXISTS idx_ta_status ON task_assignments(status)');
+        // Recréation de la vue d'audit désactivée le temps du RENAME.
+        db.exec(`
+          CREATE VIEW IF NOT EXISTS v_db_audit_task_assignments_reservation_orphans AS
+          SELECT ta.*
+          FROM task_assignments ta
+          WHERE ta.reservation_id IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM reservations r WHERE r.id = ta.reservation_id)
+        `);
         db.exec('COMMIT');
         logger.info('✅ Section intervention ajoutée à task_assignments');
       }
@@ -2637,6 +2677,22 @@ function initializeDatabase() {
         /* ignored */
       }
       logger.warn('Migration section intervention:', migErr5.message);
+    }
+
+    // Migration : (re)ajout des colonnes all_day / client_name après éventuelles recréations
+    // (si une migration recreate-table ci-dessus a été déclenchée, les colonnes peuvent avoir été perdues)
+    try {
+      const taColsFinal = db.pragma('table_info(task_assignments)').map((c) => c.name);
+      if (!taColsFinal.includes('all_day')) {
+        db.exec('ALTER TABLE task_assignments ADD COLUMN all_day INTEGER DEFAULT 0');
+        logger.info('  + task_assignments.all_day (post-recreate)');
+      }
+      if (!taColsFinal.includes('client_name')) {
+        db.exec('ALTER TABLE task_assignments ADD COLUMN client_name TEXT');
+        logger.info('  + task_assignments.client_name (post-recreate)');
+      }
+    } catch (e) {
+      logger.warn('Migration colonnes all_day/client_name:', e.message);
     }
 
     // Migration : colonnes enrichies pour bl_imports (Phase 5)
@@ -2876,6 +2932,37 @@ function initializeDatabase() {
     `);
     db.exec('CREATE INDEX IF NOT EXISTS idx_dlog_screen ON display_logs(screen_id)');
     db.exec('CREATE INDEX IF NOT EXISTS idx_dlog_date ON display_logs(created_at)');
+
+    // [T-P0-14] Enrichissement display_logs : colonnes contextuelles pour
+    // audit trail TV-client v2 (client_ip, user_agent, protocol_version,
+    // request_id, response_status). Idempotent via pragma table_info.
+    // Voir docs/05-Specs/DISPLAY_V2.md §5.
+    try {
+      const dlogCols = db.pragma('table_info(display_logs)');
+      const dlogNames = dlogCols.map((c) => c.name);
+      if (!dlogNames.includes('client_ip')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN client_ip TEXT');
+        logger.info('  + display_logs.client_ip');
+      }
+      if (!dlogNames.includes('client_user_agent')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN client_user_agent TEXT');
+        logger.info('  + display_logs.client_user_agent');
+      }
+      if (!dlogNames.includes('protocol_version')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN protocol_version TEXT');
+        logger.info('  + display_logs.protocol_version');
+      }
+      if (!dlogNames.includes('request_id')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN request_id TEXT');
+        logger.info('  + display_logs.request_id');
+      }
+      if (!dlogNames.includes('response_status')) {
+        db.exec('ALTER TABLE display_logs ADD COLUMN response_status INTEGER');
+        logger.info('  + display_logs.response_status');
+      }
+    } catch (dlogErr) {
+      logger.warn('Migration display_logs (T-P0-14):', dlogErr.message);
+    }
 
     logger.info('  ✅ Module Dashboard (écrans, playlists, médias, messages, templates, logs)');
   } catch (error) {
@@ -3562,12 +3649,14 @@ export function closeDatabase() {
   }
 }
 
-// Checkpoint automatique toutes les 5 minutes
+// Checkpoint automatique toutes les 5 minutes.
+// unref() : ne bloque pas la sortie du process (ex. `node --test`) une fois
+// que tous les tests sont finis.
 const checkpointTimer = setInterval(
   () => {
     checkpointDatabase();
   },
   5 * 60 * 1000,
-);
+).unref();
 
 export default db;

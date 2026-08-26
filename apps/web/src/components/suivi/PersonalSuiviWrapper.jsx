@@ -12,6 +12,7 @@ import { usePersonalAuth } from '../../contexts/PersonalAuthContext.jsx';
 import { usePersonalAuthWithAutoLogout } from '../../hooks/usePersonalAuthWithAutoLogout.js';
 import PersonalLoginModal from './PersonalLoginModal';
 import SuiviPanel from './SuiviPanel';
+import './PersonalSuiviWrapper.css';
 
 /**
  * Wrapper pour SuiviPanel avec gestion de l'authentification personnelle
@@ -75,23 +76,12 @@ function PersonalSuiviWrapper({ currentUser, personnel = [], initialPersonId = n
         }}
       >
         {/* Header de session personnelle */}
-        <div
-          style={{
-            padding: '1rem',
-            backgroundColor: '#fef3c7',
-            borderLeft: '4px solid #f59e0b',
-            marginBottom: '1rem',
-            borderRadius: '0.375rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
+        <div className="psw-header">
           <div>
-            <strong style={{ color: '#92400e' }}>
+            <strong className="psw-header-title">
               🔒 Accès Personnel — {authenticatedPerson.first_name} {authenticatedPerson.last_name}
             </strong>
-            <p style={{ fontSize: '0.875rem', color: '#a16207', marginTop: '0.25rem' }}>
+            <p className="psw-header-message">
               Vous consultez vos données personnelles. Vous serez automatiquement déconnecté après
               modification ou après 15 minutes d'inactivité.
             </p>
@@ -100,10 +90,7 @@ function PersonalSuiviWrapper({ currentUser, personnel = [], initialPersonId = n
             variant="ghost"
             onClick={handleManualLogout}
             title="Déconnecter ce personnel"
-            style={{
-              color: '#b45309',
-              fontSize: '0.875rem',
-            }}
+            className="psw-header-logout"
           >
             <LogOut size={16} />
             Terminer
@@ -129,9 +116,9 @@ function PersonalSuiviWrapper({ currentUser, personnel = [], initialPersonId = n
             title="Données Sauvegardées"
             showClose={false}
           >
-            <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-              <AlertCircle size={48} style={{ color: '#10b981', marginBottom: '1rem' }} />
-              <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+            <div className="psw-modal-content">
+              <AlertCircle size={48} className="psw-modal-icon" />
+              <p className="psw-modal-message">
                 Vos modifications ont été sauvegardées. <br />
                 Vous allez être déconnecté...
               </p>

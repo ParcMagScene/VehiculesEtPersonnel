@@ -51,32 +51,24 @@ export const OrderDetailDialog = React.memo(
           </div>
           <div className="order-detail-actions">
             {order.status === 'draft' && (
-              <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}>
+              <Button variant="secondary" onClick={() => onStatusChange('sent')}>
                 <Send size={14} /> Envoyer
               </Button>
             )}
             {order.status === 'sent' && (
-              <Button
-                variant="ghost"
-                className="action-btn"
-                onClick={() => onStatusChange('confirmed')}
-              >
+              <Button variant="secondary" onClick={() => onStatusChange('confirmed')}>
                 <Check size={14} /> Confirmer
               </Button>
             )}
             {order.status === STATUS.CONFIRMED && (
-              <Button
-                variant="ghost"
-                className="action-btn"
-                onClick={() => onStatusChange('received')}
-              >
+              <Button variant="secondary" onClick={() => onStatusChange('received')}>
                 <Package size={14} /> Réceptionner
               </Button>
             )}
-            <Button variant="ghost" className="action-btn" onClick={onEdit}>
+            <Button variant="primary" onClick={onEdit}>
               <Edit2 size={14} /> Modifier
             </Button>
-            <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
+            <Button variant="danger" onClick={onDelete}>
               <Trash2 size={14} /> Supprimer
             </Button>
           </div>
@@ -200,7 +192,7 @@ export const OrderDetailDialog = React.memo(
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button variant="ghost" className="action-btn" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose}>
             Fermer
           </Button>
         </ModalFooter>
@@ -230,37 +222,29 @@ export const QuoteDetailDialog = React.memo(
           </div>
           <div className="order-detail-actions">
             {quote.status === 'draft' && (
-              <Button variant="ghost" className="action-btn" onClick={() => onStatusChange('sent')}>
+              <Button variant="secondary" onClick={() => onStatusChange('sent')}>
                 <Send size={14} /> Envoyer
               </Button>
             )}
             {quote.status === 'sent' && (
               <>
-                <Button
-                  variant="ghost"
-                  className="action-btn success"
-                  onClick={() => onStatusChange('accepted')}
-                >
+                <Button variant="success" onClick={() => onStatusChange('accepted')}>
                   <Check size={14} /> Accepter
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="action-btn danger"
-                  onClick={() => onStatusChange('refused')}
-                >
+                <Button variant="danger" onClick={() => onStatusChange('refused')}>
                   <X size={14} /> Refuser
                 </Button>
               </>
             )}
             {quote.status === STATUS.ACCEPTED && !quote.converted_to_order_id && (
-              <Button variant="ghost" className="action-btn success" onClick={onConvert}>
+              <Button variant="success" onClick={onConvert}>
                 <ArrowRight size={14} /> Convertir
               </Button>
             )}
-            <Button variant="ghost" className="action-btn" onClick={onEdit}>
+            <Button variant="primary" onClick={onEdit}>
               <Edit2 size={14} /> Modifier
             </Button>
-            <Button variant="ghost" className="action-btn danger" onClick={onDelete}>
+            <Button variant="danger" onClick={onDelete}>
               <Trash2 size={14} /> Supprimer
             </Button>
           </div>
@@ -382,8 +366,7 @@ export const RequestDetailDialog = React.memo(
             {isAdmin && request.status === STATUS.PENDING && (
               <>
                 <Button
-                  variant="ghost"
-                  className="action-btn success"
+                  variant="success"
                   onClick={() => {
                     onValidate(request, 'approve');
                     onClose();
@@ -392,8 +375,7 @@ export const RequestDetailDialog = React.memo(
                   <Check size={14} /> Approuver
                 </Button>
                 <Button
-                  variant="ghost"
-                  className="action-btn danger"
+                  variant="danger"
                   onClick={() => {
                     onValidate(request, 'reject');
                     onClose();
@@ -405,8 +387,7 @@ export const RequestDetailDialog = React.memo(
             )}
             {isAdmin && hasLinkedOrder && onDetach && (
               <Button
-                variant="ghost"
-                className="action-btn warning"
+                variant="secondary"
                 onClick={() => {
                   onDetach(request);
                   onClose();
@@ -416,12 +397,11 @@ export const RequestDetailDialog = React.memo(
                 <MinusCircle size={14} /> Retirer de la commande
               </Button>
             )}
-            <Button variant="ghost" className="action-btn" onClick={() => onEdit(request)}>
+            <Button variant="primary" onClick={() => onEdit(request)}>
               <Edit2 size={14} /> Modifier
             </Button>
             <Button
-              variant="ghost"
-              className="action-btn danger"
+              variant="danger"
               onClick={() => {
                 onDelete(request);
                 onClose();

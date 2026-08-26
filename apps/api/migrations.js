@@ -9,15 +9,22 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
+import { runAffairesV2SchemaMigration } from './migrations/affaires-v2-schema-v1.js';
 import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
+import { runEquipmentAssignmentHistoryMigration } from './migrations/equipment-assignment-history-v1.js';
 import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
 import { runEquipmentSerialsMagNumberMigration } from './migrations/equipment-serials-mag-number-v1.js';
 import { runEquipmentSerialsUidMigration } from './migrations/equipment-serials-uid-v1.js';
 import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serials-uid-v2.js';
 import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
+import { runLocationsV2SchemaMigration } from './migrations/locations-v2-schema-v1.js';
 import { runLocmatImportMigrations } from './migrations/locmat-import-v1.js';
+import { runOrderReceptionsMigration } from './migrations/order-receptions-v1.js';
+import { runPersonalActionsLogV1Migration } from './migrations/personal-actions-log-v1.js';
+import { runPlanningV2SchemaMigration } from './migrations/planning-v2-schema-v1.js';
 import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
+import { runSavPartsMigration } from './migrations/sav-parts-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
@@ -888,8 +895,43 @@ export function runPostInitMigrations(db) {
   // ═══ Module Surveillance Vidéo ═══
   runVideoMigrations(db);
 
+  // ═══ [T-P0-10] Localisation v2 — depot_svg_maps + equipment_location_history
+  //     Non-destructif : coexiste avec les JSON statiques public/depot*-zones.json
+  //     et les colonnes equipment.location_zone/code/floor/depot. Voir
+  //     docs/05-Specs/LOCATIONS_V2.md.
+  runLocationsV2SchemaMigration(db);
+
+  // ═══ [T-P0-08] Affaires v2 — materialisation + FK ref (P0-DECISION-2 du 2026-07-10)
+  //     Strictement additif : ajout de colonnes affaire_ref_id INTEGER
+  //     nullable sur reservations/missions/orders/bl_imports/
+  //     dynamic_display_events/equipment_assignments + backfill depuis
+  //     colonnes TEXT existantes + table affaire_history. Les colonnes
+  //     TEXT `affaire` / `affaire_id` restent inchangees pendant la
+  //     phase de coexistence (sunset TEXT prevu en T-P0-09). Voir
+  //     docs/05-Specs/AFFAIRES_V2.md.
+  runAffairesV2SchemaMigration(db);
+
+  // ═══ [T-P1-07] SAV v2 — table sav_parts (pieces detachees)
+  //     Additive, idempotente. Coexiste avec sav_tickets. Voir
+  //     docs/api/v2/sav.md.
+  runSavPartsMigration(db);
+
+  // ═══ [T-P1-08] Equipment v2 — equipment_assignment_history
+  //     Additive, idempotente. Trace des mutations sur
+  //     equipment_assignments (audit trail). Voir docs/api/v2/
+  //     equipment-assignments.md.
+  runEquipmentAssignmentHistoryMigration(db);
+
+  // ═══ [T-P1-10] Orders v2 — order_receptions (reception partielle)
+  //     Additive, idempotente. Ventilation par ligne + audit.
+  //     Voir docs/api/v2/orders.md.
+  runOrderReceptionsMigration(db);
+
   // ═══ Suivi/Incidents v2 (multi-tickets + date) ═══
   runIncidentTicketsV2Migration(db);
+
+  // ═══ Audit log auth éphémère pour actions personnelles ═══
+  runPersonalActionsLogV1Migration(db);
 
   // ═══ Uniformisation Taxonomie ═══
   runTaxonomyMigrations(db);
@@ -1288,6 +1330,12 @@ export function runPostInitMigrations(db) {
     }
   }
   logger.info(`✅ Perf Equipment Index: ${perfEqOk}/${perfEquipmentIndexes.length} créés/vérifiés`);
+
+  // ═══ Planning v2 — DB v2 (T-P0-02) ═══
+  // Additive : ajoute task_sections_ref (seed 16 sections) + index composites
+  // cursor-based sur task_assignments. Aucune altération v1.
+  // Placé avant ANALYZE pour bénéficier de la refresh des stats.
+  runPlanningV2SchemaMigration(db);
 
   // ANALYZE après ajout d'index pour rafraîchir les stats du planner.
   try {

@@ -35,10 +35,7 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
   const [loginMode, setLoginMode] = useState('password');
   const [pin, setPin] = useState('');
   const [_resetFormName, setResetFormName] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
   const [resetError, setResetError] = useState('');
-  // Suppression du step OTP : reset direct
   const [emailStatus, setEmailStatus] = useState(null);
   const [_emailCheckName, setEmailCheckName] = useState('');
   const userSelectorRef = useRef(null);
@@ -137,8 +134,6 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
         err.response?.data?.error === 'PASSWORD_RESET_REQUIRED'
       ) {
         setResetFormEmail(email);
-        setNewPassword('');
-        setNewPasswordConfirm('');
         setShowResetPassword(true);
         setResetError('Votre compte necessite une reinitialisation du mot de passe.');
         setError('');
@@ -169,18 +164,10 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
     setResetError('');
     setLoading(true);
     try {
-      if (newPassword !== newPasswordConfirm) {
-        setResetError('Les mots de passe ne correspondent pas');
-        return;
-      }
-      if (newPassword.length < 10) {
-        setResetError('Le mot de passe doit contenir au moins 10 caracteres');
-        return;
-      }
-      await api.selfResetPassword(resetFormEmail, newPassword);
+      await api.selfResetPassword(resetFormEmail);
       setShowResetPassword(false);
       setResetError('');
-      setError('Mot de passe reinitialise — connectez-vous avec votre nouveau mot de passe.');
+      setError('Code de réinitialisation envoyé par email.');
     } catch (err) {
       setResetError(err.message);
     } finally {
@@ -373,8 +360,6 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                     setShowResetPassword(true);
                     setResetFormEmail(email || '');
                     setResetFormName('');
-                    setNewPassword('');
-                    setNewPasswordConfirm('');
                     setResetError('');
                   }}
                 >
@@ -468,8 +453,7 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
           </ModalHeader>
           <ModalBody>
             <p className="login-modal-text">
-              Entrez votre adresse email et un nouveau mot de passe. Si le compte existe, il sera
-              réinitialisé immédiatement.
+              Entrez votre adresse email pour recevoir un code de réinitialisation par email.
             </p>
             <form onSubmit={handleSelfResetPassword}>
               <FormField
@@ -488,40 +472,9 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                   className="login-reset-input"
                 />
               </FormField>
-              <FormField
-                className="form-group login-form-field-spacing"
-                label="Nouveau mot de passe"
-                htmlFor="new-password"
-              >
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Entrez votre nouveau mot de passe"
-                  minLength={10}
-                  required
-                  className="login-reset-input"
-                  autoComplete="new-password"
-                />
-              </FormField>
-              <FormField
-                className="form-group login-form-field-spacing-last"
-                label="Confirmer le mot de passe"
-                htmlFor="confirm-password"
-              >
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={newPasswordConfirm}
-                  onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                  placeholder="Confirmez votre nouveau mot de passe"
-                  minLength={10}
-                  required
-                  className="login-reset-input"
-                  autoComplete="new-password"
-                />
-              </FormField>
+              <div className="login-reset-note">
+                Le nouveau mot de passe se définira après réception du code.
+              </div>
               {resetError && <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>}
               <ModalFooter>
                 <Button
@@ -535,17 +488,8 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                 >
                   Annuler
                 </Button>
-                <Button
-                  variant="primary"
-                  type="submit"
-                  disabled={
-                    loading ||
-                    !resetFormEmail ||
-                    newPassword.length < 10 ||
-                    newPasswordConfirm !== newPassword
-                  }
-                >
-                  {loading ? 'Réinitialisation...' : 'Réinitialiser'}
+                <Button variant="primary" type="submit" disabled={loading || !resetFormEmail}>
+                  {loading ? 'Envoi...' : 'Envoyer le code'}
                 </Button>
               </ModalFooter>
             </form>

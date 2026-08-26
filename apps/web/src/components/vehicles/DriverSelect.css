@@ -176,6 +176,14 @@
   font-size: 0.88rem;
 }
 
+.driver-select-option-label-muted {
+  color: var(--theme-text-muted);
+}
+
+.driver-select-option-icon-muted {
+  color: var(--theme-text-muted);
+}
+
 .driver-select-option-skill {
   font-size: var(--font-xs);
   color: var(--theme-text-secondary);

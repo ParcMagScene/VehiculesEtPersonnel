@@ -127,6 +127,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
 
   // Sonos state
   const [nowPlaying, setNowPlaying] = useState(null);
+  const taskInterval = useRef(null);
   const sonosInterval = useRef(null);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -192,14 +193,44 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   }, []);
 
   useEffect(() => {
-    loadTasks();
-    loadNowPlaying();
+    const stopPolling = () => {
+      if (taskInterval.current) {
+        clearInterval(taskInterval.current);
+        taskInterval.current = null;
+      }
+      if (sonosInterval.current) {
+        clearInterval(sonosInterval.current);
+        sonosInterval.current = null;
+      }
+    };
+
+    const startPolling = () => {
+      if (!taskInterval.current) taskInterval.current = setInterval(loadTasks, 60000);
+      if (!sonosInterval.current) sonosInterval.current = setInterval(loadNowPlaying, 10000);
+    };
+
+    const refreshAndResume = () => {
+      if (document.hidden) {
+        stopPolling();
+        return;
+      }
+      loadTasks();
+      loadNowPlaying();
+      startPolling();
+    };
+
     loadSidebarConfig();
-    const taskTimer = setInterval(loadTasks, 60000);
-    sonosInterval.current = setInterval(loadNowPlaying, 10000);
+    refreshAndResume();
+
+    const onVisibility = () => refreshAndResume();
+    const onFocus = () => refreshAndResume();
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onFocus);
+
     return () => {
-      clearInterval(taskTimer);
-      if (sonosInterval.current) clearInterval(sonosInterval.current);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus);
+      stopPolling();
     };
   }, [loadTasks, loadNowPlaying, loadSidebarConfig, refreshKey]);
 
@@ -216,7 +247,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         loadTasks();
         refreshBus.publish('planning');
       } catch {
-        toast.error('Erreur toggle visibilité');
+        toast.error('Impossible de modifier la visibilité de la tâche.');
       }
     },
     [loadTasks, toast],

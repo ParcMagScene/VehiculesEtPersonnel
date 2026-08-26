@@ -67,6 +67,13 @@ const ReservationModal = ({
     return `${year}-${month}-${day}`;
   };
 
+  const activateOnEnterOrSpace = (event, callback) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      callback();
+    }
+  };
+
   // Initialiser les affaires en tant que tableau (compatibilité avec l'ancien format)
   const initAffaires = () => {
     if (reservation?.affaires && Array.isArray(reservation.affaires)) {
@@ -212,6 +219,21 @@ const ReservationModal = ({
     const num = formData.affaires[0];
     return num ? allAffaires.find((a) => a.numeroAffaire === num) : null;
   }, [allAffaires, formData.affaires]);
+
+  const fillFromAffaireIfMissing = (baseData, affaireNum) => {
+    if (!affaireNum) return baseData;
+    const affaireObj = allAffaires.find((a) => a.numeroAffaire === affaireNum);
+    if (!affaireObj) return baseData;
+
+    const defaultClient = affaireObj.client || affaireObj.nom || '';
+    const defaultPrestation = affaireObj.titre || affaireObj.nom || '';
+
+    return {
+      ...baseData,
+      clientName: baseData.clientName || defaultClient,
+      prestationName: baseData.prestationName || defaultPrestation,
+    };
+  };
 
   // Fermer dropdown affaire au clic extérieur
   useEffect(() => {
@@ -585,7 +607,7 @@ const ReservationModal = ({
     try {
       if (!reservation?.id) {
         toast.warning(
-          "Vous devez d'abord enregistrer la réservation avant d'ajouter des détails du trajet",
+          "Vous devez d'abord enregistrer la réservation avant d'ajouter des détails du trajet.",
         );
         return null;
       }
@@ -629,13 +651,17 @@ const ReservationModal = ({
         return updated;
       });
 
-      toast.success('Détails du trajet enregistrés avec succès !');
+      toast.success('Détails du trajet enregistrés avec succès.');
 
       // Retourner les données sauvegardées (déjà en snake_case pour TripDetailsModal)
       return savedData;
     } catch (error) {
       console.error('Erreur sauvegarde trip details:', error);
-      toast.error(`Erreur technique: ${error.message}`);
+      toast.error(
+        error?.message
+          ? `Impossible d'enregistrer les détails du trajet: ${error.message}`
+          : "Impossible d'enregistrer les détails du trajet.",
+      );
       return null;
     }
   };
@@ -666,8 +692,8 @@ const ReservationModal = ({
   // Lier deux événements (leurs trajets partagent le même groupe)
   const handleLinkTrips = async (eventId1, eventId2) => {
     if (!reservation?.id) {
-      toast.warning("Vous devez d'abord enregistrer la réservation");
-      return;
+      toast.warning("Vous devez d'abord enregistrer la réservation.");
+      return false;
     }
 
     try {
@@ -682,8 +708,12 @@ const ReservationModal = ({
         detailsMap[detail.event_id] = transformTripDetail(detail);
       });
       setTripDetails(detailsMap);
+      toast.success('Trajets liés avec succès.');
+      return true;
     } catch (error) {
       console.error('Erreur liaison trajets:', error);
+      toast.error('Impossible de lier les trajets.');
+      return false;
     }
   };
 
@@ -701,8 +731,10 @@ const ReservationModal = ({
         detailsMap[detail.event_id] = transformTripDetail(detail);
       });
       setTripDetails(detailsMap);
+      toast.success('Trajet délié avec succès.');
     } catch (error) {
       console.error('Erreur déliaison trajet:', error);
+      toast.error('Impossible de délier le trajet.');
     }
   };
 
@@ -727,10 +759,14 @@ const ReservationModal = ({
     }
 
     // Puis lier les trajets
+    let linkSuccess = true;
     if (reservation?.id) {
-      await handleLinkTrips(sourceEventId, targetEvent.id);
+      linkSuccess = await handleLinkTrips(sourceEventId, targetEvent.id);
     }
-    setLinkEventComboboxOpen(null);
+
+    if (linkSuccess) {
+      setLinkEventComboboxOpen(null);
+    }
   };
 
   // Obtenir les groupes de trajets liés
@@ -794,22 +830,25 @@ const ReservationModal = ({
     if (formData.prestationName) addPrestation(formData.prestationName);
     formData.affaires.forEach((affaire) => addAffaire(affaire));
 
+    const primaryAffaire = formData.affaires?.[0] || '';
+    const enrichedFormData = fillFromAffaireIfMissing(formData, primaryAffaire);
+
     if (isMultiVehicle) {
       // Mode multi-véhicules : créer une réservation par véhicule sélectionné
       if (selectedVehicleIds.length === 0) {
-        toast.warning('Veuillez sélectionner au moins un véhicule');
+        toast.warning('Veuillez sélectionner au moins un véhicule.');
         return;
       }
 
       const reservations = selectedVehicleIds.map((vehicleId) => ({
-        ...formData,
+        ...enrichedFormData,
         vehicleId,
       }));
 
       onSave(reservations);
     } else {
       // Mode normal : une seule réservation
-      onSave(formData);
+      onSave(enrichedFormData);
     }
   };
 
@@ -843,6 +882,7 @@ const ReservationModal = ({
       // Ne PAS fermer le dialog - LocationDialog le gère lui-même
     } catch (error) {
       console.error('Erreur lors de la mise à jour locale:', error);
+      toast.error('Erreur lors de la mise à jour du lieu.');
     }
   };
 
@@ -976,7 +1016,7 @@ const ReservationModal = ({
           <Checkbox
             checked={formData.isTournee}
             onChange={(e) => setFormData((prev) => ({ ...prev, isTournee: e.target.checked }))}
-            style={{ margin: 0, cursor: isReadOnly ? 'default' : 'pointer' }}
+            className={`reservation-tournee-checkbox ${isReadOnly ? 'is-read-only' : ''}`}
             disabled={isReadOnly}
           />
           <span className="reservation-tournee-label">🚐 Tournée</span>
@@ -1092,15 +1132,19 @@ const ReservationModal = ({
                                 <div className="rm-affaire-empty">Aucune affaire trouvée</div>
                               ) : (
                                 filteredAffaires.map((a) => (
-                                  <button
+                                  <Button
                                     type="button"
                                     className="rm-affaire-option"
                                     key={a.numeroAffaire}
                                     onClick={() => {
                                       setFormData((prev) => ({
-                                        ...prev,
-                                        affaires: [a.numeroAffaire],
-                                        clientName: prev.clientName || a.client || '',
+                                        ...fillFromAffaireIfMissing(
+                                          {
+                                            ...prev,
+                                            affaires: [a.numeroAffaire],
+                                          },
+                                          a.numeroAffaire,
+                                        ),
                                       }));
                                       setAffaireSearch('');
                                       setAffaireOpen(false);
@@ -1113,7 +1157,7 @@ const ReservationModal = ({
                                     {a.titre && (
                                       <span className="rm-affaire-opt-titre">{a.titre}</span>
                                     )}
-                                  </button>
+                                  </Button>
                                 ))
                               )}
                             </div>
@@ -1226,6 +1270,18 @@ const ReservationModal = ({
                                     setShowLocationDropdown(false);
                                   }}
                                   className="reservation-location-item"
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(event) =>
+                                    activateOnEnterOrSpace(event, () => {
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        locationName: location.name,
+                                      }));
+                                      setLocationSearch('');
+                                      setShowLocationDropdown(false);
+                                    })
+                                  }
                                 >
                                   <div className="reservation-location-item-name">
                                     {location.name}
@@ -1380,6 +1436,14 @@ const ReservationModal = ({
                     <div
                       className="custom-dropdown-trigger"
                       onClick={() => setIsEventDropdownOpen(!isEventDropdownOpen)}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isEventDropdownOpen}
+                      onKeyDown={(event) =>
+                        activateOnEnterOrSpace(event, () =>
+                          setIsEventDropdownOpen(!isEventDropdownOpen),
+                        )
+                      }
                     >
                       {formData.isTournee ? (
                         // Mode tournée : afficher tous les événements liés
@@ -1402,12 +1466,8 @@ const ReservationModal = ({
                               return (
                                 <div
                                   key={eventId}
-                                  className="selected-event-display clickable-event"
-                                  style={{
-                                    backgroundColor: getEventColor(event) + '20',
-                                    padding: '0.25rem 0.5rem',
-                                    cursor: 'pointer',
-                                  }}
+                                  className="selected-event-display clickable-event reservation-tournee-selected-event"
+                                  style={{ '--reservation-event-color': getEventColor(event) }}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     if (onRequestViewEvent) {
@@ -1416,6 +1476,16 @@ const ReservationModal = ({
                                     }
                                   }}
                                   title="Cliquer pour voir l'événement"
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(keyboardEvent) =>
+                                    activateOnEnterOrSpace(keyboardEvent, () => {
+                                      if (onRequestViewEvent) {
+                                        onRequestViewEvent(event);
+                                        onClose();
+                                      }
+                                    })
+                                  }
                                 >
                                   <span className="event-dates reservation-event-date-xs">
                                     {dateRange}
@@ -1467,11 +1537,8 @@ const ReservationModal = ({
 
                           return (
                             <div
-                              className="selected-event-display clickable-event"
-                              style={{
-                                backgroundColor: getEventColor(event) + '20',
-                                cursor: 'pointer',
-                              }}
+                              className="selected-event-display clickable-event reservation-tournee-selected-event"
+                              style={{ '--reservation-event-color': getEventColor(event) }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (onRequestViewEvent) {
@@ -1480,6 +1547,16 @@ const ReservationModal = ({
                                 }
                               }}
                               title="Cliquer pour voir l'événement"
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(keyboardEvent) =>
+                                activateOnEnterOrSpace(keyboardEvent, () => {
+                                  if (onRequestViewEvent) {
+                                    onRequestViewEvent(event);
+                                    onClose();
+                                  }
+                                })
+                              }
                             >
                               <span className="event-dates">{dateRange}</span>
                               <span className="event-title">{cleanTitle}</span>
@@ -1500,6 +1577,11 @@ const ReservationModal = ({
                         <div
                           className="custom-dropdown-item"
                           onClick={() => selectGoogleEvent(null)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(event) =>
+                            activateOnEnterOrSpace(event, () => selectGoogleEvent(null))
+                          }
                         >
                           <span className="event-dates">—</span>
                           <span className="event-title">Aucun événement</span>
@@ -1549,7 +1631,14 @@ const ReservationModal = ({
                               key={event.id}
                               className={`custom-dropdown-item ${isEventLinked ? 'affaire-added' : ''}`}
                               onClick={() => selectGoogleEvent(event)}
-                              style={{ backgroundColor: getEventColor(event) + '20' }}
+                              style={{ '--reservation-event-color': getEventColor(event) }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(keyboardEvent) =>
+                                activateOnEnterOrSpace(keyboardEvent, () =>
+                                  selectGoogleEvent(event),
+                                )
+                              }
                             >
                               <span className="event-dates">{dateRange}</span>
                               <span className="event-title">
@@ -1666,21 +1755,10 @@ const ReservationModal = ({
                     return (
                       <div
                         key={eventId}
-                        className={`event-card-with-trip ${isInGroup ? 'in-group' : ''}`}
+                        className={`event-card-with-trip reservation-event-card ${isInGroup ? 'in-group' : ''} ${hasTripDetails ? 'has-trip-details' : 'is-event-colored'}`}
                         style={{
-                          backgroundColor: hasTripDetails
-                            ? 'var(--theme-success-bg)'
-                            : getEventColor(event) + '20',
-                          padding: '0.75rem',
-                          borderRadius: isInGroup ? '0' : '0.375rem',
-                          border: hasTripDetails
-                            ? `2px solid ${STATUS_COLORS.success}`
-                            : '1px solid ' + getEventColor(event) + '40',
-                          borderBottom: isInGroup ? 'none' : undefined,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.375rem',
-                          transition: 'all 0.2s ease',
+                          '--reservation-event-color': getEventColor(event),
+                          '--reservation-success-color': STATUS_COLORS.success,
                         }}
                       >
                         <div
@@ -1693,6 +1771,16 @@ const ReservationModal = ({
                             }
                           }}
                           title="Cliquer pour voir l'événement"
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(keyboardEvent) =>
+                            activateOnEnterOrSpace(keyboardEvent, () => {
+                              if (onRequestViewEvent) {
+                                onRequestViewEvent(event);
+                                onClose();
+                              }
+                            })
+                          }
                         >
                           <div className="reservation-event-header">
                             <span className="reservation-event-date-badge">📅 {dateRange}</span>
@@ -1770,10 +1858,7 @@ const ReservationModal = ({
                               Lier à un événement
                             </Button>
                             {linkEventComboboxOpen === eventId && (
-                              <div
-                                className="link-event-combobox"
-                                onClick={(e) => e.stopPropagation()}
-                              >
+                              <div className="link-event-combobox">
                                 <div className="combobox-header">Choisir un événement à lier</div>
                                 <div className="combobox-list">
                                   {/* Événements déjà dans la tournée mais pas liés */}
@@ -1812,6 +1897,14 @@ const ReservationModal = ({
                                             handleLinkTrips(eventId, ge.id);
                                             setLinkEventComboboxOpen(null);
                                           }}
+                                          role="button"
+                                          tabIndex={0}
+                                          onKeyDown={(keyboardEvent) =>
+                                            activateOnEnterOrSpace(keyboardEvent, () => {
+                                              handleLinkTrips(eventId, ge.id);
+                                              setLinkEventComboboxOpen(null);
+                                            })
+                                          }
                                         >
                                           <span className="combobox-date">
                                             🚐{' '}
@@ -1865,6 +1958,13 @@ const ReservationModal = ({
                                           key={ge.id}
                                           className="combobox-item"
                                           onClick={() => handleLinkBannerEvent(eventId, ge)}
+                                          role="button"
+                                          tabIndex={0}
+                                          onKeyDown={(keyboardEvent) =>
+                                            activateOnEnterOrSpace(keyboardEvent, () =>
+                                              handleLinkBannerEvent(eventId, ge),
+                                            )
+                                          }
                                         >
                                           <span className="combobox-date">
                                             {geStart
@@ -2057,7 +2157,7 @@ const ReservationModal = ({
 
       <ModalFooter className="modal-actions">
         {isEdit && currentUser?.isAdmin && (
-          <Button variant="ghost" type="button" className="delete-button" onClick={onDelete}>
+          <Button variant="danger" type="button" onClick={onDelete}>
             <Trash2 size={18} />
             Supprimer
           </Button>
@@ -2066,12 +2166,12 @@ const ReservationModal = ({
           {isReadOnly ? 'Fermer' : 'Annuler'}
         </Button>
         {!isEdit && (
-          <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
+          <Button variant="success" type="submit" form="reservation-form">
             {currentUser?.isAdmin ? 'Créer' : 'Demander'}
           </Button>
         )}
         {isEdit && !isReadOnly && (isDirty || formData.isTournee) && (
-          <Button variant="ghost" type="submit" form="reservation-form" className="submit-button">
+          <Button variant="success" type="submit" form="reservation-form">
             Valider les modifications
           </Button>
         )}

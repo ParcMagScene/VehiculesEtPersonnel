@@ -12,12 +12,27 @@
   padding: 1rem;
   backdrop-filter: blur(4px);
   isolation: isolate;
+
+  .reservation-tournee-checkbox {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .reservation-tournee-checkbox.is-read-only {
+    cursor: default;
+  }
   animation: overlayFadeIn 0.2s ease-out;
 }
 
-.modal-content {
+.reservation-modal.ui-modal {
   background: var(--theme-bg-page);
   border-radius: var(--radius-xl);
+
+  .reservation-tournee-selected-event {
+    background-color: color-mix(in srgb, var(--reservation-event-color) 20%, transparent);
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+  }
   max-width: 900px !important;
   width: 100%;
   max-height: 90vh;
@@ -30,10 +45,35 @@
   z-index: var(--z-base);
 }
 
-.modal-form {
+.custom-dropdown-item[style*='--reservation-event-color'] {
+  background-color: color-mix(in srgb, var(--reservation-event-color) 20%, transparent);
+}
+
+.reservation-modal .modal-form {
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
+
+  .reservation-event-card {
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid color-mix(in srgb, var(--reservation-event-color) 40%, transparent);
+    transition: all 0.2s ease;
+  }
+
+  .reservation-event-card.in-group {
+    border-radius: 0;
+    border-bottom: none;
+  }
+
+  .reservation-event-card.is-event-colored {
+    background-color: color-mix(in srgb, var(--reservation-event-color) 20%, transparent);
+  }
+
+  .reservation-event-card.has-trip-details {
+    background-color: var(--theme-success-bg);
+    border: 2px solid var(--reservation-success-color);
+  }
   padding: var(--space-5);
 }
 
@@ -78,7 +118,7 @@
   margin: 0;
 }
 
-.close-button {
+.reservation-modal .close-button {
   background: var(--close-btn-bg);
   border: 1px solid var(--close-btn-border);
   color: var(--close-btn-color);
@@ -93,12 +133,12 @@
   height: var(--close-btn-size);
 }
 
-.close-button:hover {
+.reservation-modal .close-button:hover {
   background: var(--close-btn-hover-bg);
   border-color: var(--close-btn-hover-border);
 }
 
-.modal-form {
+.reservation-modal .modal-form {
   padding: var(--space-5);
 }
 
@@ -388,35 +428,35 @@
   font-size: var(--btn-font-size);
 }
 
-.modal-content .delete-button {
+.reservation-modal .delete-button {
   background: var(--btn-danger-filled-bg);
   color: var(--btn-danger-filled-color);
   margin-right: auto;
 }
 
-.modal-content .delete-button:hover {
+.reservation-modal .delete-button:hover {
   background: var(--theme-danger-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px var(--danger-tint-medium);
 }
 
-.modal-content .cancel-button {
+.reservation-modal .cancel-button {
   background: var(--btn-secondary-bg);
   color: var(--btn-secondary-color);
   border: var(--btn-secondary-border);
 }
 
-.modal-content .cancel-button:hover {
+.reservation-modal .cancel-button:hover {
   background: var(--btn-secondary-hover-bg);
 }
 
-.modal-content .submit-button {
+.reservation-modal .submit-button {
   background: var(--btn-primary-bg);
   color: var(--btn-primary-color);
   box-shadow: var(--btn-primary-shadow);
 }
 
-.modal-content .submit-button:hover {
+.reservation-modal .submit-button:hover {
   transform: translateY(-1px);
   box-shadow: var(--btn-primary-hover-shadow);
 }
@@ -1062,13 +1102,13 @@
 }
 
 /* Mode lecture seule */
-.modal-form fieldset:disabled {
+.reservation-modal .modal-form fieldset:disabled {
   opacity: 0.85;
 }
 
-.modal-form fieldset:disabled input,
-.modal-form fieldset:disabled select,
-.modal-form fieldset:disabled textarea {
+.reservation-modal .modal-form fieldset:disabled input,
+.reservation-modal .modal-form fieldset:disabled select,
+.reservation-modal .modal-form fieldset:disabled textarea {
   cursor: not-allowed;
   background-color: var(--theme-bg-tertiary);
 }
@@ -1080,7 +1120,7 @@
 
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
-  .modal-content {
+  .reservation-modal.ui-modal {
     max-width: 100% !important;
     border-radius: var(--radius-lg);
     max-height: 95vh;
@@ -1098,7 +1138,7 @@
     font-size: var(--font-xl);
   }
 
-  .modal-form {
+  .reservation-modal .modal-form {
     padding: 1rem;
   }
 
@@ -1126,7 +1166,7 @@
 }
 
 @media (max-width: 480px) {
-  .modal-content {
+  .reservation-modal.ui-modal {
     border-radius: var(--radius-md);
   }
 
@@ -1134,7 +1174,7 @@
     font-size: var(--font-md);
   }
 
-  .modal-form {
+  .reservation-modal .modal-form {
     padding: 0.75rem;
   }
 

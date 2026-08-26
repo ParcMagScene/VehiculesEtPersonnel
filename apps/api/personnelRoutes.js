@@ -9,6 +9,7 @@ import { alertAssignmentCreated } from './emailService.js';
 import logger from './logger.js';
 import { personSchema } from './schemas/crud.js';
 import { personnelImportSchema, validate } from './schemas/imports.js';
+import { numericIdSchema } from './schemas/paramsSchema.js';
 import { parsePagination, sendPaginated } from './utils/pagination.js';
 
 // ============ PERSONS (PERSONNEL) ============
@@ -221,14 +222,19 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
   });
 
   // PUT /api/persons/:id — Modifier une personne
-  app.put('/api/persons/:id', authenticateToken, (req, res) => {
-    try {
-      const p = req.body;
-      const existing = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
+  app.put(
+    '/api/persons/:id',
+    authenticateToken,
+    validate({ params: numericIdSchema, body: personSchema }),
+    (req, res) => {
+      try {
+        const p = req.body;
+        const existing = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
-      const admin = isAdminUser(req.user);
-      const stmt = db.prepare(`
+        const admin = isAdminUser(req.user);
+        const stmt = db.prepare(`
         UPDATE persons SET
           first_name = ?, last_name = ?, email = ?, phone = ?,
           type = ?, status = ?, user_id = ?, driver_id = ?,
@@ -245,102 +251,111 @@ export function setupPersonsRoutes(app, authenticateToken, requireAdmin) {
         WHERE id = ?
       `);
 
-      stmt.run(
-        p.first_name || existing.first_name,
-        p.last_name || existing.last_name,
-        p.email ?? existing.email,
-        p.phone ?? existing.phone,
-        p.type || existing.type,
-        p.status || existing.status,
-        p.user_id ?? existing.user_id,
-        p.driver_id ?? existing.driver_id,
-        p.license_types ? JSON.stringify(p.license_types) : existing.license_types,
-        p.certifications ? JSON.stringify(p.certifications) : existing.certifications,
-        p.contract_type ?? existing.contract_type,
-        p.default_positions !== undefined
-          ? p.default_positions
-          : existing.default_positions || '[]',
-        p.notes ?? existing.notes,
-        p.photo ?? existing.photo,
-        p.show_in_planning !== undefined
-          ? p.show_in_planning
-            ? 1
-            : 0
-          : (existing.show_in_planning ?? 1),
-        p.address ?? existing.address,
-        p.postal_code ?? existing.postal_code,
-        p.city ?? existing.city,
-        p.country ?? existing.country,
-        p.phone_personal ?? existing.phone_personal,
-        p.personal_email ?? existing.personal_email,
-        p.birth_date ?? existing.birth_date,
-        p.emergency_contact_name ?? existing.emergency_contact_name,
-        p.emergency_contact_phone ?? existing.emergency_contact_phone,
-        p.emergency_contact_relation ?? existing.emergency_contact_relation,
-        p.linkedin_url ?? existing.linkedin_url,
-        admin
-          ? (p.social_security_number ?? existing.social_security_number)
-          : existing.social_security_number,
-        admin ? (p.iban ?? existing.iban) : existing.iban,
-        admin ? (p.hr_notes ?? existing.hr_notes) : existing.hr_notes,
-        req.user.id,
-        req.params.id,
-      );
+        stmt.run(
+          p.first_name || existing.first_name,
+          p.last_name || existing.last_name,
+          p.email ?? existing.email,
+          p.phone ?? existing.phone,
+          p.type || existing.type,
+          p.status || existing.status,
+          p.user_id ?? existing.user_id,
+          p.driver_id ?? existing.driver_id,
+          p.license_types ? JSON.stringify(p.license_types) : existing.license_types,
+          p.certifications ? JSON.stringify(p.certifications) : existing.certifications,
+          p.contract_type ?? existing.contract_type,
+          p.default_positions !== undefined
+            ? p.default_positions
+            : existing.default_positions || '[]',
+          p.notes ?? existing.notes,
+          p.photo ?? existing.photo,
+          p.show_in_planning !== undefined
+            ? p.show_in_planning
+              ? 1
+              : 0
+            : (existing.show_in_planning ?? 1),
+          p.address ?? existing.address,
+          p.postal_code ?? existing.postal_code,
+          p.city ?? existing.city,
+          p.country ?? existing.country,
+          p.phone_personal ?? existing.phone_personal,
+          p.personal_email ?? existing.personal_email,
+          p.birth_date ?? existing.birth_date,
+          p.emergency_contact_name ?? existing.emergency_contact_name,
+          p.emergency_contact_phone ?? existing.emergency_contact_phone,
+          p.emergency_contact_relation ?? existing.emergency_contact_relation,
+          p.linkedin_url ?? existing.linkedin_url,
+          admin
+            ? (p.social_security_number ?? existing.social_security_number)
+            : existing.social_security_number,
+          admin ? (p.iban ?? existing.iban) : existing.iban,
+          admin ? (p.hr_notes ?? existing.hr_notes) : existing.hr_notes,
+          req.user.id,
+          req.params.id,
+        );
 
-      // Mettre à jour les compétences si fournies
-      if (p.skills !== undefined) {
-        db.prepare('DELETE FROM person_skills WHERE person_id = ?').run(req.params.id);
-        if (p.skills && p.skills.length > 0) {
-          const skillStmt = db.prepare(
-            'INSERT OR IGNORE INTO person_skills (person_id, skill_id, level) VALUES (?, ?, ?)',
-          );
-          for (const skill of p.skills) {
-            skillStmt.run(
-              req.params.id,
-              skill.skill_id || skill.id,
-              skill.level || 'intermédiaire',
+        // Mettre à jour les compétences si fournies
+        if (p.skills !== undefined) {
+          db.prepare('DELETE FROM person_skills WHERE person_id = ?').run(req.params.id);
+          if (p.skills && p.skills.length > 0) {
+            const skillStmt = db.prepare(
+              'INSERT OR IGNORE INTO person_skills (person_id, skill_id, level) VALUES (?, ?, ?)',
             );
+            for (const skill of p.skills) {
+              skillStmt.run(
+                req.params.id,
+                skill.skill_id || skill.id,
+                skill.level || 'intermédiaire',
+              );
+            }
           }
         }
-      }
 
-      addToHistory('person', req.params.id, 'updated', p, req.user.id, req.user.name);
+        addToHistory('person', req.params.id, 'updated', p, req.user.id, req.user.name);
 
-      // Renvoyer l'objet complet
-      let updated = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
-      if (!admin) updated = stripSensitive(updated);
-      updated.skills = db
-        .prepare(
-          `
+        // Renvoyer l'objet complet
+        let updated = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+        if (!admin) updated = stripSensitive(updated);
+        updated.skills = db
+          .prepare(
+            `
         SELECT ps.skill_id, ps.level, s.name, s.category
         FROM person_skills ps JOIN skills s ON s.id = ps.skill_id
         WHERE ps.person_id = ?
       `,
-        )
-        .all(updated.id);
+          )
+          .all(updated.id);
 
-      res.json(updated);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json(updated);
+      } catch (error) {
+        logger.error('PUT /api/persons/:id error:', error.message, error.code);
+        const msg = error.message || 'Erreur serveur interne';
+        res.status(500).json({ success: false, error: msg, code: error.code });
+      }
+    },
+  );
 
   // DELETE /api/persons/:id — Supprimer une personne (admin)
-  app.delete('/api/persons/:id', authenticateToken, requireAdmin, (req, res) => {
-    try {
-      const existing = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
-      if (!existing) return res.status(404).json({ success: false, error: 'Personne non trouvée' });
+  app.delete(
+    '/api/persons/:id',
+    authenticateToken,
+    requireAdmin,
+    validate({ params: numericIdSchema }),
+    (req, res) => {
+      try {
+        const existing = db.prepare('SELECT * FROM persons WHERE id = ?').get(req.params.id);
+        if (!existing)
+          return res.status(404).json({ success: false, error: 'Personne non trouvée' });
 
-      db.prepare('DELETE FROM persons WHERE id = ?').run(req.params.id);
-      addToHistory('person', req.params.id, 'deleted', null, req.user.id, req.user.name);
+        db.prepare('DELETE FROM persons WHERE id = ?').run(req.params.id);
+        addToHistory('person', req.params.id, 'deleted', null, req.user.id, req.user.name);
 
-      res.json({ success: true });
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+        res.json({ success: true });
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // POST /api/persons/import-csv — Import CSV Personnel avec détection des collisions
   app.post(

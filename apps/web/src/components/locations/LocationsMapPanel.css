@@ -99,6 +99,30 @@
   gap: var(--space-1);
 }
 
+.locations-map-recenter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 6px var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--theme-text-secondary);
+  background: var(--theme-bg-secondary);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--theme-radius, 6px);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.locations-map-recenter-btn:hover {
+  background: var(--theme-bg-tertiary, var(--theme-bg-secondary));
+  color: var(--theme-text-primary);
+  border-color: var(--theme-border-hover, var(--theme-border));
+}
+
 .locations-map-close {
   display: flex;
   align-items: center;
@@ -1308,8 +1332,8 @@
   white-space: nowrap;
   cursor: pointer;
   pointer-events: auto;
-  max-width: 132px;
-  backdrop-filter: blur(4px);
+  max-width: 140px;
+  /* backdrop-filter retiré : non rendu par html2canvas (capture des cartes) */
   transition: background 0.15s;
 }
 
@@ -1336,13 +1360,19 @@
 
 .map-offscreen-arrow {
   display: inline-block;
-  font-size: 0.9rem;
-  line-height: 1;
+  width: 14px;
+  height: 14px;
+  color: var(--theme-primary, currentColor);
+  flex-shrink: 0;
+}
+
+.map-offscreen-pill:hover .map-offscreen-arrow {
+  color: var(--color-white);
 }
 
 .map-offscreen-label {
   display: inline-block;
-  max-width: 96px;
+  max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
 }

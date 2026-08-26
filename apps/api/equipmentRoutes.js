@@ -29,8 +29,9 @@ import db, { addToHistory } from './database.js';
 import { alertSavTicketCreated } from './emailService.js';
 import logger from './logger.js';
 import { setCacheControl } from './middleware/cacheControl.js';
+import { validateFileTypes } from './middleware/validateFileType.js';
 import { equipmentSchema } from './schemas/crud.js';
-import { equipmentImportSchema, validate } from './schemas/imports.js';
+import { validate } from './schemas/imports.js';
 import { getNextUid } from './services/uidCounter.js';
 import { parsePagination, sendPaginated } from './utils/pagination.js';
 import { safeContentDispositionName } from './utils/safeFilename.js';
@@ -806,399 +807,6 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
       }
     },
   );
-
-  // POST /api/equipment/import-csv — Import CSV Locmat
-  app.post(
-    '/api/equipment/import-csv',
-    authenticateToken,
-    requireAdmin,
-    validate(equipmentImportSchema),
-    (req, res) => {
-      try {
-        const { data, mode } = req.body;
-        // data = tableau d'objets [{code_libre, nom, famille, sous_famille, categorie, zone, stock, marque, numero_serie}, ...]
-        // mode = 'preview' | 'import'
-
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          return res.status(400).json({ success: false, error: 'Données CSV vides' });
-        }
-
-        // Filtre : ignorer les équipements en zone "Hors stock" (matériel déclassé)
-        const isHorsStock = (zone) => {
-          if (!zone) return false;
-          const z = String(zone)
-            .trim()
-            .toLowerCase()
-            .replace(/[\s_-]+/g, '');
-          return z === 'horsstock';
-        };
-
-        // Collecter les familles, sous-familles, catégories uniques du CSV
-        const familiesSet = new Map();
-        const subfamiliesSet = new Map();
-        const categoriesSet = new Map();
-
-        for (const row of data) {
-          if (isHorsStock(row.zone)) continue;
-          if (row.famille && row.famille.trim()) {
-            const normalizedFamily = row.famille.trim();
-            familiesSet.set(normalizedFamily.toUpperCase(), normalizedFamily);
-          }
-          if (row.sous_famille && row.sous_famille.trim()) {
-            const key = `${(row.famille || '').trim().toUpperCase()}||${row.sous_famille.trim()}`;
-            subfamiliesSet.set(key, {
-              name: row.sous_famille.trim(),
-              family: (row.famille || '').trim(),
-            });
-          }
-          if (row.categorie && row.categorie.trim()) {
-            const key = `${(row.famille || '').trim().toUpperCase()}||${(row.sous_famille || '').trim()}||${row.categorie.trim()}`;
-            categoriesSet.set(key, {
-              name: row.categorie.trim(),
-              family: (row.famille || '').trim(),
-              subfamily: (row.sous_famille || '').trim(),
-            });
-          }
-        }
-
-        // Icons par famille (taxonomie uniformisée)
-        const FAMILY_ICONS = {
-          Sonorisation: '🔊',
-          Éclairage: '💡',
-          Structure: '🏗️',
-          Audiovisuel: '🎥',
-          'Distribution Électrique': '⚡',
-          Backline: '🎸',
-          Informatique: '💻',
-          'Rideau-Machinerie': '🎭',
-          Accroche: '🔗',
-          Motorisation: '⚙️',
-          Mobilier: '🪑',
-          'Outillage & EPI': '🔧',
-          Divers: '📋',
-        };
-        const FAMILY_COLORS = {
-          Sonorisation: '#3b82f6',
-          Éclairage: '#f59e0b',
-          Structure: '#ef4444',
-          Audiovisuel: '#8b5cf6',
-          'Distribution Électrique': '#f97316',
-          Backline: '#10b981',
-          Informatique: '#06b6d4',
-          'Rideau-Machinerie': '#ec4899',
-          Accroche: '#14b8a6',
-          Motorisation: '#f97316',
-          Mobilier: '#6b7280',
-          'Outillage & EPI': '#f59e0b',
-          Divers: '#94a3b8',
-        };
-
-        if (mode === 'preview') {
-          // Modèle A : matching prioritaire par serial_number (1 ligne = 1 unité).
-          // Fallback reference uniquement si la référence est unique en DB.
-          const findBySerial = db.prepare(
-            'SELECT id, name, reference, serial_number FROM equipment' +
-              " WHERE serial_number = ? AND serial_number IS NOT NULL AND serial_number != '' LIMIT 2",
-          );
-          const findByRef = db.prepare(
-            'SELECT id, name, reference, serial_number FROM equipment' +
-              " WHERE reference = ? AND reference IS NOT NULL AND reference != ''" +
-              " AND (serial_number IS NULL OR serial_number = '') LIMIT 2",
-          );
-          const findExistingStrict = (reference, serialNumber) => {
-            if (serialNumber) {
-              const matches = findBySerial.all(serialNumber);
-              if (matches.length === 1) return { row: matches[0], by: 'serial_number' };
-              if (matches.length > 1) return null; // ambigu
-            }
-            if (reference) {
-              const matches = findByRef.all(reference);
-              if (matches.length === 1) return { row: matches[0], by: 'reference' };
-            }
-            return null;
-          };
-
-          let toCreate = 0,
-            toUpdate = 0,
-            toSkip = 0,
-            toSkipHorsStock = 0;
-          const collisions = [];
-
-          for (let i = 0; i < data.length; i++) {
-            const row = data[i];
-            if (isHorsStock(row.zone)) {
-              toSkipHorsStock++;
-              continue;
-            }
-            const nom = (row.nom || '').trim();
-            if (!nom) {
-              toSkip++;
-              continue;
-            }
-
-            const reference = (row.code_libre || '').trim() || null;
-            const serialNumber = (row.numero_serie || '').trim() || null;
-            const matched = findExistingStrict(reference, serialNumber);
-            const existing = matched?.row || null;
-
-            if (existing) {
-              toUpdate++;
-              collisions.push({
-                index: i,
-                csvName: nom,
-                csvRef: reference,
-                csvSerial: serialNumber,
-                existingId: existing.id,
-                existingName: existing.name,
-                existingRef: existing.reference,
-                existingSerial: existing.serial_number,
-                action: 'update',
-                matchedBy: matched.by,
-              });
-            } else {
-              toCreate++;
-            }
-          }
-
-          return res.json({
-            totalRows: data.length,
-            toCreate,
-            toUpdate,
-            toSkip,
-            toSkipHorsStock,
-            collisions,
-            families: [...familiesSet.values()],
-            subfamilies: [...subfamiliesSet.values()].map((v) => v.name),
-            categories: [...categoriesSet.values()].map((v) => v.name),
-            existingEquipmentCount: db.prepare('SELECT COUNT(*) as c FROM equipment').get().c,
-            sample: data.slice(0, 10),
-          });
-        }
-
-        // Mode import réel
-        const insertFamily = db.prepare(
-          'INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, NULL)',
-        );
-        const insertSubfamily = db.prepare(
-          'INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, ?)',
-        );
-        const insertCategory = db.prepare(
-          'INSERT INTO equipment_categories (name, icon, color, level, parent_id) VALUES (?, ?, ?, ?, ?)',
-        );
-        const findCat = db.prepare(
-          'SELECT id FROM equipment_categories WHERE name = ? AND level = ? AND (parent_id = ? OR (parent_id IS NULL AND ? IS NULL))',
-        );
-        const insertEquip = db.prepare(`
-        INSERT INTO equipment (name, reference, serial_number, category_id, brand, stock_quantity, location, status, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'available', ?)
-      `);
-
-        let created = 0,
-          updated = 0,
-          skipped = 0,
-          skippedHorsStock = 0,
-          familiesCreated = 0,
-          subfamiliesCreated = 0,
-          categoriesCreated = 0;
-
-        const importAll = db.transaction(() => {
-          // Phase 1 : Créer les familles
-          const familyIdMap = {};
-          for (const [key, name] of familiesSet) {
-            let existing = findCat.get(name, 'family', null, null);
-            if (!existing) {
-              // Vérifier aussi par nom case-insensitive
-              existing = db
-                .prepare('SELECT id FROM equipment_categories WHERE UPPER(name) = ? AND level = ?')
-                .get(key, 'family');
-            }
-            if (existing) {
-              familyIdMap[key] = existing.id;
-            } else {
-              const icon = FAMILY_ICONS[name] || FAMILY_ICONS[key] || '📦';
-              const color = FAMILY_COLORS[name] || FAMILY_COLORS[key] || '#6366f1';
-              const result = insertFamily.run(name, icon, color, 'family');
-              familyIdMap[key] = result.lastInsertRowid;
-              familiesCreated++;
-            }
-          }
-
-          // Phase 2 : Créer les sous-familles
-          const subfamilyIdMap = {};
-          for (const [key, { name, family }] of subfamiliesSet) {
-            const familyKey = family.toUpperCase();
-            const parentId = familyIdMap[familyKey] || null;
-            let existing = findCat.get(name, 'subfamily', parentId, parentId);
-            if (existing) {
-              subfamilyIdMap[key] = existing.id;
-            } else {
-              const result = insertSubfamily.run(name, '📁', '#64748b', 'subfamily', parentId);
-              subfamilyIdMap[key] = result.lastInsertRowid;
-              subfamiliesCreated++;
-            }
-          }
-
-          // Phase 3 : Créer les catégories
-          const categoryIdMap = {};
-          for (const [key, { name, family, subfamily }] of categoriesSet) {
-            const sfKey = `${family.toUpperCase()}||${subfamily}`;
-            const parentId = subfamilyIdMap[sfKey] || null;
-            let existing = findCat.get(name, 'category', parentId, parentId);
-            if (existing) {
-              categoryIdMap[key] = existing.id;
-            } else {
-              const result = insertCategory.run(name, '📦', '#94a3b8', 'category', parentId);
-              categoryIdMap[key] = result.lastInsertRowid;
-              categoriesCreated++;
-            }
-          }
-
-          // Phase 4 : Insérer ou mettre à jour les équipements
-          // Modèle A : matching prioritaire par serial_number ; reference fallback si unique.
-          const findBySerialApply = db.prepare(
-            "SELECT id FROM equipment WHERE serial_number = ? AND serial_number IS NOT NULL AND serial_number != '' LIMIT 2",
-          );
-          const findByRefApply = db.prepare(
-            "SELECT id FROM equipment WHERE reference = ? AND reference IS NOT NULL AND reference != ''" +
-              " AND (serial_number IS NULL OR serial_number = '') LIMIT 2",
-          );
-          const findExistingApply = (reference, serialNumber) => {
-            if (serialNumber) {
-              const m = findBySerialApply.all(serialNumber);
-              if (m.length === 1) return m[0];
-              if (m.length > 1) return null;
-            }
-            if (reference) {
-              const m = findByRefApply.all(reference);
-              if (m.length === 1) return m[0];
-            }
-            return null;
-          };
-          const updateEquip = db.prepare(`
-          UPDATE equipment SET name = ?, category_id = ?, brand = ?, stock_quantity = ?, location = ?, updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `);
-
-          for (const row of data) {
-            if (isHorsStock(row.zone)) {
-              skippedHorsStock++;
-              continue;
-            }
-            const nom = (row.nom || '').trim();
-            if (!nom) {
-              skipped++;
-              continue;
-            }
-
-            // Trouver la catégorie
-            const catKey = `${(row.famille || '').trim().toUpperCase()}||${(row.sous_famille || '').trim()}||${(row.categorie || '').trim()}`;
-            const categoryId = categoryIdMap[catKey] || null;
-
-            const reference = (row.code_libre || '').trim() || null;
-            const serialNumber = (row.numero_serie || '').trim() || null;
-            const rawBrand = (row.marque || '').trim() || null;
-            const resolved = normalizeBrand(rawBrand);
-            const stock = parseInt(row.stock) || 1;
-            const zone = (row.zone || '').trim() || null;
-
-            // Détecter un équipement existant (matching strict modèle A)
-            const existing =
-              reference || serialNumber ? findExistingApply(reference, serialNumber) : null;
-
-            if (existing) {
-              updateEquip.run(nom, categoryId, resolved.brand, stock, zone, existing.id);
-              if (resolved.brand_id) {
-                db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(
-                  resolved.brand_id,
-                  existing.id,
-                );
-              }
-              // Synchroniser UID si le serial contient un EMAG
-              if (serialNumber) {
-                const emagMatch = serialNumber.match(/EMAG-\d{5}/i);
-                if (emagMatch) {
-                  db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
-                    emagMatch[0].toUpperCase(),
-                    existing.id,
-                  );
-                }
-              }
-              // S'assurer que l'uid n'est jamais vide
-              const existUid = db
-                .prepare('SELECT uid FROM equipment WHERE id = ?')
-                .get(existing.id);
-              if (!existUid?.uid) {
-                db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(
-                  getNextUid(db),
-                  existing.id,
-                );
-              }
-              updated++;
-            } else {
-              const insResult = insertEquip.run(
-                nom,
-                reference,
-                serialNumber,
-                categoryId,
-                resolved.brand,
-                stock,
-                zone,
-                req.user.id,
-              );
-              // Générer UID (ou synchroniser avec serial EMAG)
-              const newId = insResult.lastInsertRowid;
-              const emagMatch = serialNumber && serialNumber.match(/EMAG-\d{5}/i);
-              const uid = emagMatch ? emagMatch[0].toUpperCase() : getNextUid(db);
-              db.prepare('UPDATE equipment SET uid = ? WHERE id = ?').run(uid, newId);
-              if (resolved.brand_id) {
-                db.prepare('UPDATE equipment SET brand_id = ? WHERE id = ?').run(
-                  resolved.brand_id,
-                  newId,
-                );
-              }
-              created++;
-            }
-          }
-        });
-
-        importAll();
-
-        addToHistory(
-          'equipment',
-          null,
-          'import_csv',
-          {
-            created,
-            updated,
-            skipped,
-            skippedHorsStock,
-            familiesCreated,
-            subfamiliesCreated,
-            categoriesCreated,
-            total: data.length,
-          },
-          req.user.id,
-          req.user.name,
-        );
-
-        res.json({
-          success: true,
-          created,
-          updated,
-          skipped,
-          skippedHorsStock,
-          familiesCreated,
-          subfamiliesCreated,
-          categoriesCreated,
-          message: `Import terminé : ${created} créé(s), ${updated} mis à jour, ${skipped} ignoré(s)${skippedHorsStock ? `, ${skippedHorsStock} hors stock ignoré(s)` : ''}, ${familiesCreated} famille(s), ${subfamiliesCreated} sous-famille(s), ${categoriesCreated} catégorie(s) créée(s)`,
-        });
-      } catch (error) {
-        logger.error('Erreur import CSV:', error);
-        logger.error(error);
-        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-      }
-    },
-  );
 }
 
 // ============ ASSIGNMENTS ============
@@ -1344,7 +952,7 @@ export function setupSavTicketsRoutes(
   requireEquipmentMaintenanceAccess,
 ) {
   // GET /api/sav-tickets
-  app.get('/api/sav-tickets', authenticateToken, (req, res) => {
+  app.get('/api/sav-tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { equipment_id, status, priority } = req.query;
       let sql = `
@@ -1385,40 +993,52 @@ export function setupSavTicketsRoutes(
   });
 
   // GET /api/sav-tickets/stats
-  app.get('/api/sav-tickets/stats', authenticateToken, (req, res) => {
-    try {
-      const stats = {
-        open: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'open'").get().c,
-        in_progress: db
-          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'in_progress'")
-          .get().c,
-        waiting_parts: db
-          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'waiting_parts'")
-          .get().c,
-        resolved: db
-          .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'resolved'")
-          .get().c,
-        closed: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'closed'").get().c,
-        total_cost: db
-          .prepare('SELECT COALESCE(SUM(cost), 0) as total FROM sav_tickets WHERE cost IS NOT NULL')
-          .get().total,
-      };
-      res.json(stats);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+  app.get(
+    '/api/sav-tickets/stats',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const stats = {
+          open: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'open'").get().c,
+          in_progress: db
+            .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'in_progress'")
+            .get().c,
+          waiting_parts: db
+            .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'waiting_parts'")
+            .get().c,
+          resolved: db
+            .prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'resolved'")
+            .get().c,
+          closed: db.prepare("SELECT COUNT(*) as c FROM sav_tickets WHERE status = 'closed'").get()
+            .c,
+          total_cost: db
+            .prepare(
+              'SELECT COALESCE(SUM(cost), 0) as total FROM sav_tickets WHERE cost IS NOT NULL',
+            )
+            .get().total,
+        };
+        res.json(stats);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // GET /api/sav-tickets/report — Rapport maintenance matériel (journalier/hebdo/mensuel)
   // Query params: start (YYYY-MM-DD), end (YYYY-MM-DD), type ('entries'|'exits'|'all')
-  app.get('/api/sav-tickets/report', authenticateToken, (req, res) => {
-    try {
-      const { start, end, type } = req.query;
-      if (!start || !end)
-        return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
+  app.get(
+    '/api/sav-tickets/report',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const { start, end, type } = req.query;
+        if (!start || !end)
+          return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
 
-      let sql = `
+        let sql = `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
                st.created_at, st.resolved_at, st.updated_at,
                e.name as equipment_name, e.reference as equipment_reference,
@@ -1429,30 +1049,31 @@ export function setupSavTicketsRoutes(
         LEFT JOIN users u ON st.reported_by = u.id
         WHERE 1=1
       `;
-      const params = [];
+        const params = [];
 
-      if (type === 'entries') {
-        sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
-        params.push(start, end);
-      } else if (type === 'exits') {
-        sql +=
-          ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
-        params.push(start, end);
-      } else {
-        // 'all' : entrées OU sorties dans la période
-        sql +=
-          ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
-        params.push(start, end, start, end);
+        if (type === 'entries') {
+          sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
+          params.push(start, end);
+        } else if (type === 'exits') {
+          sql +=
+            ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
+          params.push(start, end);
+        } else {
+          // 'all' : entrées OU sorties dans la période
+          sql +=
+            ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
+          params.push(start, end, start, end);
+        }
+        sql += ' ORDER BY st.created_at DESC';
+
+        const rows = db.prepare(sql).all(...params);
+        res.json(rows);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
       }
-      sql += ' ORDER BY st.created_at DESC';
-
-      const rows = db.prepare(sql).all(...params);
-      res.json(rows);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+    },
+  );
 
   // Helper : recalcule le statut d'un équipement en fonction de ses tickets SAV et assignments
   const refreshEquipmentStatus = (equipmentId) => {
@@ -1483,8 +1104,14 @@ export function setupSavTicketsRoutes(
   app.post('/api/sav-tickets/request', authenticateToken, (req, res) => {
     try {
       const { equipment_id, title, description, type, priority } = req.body;
-      if (!equipment_id || !title)
+      const equipmentId = Number.parseInt(equipment_id, 10);
+      if (!Number.isInteger(equipmentId) || equipmentId <= 0 || !title)
         return res.status(400).json({ success: false, error: 'Équipement et titre requis' });
+
+      const equipmentExists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(equipmentId);
+      if (!equipmentExists) {
+        return res.status(400).json({ success: false, error: 'Équipement introuvable' });
+      }
 
       const result = db
         .prepare(
@@ -1493,13 +1120,13 @@ export function setupSavTicketsRoutes(
         VALUES (?, ?, NULL, ?, ?, 'open', ?, ?)
       `,
         )
-        .run(equipment_id, req.user.id, type || 'panne', priority || 'medium', title, description);
+        .run(equipmentId, req.user.id, type || 'panne', priority || 'medium', title, description);
 
       // Alerte email aux admins
       try {
         alertSavTicketCreated(
           db,
-          { equipment_id, title, type, priority, description },
+          { equipment_id: equipmentId, title, type, priority, description },
           req.user.name,
         );
       } catch (emailErr) {
@@ -1517,8 +1144,27 @@ export function setupSavTicketsRoutes(
   app.post('/api/sav-tickets', authenticateToken, requireEquipmentMaintenanceAccess, (req, res) => {
     try {
       const { equipment_id, assigned_to, type, priority, title, description } = req.body;
-      if (!equipment_id || !title)
+      const equipmentId = Number.parseInt(equipment_id, 10);
+      if (!Number.isInteger(equipmentId) || equipmentId <= 0 || !title)
         return res.status(400).json({ success: false, error: 'Équipement et titre requis' });
+
+      const equipmentExists = db.prepare('SELECT id FROM equipment WHERE id = ?').get(equipmentId);
+      if (!equipmentExists) {
+        return res.status(400).json({ success: false, error: 'Équipement introuvable' });
+      }
+
+      let assignedTo = null;
+      if (assigned_to !== null && assigned_to !== undefined && assigned_to !== '') {
+        const parsedAssigned = Number.parseInt(assigned_to, 10);
+        if (!Number.isInteger(parsedAssigned) || parsedAssigned <= 0) {
+          return res.status(400).json({ success: false, error: 'Technicien assigné invalide' });
+        }
+        const personExists = db.prepare('SELECT id FROM persons WHERE id = ?').get(parsedAssigned);
+        if (!personExists) {
+          return res.status(400).json({ success: false, error: 'Technicien assigné introuvable' });
+        }
+        assignedTo = parsedAssigned;
+      }
 
       const result = db
         .prepare(
@@ -1528,9 +1174,9 @@ export function setupSavTicketsRoutes(
       `,
         )
         .run(
-          equipment_id,
+          equipmentId,
           req.user.id,
-          assigned_to,
+          assignedTo,
           type || 'panne',
           priority || 'medium',
           title,
@@ -1538,13 +1184,13 @@ export function setupSavTicketsRoutes(
         );
 
       // Mettre l'équipement en maintenance
-      refreshEquipmentStatus(equipment_id);
+      refreshEquipmentStatus(equipmentId);
 
       // Alerte email aux admins
       try {
         alertSavTicketCreated(
           db,
-          { equipment_id, title, type, priority, description },
+          { equipment_id: equipmentId, title, type, priority, description },
           req.user.name,
         );
       } catch (emailErr) {
@@ -1692,23 +1338,28 @@ export function setupSavTicketsRoutes(
   );
 
   // GET /api/sav-tickets/unlinked — Tickets SAV importés non liés à un équipement
-  app.get('/api/sav-tickets/unlinked', authenticateToken, (req, res) => {
-    try {
-      const tickets = db
-        .prepare(
-          `
+  app.get(
+    '/api/sav-tickets/unlinked',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const tickets = db
+          .prepare(
+            `
         SELECT id, title, description, status, cost, import_code, import_serial, import_name, created_at, resolved_at
         FROM sav_tickets WHERE equipment_id IS NULL
         ORDER BY created_at DESC
       `,
-        )
-        .all();
-      res.json(tickets);
-    } catch (error) {
-      logger.error(error);
-      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
-    }
-  });
+          )
+          .all();
+        res.json(tickets);
+      } catch (error) {
+        logger.error(error);
+        res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+      }
+    },
+  );
 
   // PUT /api/sav-tickets/:id/link — Lier manuellement un ticket à un équipement
   app.put(
@@ -1872,13 +1523,17 @@ export function setupSavTicketsRoutes(
   };
 
   // GET /api/sav-tickets/report/pdf — Rapport maintenance en PDF (par période)
-  app.get('/api/sav-tickets/report/pdf', authenticateToken, (req, res) => {
-    try {
-      const { start, end, type } = req.query;
-      if (!start || !end)
-        return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
+  app.get(
+    '/api/sav-tickets/report/pdf',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const { start, end, type } = req.query;
+        if (!start || !end)
+          return res.status(400).json({ success: false, error: 'Paramètres start et end requis' });
 
-      let sql = `
+        let sql = `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
                st.created_at, st.resolved_at,
                e.name as equipment_name, e.reference as equipment_reference,
@@ -1889,52 +1544,57 @@ export function setupSavTicketsRoutes(
         LEFT JOIN users u ON st.reported_by = u.id
         WHERE 1=1
       `;
-      const params = [];
-      if (type === 'entries') {
-        sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
-        params.push(start, end);
-      } else if (type === 'exits') {
-        sql +=
-          ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
-        params.push(start, end);
-      } else {
-        sql +=
-          ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
-        params.push(start, end, start, end);
+        const params = [];
+        if (type === 'entries') {
+          sql += ' AND DATE(st.created_at) >= ? AND DATE(st.created_at) <= ?';
+          params.push(start, end);
+        } else if (type === 'exits') {
+          sql +=
+            ' AND st.resolved_at IS NOT NULL AND DATE(st.resolved_at) >= ? AND DATE(st.resolved_at) <= ?';
+          params.push(start, end);
+        } else {
+          sql +=
+            ' AND (DATE(st.created_at) BETWEEN ? AND ? OR (st.resolved_at IS NOT NULL AND DATE(st.resolved_at) BETWEEN ? AND ?))';
+          params.push(start, end, start, end);
+        }
+        sql += ' ORDER BY st.created_at DESC';
+        const rows = db.prepare(sql).all(...params);
+
+        const TYPE_LABELS = { entries: 'Entrées', exits: 'Sorties', all: 'Entrées & Sorties' };
+        const subtitle = `Du ${start} au ${end} — ${TYPE_LABELS[type] || 'Tous'}`;
+
+        const doc = new PDFDocument({
+          size: 'A4',
+          layout: 'landscape',
+          margins: { top: 25, bottom: 20, left: 20, right: 20 },
+          info: { Title: `Rapport Maintenance - ${start} au ${end}`, Author: 'eM@g' },
+        });
+        const filename = safeContentDispositionName(
+          `rapport-maintenance-${start}-${end}.pdf`,
+          'rapport-maintenance.pdf',
+        );
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        doc.pipe(res);
+        drawSavPdfTable(doc, rows, 'Rapport Maintenance Matériel', subtitle);
+        doc.end();
+      } catch (error) {
+        logger.error('GET /api/sav-tickets/report/pdf error:', error);
+        res.status(500).json({ success: false, error: 'Erreur génération PDF' });
       }
-      sql += ' ORDER BY st.created_at DESC';
-      const rows = db.prepare(sql).all(...params);
-
-      const TYPE_LABELS = { entries: 'Entrées', exits: 'Sorties', all: 'Entrées & Sorties' };
-      const subtitle = `Du ${start} au ${end} — ${TYPE_LABELS[type] || 'Tous'}`;
-
-      const doc = new PDFDocument({
-        size: 'A4',
-        layout: 'landscape',
-        margins: { top: 25, bottom: 20, left: 20, right: 20 },
-        info: { Title: `Rapport Maintenance - ${start} au ${end}`, Author: 'eM@g' },
-      });
-      const filename = safeContentDispositionName(
-        `rapport-maintenance-${start}-${end}.pdf`,
-        'rapport-maintenance.pdf',
-      );
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      doc.pipe(res);
-      drawSavPdfTable(doc, rows, 'Rapport Maintenance Matériel', subtitle);
-      doc.end();
-    } catch (error) {
-      logger.error('GET /api/sav-tickets/report/pdf error:', error);
-      res.status(500).json({ success: false, error: 'Erreur génération PDF' });
-    }
-  });
+    },
+  );
 
   // GET /api/sav-tickets/active/pdf — PDF de tout le matériel en SAV (tickets actifs)
-  app.get('/api/sav-tickets/active/pdf', authenticateToken, (req, res) => {
-    try {
-      const rows = db
-        .prepare(
-          `
+  app.get(
+    '/api/sav-tickets/active/pdf',
+    authenticateToken,
+    requireEquipmentMaintenanceAccess,
+    (req, res) => {
+      try {
+        const rows = db
+          .prepare(
+            `
         SELECT st.id, st.title, st.description, st.cost, st.status, st.type as ticket_type,
                st.created_at, st.resolved_at,
                e.name as equipment_name, e.reference as equipment_reference,
@@ -1946,32 +1606,33 @@ export function setupSavTicketsRoutes(
         WHERE st.status IN ('open', 'in_progress', 'waiting_parts')
         ORDER BY st.created_at DESC
       `,
-        )
-        .all();
+          )
+          .all();
 
-      const doc = new PDFDocument({
-        size: 'A4',
-        layout: 'landscape',
-        margins: { top: 25, bottom: 20, left: 20, right: 20 },
-        info: { Title: 'Matériel en SAV / Maintenance', Author: 'eM@g' },
-      });
-      const today = new Date().toISOString().slice(0, 10);
-      const filename = `materiel-en-sav-${today}.pdf`;
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      doc.pipe(res);
-      drawSavPdfTable(
-        doc,
-        rows,
-        'Matériel en SAV / Maintenance',
-        'Tickets actifs (ouverts, en cours, en attente de pièces)',
-      );
-      doc.end();
-    } catch (error) {
-      logger.error('GET /api/sav-tickets/active/pdf error:', error);
-      res.status(500).json({ success: false, error: 'Erreur génération PDF' });
-    }
-  });
+        const doc = new PDFDocument({
+          size: 'A4',
+          layout: 'landscape',
+          margins: { top: 25, bottom: 20, left: 20, right: 20 },
+          info: { Title: 'Matériel en SAV / Maintenance', Author: 'eM@g' },
+        });
+        const today = new Date().toISOString().slice(0, 10);
+        const filename = `materiel-en-sav-${today}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        doc.pipe(res);
+        drawSavPdfTable(
+          doc,
+          rows,
+          'Matériel en SAV / Maintenance',
+          'Tickets actifs (ouverts, en cours, en attente de pièces)',
+        );
+        doc.end();
+      } catch (error) {
+        logger.error('GET /api/sav-tickets/active/pdf error:', error);
+        res.status(500).json({ success: false, error: 'Erreur génération PDF' });
+      }
+    },
+  );
 }
 
 // ═══ LISTES FAVORIS / SURVEILLANCE ═══
@@ -2082,6 +1743,35 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     }
   });
 
+  // GET /api/equipment/by-reference/:reference — Liste des unités d'une même référence
+  // (pour les QR codes "plaques flight-case" qui pointent sur la référence).
+  app.get('/api/equipment/by-reference/:reference', authenticateToken, (req, res) => {
+    try {
+      const reference = req.params.reference;
+      if (!reference) {
+        return res.status(400).json({ success: false, error: 'Référence manquante' });
+      }
+      const list = db
+        .prepare(
+          `
+        SELECT e.id, e.uid, e.name, e.reference, e.serial_number, e.numero_mag,
+               e.brand, e.status, e.location, e.location_depot, e.location_zone,
+               e.location_code, e.location_floor, e.photo, e.stock_quantity,
+               ec.name as category_name, ec.icon as category_icon, ec.color as category_color
+        FROM equipment e
+        LEFT JOIN equipment_categories ec ON e.category_id = ec.id
+        WHERE e.reference = ?
+        ORDER BY COALESCE(e.serial_number, ''), COALESCE(e.numero_mag, ''), e.id
+      `,
+        )
+        .all(reference);
+      res.json({ reference, count: list.length, items: list });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // GET /api/equipment-photos — Liste des photos/logos disponibles
   app.get('/api/equipment-photos', authenticateToken, (req, res) => {
     try {
@@ -2158,6 +1848,7 @@ export function setupEquipmentListsRoutes(app, authenticateToken, requireAdmin) 
     '/api/equipment-photos/upload',
     authenticateToken,
     uploadPhoto.array('photos', 20),
+    validateFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']),
     (req, res) => {
       try {
         if (!req.files || req.files.length === 0) {

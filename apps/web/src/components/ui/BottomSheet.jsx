@@ -13,7 +13,7 @@
  */
 import './BottomSheet.css';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { getModalRoot, pop, push, zIndexFor } from '../../utils/modalManager';
@@ -26,9 +26,21 @@ import { getModalRoot, pop, push, zIndexFor } from '../../utils/modalManager';
  * Migration audit modals/overlays 2026-05-19 : supprime le scroll-lock manuel
  * et les z-index CSS qui pouvaient inverser backdrop/panel.
  */
-export default function BottomSheet({ open, onClose, title, children, className = '' }) {
+export default function BottomSheet({
+  open,
+  onClose,
+  title,
+  ariaLabel,
+  ariaLabelledBy,
+  ariaDescribedBy,
+  children,
+  className = '',
+}) {
   const panelRef = useRef(null);
   const [stackToken, setStackToken] = useState(null);
+  const previousFocusRef = useRef(null);
+  const generatedTitleId = useId();
+  const titleId = ariaLabelledBy || generatedTitleId;
 
   // Fermer avec Escape
   const handleKeyDown = useCallback(
@@ -43,6 +55,50 @@ export default function BottomSheet({ open, onClose, title, children, className 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, handleKeyDown]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    previousFocusRef.current = document.activeElement;
+    const focusableSelector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [role="button"], [role="link"], [role="menuitem"], [contenteditable]:not([contenteditable="false"])';
+
+    const focusFirst = () => {
+      const focusable = panelRef.current?.querySelectorAll(focusableSelector);
+      if (focusable?.length) {
+        focusable[0].focus();
+        return;
+      }
+      panelRef.current?.focus();
+    };
+
+    const timer = requestAnimationFrame(() => requestAnimationFrame(focusFirst));
+
+    const handleTrap = (e) => {
+      if (e.key !== 'Tab') return;
+      const focusable = panelRef.current?.querySelectorAll(focusableSelector);
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+        return;
+      }
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleTrap);
+    return () => {
+      cancelAnimationFrame(timer);
+      document.removeEventListener('keydown', handleTrap);
+      previousFocusRef.current?.focus?.();
+    };
+  }, [open]);
 
   // Inscription dans le ModalManager : pile partagée avec <Modal>/<Drawer>,
   // scroll-lock unique libéré seulement quand toutes les couches sont fermées.
@@ -77,13 +133,18 @@ export default function BottomSheet({ open, onClose, title, children, className 
         className={`ui-bottomsheet ${open ? 'ui-bottomsheet--open' : ''} ${className}`}
         role="dialog"
         aria-modal="true"
-        aria-label={title || 'Bottom sheet'}
+        aria-label={ariaLabel || (!title ? 'Bottom sheet' : undefined)}
+        aria-labelledby={!ariaLabel && title ? titleId : undefined}
+        aria-describedby={ariaDescribedBy || undefined}
+        tabIndex={-1}
         style={{ zIndex: z.dialog }}
       >
         <div className="ui-bottomsheet-handle" />
         {title && (
           <div className="ui-bottomsheet-header">
-            <h3 className="ui-bottomsheet-title">{title}</h3>
+            <h3 className="ui-bottomsheet-title" id={titleId}>
+              {title}
+            </h3>
           </div>
         )}
         <div className="ui-bottomsheet-body">{children}</div>

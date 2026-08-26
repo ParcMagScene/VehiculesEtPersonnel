@@ -1,0 +1,247 @@
+/* AffairesDateGrid — grille de sélection de période avec poignées */
+
+.affaires-grid-widget {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+/* ─── Contrôles (mode + nav + label) ─── */
+
+.adg-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.adg-mode-selector {
+  display: flex;
+  gap: 2px;
+  background: var(--theme-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.adg-mode-btn {
+  padding: var(--space-1) 10px !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  background: transparent !important;
+  color: var(--theme-text-secondary) !important;
+  font-size: var(--font-sm) !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.adg-mode-btn:hover {
+  color: var(--theme-text-dark) !important;
+}
+
+.adg-mode-btn.active {
+  background: var(
+    --theme-gradient,
+    linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))
+  ) !important;
+  color: var(--theme-text-inverse) !important;
+  box-shadow: 0 1px 3px var(--btn-primary-shadow);
+}
+
+.adg-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1) var(--space-2) !important;
+  border: 1px solid var(--theme-border) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--theme-bg-card) !important;
+  color: var(--theme-text-primary) !important;
+  font-size: var(--font-sm) !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.adg-nav-btn:hover {
+  background: var(--theme-border-light) !important;
+  border-color: var(--theme-text-muted) !important;
+}
+
+.adg-today-btn {
+  color: var(--theme-info-dark, var(--theme-primary)) !important;
+}
+
+.adg-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--theme-text-primary);
+  white-space: nowrap;
+  text-transform: capitalize;
+  padding: 0 var(--space-2);
+  min-width: 110px;
+}
+
+/* ─── La grille ─── */
+
+.adg-grid {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  display: grid;
+  grid-template-columns: repeat(var(--cell-count, 7), 1fr);
+  gap: 2px;
+  height: 38px;
+  user-select: none;
+  background: var(--theme-border-light);
+  border: 1px solid var(--theme-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.adg-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--theme-bg-card);
+  border-radius: 2px;
+  font-size: var(--font-2xs);
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.adg-cell:hover {
+  background: var(--theme-border-light);
+  color: var(--theme-text-dark);
+}
+
+.adg-cell-label {
+  line-height: 1;
+  text-transform: capitalize;
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.adg-grid.mode-week .adg-cell-label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+.adg-grid.mode-month .adg-cell-label {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.adg-grid.mode-year .adg-cell-label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+}
+
+.adg-cell.is-today,
+.adg-cell.is-current-month {
+  outline: 2px solid var(--theme-danger);
+  outline-offset: -2px;
+  font-weight: 800;
+  color: var(--theme-danger);
+}
+
+/* ─── Sélection (cadre + poignées) ─── */
+
+.adg-selection {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  background: rgba(102, 126, 234, 0.18);
+  border: 2px solid var(--theme-primary);
+  border-radius: var(--radius-sm);
+  cursor: grab;
+  z-index: 5;
+  transition:
+    left 0.12s ease,
+    width 0.12s ease;
+  box-shadow: 0 0 0 1px var(--theme-bg-card) inset;
+}
+
+.adg-selection.is-dragging {
+  transition: none;
+  cursor: grabbing;
+  box-shadow:
+    0 0 0 1px var(--theme-bg-card) inset,
+    0 0 8px rgba(102, 126, 234, 0.4);
+}
+
+.adg-handle {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 10px;
+  background: var(--theme-primary);
+  border: 2px solid var(--theme-bg-card);
+  border-radius: var(--radius-xs);
+  cursor: ew-resize;
+  z-index: 6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.12s;
+}
+
+.adg-handle:hover {
+  transform: scaleY(1.1);
+}
+
+.adg-handle-left {
+  left: -6px;
+}
+
+.adg-handle-right {
+  right: -6px;
+}
+
+.adg-overflow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 800;
+  color: var(--theme-primary);
+  font-size: var(--font-base);
+  pointer-events: none;
+  line-height: 1;
+}
+
+.adg-overflow-l {
+  left: 6px;
+}
+
+.adg-overflow-r {
+  right: 6px;
+}
+
+/* Adaptation mobile : la grille passe sous les contrôles */
+@media (max-width: 768px) {
+  .affaires-grid-widget {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+  }
+
+  .adg-grid {
+    width: 100%;
+  }
+
+  .adg-grid.mode-month .adg-cell-label {
+    font-size: 9px;
+  }
+}

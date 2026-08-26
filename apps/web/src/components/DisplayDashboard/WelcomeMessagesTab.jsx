@@ -54,7 +54,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
       setMessages(msgData.welcomeMessages || {});
       setSneakyStatus(sneakyData);
     } catch {
-      toast.error('Erreur chargement messages');
+      toast.error("Impossible de charger les messages d'accueil.");
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
       refreshBus.publish('display');
       toast.success('Messages enregistrés');
     } catch {
-      toast.error('Erreur enregistrement');
+      toast.error("Impossible d'enregistrer les messages d'accueil.");
     } finally {
       setSaving(false);
     }
@@ -104,7 +104,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
       const status = await api.getDisplaySneakyMessageStatus();
       setSneakyStatus(status);
     } catch {
-      toast.error('Erreur activation');
+      toast.error("Impossible d'activer le message furtif.");
     }
   }, [sneakyText, sneakyDuration, toast]);
 
@@ -115,7 +115,7 @@ function WelcomeMessagesTab({ _currentUser, refreshKey, onPreviewChange }) {
       toast.success('Message furtif désactivé');
       setSneakyStatus({ active: false });
     } catch {
-      toast.error('Erreur désactivation');
+      toast.error('Impossible de désactiver le message furtif.');
     }
   }, [toast]);
 

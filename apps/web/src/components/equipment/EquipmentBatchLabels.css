@@ -10,6 +10,45 @@
   gap: 0;
 }
 
+/* Bandeau sécurité QR — affiche l'URL embarquée + bloque si hôte privé */
+.ebl-qr-safety {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--theme-border);
+  flex-shrink: 0;
+}
+.ebl-qr-safety code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.ebl-qr-safety.ok {
+  background: var(--theme-bg-success-light, #ecfdf5);
+  color: var(--theme-success, #047857);
+}
+.ebl-qr-safety.danger {
+  background: var(--theme-bg-error-light, #fef2f2);
+  color: var(--theme-error, #b91c1c);
+  border-bottom-color: var(--theme-error, #b91c1c);
+  border-bottom-width: 2px;
+  align-items: flex-start;
+}
+.ebl-qr-safety.danger strong {
+  font-size: 0.95rem;
+  display: block;
+  margin-bottom: 2px;
+}
+.ebl-qr-safety-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* Toolbar */
 .ebl-toolbar {
   display: flex;
@@ -133,12 +172,141 @@
   font-size: var(--font-sm);
 }
 
+/* Split content (liste à gauche / récap à droite) */
+.ebl-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* Liste */
 .ebl-list {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-2);
   min-height: 0;
+  min-width: 0;
+}
+
+/* Panneau récap sélection (droite) */
+.ebl-selection-panel {
+  width: 360px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--theme-border);
+  background: var(--theme-bg-secondary);
+  overflow: hidden;
+}
+
+.ebl-selection-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--theme-bg-card);
+  border-bottom: 1px solid var(--theme-border);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--theme-text-primary);
+  flex-shrink: 0;
+}
+
+.ebl-selection-panel-title {
+  flex: 1;
+}
+
+.ebl-selection-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--space-2);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--theme-text-muted);
+  border-radius: var(--radius-sm);
+}
+
+.ebl-selection-clear:hover {
+  color: var(--theme-danger);
+  background: var(--theme-bg-page);
+}
+
+.ebl-selection-empty {
+  padding: var(--space-5) var(--space-3);
+  text-align: center;
+  color: var(--theme-text-muted);
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+
+.ebl-selection-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-xs);
+  display: block;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.ebl-selection-table thead {
+  position: sticky;
+  top: 0;
+  background: var(--theme-bg-card);
+  z-index: 1;
+}
+
+.ebl-selection-table th {
+  text-align: left;
+  padding: 6px var(--space-2);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--theme-text-secondary);
+  border-bottom: 1px solid var(--theme-border);
+  white-space: nowrap;
+}
+
+.ebl-selection-table td {
+  padding: 4px var(--space-2);
+  border-bottom: 1px solid var(--theme-border-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+.ebl-selection-table tbody tr:hover {
+  background: var(--theme-bg-hover);
+}
+
+.ebl-sel-ref {
+  font-weight: 600;
+  color: var(--theme-text-primary);
+}
+
+.ebl-sel-sn,
+.ebl-sel-uid,
+.ebl-sel-mag {
+  font-family: var(--font-mono);
+  color: var(--theme-text-secondary);
+}
+
+.ebl-sel-uid {
+  color: var(--theme-primary);
+  font-weight: 600;
+}
+
+.ebl-sel-remove {
+  padding: 2px;
+  color: var(--theme-text-muted);
+  border-radius: var(--radius-sm);
+}
+
+.ebl-sel-remove:hover {
+  color: var(--theme-danger);
+  background: var(--theme-bg-page);
 }
 
 /* Groupe par référence */
@@ -263,39 +431,18 @@
   text-overflow: ellipsis;
 }
 
-/* Mini aperçu */
+/* Mini aperçu — réplique du SVG laser (ratio 50:25 = 2:1) */
 .ebl-mini-preview {
   flex-shrink: 0;
 }
 
-.ebl-mini-label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 2px var(--space-1);
-  background: var(--theme-bg-secondary);
+.ebl-mini-svg {
+  width: 140px;
+  height: 70px;
+  display: block;
+  background: #ffffff;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-xs);
-}
-
-.ebl-mini-logo {
-  height: 18px;
-  width: auto;
-  flex-shrink: 0;
-}
-
-.ebl-mini-ref {
-  font-size: 8px;
-  font-weight: 800;
-  color: var(--theme-text-primary);
-  white-space: nowrap;
-}
-
-.ebl-mini-uid {
-  font-size: 6px;
-  color: var(--theme-text-secondary);
-  font-family: var(--font-mono);
-  white-space: nowrap;
 }
 
 /* Actions dans la toolbar */
@@ -352,6 +499,19 @@
 }
 
 /* ── Responsive ── */
+@media (max-width: 768px) {
+  .ebl-content {
+    flex-direction: column;
+  }
+
+  .ebl-selection-panel {
+    width: 100%;
+    max-height: 240px;
+    border-left: none;
+    border-top: 1px solid var(--theme-border);
+  }
+}
+
 @media (max-width: 480px) {
   .ebl-toolbar {
     padding: var(--space-2);

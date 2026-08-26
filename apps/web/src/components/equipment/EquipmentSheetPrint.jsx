@@ -3,6 +3,8 @@ import QRCode from 'qrcode';
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { formatDateSimple, safeDate } from '../../utils/formatUtils';
+import { APP_BASE_URL } from './equipmentConstants';
+import { analyzeQrBaseUrl } from './qrSafety';
 
 const cleanName = (s) => (s || '').replace(/^"+|"+$/g, '').replace(/"{2,}/g, '"');
 
@@ -14,9 +16,6 @@ const esc = (s) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-
-// URL de base pour les QR codes
-const APP_BASE_URL = window.location.origin;
 
 const SAV_STATUS = {
   open: { label: 'Ouvert', color: STATUS_COLORS.info },
@@ -47,8 +46,18 @@ const EQUIPMENT_STATUS = {
   retired: { label: 'Réformé', color: 'var(--theme-text-gray)', icon: '⛔' },
 };
 
-export async function printEquipmentSheet(eq, photosList = [], logosList = []) {
-  if (!eq) return;
+export async function buildEquipmentSheetHtml(eq, photosList = [], logosList = []) {
+  if (!eq) return null;
+
+  // Verrou sécurité : ne PAS générer si l'URL QR n'est pas publique HTTPS
+  const qrSafety = analyzeQrBaseUrl(APP_BASE_URL);
+  if (!qrSafety.safe) {
+    // eslint-disable-next-line no-alert
+    window.alert(
+      `⛔ Impression bloquée — URL non publique : ${APP_BASE_URL}\n\n${qrSafety.reason}\n\nOuvrez l'application via https://magsav.duckdns.org avant d'imprimer la fiche.`,
+    );
+    return null;
+  }
 
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
   const qrUrl = eq.uid ? `${APP_BASE_URL}/#/mobile/equipment/${eq.uid}` : null;
@@ -260,17 +269,32 @@ export async function printEquipmentSheet(eq, photosList = [], logosList = []) {
     <span>Fiche matériel — ${esc(cleanName(eq.name))}</span>
     <span>Imprimée le ${today}</span>
   </div>
-
-  <script>
-    window.onload = function() { setTimeout(function() { window.print(); }, 300); };
-    window.onafterprint = function() { window.close(); };
-  </script>
 </body>
 </html>`;
 
+  return {
+    html,
+    title: `Fiche matériel — ${cleanName(eq.name) || 'Équipement'}`,
+    filename: `fiche-${(eq.reference || eq.uid || 'equipement').toString().replace(/[^a-z0-9-_]/gi, '_')}.html`,
+  };
+}
+
+/**
+ * @deprecated — Utiliser `buildEquipmentSheetHtml` + `usePrintPreview().showHtml(...)`.
+ *   Cette fonction reste pour compat mais ouvre une popup browser.
+ */
+export async function printEquipmentSheet(eq, photosList = [], logosList = []) {
+  const result = await buildEquipmentSheetHtml(eq, photosList, logosList);
+  if (!result) return;
   const printWindow = window.open('', '_blank');
   if (printWindow) {
-    printWindow.document.write(html);
+    printWindow.document.write(
+      result.html.replace(
+        '</body>',
+        `<script>window.onload = function() { setTimeout(function() { window.print(); }, 300); };
+         window.onafterprint = function() { window.close(); };</script></body>`,
+      ),
+    );
     printWindow.document.close();
   }
 }

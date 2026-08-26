@@ -13,7 +13,6 @@ import {
   Boxes,
   Briefcase,
   Building2,
-  MapPin,
   Package,
   Radio,
   ShieldCheck,
@@ -37,7 +36,6 @@ export const DESKTOP_MODULES = [
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },
   { id: 'stock', label: 'Stocks', icon: Boxes },
   { id: 'annuaire', label: 'Annuaire', icon: Building2 },
-  { id: 'lieux', label: 'Lieux', icon: MapPin },
   { id: 'video', label: 'Vidéo', icon: Video },
   { id: 'controles', label: 'Contrôles', icon: ShieldCheck },
 ];
@@ -136,3 +134,10 @@ export const MOBILE_ACTIVE_TAB_KEY = 'mobileActiveTab';
  * étiquettes imprimées.
  */
 export const MOBILE_QR_PATTERN = /^#\/mobile\/equipment\/(EMAG-\d+)/i;
+
+/**
+ * Pattern QR code par référence (plaques ID flight-case) :
+ * `#/mobile/equipment-ref/<referenceURIEncodée>`.
+ * Affiche la liste des unités partageant cette référence.
+ */
+export const MOBILE_QR_REF_PATTERN = /^#\/mobile\/equipment-ref\/([^?]+)/i;

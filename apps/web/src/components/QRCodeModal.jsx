@@ -6,9 +6,14 @@ import { useEffect, useRef } from 'react';
 
 import { Button, ModalLayout } from '@/design-system';
 
+import { usePrintPreview } from './ui/PrintPreviewProvider';
+
+const PUBLIC_BASE = import.meta.env.VITE_PUBLIC_URL || 'https://magsav.duckdns.org';
+
 function QRCodeModal({ onClose }) {
   const canvasRef = useRef(null);
-  const mobileUrl = `${window.location.origin}/#/mobile`;
+  const mobileUrl = `${PUBLIC_BASE}/#/mobile`;
+  const printPreview = usePrintPreview();
 
   useEffect(() => {
     generateQRCode();
@@ -22,11 +27,11 @@ function QRCodeModal({ onClose }) {
   };
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const qrDataUrl = canvas.toDataURL('image/png');
 
-    printWindow.document.write(`
+    const html = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -184,18 +189,14 @@ function QRCodeModal({ onClose }) {
               )
               .join('')}
           </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              };
-            };
-          </script>
         </body>
       </html>
-    `);
-    printWindow.document.close();
+    `;
+
+    printPreview.showHtml(html, {
+      title: 'QR Codes — Accès Mobile eM@g',
+      filename: 'qr-codes-mobile.html',
+    });
   };
 
   const handleDownloadJPG = () => {

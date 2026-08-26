@@ -914,9 +914,23 @@
   margin-left: auto;
 }
 
+.contacts-section-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .form-row {
   display: flex;
   gap: var(--space-3);
+}
+
+.location-link-row {
+  gap: 8px;
+  align-items: center;
+}
+
+.location-link-select {
+  flex: 1;
 }
 
 .annuaire-panel .form-group {

@@ -220,6 +220,119 @@ function mergePreviewOverrides(state) {
   };
 }
 
+// ===============================================
+//  ALERTES SUR TACHES (Phase 2 — synchro avec activeAlerts du backend)
+// ===============================================
+// Cle : taskId, valeur : { audio, blinkTimer, blinkExpired, soundPath }.
+// Sync a chaque tick loadTVState : les alertes du server pilotent le state.
+const activeTaskAlerts = new Map();
+
+function findTaskElement(taskId) {
+  return document.querySelector(`.event-item[data-event-id="${CSS.escape(String(taskId))}"]`);
+}
+
+function applyTaskAlertUI(taskId) {
+  const el = findTaskElement(taskId);
+  if (!el) return;
+  el.classList.add('task-alert-active');
+  if (!el.querySelector('.task-alert-ack-btn')) {
+    const btn = document.createElement('button');
+    btn.className = 'task-alert-ack-btn';
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Acquitter l\u2019alerte');
+    btn.textContent = 'Acquitter';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ackTaskAlert(taskId);
+    });
+    el.appendChild(btn);
+  }
+}
+
+function removeTaskAlertUI(taskId) {
+  const el = findTaskElement(taskId);
+  if (!el) return;
+  el.classList.remove('task-alert-active');
+  const btn = el.querySelector('.task-alert-ack-btn');
+  if (btn) btn.remove();
+}
+
+async function ackTaskAlert(taskId) {
+  try {
+    await tvFetch(`${API_BASE}/api/display/alerts/ack/${encodeURIComponent(taskId)}`, {
+      method: 'POST',
+    });
+  } catch (err) {
+    console.warn('Ack alerte impossible:', err.message);
+  }
+  stopTaskAlert(taskId);
+}
+
+function startTaskAlert(alert) {
+  const taskId = String(alert.taskId);
+  if (activeTaskAlerts.has(taskId)) return;
+
+  let audio = null;
+  try {
+    audio = new Audio(alert.soundPath);
+    audio.volume = 1.0;
+    const p = audio.play();
+    if (p) p.catch((err) => console.warn(`Son alerte ${taskId} bloque:`, err.message));
+  } catch (e) {
+    console.warn('Audio init alerte:', e.message);
+  }
+
+  const state = { audio, blinkTimer: null, blinkExpired: false, soundPath: alert.soundPath };
+
+  // blinkDurationSec === -1 : blink infini jusqu'a ack ou done
+  const dur = Number(alert.blinkDurationSec);
+  if (Number.isFinite(dur) && dur > 0) {
+    state.blinkTimer = setTimeout(() => {
+      // Fin auto du blink : on retire l'UI mais on garde l'entree active
+      // pour ne PAS rejouer le son au prochain tick tant que l'alerte
+      // reste server-side. C'est resolu quand la tache passe done ou ack.
+      removeTaskAlertUI(taskId);
+      state.blinkExpired = true;
+    }, dur * 1000);
+  }
+
+  activeTaskAlerts.set(taskId, state);
+  applyTaskAlertUI(taskId);
+  console.log(`\u{1F514} Alerte demarree : tache ${taskId} (son=${alert.soundPath}, blink=${dur}s)`);
+}
+
+function stopTaskAlert(taskId) {
+  const state = activeTaskAlerts.get(taskId);
+  if (!state) return;
+  if (state.blinkTimer) clearTimeout(state.blinkTimer);
+  if (state.audio) {
+    try {
+      state.audio.pause();
+      state.audio.currentTime = 0;
+    } catch { /* ignore */ }
+  }
+  removeTaskAlertUI(taskId);
+  activeTaskAlerts.delete(taskId);
+}
+
+function syncTaskAlerts(activeAlerts) {
+  const serverIds = new Set((activeAlerts || []).map((a) => String(a.taskId)));
+
+  for (const id of Array.from(activeTaskAlerts.keys())) {
+    if (!serverIds.has(id)) stopTaskAlert(id);
+  }
+
+  for (const alert of activeAlerts || []) {
+    const id = String(alert.taskId);
+    if (!activeTaskAlerts.has(id)) {
+      startTaskAlert(alert);
+    } else {
+      const st = activeTaskAlerts.get(id);
+      if (!st.blinkExpired) applyTaskAlertUI(id);
+    }
+  }
+}
+
 /** Applique l'état TV (live ou cache) */
 function applyTVState(state) {
     // Appliquer la config (variables CSS)
@@ -261,6 +374,9 @@ function applyTVState(state) {
     // Événements (tâches planifiées)
     allEvents = state.events || [];
     renderEvents(allEvents);
+
+    // Alertes par section (Phase 2) — synchro apres re-render pour que le DOM existe.
+    syncTaskAlerts(state.activeAlerts || []);
 
     // Alarme test déclenchée depuis l'admin
     if (state.alarmTest && state.alarmTest > lastAlarmTestTs) {

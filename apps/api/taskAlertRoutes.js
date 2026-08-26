@@ -131,6 +131,13 @@ export function computeActiveAlerts(db, todayISO, dayTasks) {
   const acks = db.prepare('SELECT task_id FROM task_alert_acks WHERE event_date = ?').all(todayISO);
   const ackedSet = new Set(acks.map((a) => a.task_id));
 
+  // Taches "terminees" via le mecanisme click-row du TV kiosk (table separee
+  // de task_assignments.status, sert d'overlay ephemere par jour).
+  const completedRows = db
+    .prepare('SELECT event_id FROM display_completed_events WHERE event_date = ?')
+    .all(todayISO);
+  const completedSet = new Set(completedRows.map((r) => String(r.event_id)));
+
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -138,6 +145,7 @@ export function computeActiveAlerts(db, todayISO, dayTasks) {
   for (const task of dayTasks) {
     if (!task.time || typeof task.time !== 'string') continue;
     if (task.status === 'done' || task.status === 'cancelled') continue;
+    if (completedSet.has(String(task.id))) continue;
 
     const rule = rulesBySection.get(task.section);
     if (!rule) continue;
@@ -190,12 +198,10 @@ export function setupTaskAlertRoutes(app, authenticateToken, requireAdmin, optio
 
       const off = parseInt(offsetMinutes, 10);
       if (!Number.isFinite(off) || off < 0 || off > MAX_OFFSET_MINUTES) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: `offsetMinutes doit être entre 0 et ${MAX_OFFSET_MINUTES}`,
-          });
+        return res.status(400).json({
+          success: false,
+          error: `offsetMinutes doit être entre 0 et ${MAX_OFFSET_MINUTES}`,
+        });
       }
       const dur = parseInt(blinkDurationSec, 10);
       if (!VALID_BLINK_DURATIONS.has(dur)) {

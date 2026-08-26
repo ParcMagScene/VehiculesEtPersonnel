@@ -701,4 +701,73 @@ footer {
   to   { transform: translateY(0); }
 }
 
+/* ═══════════ ALERTES TACHES (Phase 2) ═══════════ */
+/* Row d'evenement en alerte : bordure + fond pulsants, bouton acquitter overlay. */
+.event-item.task-alert-active {
+  position: relative;
+  border-left: 6px solid #ff3b3b !important;
+  animation: task-alert-pulse 0.9s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(255, 59, 59, 0.35);
+}
+
+@keyframes task-alert-pulse {
+  0%, 100% {
+    background: rgba(255, 59, 59, 0.08);
+  }
+  50% {
+    background: rgba(255, 59, 59, 0.28);
+  }
+}
+
+/* Icone cloche animee dans le coin */
+.event-item.task-alert-active::before {
+  content: '🔔';
+  position: absolute;
+  right: 6.5em;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.4em;
+  animation: task-alert-bell 0.4s ease infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes task-alert-bell {
+  0%, 100% { transform: translateY(-50%) rotate(-12deg); }
+  50%      { transform: translateY(-50%) rotate(12deg); }
+}
+
+/* Bouton "Acquitter" injecte cote JS */
+.task-alert-ack-btn {
+  position: absolute;
+  right: 0.8em;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  padding: 0.4em 0.9em;
+  font-size: 0.85em;
+  font-weight: 700;
+  color: #fff;
+  background: #ff3b3b;
+  border: 2px solid #fff;
+  border-radius: 0.4em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.task-alert-ack-btn:hover,
+.task-alert-ack-btn:active {
+  background: #ff5252;
+  transform: translateY(-50%) scale(1.05);
+}
+
+@media (max-width: 800px) {
+  .event-item.task-alert-active::before { display: none; }
+  .task-alert-ack-btn {
+    padding: 0.35em 0.7em;
+    font-size: 0.8em;
+  }
+}
+
 

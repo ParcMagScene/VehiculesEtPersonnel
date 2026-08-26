@@ -101,11 +101,31 @@ function SneakyPhotoSection() {
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
+    // Reset la valeur pour permettre de reselectionner le meme fichier plus tard
+    // (iOS Safari / Chrome mobile ne re-firent pas onChange si input.value inchange).
+    e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Veuillez sélectionner une image');
+
+    // Cote backend : DISPLAY_IMAGE_MIMES = jpeg / png / gif / webp.
+    // HEIC (iPhone) et autres formats sont rejetes silencieusement, on previent l'utilisateur ici.
+    const okType =
+      /^image\/(jpeg|png|gif|webp)$/i.test(file.type) ||
+      (!file.type && /\.(jpe?g|png|gif|webp)$/i.test(file.name || ''));
+    if (!okType) {
+      toast.error(
+        `Format non supporté (${file.type || 'inconnu'}). Réglez votre iPhone sur JPEG (Réglages > Appareil photo > Formats > Plus compatible).`,
+      );
       return;
     }
+
+    // Backend refuse > 10 Mo (limite multer). Avertit l'utilisateur avant l'upload.
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMb = (file.size / 1024 / 1024).toFixed(1);
+      toast.error(`Photo trop grande (${sizeMb} Mo). Maximum 10 Mo.`);
+      return;
+    }
+
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
@@ -133,7 +153,9 @@ function SneakyPhotoSection() {
       await loadStatus();
     } catch (e) {
       console.error('Erreur upload photo furtive:', e);
-      toast.error("Impossible d'envoyer la photo");
+      // Detail visible (utile depuis mobile ou l'inspecteur ne s'ouvre pas facilement).
+      const msg = e?.message || e?.error || 'erreur reseau';
+      toast.error(`Envoi impossible : ${msg}`);
     } finally {
       setUploading(false);
     }
@@ -178,21 +200,23 @@ function SneakyPhotoSection() {
         </div>
       ) : (
         <div className="mda-sneaky-upload-block">
-          {/* Inputs caches — declenches par les boutons ci-dessous */}
+          {/* Inputs caches — declenches par les boutons ci-dessous.
+              display:none casse le change event sur certains iOS Safari + PWA :
+              on utilise donc visibility:hidden + position absolue hors ecran. */}
           <input
             ref={galleryInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/*"
             onChange={handleFileSelect}
-            style={{ display: 'none' }}
+            className="mda-sneaky-file-input"
           />
           <input
             ref={cameraInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/*"
             capture="environment"
             onChange={handleFileSelect}
-            style={{ display: 'none' }}
+            className="mda-sneaky-file-input"
           />
 
           {previewUrl ? (

@@ -1886,8 +1886,20 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         is_recurrent: t.source_type === 'recurring' ? 1 : 0,
       }));
 
-      // Trier par heure (événements sans heure en fin)
+      // Ordre metier des sections : suit le flux logistique d'une journee
+      // (RDV -> preparation -> chargement -> depart -> retour -> divers).
+      const SECTION_ORDER = Object.keys(SECTION_LABELS);
+      const sectionRank = (s) => {
+        const i = SECTION_ORDER.indexOf(s);
+        return i === -1 ? SECTION_ORDER.length : i;
+      };
+
+      // Tri par type (section) puis chronologie (heure). Evenements sans
+      // heure a la fin de leur groupe de section.
       events.sort((a, b) => {
+        const rA = sectionRank(a.section);
+        const rB = sectionRank(b.section);
+        if (rA !== rB) return rA - rB;
         if (!a.time && !b.time) return 0;
         if (!a.time) return 1;
         if (!b.time) return -1;
@@ -2200,7 +2212,16 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         is_recurrent: t.source_type === 'recurring' ? 1 : 0,
       }));
 
+      // Meme tri que /api/display/appearance : type (section) puis chronologie.
+      const SECTION_ORDER_2 = Object.keys(SECTION_LABELS);
+      const sectionRank2 = (s) => {
+        const i = SECTION_ORDER_2.indexOf(s);
+        return i === -1 ? SECTION_ORDER_2.length : i;
+      };
       events.sort((a, b) => {
+        const rA = sectionRank2(a.section);
+        const rB = sectionRank2(b.section);
+        if (rA !== rB) return rA - rB;
         if (!a.time && !b.time) return 0;
         if (!a.time) return 1;
         if (!b.time) return -1;

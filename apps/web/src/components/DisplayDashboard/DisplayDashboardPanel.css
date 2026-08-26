@@ -2940,6 +2940,26 @@
   object-fit: cover;
 }
 
+.tv-mini-sonos-art-wrap {
+  position: relative;
+  display: inline-block;
+  width: 4cqi;
+  height: 4cqi;
+  flex-shrink: 0;
+}
+
+.tv-mini-sonos-service-badge {
+  position: absolute;
+  right: -0.5cqi;
+  bottom: -0.5cqi;
+  width: 1.6cqi;
+  height: 1.6cqi;
+  border-radius: 50%;
+  background: #000;
+  box-shadow: 0 0 0 0.15cqi rgba(0, 0, 0, 0.85);
+  object-fit: contain;
+}
+
 .tv-mini-sonos-info {
   display: flex;
   flex-direction: column;

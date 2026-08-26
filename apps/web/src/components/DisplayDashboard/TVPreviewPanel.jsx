@@ -111,7 +111,7 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
         <div className="tv-preview-frame">
           <iframe
             ref={iframeRef}
-            src="/tv-client/index.html"
+            src="/tv-client/index.html?tvScale=1"
             className="tv-preview-iframe"
             title="Dashboard TV — Direct"
           />

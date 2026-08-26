@@ -279,14 +279,27 @@ function TVScreenMini({ state = {} }) {
           style={{ borderColor: primaryColor, color: primaryColor }}
         >
           {state.sonos.albumArtURI && (
-            <img
-              src={state.sonos.albumArtURI}
-              alt=""
-              className="tv-mini-sonos-art"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
+            <span className="tv-mini-sonos-art-wrap">
+              <img
+                src={state.sonos.albumArtURI}
+                alt=""
+                className="tv-mini-sonos-art"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              {state.sonos.service?.logo && (
+                <img
+                  src={state.sonos.service.logo}
+                  alt={state.sonos.service.name || ''}
+                  title={state.sonos.service.name || ''}
+                  className="tv-mini-sonos-service-badge"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
+            </span>
           )}
           <div className="tv-mini-sonos-info">
             <span className="tv-mini-sonos-title">{sonosTitle}</span>

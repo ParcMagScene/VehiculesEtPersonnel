@@ -601,10 +601,11 @@ function updateSonosWidget(data) {
     widget.style.display = 'flex';
     widget.style.opacity = data.playing ? '1' : '0.6';
     if (albumArt) {
-      // Priorite au logo officiel du service (Radio Meuh, France Inter, Tidal,
-      // Spotify, etc.) si detecte. Fallback : artwork de l'album, puis logo entreprise.
+      // Meme rendu que l'app Sonos "En lecture" : le backend renvoie deja le vrai
+      // artwork (pochette album, logo radio officiel via matchKnownRadioLogo ou favicon
+      // ICY) dans albumArtURI. service.logo n'est qu'un ultime fallback.
       const artUrl =
-        data.service?.logo || data.albumArtURI || data.albumArt || '/display-logo/logo.png';
+        data.albumArtURI || data.albumArt || data.service?.logo || '/display-logo/logo.png';
       if (albumArt._failedUrls && albumArt._failedUrls.has(artUrl)) {
         albumArt.src = '/display-logo/logo.png';
       } else if (albumArt.src !== artUrl) {

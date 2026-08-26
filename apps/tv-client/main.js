@@ -16,6 +16,12 @@ const TV_TOKEN = (() => {
   return localStorage.getItem('tv-token') || '';
 })();
 
+// Mode preview (iframe dans /admin/Dashboard Ecrans) — recoit les overrides
+// via postMessage pour prevoir le rendu avant validation cote admin.
+const IS_PREVIEW = new URLSearchParams(window.location.search).get('preview') === '1';
+let previewOverrides = null;
+let lastRawState = null;
+
 /** Fetch wrapper qui inclut le header X-TV-Token */
 function tvFetch(url, options = {}) {
   const headers = { ...(options.headers || {}) };
@@ -182,16 +188,36 @@ async function loadTVState() {
     cacheSet(CACHE_KEYS.tvState, state);
     setOnlineStatus(true);
 
-    applyTVState(state);
+    lastRawState = state;
+    applyTVState(mergePreviewOverrides(state));
   } catch (error) {
     console.error('Erreur chargement état TV:', error);
     setOnlineStatus(false);
     // Fallback : utiliser le cache
     const cached = cacheGet(CACHE_KEYS.tvState);
     if (cached && cached.data) {
-      applyTVState(cached.data);
+      lastRawState = cached.data;
+      applyTVState(mergePreviewOverrides(cached.data));
     }
   }
+}
+
+/**
+ * En mode preview, fusionne le state serveur avec les overrides recus
+ * du parent via postMessage (config, welcomeMessage, colorRules, iconRules,
+ * logoUrl). Retourne le state tel quel en mode normal.
+ */
+function mergePreviewOverrides(state) {
+  if (!IS_PREVIEW || !previewOverrides) return state;
+  const o = previewOverrides;
+  return {
+    ...state,
+    config: { ...(state.config || {}), ...(o.config || {}) },
+    welcomeMessage: o.welcomeMessage !== undefined ? o.welcomeMessage : state.welcomeMessage,
+    colorRules: o.colorRules !== undefined ? o.colorRules : state.colorRules,
+    iconRules: o.iconRules !== undefined ? o.iconRules : state.iconRules,
+    logoUrl: o.logoUrl !== undefined ? o.logoUrl : state.logoUrl,
+  };
 }
 
 /** Applique l'état TV (live ou cache) */
@@ -745,6 +771,18 @@ async function refreshTokenSilently() {
 // ===============================================
 async function init() {
   console.log('🚀 Dashboard TV (eM@g) — Initialisation...');
+  if (IS_PREVIEW) {
+    console.log('👁 Mode preview actif — attente des overrides via postMessage');
+    window.addEventListener('message', (evt) => {
+      // Best-effort : accepter n'importe quelle origine (iframe admin locale).
+      // Ne traite que les payloads structures explicitement pour preview.
+      const data = evt.data;
+      if (data && typeof data === 'object' && data.type === 'tv-preview:overrides') {
+        previewOverrides = data.overrides || {};
+        if (lastRawState) applyTVState(mergePreviewOverrides(lastRawState));
+      }
+    });
+  }
 
   // Charger l'état complet (config, events, rules, sonos, sneaky, welcome)
   await loadTVState();
@@ -758,7 +796,10 @@ async function init() {
   setInterval(loadTVState, 30000);              // État complet : toutes les 30s
   setInterval(loadWeather, 600000);             // Météo : toutes les 10 min
   setInterval(loadSonosNowPlaying, 5000);       // Sonos : toutes les 5s
-  setInterval(checkAlarms, 1000);               // Alarmes : chaque seconde
+  if (!IS_PREVIEW) {
+    // Pas d'alarme sonore en preview admin.
+    setInterval(checkAlarms, 1000);
+  }
 
   setInterval(refreshTokenSilently, 6 * 60 * 60 * 1000); // Token refresh : toutes les 6h
 

@@ -484,14 +484,18 @@ footer {
 }
 #sonos-service-badge {
   position: absolute;
-  bottom: -6px;
-  right: -6px;
-  width: 28px;
-  height: 28px;
+  bottom: -8px;
+  right: -8px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: #000;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.85), 0 2px 6px rgba(0, 0, 0, 0.6);
+  background: #fff;
+  padding: 3px;
+  box-shadow:
+    0 0 0 3px var(--primary-color, #00e1ff),
+    0 4px 10px rgba(0, 0, 0, 0.7);
   object-fit: contain;
+  z-index: 2;
 }
 #sonos-info { flex: 1; color: #ffffff; }
 #sonos-title {

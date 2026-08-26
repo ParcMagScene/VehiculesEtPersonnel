@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
-  <rect width="120" height="120" rx="16" fill="#0D47A1"/>
-  <circle cx="60" cy="60" r="50" fill="none" stroke="#FFB300" stroke-opacity="0.15" stroke-width="2"/>
-    <text x="60" y="43.2" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="bold" fill="#FFB300" text-anchor="middle" dominant-baseline="central">france</text>
-    <text x="60" y="76.80000000000001" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="bold" fill="#FFB300" text-anchor="middle" dominant-baseline="central">info</text>
-</svg>

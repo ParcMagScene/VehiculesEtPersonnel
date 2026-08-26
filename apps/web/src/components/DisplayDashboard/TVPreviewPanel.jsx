@@ -4,15 +4,15 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { Bell, Eye, Radio, RefreshCw } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/design-system';
 
 import api from '../../utils/api';
-import TVScreenMini from './TVScreenMini';
 function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
   const iframeRef = useRef(null);
-  const [adminState, setAdminState] = useState(null);
+  const previewIframeRef = useRef(null);
+  const [_adminState, setAdminState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alarmSending, setAlarmSending] = useState(false);
 
@@ -42,6 +42,9 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.location.reload();
     }
+    if (previewIframeRef.current?.contentWindow) {
+      previewIframeRef.current.contentWindow.location.reload();
+    }
   }, []);
 
   // Chargement initial + polling toutes les 15s (état admin pour Preview)
@@ -51,30 +54,22 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
     return () => clearInterval(timer);
   }, [fetchAdminState, refreshKey]);
 
-  // Fusion état admin + overrides du formulaire pour l'aperçu brouillon
-  const draftState = useMemo(() => {
-    if (!adminState) return null;
-    return {
-      ...adminState,
-      config: { ...(adminState.config || {}), ...(previewOverrides.config || {}) },
-      welcomeMessage:
-        previewOverrides.welcomeMessage !== undefined
-          ? previewOverrides.welcomeMessage
-          : adminState.welcomeMessage,
-      colorRules:
-        previewOverrides.colorRules !== undefined
-          ? previewOverrides.colorRules
-          : adminState.colorRules,
-      iconRules:
-        previewOverrides.iconRules !== undefined
-          ? previewOverrides.iconRules
-          : adminState.iconRules,
-      logoUrl:
-        previewOverrides.logoUrl !== undefined ? previewOverrides.logoUrl : adminState.logoUrl,
+  // Envoie les overrides du formulaire a l'iframe Preview via postMessage
+  // pour qu'elle rende le meme layout que Direct mais avec les modifs en cours.
+  useEffect(() => {
+    const target = previewIframeRef.current?.contentWindow;
+    if (!target) return;
+    // Petit delai pour laisser l'iframe se charger a froid.
+    const send = () => {
+      target.postMessage({ type: 'tv-preview:overrides', overrides: previewOverrides || {} }, '*');
     };
-  }, [adminState, previewOverrides]);
+    send();
+    // Rebouclage court : si l'iframe n'etait pas prete, redemander apres 500ms.
+    const t = setTimeout(send, 500);
+    return () => clearTimeout(t);
+  }, [previewOverrides, refreshKey]);
 
-  if (loading && !adminState) {
+  if (loading) {
     return (
       <div className="tv-preview-panel" style={style}>
         <div className="tv-preview-loading">Chargement aperçu…</div>
@@ -118,18 +113,19 @@ function TVPreviewPanel({ previewOverrides = {}, refreshKey, style }) {
         </div>
       </div>
 
-      {/* ─── Preview (après validation des changements) ─── */}
+      {/* ─── Preview (apres validation des changements) ─── */}
       <div className="tv-preview-zone draft">
         <div className="tv-preview-label">
           <Eye size={12} />
           <span>Preview</span>
         </div>
         <div className="tv-preview-frame">
-          {draftState ? (
-            <TVScreenMini state={draftState} />
-          ) : (
-            <div className="tv-preview-empty">Modifiez la configuration pour prévisualiser</div>
-          )}
+          <iframe
+            ref={previewIframeRef}
+            src="/tv-client/index.html?tvScale=1&preview=1"
+            className="tv-preview-iframe"
+            title="Dashboard TV — Preview (brouillon)"
+          />
         </div>
       </div>
     </div>

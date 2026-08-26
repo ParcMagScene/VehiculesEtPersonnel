@@ -116,6 +116,79 @@ function matchKnownRadioLogo(uri, title) {
   return null;
 }
 
+/**
+ * Detecte le service musical source depuis l'URI de la piste (schemas Sonos).
+ * Reference : https://developer.sonos.com/reference/soap-api/uri-schemes/
+ *
+ * @param {object} track — objet track du package sonos
+ * @returns {{id: string, name: string, logo: string}|null}
+ */
+function detectSonosService(track) {
+  if (!track || typeof track !== 'object') return null;
+  const uri = String(track.uri || '').toLowerCase();
+  if (!uri) return null;
+
+  // ── Streaming premium ──
+  if (uri.startsWith('x-sonos-spotify:') || uri.includes('spotify')) {
+    return { id: 'spotify', name: 'Spotify', logo: '/sonos-logos/spotify.svg' };
+  }
+  if (uri.includes('deezer') || uri.startsWith('x-sonos-http:deezer')) {
+    return { id: 'deezer', name: 'Deezer', logo: '/sonos-logos/deezer.svg' };
+  }
+  if (
+    uri.includes('applemusic') ||
+    uri.includes('itunes.apple') ||
+    uri.startsWith('x-sonosprog-http:')
+  ) {
+    return { id: 'applemusic', name: 'Apple Music', logo: '/sonos-logos/applemusic.svg' };
+  }
+  if (
+    uri.includes('amazonmusic') ||
+    uri.includes('amazon.com/music') ||
+    uri.startsWith('x-sonos-hls-amazon:')
+  ) {
+    return { id: 'amazonmusic', name: 'Amazon Music', logo: '/sonos-logos/amazonmusic.svg' };
+  }
+  if (uri.includes('youtubemusic') || uri.includes('music.youtube')) {
+    return { id: 'youtubemusic', name: 'YouTube Music', logo: '/sonos-logos/youtubemusic.svg' };
+  }
+  if (uri.includes('tidal')) {
+    return { id: 'tidal', name: 'Tidal', logo: '/sonos-logos/tidal.svg' };
+  }
+  if (uri.includes('soundcloud')) {
+    return { id: 'soundcloud', name: 'SoundCloud', logo: '/sonos-logos/soundcloud.svg' };
+  }
+  if (uri.includes('qobuz')) {
+    return { id: 'qobuz', name: 'Qobuz', logo: '/sonos-logos/qobuz.svg' };
+  }
+
+  // ── Radio (stream ou tunein) ──
+  if (uri.startsWith('x-sonosapi-stream:')) {
+    return { id: 'tunein', name: 'TuneIn', logo: '/sonos-logos/tunein.svg' };
+  }
+  if (
+    uri.startsWith('x-rincon-mp3radio://') ||
+    uri.startsWith('x-sonosapi-hls-static:') ||
+    uri.startsWith('aac:') ||
+    uri.startsWith('x-rincon-stream:')
+  ) {
+    return { id: 'radio', name: 'Radio', logo: '/sonos-logos/radio.svg' };
+  }
+
+  // ── Sources locales ──
+  if (uri.startsWith('x-file-cifs:') || uri.startsWith('file:')) {
+    return { id: 'library', name: 'Bibliothèque', logo: '/sonos-logos/library.svg' };
+  }
+  if (uri.startsWith('x-rincon-queue:') || uri.startsWith('x-rincon-playlist:')) {
+    return { id: 'queue', name: "File d'attente", logo: '/sonos-logos/queue.svg' };
+  }
+  if (uri.startsWith('x-rincon:')) {
+    return { id: 'group', name: 'Groupe Sonos', logo: '/sonos-logos/sonos.svg' };
+  }
+
+  return null;
+}
+
 // ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
@@ -388,6 +461,7 @@ export async function getSonosNowPlaying() {
     artist,
     album: track.album || '',
     albumArtURI: artUrl,
+    service: detectSonosService(track),
     duration: track.duration || 0,
     position: track.position || 0,
     ...(typeof volume === 'number' ? { volume } : {}),

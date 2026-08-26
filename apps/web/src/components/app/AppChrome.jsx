@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 
 import { NavigationProvider } from '../../contexts/NavigationContext';
+import TaskAlertBanner from '../alerts/TaskAlertBanner';
 import Header from '../Header';
 import { PrintPreviewProvider } from '../ui/PrintPreviewProvider';
 import '../../App.css';
@@ -32,6 +33,8 @@ function AppChrome({
           )}
 
           <Header {...headerProps} />
+
+          <TaskAlertBanner />
 
           {showGoogleBanner && (
             <Suspense fallback={null}>

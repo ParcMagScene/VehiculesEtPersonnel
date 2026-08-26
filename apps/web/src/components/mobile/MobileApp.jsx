@@ -10,6 +10,7 @@ import useMobileRouter from '../../hooks/useMobileRouter';
 import useSwipeBack from '../../hooks/useSwipeBack';
 import { PALETTES, useTheme } from '../../hooks/useTheme';
 import api from '../../utils/api';
+import TaskAlertBanner from '../alerts/TaskAlertBanner';
 import MobileHeader from './MobileHeader';
 import MobileHome from './MobileHome';
 import MobileLogin from './MobileLogin';
@@ -361,6 +362,9 @@ function MobileApp({ onSwitchToDesktop }) {
 
   return (
     <div className="mobile-app">
+      {/* Bannier global d'alertes taches (Phase 3) */}
+      <TaskAlertBanner />
+
       {/* Header unifié */}
       <MobileHeader
         currentScreen={currentScreen}

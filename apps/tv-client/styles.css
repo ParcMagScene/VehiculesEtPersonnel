@@ -45,32 +45,25 @@ body {
 
 /* ═══════════ SCALING GLOBAL TV ═══════════
    Le container #tv-root.tv-scale enveloppe tout le dashboard TV.
-   On applique un `transform: scale(var(--tv-scale))` avec compensation
-   `width/height = 100% / var(--tv-scale)` pour que le rendu final
-   occupe toujours 100% du viewport (le contenu apparait juste plus grand).
+   On utilise CSS `zoom` (et non `transform: scale`) : zoom recalcule
+   le layout et rasterise directement a la resolution finale — aucun
+   compositing GPU, aucune re-rasterisation par frame. Indispensable
+   sur Raspberry Pi (VideoCore) ou transform: scale saccadait.
    Le facteur est modifiable dynamiquement via display_config.tvScale
    (cf. apps/tv-client/main.js → applyConfig).
 
-   Ne pas casser :
-   - les elements en position:fixed a l'interieur (footer, sonos-widget,
-     sneaky-photo, mobile-tabs, offline-indicator) sont positionnes
-     relativement au container transforme et suivent donc le scale.
-   - les @keyframes (alarm-flash, slideUp, sonos, sneakyPhotoSlide)
-     agissent sur des elements internes et restent inchanges. */
+   Zoom, contrairement a transform:
+   - ne cree pas de containing block : les enfants position:fixed
+     restent ancres au viewport (comportement souhaite pour footer,
+     sonos-widget, sneaky-photo, offline-indicator).
+   - recalcule le layout : aucune compensation width/height necessaire.
+   - est supporte nativement par Chromium (Pi), Safari, Firefox 126+. */
 .tv-scale {
-  transform-origin: top left;
-  transform: scale(var(--tv-scale, 1.6));
-  width: calc(100% / var(--tv-scale, 1.6));
-  height: calc(100% / var(--tv-scale, 1.6));
-  flex: 0 0 auto;
+  zoom: var(--tv-scale, 1.6);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  /* Promotion couche GPU : sur Raspberry Pi (VideoCore) sans ces hints,
-     chaque frame d'animation interne (marquee, sneaky-photo, alarm-flash)
-     force une re-rasterisation complete du conteneur scale. */
-  will-change: transform;
-  backface-visibility: hidden;
+  flex: 1;
+  min-height: 100vh;
 }
 
 /* ═══════════ NAVIGATION MOBILE (ONGLETS) ═══════════ */
@@ -608,10 +601,8 @@ footer {
      dimensionne pour un ecran tactile de proximite. */
   :root { --tv-scale: 1; }
   .tv-scale {
-    transform: none;
-    width: 100%;
-    height: auto;
-    overflow: visible;
+    zoom: 1;
+    min-height: auto;
   }
   #mobile-tabs { display: flex; }
   body { padding-bottom: 60px; overflow: auto; }

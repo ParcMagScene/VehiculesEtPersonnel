@@ -12,17 +12,27 @@ Sur ce container on applique :
 
 ```css
 .tv-scale {
-  transform-origin: top left;
-  transform: scale(var(--tv-scale, 1.6));
-  width:  calc(100% / var(--tv-scale, 1.6));
-  height: calc(100% / var(--tv-scale, 1.6));
+  zoom: var(--tv-scale, 1.6);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 100vh;
 }
 ```
 
-L’astuce des dimensions inversées (`100% / scale`) compense le facteur
-appliqué par `transform: scale()`. Le container occupe donc toujours
-100 % du viewport après scaling — le contenu apparaît simplement plus
-grand, sans laisser de bande vide et sans déborder.
+On utilise **CSS `zoom`** (et non `transform: scale`) : `zoom` recalcule
+le layout et rasterise directement à la résolution finale. Aucun
+compositing GPU, aucune re-rasterisation par frame — indispensable sur
+Raspberry Pi (VideoCore) où `transform: scale` saccadait notablement.
+
+`zoom` ne crée pas de containing block, donc les enfants
+`position: fixed` (footer, sonos-widget, sneaky-photo, offline-indicator)
+restent ancrés au viewport — comportement souhaité.
+
+Aucune compensation `width/height = 100% / scale` n’est nécessaire :
+le navigateur gère nativement.
+
+Support : Chromium/Edge/Safari (toujours), Firefox 126+ (mai 2024).
 
 ## Configuration
 
@@ -81,7 +91,7 @@ Le scaling est **désactivé** sous `@media (max-width: 768px)` :
 ```css
 @media (max-width: 768px) {
   :root { --tv-scale: 1; }
-  .tv-scale { transform: none; width: 100%; height: auto; overflow: visible; }
+  .tv-scale { zoom: 1; min-height: auto; }
 }
 ```
 
@@ -128,3 +138,5 @@ Avant tout déploiement production :
 
 - 2026-08-26 — Introduction du système `tvScale` + container
   `#tv-root.tv-scale`. Valeur par défaut 1.6 pour TV 65" UHD.
+- 2026-08-26 — Passage de `transform: scale()` à CSS `zoom`
+  pour éliminer les saccades sur Raspberry Pi (VideoCore).

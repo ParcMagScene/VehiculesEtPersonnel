@@ -3,17 +3,20 @@ import './MobileDashboardAdmin.css';
 import {
   ArrowLeft,
   Briefcase,
+  Camera,
   CheckCircle,
   Circle,
   Clock,
   Eye,
+  Image as ImageIcon,
   RefreshCw,
   Trash2,
+  Upload,
   User,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, ProgressBar, Spinner } from '@/design-system';
+import { Button, ProgressBar, Select, Spinner } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
@@ -21,6 +24,7 @@ import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import usePullToRefresh from '../../hooks/usePullToRefresh';
 import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import useSwipeAction from '../../hooks/useSwipeAction';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import PullToRefreshIndicator from './PullToRefreshIndicator';
@@ -50,9 +54,211 @@ const TASK_SECTIONS = {
   manual: { label: 'Autres', emoji: '📋', color: STATUS_COLORS.neutralSoft },
 };
 
+const SNEAKY_DURATION_OPTIONS = [
+  { value: '15', label: '15 min' },
+  { value: '30', label: '30 min' },
+  { value: '60', label: '1 heure' },
+  { value: '240', label: '4 heures' },
+  { value: 'endOfDay', label: 'Fin de journée' },
+  { value: 'endOfWeek', label: 'Fin de semaine' },
+];
+
+// Section "Photo furtive" — replique la fonctionnalite desktop (SneakyTab.jsx)
+// avec picker natif mobile (capture="environment" pour l'appareil photo).
+function SneakyPhotoSection() {
+  const toast = useToast();
+  const galleryInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const [status, setStatus] = useState({ active: false });
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [duration, setDuration] = useState('60');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await api.getDisplaySneakyPhotoStatus();
+      setStatus(data || { active: false });
+    } catch {
+      // Silencieux : le composant reste utilisable pour envoyer une nouvelle photo.
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  // Libere l'objectURL de preview quand il change/le composant se demonte.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleClearSelection = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('photo', selectedFile);
+      formData.append('duration', duration);
+      await api.uploadDisplaySneakyPhoto(formData);
+      refreshBus.publish('display');
+      toast.success('Photo furtive envoyée sur la TV');
+      handleClearSelection();
+      await loadStatus();
+    } catch (e) {
+      console.error('Erreur upload photo furtive:', e);
+      toast.error("Impossible d'envoyer la photo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDisable = async () => {
+    try {
+      await api.deleteDisplaySneakyPhoto();
+      refreshBus.publish('display');
+      toast.success('Photo furtive désactivée');
+      setStatus({ active: false });
+    } catch {
+      toast.error('Impossible de désactiver la photo');
+    }
+  };
+
+  return (
+    <div className="mda-sneaky-section">
+      <div className="mda-section-title">
+        <span>📸 Photo furtive</span>
+        {status.active && <span className="mda-sneaky-badge">Active</span>}
+      </div>
+
+      {loading ? (
+        <div className="mda-empty mda-empty-small">
+          <Spinner size={20} />
+        </div>
+      ) : status.active ? (
+        <div className="mda-sneaky-active-block">
+          {status.path && (
+            <div className="mda-sneaky-preview">
+              <img src={`${status.path}?t=${Date.now()}`} alt="Photo furtive active" />
+            </div>
+          )}
+          <div className="mda-sneaky-expires">
+            <Clock size={12} /> Expire :{' '}
+            {status.expiresAt ? new Date(status.expiresAt).toLocaleString('fr-FR') : '—'}
+          </div>
+          <Button variant="danger" size="sm" onClick={handleDisable} className="mda-sneaky-off-btn">
+            <Trash2 size={14} /> Désactiver
+          </Button>
+        </div>
+      ) : (
+        <div className="mda-sneaky-upload-block">
+          {/* Inputs caches — declenches par les boutons ci-dessous */}
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+
+          {previewUrl ? (
+            <>
+              <div className="mda-sneaky-preview">
+                <img src={previewUrl} alt="Aperçu" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearSelection}
+                  className="mda-sneaky-clear-btn"
+                  aria-label="Retirer"
+                >
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+              <div className="mda-sneaky-duration">
+                <label htmlFor="mda-sneaky-duration">Durée d'affichage</label>
+                <Select
+                  id="mda-sneaky-duration"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                >
+                  {SNEAKY_DURATION_OPTIONS.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <Button
+                variant="primary"
+                onClick={handleUpload}
+                disabled={uploading}
+                className="mda-sneaky-send-btn"
+              >
+                {uploading ? <Spinner size={14} /> : <Upload size={14} />} Envoyer sur la TV
+              </Button>
+            </>
+          ) : (
+            <div className="mda-sneaky-pick-row">
+              <Button
+                variant="secondary"
+                onClick={() => cameraInputRef.current?.click()}
+                className="mda-sneaky-pick-btn"
+              >
+                <Camera size={18} /> Appareil photo
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => galleryInputRef.current?.click()}
+                className="mda-sneaky-pick-btn"
+              >
+                <ImageIcon size={18} /> Galerie
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * MobileDashboardAdmin — Dashboard admin mobile.
- * Tâches du jour + gestion des messages display.
+ * Tâches du jour + photo furtive + gestion des messages display.
  */
 function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
   const [entries, setEntries] = useState([]);
@@ -294,6 +500,9 @@ function MobileDashboardAdmin({ currentUser: _currentUser, onBack }) {
           </div>
         )}
       </div>
+
+      {/* ═══ PHOTO FURTIVE ═══ */}
+      <SneakyPhotoSection />
 
       {/* ═══ MESSAGES DISPLAY ═══ */}
       <div className="mda-messages-section">

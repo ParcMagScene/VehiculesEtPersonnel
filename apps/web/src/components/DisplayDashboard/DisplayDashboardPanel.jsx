@@ -5,7 +5,7 @@
 
 import './DisplayDashboardPanel.css';
 
-import { Camera, ExternalLink, Film, MessageCircle, Music, Palette, Tag } from 'lucide-react';
+import { Bell, Camera, ExternalLink, Film, MessageCircle, Music, Palette, Tag } from 'lucide-react';
 import { lazy, memo, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Tab, TabList, TabPanel, Tabs } from '@/design-system';
@@ -18,6 +18,7 @@ const WelcomeMessagesTab = lazy(() => import('./WelcomeMessagesTab'));
 const ColorRulesTab = lazy(() => import('./ColorRulesTab'));
 const LocationIconsTab = lazy(() => import('./LocationIconsTab'));
 const SneakyTab = lazy(() => import('./SneakyTab'));
+const TaskAlertsTab = lazy(() => import('./TaskAlertsTab'));
 const SonosTab = lazy(() => import('../sonos/SonosPanel'));
 const TVPreviewPanel = lazy(() => import('./TVPreviewPanel'));
 const DashboardTasksSidebar = lazy(() => import('./DashboardTasksSidebar'));
@@ -35,6 +36,7 @@ const CONFIG_TABS = [
   { id: 'welcomeMessages', label: 'Messages TV', icon: MessageCircle },
   { id: 'colorRules', label: 'Couleurs', icon: Tag },
   { id: 'locationIcons', label: 'Icônes tâches', icon: Film },
+  { id: 'alerts', label: 'Alertes', icon: Bell },
   { id: 'sneaky', label: 'Photo furtive', icon: Camera },
   { id: 'sonos', label: 'Sonos', icon: Music },
 ];
@@ -203,6 +205,9 @@ function DisplayDashboardPanel({ currentUser }) {
                     refreshKey={refreshKey}
                     onPreviewChange={handlePreviewChange}
                   />
+                </TabPanel>
+                <TabPanel value="alerts">
+                  <TaskAlertsTab currentUser={currentUser} refreshKey={refreshKey} />
                 </TabPanel>
                 <TabPanel value="sneaky">
                   <SneakyTab currentUser={currentUser} refreshKey={refreshKey} />

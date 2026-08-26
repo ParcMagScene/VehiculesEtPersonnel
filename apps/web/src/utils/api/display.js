@@ -216,5 +216,32 @@ export function registerDisplayMethods(ApiClient) {
     async triggerTVAlarmTest() {
       return this.request('/display/tv/test-alarm', { method: 'POST' });
     },
+
+    // Alertes sonores sur les taches (config par section, sons, ack)
+    async getDisplayAlertRules() {
+      return this.request('/display/alert-rules');
+    },
+    async saveDisplayAlertRule(section, rule) {
+      return this.request(`/display/alert-rules/${encodeURIComponent(section)}`, {
+        method: 'PUT',
+        body: JSON.stringify(rule),
+      });
+    },
+    async getDisplayAlertSounds() {
+      return this.request('/display/alert-sounds');
+    },
+    async uploadDisplayAlertSound(formData) {
+      return this.requestFormData('/display/alert-sounds/upload', formData);
+    },
+    async deleteDisplayAlertSound(filename) {
+      return this.request(`/display/alert-sounds/${encodeURIComponent(filename)}`, {
+        method: 'DELETE',
+      });
+    },
+    async ackDisplayAlert(taskId) {
+      return this.request(`/display/alerts/ack/${encodeURIComponent(taskId)}`, {
+        method: 'POST',
+      });
+    },
   });
 }

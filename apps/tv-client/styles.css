@@ -66,6 +66,11 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Promotion couche GPU : sur Raspberry Pi (VideoCore) sans ces hints,
+     chaque frame d'animation interne (marquee, sneaky-photo, alarm-flash)
+     force une re-rasterisation complete du conteneur scale. */
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* ═══════════ NAVIGATION MOBILE (ONGLETS) ═══════════ */
@@ -459,9 +464,12 @@ footer {
   gap: var(--space-5);
   z-index: 1000;
   box-shadow: 0 8px 32px rgba(0, 225, 255, 0.3);
-  backdrop-filter: blur(10px);
+  /* blur(10px) tue les FPS sur Raspberry Pi ; le fond noir a 0.9 est deja
+     largement opaque, un blur leger suffit pour l'effet visuel. */
+  backdrop-filter: blur(4px);
   max-width: 600px;
   animation: slideUp 0.5s ease-out;
+  will-change: transform, opacity;
 }
 @keyframes slideUp {
   from { bottom: -100px; opacity: 0; }
@@ -518,6 +526,7 @@ footer {
   border: 3px solid var(--primary-color, #00e1ff);
   animation: sneakyPhotoSlide 25s linear infinite;
   object-fit: cover;
+  will-change: left, opacity;
 }
 @keyframes sneakyPhotoSlide {
   0% { left: -200px; opacity: 0; }

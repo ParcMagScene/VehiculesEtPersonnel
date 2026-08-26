@@ -263,13 +263,14 @@ function applyConfig(config) {
   if (config.fontFamily && isSafeCSSValue(config.fontFamily)) root.style.setProperty('--font-family', config.fontFamily);
 
   // ── Scaling global TV (cf. docs/tv-client-scaling.md) ──
-  // On lit config.tvScale (float dans [0.5, 3]) et on applique le meme
-  // facteur au container #tv-root.tv-scale via transform + compensation
-  // width/height pour garder un rendu qui remplit tout le viewport.
-  applyTvScale(config.tvScale);
+  // Priorite : query string ?tvScale=X > config serveur > default 1.6.
+  // La query string permet a chaque ecran d'ajuster localement sans SQL,
+  // utile pour des Pi de resolutions differentes derriere le meme backend.
+  const params = new URLSearchParams(window.location.search);
+  const overrideScale = params.get('tvScale');
+  applyTvScale(overrideScale !== null ? overrideScale : config.tvScale);
 
   // Overscan TV : ?overscan=XX dans l'URL (en px), ou auto-détection Raspberry Pi
-  const params = new URLSearchParams(window.location.search);
   let overscan = parseInt(params.get('overscan'), 10);
   if (isNaN(overscan)) {
     // Auto-détection : appliquer une marge par défaut sur les navigateurs embarqués (Pi, etc.)

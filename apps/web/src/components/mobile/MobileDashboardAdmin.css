@@ -288,3 +288,96 @@
 .mda-messages-section {
   border-top: 4px solid var(--theme-border-light);
 }
+
+/* ── Sneaky photo section ── */
+.mda-sneaky-section {
+  border-top: 4px solid var(--theme-border-light);
+}
+.mda-sneaky-badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--theme-success);
+  color: white;
+  font-size: var(--font-2xs);
+  font-weight: 700;
+}
+.mda-sneaky-upload-block,
+.mda-sneaky-active-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+.mda-sneaky-pick-row {
+  display: flex;
+  gap: var(--space-2);
+}
+.mda-sneaky-pick-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 52px;
+  font-weight: 600;
+}
+.mda-sneaky-preview {
+  position: relative;
+  width: 100%;
+  max-height: 240px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--theme-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mda-sneaky-preview img {
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  object-fit: contain;
+  display: block;
+}
+.mda-sneaky-clear-btn {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  min-width: 32px;
+  min-height: 32px;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  border-radius: var(--radius-full);
+  padding: var(--space-1);
+}
+.mda-sneaky-duration {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.mda-sneaky-duration label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--theme-text-secondary);
+}
+.mda-sneaky-send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  font-weight: 700;
+}
+.mda-sneaky-expires {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--theme-text-secondary);
+}
+.mda-sneaky-off-btn {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}

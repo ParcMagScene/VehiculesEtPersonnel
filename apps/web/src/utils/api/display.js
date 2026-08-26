@@ -243,5 +243,8 @@ export function registerDisplayMethods(ApiClient) {
         method: 'POST',
       });
     },
+    async getDisplayPendingAlerts() {
+      return this.request('/display/alerts/pending');
+    },
   });
 }

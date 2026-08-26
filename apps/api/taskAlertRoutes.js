@@ -311,6 +311,66 @@ export function setupTaskAlertRoutes(app, authenticateToken, requireAdmin, optio
     }
   });
 
+  // ── GET /api/display/alerts/pending — alertes actives enrichies pour l'UI admin/mobile ──
+  // Retourne les alertes calculees via computeActiveAlerts + les champs UX
+  // (title, time, sectionLabel) issues de task_assignments pour eviter un second
+  // fetch cote client.
+  app.get('/api/display/alerts/pending', authenticateToken, (_req, res) => {
+    try {
+      const now = new Date();
+      const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      const dayTasks = db
+        .prepare(
+          `SELECT id, title, time, section, status
+           FROM task_assignments
+           WHERE date = ? AND visible = 1 AND deleted_at IS NULL`,
+        )
+        .all(todayISO);
+
+      const rawAlerts = computeActiveAlerts(db, todayISO, dayTasks);
+      const tasksById = new Map(dayTasks.map((t) => [String(t.id), t]));
+
+      const SECTION_LABELS = {
+        rdv: 'RDV',
+        evenements: 'Événement',
+        taches_prioritaires: 'Prioritaire',
+        courses: 'Courses',
+        prep_locations: 'Prépa Location',
+        prep_prestations: 'Prépa Prestation',
+        prep_ventes: 'Prépa Vente',
+        prep_installations: 'Prépa Installation',
+        prep_tournees: 'Prépa Tournée',
+        chargement: 'Chargement',
+        depart: 'Départ',
+        enlevement: 'Enlèvement',
+        retour: 'Retour',
+        recuperation: 'Récupération',
+        installation: 'Installation',
+        montage: 'Montage',
+        demontage: 'Démontage',
+        intervention: 'Intervention',
+        taches_secondaires: 'Secondaire',
+        manual: 'Divers',
+      };
+
+      const enriched = rawAlerts.map((a) => {
+        const t = tasksById.get(a.taskId);
+        return {
+          ...a,
+          title: t?.title || '',
+          time: (t?.time || '').substring(0, 5),
+          sectionLabel: SECTION_LABELS[a.section] || a.section,
+        };
+      });
+
+      res.json({ activeAlerts: enriched });
+    } catch (e) {
+      logger.error('alerts pending:', e);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
   // ── POST /api/display/alerts/ack/:taskId — acquitte une alerte (auth TV ou admin) ──
   app.post('/api/display/alerts/ack/:taskId', optionalTvToken || authenticateToken, (req, res) => {
     try {

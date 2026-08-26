@@ -468,34 +468,14 @@ footer {
   from { bottom: -100px; opacity: 0; }
   to { bottom: 20px; opacity: 1; }
 }
-#sonos-artwork-wrap {
-  position: relative;
-  flex-shrink: 0;
-  width: 80px;
-  height: 80px;
-}
 #sonos-album-art {
   width: 80px;
   height: 80px;
   border-radius: var(--radius-md-lg);
   object-fit: contain;
+  flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  display: block;
-}
-#sonos-service-badge {
-  position: absolute;
-  bottom: -8px;
-  right: -8px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
   background: #fff;
-  padding: 3px;
-  box-shadow:
-    0 0 0 3px var(--primary-color, #00e1ff),
-    0 4px 10px rgba(0, 0, 0, 0.7);
-  object-fit: contain;
-  z-index: 2;
 }
 #sonos-info { flex: 1; color: #ffffff; }
 #sonos-title {

@@ -6,6 +6,16 @@
 
 const API_BASE = window.location.origin;
 
+// Mode embed : iframe preview/direct du Dashboard admin. Force le rendu
+// desktop TV meme sur iframes etroites (< 768px) qui declencheraient
+// sinon la media query mobile (onglets Evenements/Recurrents).
+(() => {
+  const p = new URLSearchParams(window.location.search);
+  if (p.has('preview') || p.has('tvScale')) {
+    document.documentElement.classList.add('tv-embed');
+  }
+})();
+
 // Token TV : lu depuis le paramètre URL ?token= ou depuis localStorage
 const TV_TOKEN = (() => {
   const urlToken = new URLSearchParams(window.location.search).get('token');

@@ -25,10 +25,10 @@ import { runPersonalActionsLogV1Migration } from './migrations/personal-actions-
 import { runPlanningV2SchemaMigration } from './migrations/planning-v2-schema-v1.js';
 import { runPvImportsMigrations } from './migrations/pv-imports-v1.js';
 import { runSavPartsMigration } from './migrations/sav-parts-v1.js';
+import { runTaskAlertRulesMigration } from './migrations/task-alert-rules-v1.js';
 import { runBrandsMigrations } from './migrations/taxonomy-brands-v1.js';
 import { runTaxonomyMaintenanceMigrations } from './migrations/taxonomy-maintenance-v1.js';
 import { runTaxonomyMigrations } from './migrations/taxonomy-v1.js';
-import { runTaskAlertRulesMigration } from './migrations/task-alert-rules-v1.js';
 import { runVideoMigrations } from './migrations/video-v1.js';
 
 const __filename = fileURLToPath(import.meta.url);

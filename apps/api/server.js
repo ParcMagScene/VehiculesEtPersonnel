@@ -129,8 +129,8 @@ import {
   setupStockStatsRoutes,
 } from './stockRoutes.js';
 import { setupSuiviRoutes } from './suiviRoutes.js';
-import { setupTaskAlertRoutes } from './taskAlertRoutes.js';
 import { setupSupplierCatalogRoutes } from './supplierCatalogRoutes.js';
+import { setupTaskAlertRoutes } from './taskAlertRoutes.js';
 import { setupTOTPRoutes } from './totpRoutes.js';
 import { setupAffairesV2Routes } from './v2/affairesRoutes.js';
 import { setupConflictsV2Routes } from './v2/conflictsRoutes.js';

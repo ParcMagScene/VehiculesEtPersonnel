@@ -1,44 +1,24 @@
 import { Music } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 
-const resolvedLogoCache = new Map();
-const RESOLVED_LOGO_TTL_MS = 60 * 60 * 1000;
-const RESOLVED_LOGO_CACHE_VERSION = 20260424;
-
 function isAlreadyLocalLogo(src) {
   const v = String(src || '');
   return (
     v.startsWith('/radio-logos/') ||
     v.startsWith('/sonos-logos/') ||
     v.startsWith('/api/sonos/artwork?') ||
+    v.startsWith('/api/sonos/logo?') ||
     v.startsWith('data:image/')
   );
 }
 
-async function resolveLogoUrl(src) {
+function resolveLogoUrl(src) {
   if (!src) return '';
   if (isAlreadyLocalLogo(src) || src.startsWith('/')) return src;
   if (!/^https?:\/\//i.test(src)) return src;
-
-  const cached = resolvedLogoCache.get(src);
-  if (cached && cached.expiresAt > Date.now() && cached.v === RESOLVED_LOGO_CACHE_VERSION)
-    return cached.url;
-
-  const res = await fetch(`/api/sonos/logo?url=${encodeURIComponent(src)}`, {
-    method: 'GET',
-    cache: 'no-cache',
-  });
-  if (!res.ok) throw new Error(`Logo resolver failed (${res.status})`);
-  const data = await res.json();
-  const url = data?.url || '';
-  if (url) {
-    resolvedLogoCache.set(src, {
-      url,
-      expiresAt: Date.now() + RESOLVED_LOGO_TTL_MS,
-      v: RESOLVED_LOGO_CACHE_VERSION,
-    });
-  }
-  return url;
+  // URL externe : passe par le proxy meme-origine pour contourner la CSP admin
+  // (imgSrc sans wildcard) et le mixed content sur pages https servant du http.
+  return `/api/sonos/logo?url=${encodeURIComponent(src)}`;
 }
 
 function RadioLogo({
@@ -55,38 +35,16 @@ function RadioLogo({
   const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
     setFailed(false);
-    setUsingFallback(false);
-    setResolvedSrc('');
-
     // Resout src en priorite, sinon bascule immediatement sur fallbackSrc.
     const primary = src || '';
     if (!primary && fallbackSrc) {
       setUsingFallback(true);
-      resolveLogoUrl(fallbackSrc)
-        .then((url) => {
-          if (!cancelled) setResolvedSrc(url || '');
-        })
-        .catch(() => {
-          if (!cancelled) setFailed(true);
-        });
-      return () => {
-        cancelled = true;
-      };
+      setResolvedSrc(resolveLogoUrl(fallbackSrc));
+      return;
     }
-
-    resolveLogoUrl(primary)
-      .then((url) => {
-        if (!cancelled) setResolvedSrc(url || '');
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    setUsingFallback(false);
+    setResolvedSrc(resolveLogoUrl(primary));
   }, [src, fallbackSrc]);
 
   const effectivePlaceholderClass = placeholderClassName || className;
@@ -96,9 +54,7 @@ function RadioLogo({
     if (fallbackSrc && !usingFallback) {
       setUsingFallback(true);
       setFailed(false);
-      resolveLogoUrl(fallbackSrc)
-        .then((url) => setResolvedSrc(url || ''))
-        .catch(() => setFailed(true));
+      setResolvedSrc(resolveLogoUrl(fallbackSrc));
       return;
     }
     setFailed(true);

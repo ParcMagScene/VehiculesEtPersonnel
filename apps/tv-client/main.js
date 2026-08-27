@@ -713,16 +713,25 @@ function updateSonosWidget(data) {
 
   if (!widget) return;
 
+  // URLs externes http/https -> proxy meme-origine pour eviter le mixed content
+  // et beneficier de la CSP img-src alors que le rendu passe par 'self'.
+  function toProxyIfExternal(url) {
+    if (!url) return url;
+    if (/^https?:\/\//i.test(url)) return `/api/sonos/logo?url=${encodeURIComponent(url)}`;
+    return url;
+  }
+
   // Afficher le widget dès qu'il y a un titre (même en pause)
   if (data && data.title) {
     widget.style.display = 'flex';
     widget.style.opacity = data.playing ? '1' : '0.6';
     if (albumArt) {
       // Meme rendu que l'app Sonos "En lecture" : le backend renvoie deja le vrai
-      // artwork (pochette album, logo radio officiel via matchKnownRadioLogo ou favicon
-      // ICY) dans albumArtURI. service.logo n'est qu'un ultime fallback.
-      const artUrl =
+      // artwork (logo officiel de la station via GetMediaInfo, pochette album,
+      // favicon ICY, ...) dans albumArtURI. service.logo n'est qu'un ultime fallback.
+      const rawArtUrl =
         data.albumArtURI || data.albumArt || data.service?.logo || '/display-logo/logo.png';
+      const artUrl = toProxyIfExternal(rawArtUrl);
       if (albumArt._failedUrls && albumArt._failedUrls.has(artUrl)) {
         albumArt.src = '/display-logo/logo.png';
       } else if (albumArt.src !== artUrl) {

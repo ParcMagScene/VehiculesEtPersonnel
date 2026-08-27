@@ -539,6 +539,33 @@ export function runPostInitMigrations(db) {
     )
   `);
     logger.info('✅ Table recurring_tasks vérifiée/créée');
+
+    // Colonnes alert_* : override par tache de la regle de section (task_alert_rules)
+    try {
+      const rtCols = db.pragma('table_info(recurring_tasks)').map((c) => c.name);
+      if (!rtCols.includes('alert_enabled')) {
+        db.exec('ALTER TABLE recurring_tasks ADD COLUMN alert_enabled INTEGER NOT NULL DEFAULT 0');
+        logger.info('  ✅ Migration: recurring_tasks.alert_enabled ajouté');
+      }
+      if (!rtCols.includes('alert_sound_path')) {
+        db.exec('ALTER TABLE recurring_tasks ADD COLUMN alert_sound_path TEXT');
+        logger.info('  ✅ Migration: recurring_tasks.alert_sound_path ajouté');
+      }
+      if (!rtCols.includes('alert_offset_minutes')) {
+        db.exec(
+          'ALTER TABLE recurring_tasks ADD COLUMN alert_offset_minutes INTEGER NOT NULL DEFAULT 0',
+        );
+        logger.info('  ✅ Migration: recurring_tasks.alert_offset_minutes ajouté');
+      }
+      if (!rtCols.includes('alert_blink_duration_sec')) {
+        db.exec(
+          'ALTER TABLE recurring_tasks ADD COLUMN alert_blink_duration_sec INTEGER NOT NULL DEFAULT 30',
+        );
+        logger.info('  ✅ Migration: recurring_tasks.alert_blink_duration_sec ajouté');
+      }
+    } catch (e) {
+      logger.warn('⚠️ recurring_tasks alert_* columns:', e.message);
+    }
   } catch (error) {
     logger.warn('⚠️ recurring_tasks:', error.message);
   }

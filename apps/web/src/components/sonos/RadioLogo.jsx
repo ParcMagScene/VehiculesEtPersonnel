@@ -43,6 +43,7 @@ async function resolveLogoUrl(src) {
 
 function RadioLogo({
   src,
+  fallbackSrc = '',
   alt = '',
   className = '',
   placeholderClassName = '',
@@ -51,13 +52,31 @@ function RadioLogo({
 }) {
   const [resolvedSrc, setResolvedSrc] = useState('');
   const [failed, setFailed] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setFailed(false);
+    setUsingFallback(false);
     setResolvedSrc('');
 
-    resolveLogoUrl(src)
+    // Resout src en priorite, sinon bascule immediatement sur fallbackSrc.
+    const primary = src || '';
+    if (!primary && fallbackSrc) {
+      setUsingFallback(true);
+      resolveLogoUrl(fallbackSrc)
+        .then((url) => {
+          if (!cancelled) setResolvedSrc(url || '');
+        })
+        .catch(() => {
+          if (!cancelled) setFailed(true);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    resolveLogoUrl(primary)
       .then((url) => {
         if (!cancelled) setResolvedSrc(url || '');
       })
@@ -68,10 +87,22 @@ function RadioLogo({
     return () => {
       cancelled = true;
     };
-  }, [src]);
+  }, [src, fallbackSrc]);
 
   const effectivePlaceholderClass = placeholderClassName || className;
   const fallbackNode = placeholder ?? <Music size={20} />;
+
+  const tryFallbackOnError = () => {
+    if (fallbackSrc && !usingFallback) {
+      setUsingFallback(true);
+      setFailed(false);
+      resolveLogoUrl(fallbackSrc)
+        .then((url) => setResolvedSrc(url || ''))
+        .catch(() => setFailed(true));
+      return;
+    }
+    setFailed(true);
+  };
 
   if (!resolvedSrc || failed) {
     return (
@@ -107,7 +138,7 @@ function RadioLogo({
         src={resolvedSrc}
         alt={alt}
         loading={loading}
-        onError={() => setFailed(true)}
+        onError={tryFallbackOnError}
         style={{
           width: '100%',
           height: '100%',

@@ -63,6 +63,7 @@ function SonosFavorites({ favorites, favoritesLoading, loadFavorites, playFavori
             >
               <RadioLogo
                 src={fav.albumArtURI}
+                fallbackSrc={fav.service?.logo || ''}
                 alt=""
                 className="sonos-favs-art"
                 placeholderClassName="sonos-favs-art sonos-favs-art-ph"

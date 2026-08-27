@@ -35,6 +35,7 @@ function SonosNowPlaying({ displayState }) {
       <div className="sonos-np-art-wrap">
         <RadioLogo
           src={displayState.albumArtURI}
+          fallbackSrc={displayState.service?.logo || ''}
           alt="Album art"
           className="sonos-np-art"
           placeholderClassName="sonos-np-art sonos-np-art-placeholder"

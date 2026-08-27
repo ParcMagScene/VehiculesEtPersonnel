@@ -141,7 +141,7 @@ function DisplayDashboardPanel({ currentUser }) {
   return (
     <div className="display-dashboard">
       {/* Sous-onglets Configuration TV */}
-      <Tabs value={activeTab} onChange={handleTabChange}>
+      <Tabs value={activeTab} onChange={handleTabChange} className="display-dashboard-tabs">
         {/* Corps — split layout : tâches | config | divider | aperçu TV */}
         <div className="display-body split" ref={bodyRef}>
           {/* Sidebar tâches du jour + Sonos */}

@@ -770,4 +770,12 @@ footer {
   }
 }
 
+/* ═══════════ MODE EMBED (iframe preview/direct) ═══════════
+   Active quand ?preview=1 ou ?tvScale=X est present dans l'URL.
+   Force le rendu desktop TV meme sur iframes etroites, sinon la
+   media query (max-width: 768px) affiche a tort la navigation
+   mobile Evenements / Recurrents. */
+html.tv-embed #mobile-tabs { display: none !important; }
+html.tv-embed body { padding-bottom: 0 !important; overflow: hidden !important; }
+html.tv-embed .tab-content { display: block !important; }
 

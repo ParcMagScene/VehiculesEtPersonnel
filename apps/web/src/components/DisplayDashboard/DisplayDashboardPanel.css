@@ -2408,6 +2408,16 @@
   display: flex;
 }
 
+/* Force le composant Tabs (design system) a prendre toute la hauteur restante
+   pour que .display-tab-content (overflow-y: auto) puisse scroller. Sans ca,
+   .ui-tabs prend la hauteur naturelle du contenu et le scroll ne se declenche
+   jamais (constate onglet Alertes avec 20+ sections). */
+.ui-tabs.display-dashboard-tabs {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .display-tab-content {
   flex: 1;
   overflow-y: auto;

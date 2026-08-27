@@ -469,8 +469,8 @@ footer {
   to { bottom: 20px; opacity: 1; }
 }
 #sonos-album-art {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   border-radius: var(--radius-md-lg);
   object-fit: cover;
   flex-shrink: 0;

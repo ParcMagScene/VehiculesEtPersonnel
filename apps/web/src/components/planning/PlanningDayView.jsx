@@ -465,12 +465,25 @@ const PlanningRecurringPanel = React.memo(function PlanningRecurringPanel({
             </div>
             <div className="recurring-item-actions">
               <Tooltip content="Modifier">
-                <Button variant="ghost" onClick={() => setRecurringForm({ ...rt })}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  aria-label="Modifier"
+                  onClick={() => setRecurringForm({ ...rt })}
+                >
                   <Edit2 size={14} />
                 </Button>
               </Tooltip>
               <Tooltip content="Supprimer">
-                <Button variant="ghost" className="delete" onClick={() => onDelete(rt.id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  className="delete"
+                  aria-label="Supprimer"
+                  onClick={() => onDelete(rt.id)}
+                >
                   <Trash2 size={14} />
                 </Button>
               </Tooltip>

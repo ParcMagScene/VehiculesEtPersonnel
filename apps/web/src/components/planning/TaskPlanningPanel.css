@@ -2111,24 +2111,28 @@
 .task-planning-panel .recurring-item-actions {
   display: flex;
   gap: var(--space-1);
+  flex-shrink: 0;
 }
-.task-planning-panel .recurring-item-actions button {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
+.task-planning-panel .recurring-item-actions .ui-btn {
   color: var(--text-muted);
+}
+.task-planning-panel .recurring-item-actions .ui-btn:hover:not(:disabled) {
+  background: var(--surface-tertiary);
+  color: var(--text-body);
+}
+.task-planning-panel .recurring-item-actions .ui-btn.delete:hover:not(:disabled) {
+  color: var(--theme-danger);
+}
+/* Reset override CSS local qui forcait 28px et cachait les DS Buttons. */
+.task-planning-panel .recurring-item-actions button {
+  width: auto;
+  height: auto;
+  border: none;
+  background: transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.task-planning-panel .recurring-item-actions button:hover {
-  background: var(--surface-tertiary);
-}
-.task-planning-panel .recurring-item-actions button.delete:hover {
-  color: var(--theme-danger);
 }
 
 /* ═══ iCal Manager ═══ */

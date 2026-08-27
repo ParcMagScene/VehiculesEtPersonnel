@@ -49,6 +49,7 @@ function MobileSonosNowPlaying({ displayState, onNext, onPrevious }) {
       >
         <RadioLogo
           src={displayState.albumArtURI}
+          fallbackSrc={displayState.service?.logo || ''}
           alt="Album art"
           className="mobile-sonos-art"
           placeholderClassName="mobile-sonos-art-placeholder"

@@ -108,24 +108,51 @@ function getRuleForSection(db, section) {
 /**
  * Calcule les alertes actives pour un lot de taches du jour.
  * Une alerte est active si :
- *   - la section a une regle enabled
+ *   - la section a une regle enabled OU la tache est recurrente avec alert_enabled=1
  *   - la tache a un `time` (HH:MM)
  *   - `now >= (task.time - offsetMinutes)` cote heure locale
  *   - la tache n'est pas 'done' / 'cancelled'
  *   - pas d'acquittement dans task_alert_acks pour ce (taskId, eventDate)
  *
+ * Override par tache recurrente : si dayTask.source_type='recurring', les
+ * colonnes alert_* de recurring_tasks (jointure sur source_id) prennent le
+ * pas sur task_alert_rules.<section>.
+ *
  * @param {import('better-sqlite3').Database} db
  * @param {string} todayISO YYYY-MM-DD
- * @param {Array<{id:string,time:string,section:string,status:string}>} dayTasks
+ * @param {Array<{id:string,time:string,section:string,status:string,source_type?:string,source_id?:string}>} dayTasks
  * @returns {Array<{taskId:string, section:string, soundPath:string, triggeredAt:string, blinkDurationSec:number}>}
  */
 export function computeActiveAlerts(db, todayISO, dayTasks) {
   if (!Array.isArray(dayTasks) || dayTasks.length === 0) return [];
 
-  // Precache toutes les regles activees
+  // Precache toutes les regles activees par section
   const enabledRules = db.prepare('SELECT * FROM task_alert_rules WHERE enabled = 1').all();
-  if (enabledRules.length === 0) return [];
   const rulesBySection = new Map(enabledRules.map((r) => [r.section, r]));
+
+  // Precache les overrides par tache recurrente : lookup direct par source_id des recurrentes
+  // presentes dans le lot. Une seule requete IN(...) au lieu d'un JOIN par tache.
+  const recurringSourceIds = Array.from(
+    new Set(
+      dayTasks
+        .filter((t) => t.source_type === 'recurring' && t.source_id)
+        .map((t) => String(t.source_id)),
+    ),
+  );
+  const overridesById = new Map();
+  if (recurringSourceIds.length > 0) {
+    const placeholders = recurringSourceIds.map(() => '?').join(',');
+    const rows = db
+      .prepare(
+        `SELECT id, alert_enabled, alert_sound_path, alert_offset_minutes, alert_blink_duration_sec
+         FROM recurring_tasks
+         WHERE id IN (${placeholders})`,
+      )
+      .all(...recurringSourceIds);
+    for (const r of rows) overridesById.set(String(r.id), r);
+  }
+
+  if (enabledRules.length === 0 && overridesById.size === 0) return [];
 
   // Precache les ack du jour
   const acks = db.prepare('SELECT task_id FROM task_alert_acks WHERE event_date = ?').all(todayISO);
@@ -147,23 +174,42 @@ export function computeActiveAlerts(db, todayISO, dayTasks) {
     if (task.status === 'done' || task.status === 'cancelled') continue;
     if (completedSet.has(String(task.id))) continue;
 
-    const rule = rulesBySection.get(task.section);
-    if (!rule) continue;
+    // 1. Override par tache recurrente si alert_enabled=1
+    let soundPath;
+    let offsetMinutes;
+    let blinkDurationSec;
+    const override =
+      task.source_type === 'recurring' && task.source_id
+        ? overridesById.get(String(task.source_id))
+        : null;
+    if (override && override.alert_enabled) {
+      soundPath = override.alert_sound_path || '/alert-sounds/bell.wav';
+      offsetMinutes = override.alert_offset_minutes || 0;
+      blinkDurationSec = override.alert_blink_duration_sec || 30;
+    } else {
+      // 2. Sinon regle de section (avec fallback : si recurrente n'override pas, on
+      //    respecte la section pour ne pas casser le comportement existant)
+      const rule = rulesBySection.get(task.section);
+      if (!rule) continue;
+      soundPath = rule.sound_path;
+      offsetMinutes = rule.offset_minutes || 0;
+      blinkDurationSec = rule.blink_duration_sec;
+    }
 
     const [hh, mm] = task.time.split(':').map((v) => parseInt(v, 10));
     if (Number.isNaN(hh) || Number.isNaN(mm)) continue;
     const taskMinutes = hh * 60 + mm;
-    const triggerMinutes = taskMinutes - (rule.offset_minutes || 0);
+    const triggerMinutes = taskMinutes - offsetMinutes;
 
     if (nowMinutes >= triggerMinutes) {
       if (ackedSet.has(String(task.id))) continue;
       alerts.push({
         taskId: String(task.id),
         section: task.section,
-        soundPath: rule.sound_path,
+        soundPath,
         triggeredAt: `${todayISO}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`,
-        blinkDurationSec: rule.blink_duration_sec,
-        offsetMinutes: rule.offset_minutes || 0,
+        blinkDurationSec,
+        offsetMinutes,
       });
     }
   }
@@ -322,7 +368,7 @@ export function setupTaskAlertRoutes(app, authenticateToken, requireAdmin, optio
 
       const dayTasks = db
         .prepare(
-          `SELECT id, title, time, section, status
+          `SELECT id, title, time, section, status, source_type, source_id
            FROM task_assignments
            WHERE date = ? AND visible = 1 AND deleted_at IS NULL`,
         )
@@ -387,6 +433,114 @@ export function setupTaskAlertRoutes(app, authenticateToken, requireAdmin, optio
       res.json({ success: true });
     } catch (e) {
       logger.error('alerts ack:', e);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  // ── GET /api/display/alert-rules/recurring — liste des taches recurrentes actives + leur override d'alerte ──
+  app.get('/api/display/alert-rules/recurring', authenticateToken, (_req, res) => {
+    try {
+      const rows = db
+        .prepare(
+          `SELECT id, title, section, time, period, recurrence, day_of_week, day_of_month,
+                  active, alert_enabled, alert_sound_path, alert_offset_minutes, alert_blink_duration_sec
+           FROM recurring_tasks
+           WHERE active = 1
+           ORDER BY title ASC`,
+        )
+        .all();
+      res.json({
+        recurringTasks: rows.map((r) => ({
+          id: r.id,
+          title: r.title,
+          section: r.section,
+          time: r.time,
+          period: r.period,
+          recurrence: r.recurrence,
+          dayOfWeek: r.day_of_week,
+          dayOfMonth: r.day_of_month,
+          alertEnabled: !!r.alert_enabled,
+          alertSoundPath: r.alert_sound_path || '/alert-sounds/bell.wav',
+          alertOffsetMinutes: r.alert_offset_minutes,
+          alertBlinkDurationSec: r.alert_blink_duration_sec,
+        })),
+      });
+    } catch (e) {
+      logger.error('alert-rules recurring list:', e);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  // ── PUT /api/display/alert-rules/recurring/:id — upsert de l'override d'une tache recurrente ──
+  app.put('/api/display/alert-rules/recurring/:id', authenticateToken, requireAdmin, (req, res) => {
+    try {
+      const id = String(req.params.id).slice(0, 64);
+      if (!id) return res.status(400).json({ success: false, error: 'id invalide' });
+
+      const exists = db.prepare('SELECT 1 FROM recurring_tasks WHERE id = ?').get(id);
+      if (!exists) {
+        return res.status(404).json({ success: false, error: 'Tache recurrente introuvable' });
+      }
+
+      const {
+        enabled = false,
+        soundPath = '/alert-sounds/bell.wav',
+        offsetMinutes = 0,
+        blinkDurationSec = 30,
+      } = req.body || {};
+
+      const off = parseInt(offsetMinutes, 10);
+      if (!Number.isFinite(off) || off < 0 || off > MAX_OFFSET_MINUTES) {
+        return res.status(400).json({
+          success: false,
+          error: `offsetMinutes doit être entre 0 et ${MAX_OFFSET_MINUTES}`,
+        });
+      }
+      const dur = parseInt(blinkDurationSec, 10);
+      if (!VALID_BLINK_DURATIONS.has(dur)) {
+        return res.status(400).json({
+          success: false,
+          error: 'blinkDurationSec doit être 15, 30, 60, 300, 900 ou -1',
+        });
+      }
+
+      const safeName = basename(String(soundPath));
+      if (!safeName || safeName === '.' || safeName === '..') {
+        return res.status(400).json({ success: false, error: 'soundPath invalide' });
+      }
+      const soundFile = resolve(alertSoundsDir, safeName);
+      if (!soundFile.startsWith(resolve(alertSoundsDir) + sep)) {
+        return res.status(400).json({ success: false, error: 'soundPath invalide' });
+      }
+      if (!fs.existsSync(soundFile)) {
+        return res.status(400).json({ success: false, error: 'Fichier son introuvable' });
+      }
+      const normalizedSoundPath = `/alert-sounds/${safeName}`;
+
+      db.prepare(
+        `UPDATE recurring_tasks
+           SET alert_enabled = ?, alert_sound_path = ?, alert_offset_minutes = ?, alert_blink_duration_sec = ?
+           WHERE id = ?`,
+      ).run(enabled ? 1 : 0, normalizedSoundPath, off, dur, id);
+
+      const row = db
+        .prepare(
+          `SELECT id, alert_enabled, alert_sound_path, alert_offset_minutes, alert_blink_duration_sec
+             FROM recurring_tasks WHERE id = ?`,
+        )
+        .get(id);
+      res.json({
+        success: true,
+        rule: {
+          id: row.id,
+          alertEnabled: !!row.alert_enabled,
+          alertSoundPath: row.alert_sound_path || '/alert-sounds/bell.wav',
+          alertOffsetMinutes: row.alert_offset_minutes,
+          alertBlinkDurationSec: row.alert_blink_duration_sec,
+        },
+      });
+    } catch (e) {
+      logger.error('alert-rules recurring upsert:', e);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });

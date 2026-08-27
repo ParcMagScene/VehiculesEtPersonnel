@@ -4,7 +4,7 @@
 // un son, un offset (minutes avant l'heure) et une duree de clignotement.
 // ═══════════════════════════════════════════════════════════════
 
-import { Bell, Play, Trash2, Upload } from 'lucide-react';
+import { Bell, Play, Repeat, Trash2, Upload } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, SectionHeader, Select, Spinner } from '@/design-system';
@@ -65,13 +65,16 @@ function TaskAlertsTab({ refreshKey }) {
   const [rules, setRules] = useState({});
   const [sounds, setSounds] = useState({ builtin: [], custom: [] });
   const [savingSection, setSavingSection] = useState(null);
+  const [recurring, setRecurring] = useState([]);
+  const [savingRecurringId, setSavingRecurringId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [rulesRes, soundsRes] = await Promise.all([
+      const [rulesRes, soundsRes, recurringRes] = await Promise.all([
         api.getDisplayAlertRules(),
         api.getDisplayAlertSounds(),
+        api.getDisplayAlertRulesRecurring().catch(() => ({ recurringTasks: [] })),
       ]);
       const byId = {};
       (rulesRes.sections || []).forEach((r) => {
@@ -79,6 +82,7 @@ function TaskAlertsTab({ refreshKey }) {
       });
       setRules(byId);
       setSounds(soundsRes || { builtin: [], custom: [] });
+      setRecurring(Array.isArray(recurringRes?.recurringTasks) ? recurringRes.recurringTasks : []);
     } catch (e) {
       console.error('load alerts:', e);
       toast.error('Impossible de charger les alertes');
@@ -115,6 +119,31 @@ function TaskAlertsTab({ refreshKey }) {
       }
     },
     [rules, toast],
+  );
+
+  const handleSaveRecurring = useCallback(
+    async (id, patch) => {
+      const idx = recurring.findIndex((r) => r.id === id);
+      if (idx === -1) return;
+      const current = recurring[idx];
+      const next = { ...current, ...patch };
+      setRecurring((prev) => prev.map((r) => (r.id === id ? next : r)));
+      setSavingRecurringId(id);
+      try {
+        await api.saveDisplayAlertRuleRecurring(id, {
+          enabled: !!next.alertEnabled,
+          soundPath: next.alertSoundPath,
+          offsetMinutes: Number(next.alertOffsetMinutes) || 0,
+          blinkDurationSec: Number(next.alertBlinkDurationSec) || 30,
+        });
+      } catch (e) {
+        toast.error(`Échec sauvegarde ${current.title || 'tâche'}: ${e?.message || ''}`);
+        setRecurring((prev) => prev.map((r) => (r.id === id ? current : r)));
+      } finally {
+        setSavingRecurringId(null);
+      }
+    },
+    [recurring, toast],
   );
 
   const handlePlayTest = useCallback(
@@ -297,6 +326,149 @@ function TaskAlertsTab({ refreshKey }) {
             );
           })}
         </div>
+      </div>
+
+      <div className="dtv-section">
+        <SectionHeader
+          className="dtv-section-title"
+          icon={<Repeat size={16} />}
+          title="Tâches récurrentes"
+        />
+        <p className="dtv-hint">
+          Override par tâche : chaque tâche récurrente peut avoir son propre son, offset et
+          clignotement. Quand activé, la règle de section (ci-dessus) est ignorée pour cette tâche
+          uniquement.
+        </p>
+
+        {recurring.length === 0 ? (
+          <p className="dtv-hint" style={{ fontStyle: 'italic' }}>
+            Aucune tâche récurrente active. Créez-en depuis Planning → Récurrentes.
+          </p>
+        ) : (
+          <div className="dtv-alerts-table">
+            <div className="dtv-alerts-thead">
+              <div>Tâche</div>
+              <div>Activé</div>
+              <div>Son</div>
+              <div>Déclenchement</div>
+              <div>Clignotement</div>
+              <div>Test</div>
+            </div>
+
+            {recurring.map((rt) => {
+              const isSaving = savingRecurringId === rt.id;
+              return (
+                <div
+                  key={rt.id}
+                  className={`dtv-alerts-row ${rt.alertEnabled ? 'active' : ''} ${isSaving ? 'saving' : ''}`}
+                >
+                  <div className="dtv-alerts-cell dtv-alerts-name">
+                    {rt.title || 'Sans titre'}
+                    {rt.time ? (
+                      <span
+                        className="dtv-hint"
+                        style={{ fontWeight: 400, marginLeft: 8, fontSize: '0.75rem' }}
+                      >
+                        {rt.time.substring(0, 5)}
+                        {rt.recurrence === 'weekly' && rt.dayOfWeek != null
+                          ? ` · ${['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][rt.dayOfWeek]}`
+                          : ''}
+                        {rt.recurrence === 'monthly' && rt.dayOfMonth != null
+                          ? ` · le ${rt.dayOfMonth}`
+                          : ''}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="dtv-alerts-cell">
+                    <label className="dtv-switch">
+                      <input
+                        type="checkbox"
+                        checked={!!rt.alertEnabled}
+                        onChange={(e) =>
+                          handleSaveRecurring(rt.id, { alertEnabled: e.target.checked })
+                        }
+                      />
+                      <span className="dtv-switch-slider" />
+                    </label>
+                  </div>
+
+                  <div className="dtv-alerts-cell">
+                    <Select
+                      value={rt.alertSoundPath}
+                      onChange={(e) =>
+                        handleSaveRecurring(rt.id, { alertSoundPath: e.target.value })
+                      }
+                      disabled={!rt.alertEnabled}
+                    >
+                      <optgroup label="Bibliothèque">
+                        {(sounds.builtin || []).map((s) => (
+                          <option key={s.path} value={s.path}>
+                            {s.label}
+                          </option>
+                        ))}
+                      </optgroup>
+                      {sounds.custom && sounds.custom.length > 0 && (
+                        <optgroup label="Sons custom">
+                          {sounds.custom.map((s) => (
+                            <option key={s.path} value={s.path}>
+                              {s.label}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                    </Select>
+                  </div>
+
+                  <div className="dtv-alerts-cell">
+                    <Select
+                      value={rt.alertOffsetMinutes}
+                      onChange={(e) =>
+                        handleSaveRecurring(rt.id, { alertOffsetMinutes: Number(e.target.value) })
+                      }
+                      disabled={!rt.alertEnabled}
+                    >
+                      {OFFSET_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="dtv-alerts-cell">
+                    <Select
+                      value={rt.alertBlinkDurationSec}
+                      onChange={(e) =>
+                        handleSaveRecurring(rt.id, {
+                          alertBlinkDurationSec: Number(e.target.value),
+                        })
+                      }
+                      disabled={!rt.alertEnabled}
+                    >
+                      {DURATION_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="dtv-alerts-cell">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handlePlayTest(rt.alertSoundPath)}
+                      aria-label={`Écouter ${rt.title}`}
+                    >
+                      <Play size={14} />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="dtv-section">

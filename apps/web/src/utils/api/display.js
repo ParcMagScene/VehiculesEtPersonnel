@@ -246,5 +246,14 @@ export function registerDisplayMethods(ApiClient) {
     async getDisplayPendingAlerts() {
       return this.request('/display/alerts/pending');
     },
+    async getDisplayAlertRulesRecurring() {
+      return this.request('/display/alert-rules/recurring');
+    },
+    async saveDisplayAlertRuleRecurring(id, rule) {
+      return this.request(`/display/alert-rules/recurring/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(rule),
+      });
+    },
   });
 }

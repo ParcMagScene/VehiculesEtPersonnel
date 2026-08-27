@@ -1738,7 +1738,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const dayTasks = db
         .prepare(
           `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.period,
-                ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
+                ta.notes, ta.status, ta.source_type, ta.source_id, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
                 dde.type AS event_type, dde.category AS event_category,
                 COALESCE(
@@ -1885,6 +1885,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
             .filter(Boolean)
             .join(' — ') || '',
         is_recurrent: t.source_type === 'recurring' ? 1 : 0,
+        source_type: t.source_type || null,
+        source_id: t.source_id || null,
       }));
 
       // Ordre metier des sections : suit le flux logistique d'une journee
@@ -2066,7 +2068,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
       const dayTasks = db
         .prepare(
           `SELECT ta.id, ta.title, ta.time, ta.end_time, ta.section, ta.period,
-                ta.notes, ta.status, ta.source_type, ta.google_event_title, ta.affaire_num,
+                ta.notes, ta.status, ta.source_type, ta.source_id, ta.google_event_title, ta.affaire_num,
                 dde.client AS event_client, dde.location AS event_location,
                 dde.type AS event_type, dde.category AS event_category,
                 COALESCE(
@@ -2211,6 +2213,8 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
             .filter(Boolean)
             .join(' — ') || '',
         is_recurrent: t.source_type === 'recurring' ? 1 : 0,
+        source_type: t.source_type || null,
+        source_id: t.source_id || null,
       }));
 
       // Meme tri que /api/display/appearance : type (section) puis chronologie.

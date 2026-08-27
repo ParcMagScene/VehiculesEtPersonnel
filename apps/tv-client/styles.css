@@ -220,7 +220,7 @@ header {
   text-align: left;
 }
 #events-list li, #regular-events-list li, .recurrent-events-list li {
-  padding: 0.8em 1em;
+  padding: 0.4em 1em;
   border-bottom: 1px solid rgba(255,255,255,0.1);
   word-break: break-word;
   background: var(--event-bg-color, #000000);
@@ -320,12 +320,12 @@ main {
   align-items: center;
   justify-content: center;
   gap: 0.5em;
-  height: 70px;
+  height: 56px;
 }
 .col-location .location-icon {
-  width: 64px;
-  min-width: 64px;
-  height: 64px;
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;

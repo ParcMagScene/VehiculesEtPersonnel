@@ -19,9 +19,11 @@
   --space-5: 20px;
   --font-base: 1rem;
   /* Facteur d'agrandissement global du dashboard TV.
-     Surcharge dynamique via display_config.tvScale (cf. main.js).
-     Valeurs recommandees : 1.2 pour ecran DashTV proche, 1.6 - 1.8 pour TV 65" a 4-5 m. */
-  --tv-scale: 1.2;
+     Surcharge dynamique via display_config.tvScale (BDD) ou ?tvScale=X (URL).
+     Defaut : 1.0 (taille native, aucun zoom). Recommandations :
+     - Ecran 1080p a distance de lecture normale : 1.0 (defaut)
+     - TV 65" a 4-5 m : 1.6 - 1.8 */
+  --tv-scale: 1.0;
 }
 
 html, body {
@@ -59,7 +61,7 @@ body {
    - recalcule le layout : aucune compensation width/height necessaire.
    - est supporte nativement par Chromium (Pi), Safari, Firefox 126+. */
 .tv-scale {
-  zoom: var(--tv-scale, 1.2);
+  zoom: var(--tv-scale, 1.0);
   display: flex;
   flex-direction: column;
   flex: 1;

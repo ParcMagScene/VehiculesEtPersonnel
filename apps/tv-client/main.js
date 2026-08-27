@@ -405,7 +405,7 @@ function applyConfig(config) {
   if (config.fontFamily && isSafeCSSValue(config.fontFamily)) root.style.setProperty('--font-family', config.fontFamily);
 
   // ── Scaling global TV (cf. docs/tv-client-scaling.md) ──
-  // Priorite : query string ?tvScale=X > config serveur > default 1.6.
+  // Priorite : query string ?tvScale=X > config serveur > default 1.2.
   // La query string permet a chaque ecran d'ajuster localement sans SQL,
   // utile pour des Pi de resolutions differentes derriere le meme backend.
   const params = new URLSearchParams(window.location.search);
@@ -428,7 +428,7 @@ function applyConfig(config) {
 
 /**
  * Applique le facteur d'agrandissement global au container .tv-scale.
- * Valeur par defaut : 1.6 (recommande pour TV 65" a 4-5 m).
+ * Valeur par defaut : 1.2 (ecran DashTV proche ; passer a 1.6-1.8 pour TV 65" a 4-5 m).
  * Bornes de securite : [0.5, 3] pour eviter tout facteur aberrant.
  * Sans effet sur mobile (media query @media (max-width: 768px)
  * force .tv-scale { transform: none } dans styles.css).
@@ -437,7 +437,7 @@ function applyTvScale(raw) {
   const el = document.querySelector('.tv-scale');
   if (!el) return;
   const parsed = Number(raw);
-  const scale = Number.isFinite(parsed) && parsed >= 0.5 && parsed <= 3 ? parsed : 1.6;
+  const scale = Number.isFinite(parsed) && parsed >= 0.5 && parsed <= 3 ? parsed : 1.2;
   // On ecrit uniquement la variable CSS pour ne pas ecraser la media
   // query mobile (transform:none) via des styles inline.
   el.style.setProperty('--tv-scale', String(scale));

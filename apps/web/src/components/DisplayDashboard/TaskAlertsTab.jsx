@@ -328,7 +328,7 @@ function TaskAlertsTab({ refreshKey }) {
         </div>
       </div>
 
-      <div className="dtv-section">
+      <div className="dtv-section dtv-section-recurring">
         <SectionHeader
           className="dtv-section-title"
           icon={<Repeat size={16} />}

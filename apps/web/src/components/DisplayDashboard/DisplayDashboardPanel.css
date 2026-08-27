@@ -3582,6 +3582,10 @@
   flex-shrink: 0;
 }
 
+.dtv-alerts > .dtv-section-recurring {
+  order: -1;
+}
+
 .dtv-alerts-table {
   display: flex;
   flex-direction: column;

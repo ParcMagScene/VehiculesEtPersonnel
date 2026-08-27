@@ -386,9 +386,42 @@ async function getRadioFavicon(streamUrl) {
 }
 
 /**
+ * Extrait le logo officiel de la station radio depuis le CurrentURIMetaData
+ * d'un GetMediaInfo() Sonos. C'est LE meme mecanisme utilise par l'app Sonos
+ * officielle : le logo vient des metadonnees SMAPI/TuneIn fournies par le
+ * service musical, pas d'un match par titre.
+ *
+ * @param {object} mediaInfo Resultat de avTransportService().GetMediaInfo()
+ * @returns {Promise<{stationName: string|null, logoUrl: string|null}>}
+ */
+async function extractStationMetaFromMediaInfo(mediaInfo) {
+  try {
+    const raw = mediaInfo?.CurrentURIMetaData;
+    if (!raw || typeof raw !== 'string') return { stationName: null, logoUrl: null };
+    // Sonos decode l'XML : les entities &lt; &gt; peuvent apparaitre, xml2js les gere.
+    const { parseString } = await import('xml2js');
+    const parsed = await new Promise((resolve, reject) => {
+      parseString(raw, { explicitArray: false }, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+    const item = parsed?.['DIDL-Lite']?.item;
+    if (!item) return { stationName: null, logoUrl: null };
+    const stationName =
+      typeof item['dc:title'] === 'string' ? item['dc:title'] : item['dc:title']?._ || null;
+    const rawLogo = item['upnp:albumArtURI'];
+    const logoUrl = typeof rawLogo === 'string' ? rawLogo : rawLogo?._ || rawLogo?.[0]?._ || null;
+    return { stationName, logoUrl };
+  } catch {
+    return { stationName: null, logoUrl: null };
+  }
+}
+
+/**
  * Résout l'artwork pour un morceau/radio
  */
-async function resolveArtwork(track, coordinatorIP) {
+async function resolveArtwork(track, coordinatorIP, device) {
   let artUrl =
     track.albumArtURL ||
     (track.albumArtURI ? `http://${coordinatorIP}:1400${track.albumArtURI}` : '');
@@ -402,9 +435,20 @@ async function resolveArtwork(track, coordinatorIP) {
       track.uri.startsWith('x-rincon-stream:'));
 
   if (isRadio) {
-    // 1) Si Sonos fournit deja un artwork embedded (vrai logo officiel de la station
-    //    envoye par le flux SHOUTcast/Icecast/SMAPI - meme rendu que l'app Sonos),
-    //    l'utiliser directement.
+    // 0) Priorite maximale : logo officiel de la station via GetMediaInfo.
+    //    Sonos remplit CurrentURIMetaData avec les metadonnees SMAPI/TuneIn de
+    //    la station (nom + upnp:albumArtURI). C'est ce que l'app Sonos utilise.
+    if (device) {
+      try {
+        const mediaInfo = await withTimeout(device.avTransportService().GetMediaInfo(), 4000);
+        const { logoUrl } = await extractStationMetaFromMediaInfo(mediaInfo);
+        if (logoUrl) return toSonosArtworkUrl(logoUrl, coordinatorIP);
+      } catch {
+        /* GetMediaInfo indisponible ou XML mal forme, on tombe sur les fallback */
+      }
+    }
+
+    // 1) Si Sonos fournit deja un artwork embedded (via track), l'utiliser.
     if (artUrl) return toSonosArtworkUrl(artUrl, coordinatorIP);
 
     // 2) Tenter le favicon ICY via le stream URL
@@ -457,7 +501,7 @@ export async function getSonosNowPlaying() {
 
   if (!track) return { playing: false, state };
 
-  const artUrl = await resolveArtwork(track, coordinatorIP);
+  const artUrl = await resolveArtwork(track, coordinatorIP, device);
 
   // Centralisation du parsing radio : "Artiste - Titre" dans le champ title
   let title = track.title || '';
@@ -536,6 +580,78 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
     } catch (error) {
       logger.warn('Sonos artwork proxy error:', error?.message || error);
       return res.status(502).json({ success: false, error: 'Proxy artwork indisponible' });
+    }
+  });
+
+  // GET /api/sonos/logo?url=<external> — Proxy logos externes (CDN Tunein, Deezer, etc.)
+  // Retourne l'image directement (Content-Type: image/*) pour etre utilisable dans
+  // <img src> sans se heurter a la CSP admin restrictive (imgSrc sans *) ni au
+  // mixed content sur pages https servant des URLs http externes.
+  app.get('/api/sonos/logo', optionalTvToken, sonosReadLimiter, async (req, res) => {
+    try {
+      const src = String(req.query?.url || '').trim();
+      if (!src || src.length > 2048) {
+        return res.status(400).json({ success: false, error: 'url invalide' });
+      }
+
+      let parsed;
+      try {
+        parsed = new URL(src);
+      } catch {
+        return res.status(400).json({ success: false, error: 'URL invalide' });
+      }
+
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return res.status(400).json({ success: false, error: 'Protocole non autorise' });
+      }
+
+      // SSRF: bloque les IP privees / loopback / link-local
+      const host = parsed.hostname.toLowerCase();
+      const BLOCKED_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1']);
+      if (BLOCKED_HOSTS.has(host) || host.endsWith('.local')) {
+        return res.status(400).json({ success: false, error: 'Hote non autorise' });
+      }
+      if (isValidIPv4(host)) {
+        if (
+          host.startsWith('10.') ||
+          host.startsWith('192.168.') ||
+          /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+          host.startsWith('169.254.') ||
+          host.startsWith('127.')
+        ) {
+          return res.status(400).json({ success: false, error: 'IP privee non autorisee' });
+        }
+      }
+
+      const upstream = await withTimeout(
+        fetch(parsed.toString(), {
+          method: 'GET',
+          redirect: 'follow',
+          headers: { Accept: 'image/*,*/*;q=0.8' },
+        }),
+        5000,
+      );
+
+      if (!upstream.ok) {
+        return res.status(502).json({ success: false, error: 'Logo indisponible' });
+      }
+
+      const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
+      if (!contentType.startsWith('image/')) {
+        return res.status(415).json({ success: false, error: 'Format non autorise' });
+      }
+
+      const buf = Buffer.from(await upstream.arrayBuffer());
+      if (buf.byteLength > 2 * 1024 * 1024) {
+        return res.status(413).json({ success: false, error: 'Logo trop volumineux' });
+      }
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.status(200).send(buf);
+    } catch (error) {
+      logger.warn('Sonos logo proxy error:', error?.message || error);
+      return res.status(502).json({ success: false, error: 'Proxy logo indisponible' });
     }
   });
 
@@ -685,7 +801,7 @@ export function setupSonosRoutes(app, authenticateToken, requireAdmin) {
 
       let artUrl = '';
       if (track) {
-        artUrl = await resolveArtwork(track, coordinatorIP);
+        artUrl = await resolveArtwork(track, coordinatorIP, device);
       }
 
       // Parse playMode pour shuffle/repeat

@@ -1474,9 +1474,58 @@ export function setupTaskRoutes(app, authenticateToken) {
   // ─── PUT /api/planning/tasks/:id ───
   app.put('/api/planning/tasks/:id', authenticateToken, validate(taskUpdateSchema), (req, res) => {
     try {
-      const existing = db
+      let existing = db
         .prepare('SELECT * FROM task_assignments WHERE id = ? AND deleted_at IS NULL')
         .get(req.params.id);
+      let targetId = req.params.id;
+      let rolledOverFrom = null;
+
+      // Cas rollover minuit : la tâche a été soft-deleted par le cron avec le
+      // suffixe " [reportée]" et une copie active a été créée à J+1.
+      // Si le frontend garde le modal ouvert et sauve après minuit, il envoie
+      // l'ancien id. On redirige transparentement vers le successeur actif.
+      if (!existing) {
+        const softDeleted = db
+          .prepare('SELECT * FROM task_assignments WHERE id = ?')
+          .get(req.params.id);
+        if (
+          softDeleted &&
+          softDeleted.deleted_at &&
+          (softDeleted.notes || '').includes('[reportée]')
+        ) {
+          const successor = db
+            .prepare(
+              `SELECT * FROM task_assignments
+                 WHERE date > ?
+                   AND section = ?
+                   AND title = ?
+                   AND COALESCE(person_id, -1) = COALESCE(?, -1)
+                   AND COALESCE(source_id, '') = COALESCE(?, '')
+                   AND COALESCE(affaire_num, '') = COALESCE(?, '')
+                   AND deleted_at IS NULL
+                 ORDER BY date ASC, created_at ASC LIMIT 1`,
+            )
+            .get(
+              softDeleted.date,
+              softDeleted.section,
+              softDeleted.title,
+              softDeleted.person_id,
+              softDeleted.source_id,
+              softDeleted.affaire_num,
+            );
+          if (successor) {
+            existing = successor;
+            targetId = successor.id;
+            rolledOverFrom = req.params.id;
+            // Si le client renvoie l'ancienne date (cache pré-rollover),
+            // on la remplace par celle du successeur pour ne pas casser le report.
+            if (req.body && req.body.date && req.body.date <= softDeleted.date) {
+              req.body.date = successor.date;
+            }
+          }
+        }
+      }
+
       if (!existing) return res.status(404).json({ success: false, error: 'Tâche non trouvée' });
 
       const {
@@ -1546,7 +1595,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         all_day !== undefined ? (all_day ? 1 : 0) : existing.all_day,
         client_name !== undefined ? client_name : existing.client_name,
         req.user.id,
-        req.params.id,
+        targetId,
       );
 
       // Retourner avec les JOINs
@@ -1564,7 +1613,7 @@ export function setupTaskRoutes(app, authenticateToken) {
       WHERE ta.id = ?
     `,
         )
-        .get(req.params.id);
+        .get(targetId);
 
       // Synchroniser le statut vers le suivi du personnel
       const newStatus = status || existing.status;
@@ -1572,10 +1621,13 @@ export function setupTaskRoutes(app, authenticateToken) {
         const completedValue = newStatus === 'done' ? 1 : null;
         db.prepare('UPDATE tracking_entries SET completed = ? WHERE task_assignment_id = ?').run(
           completedValue,
-          req.params.id,
+          targetId,
         );
       }
 
+      if (rolledOverFrom) {
+        updated.rolled_over_from = rolledOverFrom;
+      }
       res.json(updated);
     } catch (error) {
       logger.error('PUT /api/planning/tasks/:id error:', error);

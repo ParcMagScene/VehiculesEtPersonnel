@@ -3307,6 +3307,62 @@
   font-style: italic;
 }
 
+/* ─── Tâche en alerte : rouge + clignotement jusqu'à acquittement ─── */
+.dash-task-item.alert {
+  border-left-color: var(--theme-danger, #ef4444);
+  background: color-mix(in srgb, var(--theme-danger, #ef4444) 12%, transparent);
+  box-shadow: 0 0 0 1px var(--theme-danger, #ef4444);
+  animation: dash-task-blink 0.9s ease-in-out infinite;
+}
+
+.dash-task-item.alert .dash-task-name {
+  color: var(--theme-danger, #ef4444);
+  font-weight: 700;
+}
+
+@keyframes dash-task-blink {
+  0%,
+  100% {
+    background: color-mix(in srgb, var(--theme-danger, #ef4444) 12%, transparent);
+  }
+  50% {
+    background: color-mix(in srgb, var(--theme-danger, #ef4444) 32%, transparent);
+  }
+}
+
+.dash-task-alert-bell {
+  color: var(--theme-danger, #ef4444);
+  animation: dash-task-bell-shake 0.5s ease-in-out infinite;
+  transform-origin: 50% 20%;
+}
+
+@keyframes dash-task-bell-shake {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+.dash-task-ack-btn.ui-btn {
+  color: var(--theme-danger, #ef4444);
+  background: none;
+  border: none;
+  width: var(--space-4);
+  height: var(--space-4);
+  min-width: var(--space-4);
+  padding: 0;
+  margin-top: var(--space-0-5);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.dash-task-ack-btn.ui-btn:hover {
+  background: color-mix(in srgb, var(--theme-danger, #ef4444) 15%, transparent);
+  border-radius: var(--radius-sm);
+}
+
 /* Toggle visible button */
 .dash-task-visible-btn.ui-btn {
   background: none;

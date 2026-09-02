@@ -6,6 +6,8 @@
 /* eslint-disable no-misleading-character-class */
 
 import {
+  Bell,
+  BellOff,
   Briefcase,
   Check,
   ClipboardList,
@@ -130,6 +132,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collapsedSections, setCollapsedSections] = useState({});
+  const [activeAlertIds, setActiveAlertIds] = useState(() => new Set());
 
   // Section filter
   const [visibleSections, setVisibleSections] = useState(null); // null = all visible
@@ -144,6 +147,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   const [nowPlaying, setNowPlaying] = useState(null);
   const taskInterval = useRef(null);
   const sonosInterval = useRef(null);
+  const alertsInterval = useRef(null);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
@@ -166,6 +170,20 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       setVisibleSections(data.sections); // null = all
     } catch {
       /* ignore */
+    }
+  }, []);
+
+  // ─── Alertes actives (rouge + clignotement sur les tâches concernées) ───
+  const loadActiveAlerts = useCallback(async () => {
+    try {
+      const data = await api.getDisplayPendingAlerts();
+      const ids = new Set((data?.activeAlerts || []).map((a) => String(a.taskId)));
+      setActiveAlertIds((prev) => {
+        if (prev.size === ids.size && [...ids].every((id) => prev.has(id))) return prev;
+        return ids;
+      });
+    } catch {
+      /* ignore erreur transitoire, réessai au prochain tick */
     }
   }, []);
 
@@ -217,11 +235,16 @@ function DashboardTasksSidebar({ refreshKey, style }) {
         clearInterval(sonosInterval.current);
         sonosInterval.current = null;
       }
+      if (alertsInterval.current) {
+        clearInterval(alertsInterval.current);
+        alertsInterval.current = null;
+      }
     };
 
     const startPolling = () => {
       if (!taskInterval.current) taskInterval.current = setInterval(loadTasks, 60000);
       if (!sonosInterval.current) sonosInterval.current = setInterval(loadNowPlaying, 10000);
+      if (!alertsInterval.current) alertsInterval.current = setInterval(loadActiveAlerts, 10000);
     };
 
     const refreshAndResume = () => {
@@ -231,6 +254,7 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       }
       loadTasks();
       loadNowPlaying();
+      loadActiveAlerts();
       startPolling();
     };
 
@@ -247,10 +271,12 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       window.removeEventListener('focus', onFocus);
       stopPolling();
     };
-  }, [loadTasks, loadNowPlaying, loadSidebarConfig, refreshKey]);
+  }, [loadTasks, loadNowPlaying, loadSidebarConfig, loadActiveAlerts, refreshKey]);
 
   // Auto-refresh quand le planning change ailleurs (TaskPlanning, EventTaskModal, mobile, etc.).
   useRefreshSubscription('planning', loadTasks);
+  // Rafraîchir les alertes quand l'utilisateur acquitte depuis TaskAlertBanner.
+  useRefreshSubscription('display', loadActiveAlerts);
 
   // Refresh affaires : géré automatiquement par useAffairesList (bus 'affaires' + 'reservations').
 
@@ -266,6 +292,27 @@ function DashboardTasksSidebar({ refreshKey, style }) {
       }
     },
     [loadTasks, toast],
+  );
+
+  // ─── Acquittement d'une alerte active depuis la ligne de tâche ───
+  const handleAckAlert = useCallback(
+    async (task) => {
+      const id = String(task.id);
+      setActiveAlertIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      try {
+        await api.ackDisplayAlert(task.id);
+        refreshBus.publish('display');
+      } catch {
+        toast.error('Acquittement impossible');
+        loadActiveAlerts();
+      }
+    },
+    [loadActiveAlerts, toast],
   );
 
   // ─── Résoudre la couleur d'une tâche ───
@@ -502,14 +549,29 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                       const isDone = task.status === STATUS.DONE;
                       const isProgress = task.status === 'in_progress';
                       const isHidden = task.visible === 0;
+                      const isAlerted = activeAlertIds.has(String(task.id));
                       const taskColor = getTaskColor(task);
                       const affBadge = getAffaireBadge(task);
                       return (
                         <div
                           key={task.id}
-                          className={`dash-task-item ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''} ${isHidden ? 'hidden-task' : ''}`}
-                          style={{ borderLeftColor: taskColor }}
+                          className={`dash-task-item ${isDone ? 'done' : ''} ${isProgress ? 'in-progress' : ''} ${isHidden ? 'hidden-task' : ''} ${isAlerted ? 'alert' : ''}`}
+                          style={{ borderLeftColor: isAlerted ? undefined : taskColor }}
                         >
+                          {isAlerted && (
+                            <Tooltip content="Acquitter l'alerte" position="bottom">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                iconOnly
+                                className="dash-task-ack-btn"
+                                onClick={() => handleAckAlert(task)}
+                                aria-label="Acquitter l'alerte"
+                              >
+                                <BellOff size={12} />
+                              </Button>
+                            </Tooltip>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -523,7 +585,13 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                           <span
                             className={`dash-task-status ${isDone ? 'done' : isProgress ? 'in-progress' : ''}`}
                           >
-                            {isDone ? <Check size={10} /> : isProgress ? <Clock size={10} /> : null}
+                            {isAlerted ? (
+                              <Bell size={10} className="dash-task-alert-bell" />
+                            ) : isDone ? (
+                              <Check size={10} />
+                            ) : isProgress ? (
+                              <Clock size={10} />
+                            ) : null}
                           </span>
                           <div className="dash-task-info">
                             <div className="dash-task-name-row">

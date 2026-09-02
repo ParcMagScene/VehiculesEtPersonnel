@@ -97,6 +97,7 @@ export const orderSchema = z
     affaire_id: optStr(100),
     supplier_id: optInt,
     supplier_order_number: optStr(100),
+    name: optStr(255),
     status: optStr(50),
     order_date: optDate,
     expected_date: optDate,

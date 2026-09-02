@@ -1,6 +1,6 @@
 import './Header.css';
 
-import { HelpCircle, Moon, Sun, Upload } from 'lucide-react';
+import { Download, HelpCircle, Moon, Sun } from 'lucide-react';
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 
 import { Button, TabBadge, Tooltip } from '@/design-system';
@@ -320,7 +320,7 @@ const Header = ({
                   onClick={() => setShowImportsHub(true)}
                   aria-label="Ouvrir le hub d'imports"
                 >
-                  <Upload size={18} />
+                  <Download size={18} />
                 </Button>
               </Tooltip>
               <Tooltip

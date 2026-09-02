@@ -245,37 +245,17 @@ function applyTaskAlertUI(taskId) {
   const el = findTaskElement(taskId);
   if (!el) return;
   el.classList.add('task-alert-active');
-  if (!el.querySelector('.task-alert-ack-btn')) {
-    const btn = document.createElement('button');
-    btn.className = 'task-alert-ack-btn';
-    btn.type = 'button';
-    btn.setAttribute('aria-label', 'Acquitter l\u2019alerte');
-    btn.textContent = 'Acquitter';
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      ackTaskAlert(taskId);
-    });
-    el.appendChild(btn);
-  }
+  // Pas de bouton Acquitter cote TV kiosk (ecran non-tactile, pas de souris).
+  // L'acquittement se fait depuis le dashboard admin (TaskAlertBanner web).
 }
 
 function removeTaskAlertUI(taskId) {
   const el = findTaskElement(taskId);
   if (!el) return;
   el.classList.remove('task-alert-active');
+  // Compat retro : purger un eventuel bouton legacy encore present dans le DOM.
   const btn = el.querySelector('.task-alert-ack-btn');
   if (btn) btn.remove();
-}
-
-async function ackTaskAlert(taskId) {
-  try {
-    await tvFetch(`${API_BASE}/api/display/alerts/ack/${encodeURIComponent(taskId)}`, {
-      method: 'POST',
-    });
-  } catch (err) {
-    console.warn('Ack alerte impossible:', err.message);
-  }
-  stopTaskAlert(taskId);
 }
 
 function startTaskAlert(alert) {

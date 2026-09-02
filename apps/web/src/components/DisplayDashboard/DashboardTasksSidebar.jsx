@@ -66,8 +66,17 @@ const SECTION_LABEL_RE =
 const EMOJI_RE =
   /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}\u2700-\u27BF]/gu;
 
+// Extrait un numéro d'affaire générique (AF\d{3,}) depuis un texte libre.
+function extractAfFromText(text) {
+  if (!text) return '';
+  const m = String(text).match(/\bAF\s*\d{3,}\b/i);
+  return m ? m[0].toUpperCase().replace(/\s+/g, '') : '';
+}
+
 function stripAfNum(text, task) {
-  const affNum = task.affaire_num || task.affaireNum || '';
+  if (!text) return text;
+  const affNumLinked = task.affaire_num || task.affaireNum || '';
+  const affNum = affNumLinked || extractAfFromText(text);
   if (!affNum) return text;
   const digits = affNum.replace(/^AF/i, '');
   if (!digits) return text;
@@ -105,8 +114,14 @@ function cleanTaskDisplayTitle(task, affaireName) {
     if (t) return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
-  // 3. Fallback : nom de l'affaire > notes
-  const fallback = affaireName || task.notes || '-';
+  // 3. Fallback : nom de l'affaire > notes (peut contenir un AF à retirer)
+  const fallbackRaw = affaireName || task.notes || '-';
+  const fallback =
+    stripAfNum(fallbackRaw, task)
+      .replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '')
+      .replace(/^[\s—–-]+/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim() || '-';
   return fallback.charAt(0).toUpperCase() + fallback.slice(1);
 }
 
@@ -364,7 +379,9 @@ function DashboardTasksSidebar({ refreshKey, style }) {
   // Résoudre badge affaire sur la tâche
   const getAffaireBadge = useCallback(
     (task) => {
-      const affNum = (task.affaire_num || task.affaireNum || '').toUpperCase();
+      const linkedAf = (task.affaire_num || task.affaireNum || '').toUpperCase();
+      const affNum =
+        linkedAf || extractAfFromText(task.title) || extractAfFromText(task.google_event_title);
       if (!affNum) return null;
       const affaire = affairesMap[affNum];
       const typeInfo = affaire?.type ? AFFAIRE_TYPE_MAP[affaire.type] : null;
@@ -495,6 +512,8 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                         >
                           <Button
                             variant="ghost"
+                            size="sm"
+                            iconOnly
                             className={`dash-task-visible-btn ${isHidden ? 'off' : ''}`}
                             onClick={() => handleToggleVisible(task)}
                             title={isHidden ? "Afficher sur l'écran TV" : "Masquer de l'écran TV"}

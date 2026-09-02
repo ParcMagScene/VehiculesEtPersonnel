@@ -719,17 +719,22 @@ footer {
   }
 }
 
-/* Icone cloche animee dans le coin */
+/* Icone cloche animee dans le coin — SVG inline (Lucide Bell) pour ne pas
+   dependre d'une police d'emojis absente sur Chromium Bookworm. */
 .event-item.task-alert-active::before {
-  content: '🔔';
+  content: '';
   position: absolute;
-  right: 6.5em;
+  right: 0.8em;
   top: 50%;
+  width: 1.6em;
+  height: 1.6em;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff3b3b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9'/><path d='M10.3 21a1.94 1.94 0 0 0 3.4 0'/></svg>") center / contain no-repeat;
   transform: translateY(-50%);
-  font-size: 1.4em;
+  transform-origin: 50% 15%;
   animation: task-alert-bell 0.4s ease infinite;
   z-index: 2;
   pointer-events: none;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
 }
 
 @keyframes task-alert-bell {
@@ -737,37 +742,8 @@ footer {
   50%      { transform: translateY(-50%) rotate(12deg); }
 }
 
-/* Bouton "Acquitter" injecte cote JS */
-.task-alert-ack-btn {
-  position: absolute;
-  right: 0.8em;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3;
-  padding: 0.4em 0.9em;
-  font-size: 0.85em;
-  font-weight: 700;
-  color: #fff;
-  background: #ff3b3b;
-  border: 2px solid #fff;
-  border-radius: 0.4em;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-  transition: background 0.15s, transform 0.15s;
-}
-
-.task-alert-ack-btn:hover,
-.task-alert-ack-btn:active {
-  background: #ff5252;
-  transform: translateY(-50%) scale(1.05);
-}
-
 @media (max-width: 800px) {
   .event-item.task-alert-active::before { display: none; }
-  .task-alert-ack-btn {
-    padding: 0.35em 0.7em;
-    font-size: 0.8em;
-  }
 }
 
 /* ═══════════ MODE EMBED (iframe preview/direct) ═══════════

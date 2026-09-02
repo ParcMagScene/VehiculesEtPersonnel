@@ -202,7 +202,12 @@ export const ApproveRequestModal = React.memo(({ request, eligibleData, onConfir
   const pendingLines = requestLines.filter(
     (l) => l.status !== 'approved' && l.status !== 'rejected',
   );
-  const defaultTarget = sameSupplier[0] ? String(sameSupplier[0].id) : 'new';
+  // Pré-sélection : cible mémorisée sur la demande > 1re commande même fournisseur > 'new'
+  const defaultTarget = request?.target_order_id
+    ? String(request.target_order_id)
+    : sameSupplier[0]
+      ? String(sameSupplier[0].id)
+      : 'new';
 
   // Map line.id -> target ('new' | order_id string)
   const [targets, setTargets] = useState(() => {
@@ -272,6 +277,18 @@ export const ApproveRequestModal = React.memo(({ request, eligibleData, onConfir
             <strong>Fournisseur demandé :</strong>{' '}
             {eligibleData?.request_supplier || request?.supplier_name || '— non spécifié —'}
           </div>
+          {request?.target_order_id ? (
+            <div style={{ color: 'var(--theme-accent, #2563eb)' }}>
+              <strong>🎯 Commande cible demandée :</strong>{' '}
+              {(() => {
+                const all = [...sameSupplier, ...otherSupplier];
+                const tgt = all.find((o) => String(o.id) === String(request.target_order_id));
+                return tgt
+                  ? `${tgt.reference}${tgt.name ? ' — ' + tgt.name : ''} (${tgt.supplier_name || '—'})`
+                  : `#${request.target_order_id} (non modifiable, remplacée)`;
+              })()}
+            </div>
+          ) : null}
           <div>
             <strong>{pendingLines.length}</strong> référence{pendingLines.length > 1 ? 's' : ''} à
             dispatcher
@@ -583,7 +600,26 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
     destination: request?.destination || 'Stock',
     destination_other: request?.destination_other || '',
     notes: request?.notes || '',
+    target_order_id: request?.target_order_id ? String(request.target_order_id) : '',
   });
+  const [openOrders, setOpenOrders] = useState([]);
+
+  // Charger les commandes ouvertes (draft/sent) pour permettre de cibler
+  // une commande existante lors de la création/édition de la demande.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getOpenOrders()
+      .then((data) => {
+        if (!cancelled) setOpenOrders(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setOpenOrders([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [lines, setLines] = useState(() => {
     // Préférer les lignes serveur si présentes (édition d'une demande multi-références).
     if (Array.isArray(request?.lines) && request.lines.length > 0) {
@@ -647,6 +683,7 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
     if (!canSave) return;
     const payload = {
       ...common,
+      target_order_id: common.target_order_id ? Number(common.target_order_id) : null,
       lines: validLines.map((l) => ({
         article: l.article,
         ref_code: l.ref_code,
@@ -719,6 +756,37 @@ export const MaterialRequestModal = React.memo(({ request, suppliers, onSave, on
               onChange={(e) => setCommon((c) => ({ ...c, notes: e.target.value }))}
               rows={2}
               placeholder="Informations supplémentaires..."
+            />
+          </FormField>
+          <FormField
+            className="form-field full-width"
+            label="Ajouter à une commande existante (optionnel)"
+          >
+            <EntityCombobox
+              value={common.target_order_id}
+              onChange={(val) => setCommon((c) => ({ ...c, target_order_id: val || '' }))}
+              options={(() => {
+                // Priorise les commandes du même fournisseur si sélectionné
+                const supId = common.supplier_id ? parseInt(common.supplier_id, 10) : null;
+                const same = supId ? openOrders.filter((o) => Number(o.supplier_id) === supId) : [];
+                const others = supId
+                  ? openOrders.filter((o) => Number(o.supplier_id) !== supId)
+                  : openOrders;
+                const fmt = (o, prefix = '') =>
+                  `${prefix}${o.reference}${o.name ? ' — ' + o.name : ''} · ${o.supplier_name || '—'} (${o.items_count || 0} art.)`;
+                return [
+                  ...same.map((o) => ({
+                    id: String(o.id),
+                    label: fmt(o, '[Même fourn.] '),
+                  })),
+                  ...others.map((o) => ({
+                    id: String(o.id),
+                    label: fmt(o, supId ? '[Autre fourn.] ' : ''),
+                  })),
+                ];
+              })()}
+              placeholder="— Nouvelle commande (par défaut) —"
+              allowClear
             />
           </FormField>
         </div>

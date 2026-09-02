@@ -7,7 +7,17 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
   app.get('/api/material-requests', authenticateToken, (req, res) => {
     try {
       const { status, affaire_id, requested_by, search, priority } = req.query;
-      let query = `SELECT mr.*, u.name as requested_by_name_db FROM material_requests mr LEFT JOIN users u ON u.id = mr.requested_by WHERE 1=1`;
+      let query = `SELECT mr.*,
+          u.name as requested_by_name_db,
+          o_target.reference as target_order_reference,
+          o_target.name as target_order_name,
+          o_linked.reference as linked_order_reference,
+          o_linked.name as linked_order_name
+        FROM material_requests mr
+        LEFT JOIN users u ON u.id = mr.requested_by
+        LEFT JOIN orders o_target ON o_target.id = mr.target_order_id
+        LEFT JOIN orders o_linked ON o_linked.id = mr.order_id
+        WHERE 1=1`;
       const params = [];
       if (status) {
         query += ' AND mr.status = ?';
@@ -93,7 +103,26 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         notes,
         ref_code,
         lines,
+        target_order_id,
       } = req.body;
+
+      // Validation de la commande cible (optionnelle) — doit exister et être modifiable
+      let validatedTargetOrderId = null;
+      if (target_order_id) {
+        const targetOrder = db
+          .prepare('SELECT id, status FROM orders WHERE id = ?')
+          .get(Number(target_order_id));
+        if (!targetOrder) {
+          return res.status(400).json({ success: false, error: 'Commande cible introuvable' });
+        }
+        if (!['draft', 'sent'].includes(targetOrder.status)) {
+          return res.status(400).json({
+            success: false,
+            error: 'La commande cible n\u2019est plus modifiable (statut incompatible)',
+          });
+        }
+        validatedTargetOrderId = targetOrder.id;
+      }
 
       // Normaliser : toujours un tableau de lignes en interne.
       const inputLines =
@@ -125,8 +154,8 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         const first = inputLines[0];
         const result = db
           .prepare(
-            `INSERT INTO material_requests (article, supplier_id, supplier_name, quantity, priority, affaire_id, destination, destination_other, notes, ref_code, requested_by, requested_by_name)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO material_requests (article, supplier_id, supplier_name, quantity, priority, affaire_id, destination, destination_other, notes, ref_code, requested_by, requested_by_name, target_order_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .run(
             first.article,
@@ -141,6 +170,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
             first.ref_code,
             req.user.id,
             req.user.name,
+            validatedTargetOrderId,
           );
         const requestId = result.lastInsertRowid;
         const insertLine = db.prepare(
@@ -213,7 +243,30 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         notes,
         ref_code,
         lines,
+        target_order_id,
       } = req.body;
+
+      // Validation de la commande cible (optionnelle) — inchangée si non fournie
+      let nextTargetOrderId = existing.target_order_id;
+      if (target_order_id !== undefined) {
+        if (target_order_id === null || target_order_id === '') {
+          nextTargetOrderId = null;
+        } else {
+          const targetOrder = db
+            .prepare('SELECT id, status FROM orders WHERE id = ?')
+            .get(Number(target_order_id));
+          if (!targetOrder) {
+            return res.status(400).json({ success: false, error: 'Commande cible introuvable' });
+          }
+          if (!['draft', 'sent'].includes(targetOrder.status)) {
+            return res.status(400).json({
+              success: false,
+              error: 'La commande cible n\u2019est plus modifiable (statut incompatible)',
+            });
+          }
+          nextTargetOrderId = targetOrder.id;
+        }
+      }
 
       const normalisedLines =
         Array.isArray(lines) && lines.length > 0
@@ -230,7 +283,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
         const first = normalisedLines?.[0];
         db.prepare(
           `UPDATE material_requests SET article = ?, supplier_id = ?, supplier_name = ?, quantity = ?, priority = ?,
-           affaire_id = ?, destination = ?, destination_other = ?, notes = ?, ref_code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+           affaire_id = ?, destination = ?, destination_other = ?, notes = ?, ref_code = ?, target_order_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
         ).run(
           first?.article ?? article ?? existing.article,
           supplier_id ?? existing.supplier_id,
@@ -242,6 +295,7 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
           destination_other ?? existing.destination_other,
           notes ?? existing.notes,
           first?.ref_code ?? ref_code ?? existing.ref_code,
+          nextTargetOrderId,
           req.params.id,
         );
 
@@ -487,7 +541,15 @@ export function setupMaterialRequestsRoutes(app, authenticateToken, requireAdmin
       }
 
       if (action === 'approve') {
-        const { target_order_id, assignments } = req.body || {};
+        const { target_order_id: bodyTargetOrderId, assignments } = req.body || {};
+        // Fallback : si l'admin n'a rien envoyé mais que le demandeur avait
+        // mémorisé une commande cible sur la demande, on l'utilise par défaut.
+        const target_order_id =
+          bodyTargetOrderId !== undefined && bodyTargetOrderId !== null
+            ? bodyTargetOrderId
+            : request.target_order_id
+              ? String(request.target_order_id)
+              : undefined;
 
         // Charger toutes les lignes pending de la demande
         const lines = db

@@ -93,6 +93,33 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
     }
   });
 
+  // Commandes ouvertes (draft/sent) — accessibles à tous les utilisateurs authentifiés
+  // pour permettre aux demandeurs de cibler une commande existante lors d'une demande de matériel.
+  app.get('/api/orders/open', authenticateToken, (req, res) => {
+    try {
+      const { supplier_id } = req.query;
+      let query = `
+        SELECT o.id, o.reference, o.name, o.status, o.order_date, o.supplier_id,
+          s.name as supplier_name,
+          (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as items_count
+        FROM orders o
+        LEFT JOIN suppliers s ON o.supplier_id = s.id
+        WHERE o.type = 'purchase' AND o.status IN ('draft', 'sent')
+      `;
+      const params = [];
+      if (supplier_id) {
+        query += ' AND o.supplier_id = ?';
+        params.push(supplier_id);
+      }
+      query += ' ORDER BY o.created_at DESC LIMIT 100';
+      const orders = db.prepare(query).all(...params);
+      res.json(orders);
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // Commandes liées aux demandes de l'utilisateur courant (pour utilisateurs simples)
   app.get('/api/orders/my-linked', authenticateToken, (req, res) => {
     try {
@@ -155,6 +182,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         affaire_id,
         supplier_id,
         supplier_order_number,
+        name,
         status = 'draft',
         order_date,
         expected_date,
@@ -207,8 +235,8 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         const result = db
           .prepare(
             `
-          INSERT INTO orders (reference, type, affaire_id, supplier_id, supplier_order_number, status, order_date, expected_date, total_ht, tva_rate, total_ttc, notes, created_by)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO orders (reference, type, affaire_id, supplier_id, supplier_order_number, name, status, order_date, expected_date, total_ht, tva_rate, total_ttc, notes, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
           )
           .run(
@@ -217,6 +245,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
             affaire_id || null,
             supplier_id || null,
             supplier_order_number ? String(supplier_order_number).trim() || null : null,
+            name ? String(name).trim() || null : null,
             status,
             order_date || new Date().toISOString().slice(0, 10),
             expected_date || null,
@@ -279,6 +308,7 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
         affaire_id,
         supplier_id,
         supplier_order_number,
+        name,
         status,
         order_date,
         expected_date,
@@ -289,6 +319,28 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
       } = req.body;
       const existing = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
       if (!existing) return res.status(404).json({ success: false, error: 'Commande non trouvée' });
+
+      // Normalisation : chaîne vide/0 → null (évite violation FK sur supplier_id)
+      const emptyToNull = (v) => (v === '' || v === undefined ? null : v);
+      const normSupplierId =
+        supplier_id === undefined
+          ? existing.supplier_id
+          : supplier_id === '' || supplier_id === 0 || supplier_id === '0'
+            ? null
+            : supplier_id;
+      const normAffaireId =
+        affaire_id === undefined ? existing.affaire_id : emptyToNull(affaire_id);
+      const normExpectedDate =
+        expected_date === undefined ? existing.expected_date : emptyToNull(expected_date);
+      const normReceivedDate =
+        received_date === undefined ? existing.received_date : emptyToNull(received_date);
+
+      // Vérifier le fournisseur si fourni (parité avec POST /api/orders)
+      if (normSupplierId) {
+        const supplier = db.prepare('SELECT id FROM suppliers WHERE id = ?').get(normSupplierId);
+        if (!supplier)
+          return res.status(400).json({ success: false, error: 'Fournisseur introuvable' });
+      }
 
       // Validation transition de statut
       if (status && status !== existing.status) {
@@ -325,20 +377,21 @@ export function setupOrdersRoutes(app, authenticateToken, requireAdmin) {
 
         db.prepare(
           `
-          UPDATE orders SET affaire_id = ?, supplier_id = ?, supplier_order_number = ?, status = ?, order_date = ?, 
+          UPDATE orders SET affaire_id = ?, supplier_id = ?, supplier_order_number = ?, name = ?, status = ?, order_date = ?, 
           expected_date = ?, received_date = ?, total_ht = ?, tva_rate = ?, total_ttc = ?, 
           notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?
         `,
         ).run(
-          affaire_id !== undefined ? affaire_id : existing.affaire_id,
-          supplier_id !== undefined ? supplier_id : existing.supplier_id,
+          normAffaireId,
+          normSupplierId,
           supplier_order_number !== undefined
             ? String(supplier_order_number).trim() || null
             : existing.supplier_order_number,
+          name !== undefined ? (name ? String(name).trim() || null : null) : existing.name,
           status || existing.status,
           order_date || existing.order_date,
-          expected_date !== undefined ? expected_date : existing.expected_date,
-          received_date !== undefined ? received_date : existing.received_date,
+          normExpectedDate,
+          normReceivedDate,
           total_ht,
           finalTvaRate,
           total_ttc,

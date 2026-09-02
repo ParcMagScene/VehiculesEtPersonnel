@@ -45,7 +45,7 @@ export const OrderSlidePanel = React.memo(
         inline
         overlay={false}
         className="orders-slide-panel"
-        title={order.reference}
+        title={order.name ? `${order.reference} — ${order.name}` : order.reference}
         headerActions={
           <Tooltip content="Ouvrir en détail" position="bottom">
             <Button
@@ -62,6 +62,12 @@ export const OrderSlidePanel = React.memo(
           {status.icon} {status.label}
         </StatusBadge>
         <div className="slide-fields">
+          {order.name && (
+            <div className="slide-field">
+              <span>Libellé</span>
+              <strong>{order.name}</strong>
+            </div>
+          )}
           <div className="slide-field">
             <span>Fournisseur</span>
             <strong>{order.supplier_name || '—'}</strong>
@@ -112,6 +118,34 @@ export const OrderSlidePanel = React.memo(
                       {group.totalQty > 1 ? 's' : ''}
                     </span>
                   </div>
+                  <Table className="items-table compact">
+                    <thead>
+                      <tr>
+                        <th>Réf</th>
+                        <th>Désignation</th>
+                        <th>Qté</th>
+                        <th>P.U. HT</th>
+                        <th>Reçu</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.items.map((item) => (
+                        <tr
+                          key={item.id}
+                          className={item.received_qty >= item.quantity ? 'received-row' : ''}
+                        >
+                          <td className="ref-code">{item.ref_code || '—'}</td>
+                          <td>{item.designation}</td>
+                          <td className="center">
+                            {item.quantity}
+                            {item.unit && item.unit !== 'u' ? ` ${item.unit}` : ''}
+                          </td>
+                          <td className="amount">{formatCurrency(item.unit_price_ht)}</td>
+                          <td className="center">{item.received_qty || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
                 </div>
               ))}
             </div>
@@ -341,6 +375,33 @@ export const RequestSlidePanel = React.memo(
             </div>
           )}
         </div>
+        {Array.isArray(request.lines) && request.lines.length > 0 && (
+          <>
+            <h4>Lignes ({request.lines.length})</h4>
+            <Table className="items-table compact">
+              <thead>
+                <tr>
+                  <th>Réf</th>
+                  <th>Article</th>
+                  <th>Qté</th>
+                  {request.lines.some((l) => l.order_id) && <th>Cmd</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {request.lines.map((line) => (
+                  <tr key={line.id}>
+                    <td className="ref-code">{line.ref_code || '—'}</td>
+                    <td>{line.article}</td>
+                    <td className="center">{line.quantity}</td>
+                    {request.lines.some((l) => l.order_id) && (
+                      <td className="center">{line.order_id ? `#${line.order_id}` : '—'}</td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </>
+        )}
         {request.notes && (
           <div className="slide-notes">
             <h4>Notes</h4>

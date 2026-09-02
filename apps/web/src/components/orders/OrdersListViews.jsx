@@ -32,6 +32,7 @@ import { ORDER_STATUS, QUOTE_STATUS, REQUEST_PRIORITY, REQUEST_STATUS } from './
 // ═══ Liste des commandes ═══
 const ORDERS_COLS = {
   ref: 160,
+  name: 200,
   supplier: 180,
   affaire: 140,
   date: 110,
@@ -67,6 +68,10 @@ export const OrdersList = React.memo(
               <th {...getThProps('reference')}>
                 Référence<span className="app-sort-indicator">{getSortIndicator('reference')}</span>
                 <span {...getResizerProps('ref')} />
+              </th>
+              <th {...getThProps('name')}>
+                Libellé<span className="app-sort-indicator">{getSortIndicator('name')}</span>
+                <span {...getResizerProps('name')} />
               </th>
               <th {...getThProps('supplier_name')}>
                 Fournisseur
@@ -108,6 +113,9 @@ export const OrdersList = React.memo(
                 >
                   <td className="ref-cell">
                     <Hash size={14} /> {order.reference}
+                  </td>
+                  <td className="order-name-cell" title={order.name || ''}>
+                    {order.name || <span className="muted">—</span>}
                   </td>
                   <td>{order.supplier_name || '—'}</td>
                   <td className="affaire-cell">
@@ -493,6 +501,7 @@ const REQUESTS_COLS = {
   priority: 130,
   destination: 150,
   supplier: 160,
+  order_label: 180,
   requester: 140,
   status: 140,
   actions: 130,
@@ -521,6 +530,14 @@ export const MaterialRequestsList = React.memo(
         if (col === 'destination')
           return row.destination === 'Autre' ? row.destination_other || 'Autre' : row.destination;
         if (col === 'requester') return row.requested_by_name || row.requested_by_name_db || '';
+        if (col === 'order_label')
+          return (
+            row.linked_order_name ||
+            row.linked_order_reference ||
+            row.target_order_name ||
+            row.target_order_reference ||
+            ''
+          );
         return row[col];
       },
     });
@@ -616,7 +633,21 @@ export const MaterialRequestsList = React.memo(
                       color: 'var(--theme-accent, #2563eb)',
                     }}
                   >
-                    → Commande #{req.order_id}
+                    → {req.linked_order_reference || `Commande #${req.order_id}`}
+                    {req.linked_order_name ? ` — ${req.linked_order_name}` : ''}
+                  </div>
+                )}
+                {!req.order_id && req.target_order_id && (
+                  <div
+                    style={{
+                      marginTop: '0.4rem',
+                      fontSize: '0.72rem',
+                      color: 'var(--theme-text-muted)',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    🎯 Cible : {req.target_order_reference || `Cmd #${req.target_order_id}`}
+                    {req.target_order_name ? ` — ${req.target_order_name}` : ''}
                   </div>
                 )}
                 {req.notes && (
@@ -665,6 +696,11 @@ export const MaterialRequestsList = React.memo(
                 Fournisseur
                 <span className="app-sort-indicator">{getSortIndicator('supplier_name')}</span>
                 <span {...getResizerProps('supplier')} />
+              </th>
+              <th {...getThProps('order_label')}>
+                Libellé cmd
+                <span className="app-sort-indicator">{getSortIndicator('order_label')}</span>
+                <span {...getResizerProps('order_label')} />
               </th>
               <th {...getThProps('requester')}>
                 Demandeur<span className="app-sort-indicator">{getSortIndicator('requester')}</span>
@@ -715,14 +751,40 @@ export const MaterialRequestsList = React.memo(
                         : req.destination}
                     </td>
                     <td>{req.supplier_name || '—'}</td>
+                    <td
+                      className="order-label-cell"
+                      title={req.linked_order_reference || req.target_order_reference || ''}
+                    >
+                      {req.linked_order_reference ? (
+                        <>
+                          <span className="order-link-small">→ {req.linked_order_reference}</span>
+                          {req.linked_order_name ? (
+                            <div className="ref-small">{req.linked_order_name}</div>
+                          ) : null}
+                        </>
+                      ) : req.target_order_reference ? (
+                        <>
+                          <span
+                            className="order-link-small"
+                            style={{ fontStyle: 'italic', opacity: 0.75 }}
+                          >
+                            🎯 {req.target_order_reference}
+                          </span>
+                          {req.target_order_name ? (
+                            <div className="ref-small" style={{ fontStyle: 'italic' }}>
+                              {req.target_order_name}
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
                     <td>{req.requested_by_name || req.requested_by_name_db || '—'}</td>
                     <td>
                       <StatusBadge color={status.color}>
                         {status.icon} {status.label}
                       </StatusBadge>
-                      {req.order_id && (
-                        <span className="order-link-small">→ Cmd #{req.order_id}</span>
-                      )}
                     </td>
                     <td className="actions-cell" onClick={(e) => e.stopPropagation()}>
                       {isAdmin && req.status === STATUS.PENDING && (

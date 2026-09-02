@@ -18,12 +18,10 @@ async function generatePhotoList() {
     const photosDir = join(projectRoot, 'Photos');
     const files = await readdir(photosDir);
     
-    // Filtrer pour ne garder que les images
+    // Filtrer pour ne garder que les images supportées
+    const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
     const photoFiles = files
-      .filter(file => {
-        const ext = file.toLowerCase();
-        return ext.endsWith('.jpg') || ext.endsWith('.jpeg') || ext.endsWith('.png');
-      })
+      .filter((file) => IMAGE_EXTS.some((ext) => file.toLowerCase().endsWith(ext)))
       .sort();
 
     // Générer le fichier JSON

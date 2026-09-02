@@ -26,7 +26,8 @@ watch(photosDir, { recursive: false }, (eventType, filename) => {
   if (!filename) return;
   
   const ext = filename.toLowerCase();
-  if (!ext.endsWith('.jpg') && !ext.endsWith('.jpeg') && !ext.endsWith('.png')) {
+  const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
+  if (!IMAGE_EXTS.some((e) => ext.endsWith(e))) {
     return;
   }
 

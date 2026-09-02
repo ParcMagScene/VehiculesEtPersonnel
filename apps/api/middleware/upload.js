@@ -33,13 +33,13 @@ export const uploadBL = multer({
   storage: createStorage('bl-imports', 'bl'),
   limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
   fileFilter: (_req, file, cb) => {
-    const allowed = /\.(pdf|jpg|jpeg|png|gif|webp|tiff?)$/i;
+    const allowed = /\.(pdf|jpg|jpeg|png|gif|webp|avif|tiff?)$/i;
     if (allowed.test(path.extname(file.originalname))) {
       cb(null, true);
     } else {
       cb(
         new Error(
-          'Type de fichier non supporté. Formats acceptés : PDF, JPG, PNG, GIF, WEBP, TIFF',
+          'Type de fichier non supporté. Formats acceptés : PDF, JPG, PNG, GIF, WEBP, AVIF, TIFF',
         ),
       );
     }

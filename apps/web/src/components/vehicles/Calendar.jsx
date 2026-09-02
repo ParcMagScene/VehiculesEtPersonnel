@@ -2,14 +2,15 @@ import './Calendar.css';
 
 import { format, isSameDay, isSameMonth, isSameWeek, isSameYear, setMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Link, Truck } from 'lucide-react';
-import React, { startTransition, useCallback, useEffect, useState } from 'react';
+import { Briefcase, ChevronLeft, ChevronRight, Link, Truck } from 'lucide-react';
+import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button, Tooltip } from '@/design-system';
+import { Button, EntityCombobox, Tooltip } from '@/design-system';
 
 import { TIMING } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import useWindowWidth from '../../hooks/useWindowWidth';
+import api from '../../utils/api';
 import { formatDateSimple } from '../../utils/formatUtils';
 import MonthSelector from '../MonthSelector';
 import WeekSelector from '../WeekSelector';
@@ -65,8 +66,50 @@ const Calendar = ({
   const [showMonthSelector, setShowMonthSelector] = useState(false);
   const [showWeekSelector, setShowWeekSelector] = useState(false);
   const [showYearSelector, setShowYearSelector] = useState(false);
+  const [selectedAffaire, setSelectedAffaire] = useState('');
+  const [affairesList, setAffairesList] = useState([]);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const windowWidth = useWindowWidth();
+
+  // Charger les affaires une fois pour le sélecteur "Vue par affaire".
+  useEffect(() => {
+    if (view !== 'affaire' || affairesList.length > 0) return;
+    let cancelled = false;
+    api
+      .getAffaires()
+      .then((data) => {
+        if (!cancelled) setAffairesList(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setAffairesList([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [view, affairesList.length]);
+
+  // Vue "affaire" : mêmes calculs qu'une vue semaine, avec véhicules filtrés.
+  const effectiveView = view === 'affaire' ? 'week' : view;
+
+  const normalizedAffaire = String(selectedAffaire || '')
+    .trim()
+    .toUpperCase();
+  const effectiveVehicles = useMemo(() => {
+    if (view !== 'affaire') return vehicles;
+    if (!normalizedAffaire) return [];
+    const ids = new Set(
+      (reservations || [])
+        .filter(
+          (r) =>
+            String(r.affaire || '')
+              .trim()
+              .toUpperCase() === normalizedAffaire,
+        )
+        .map((r) => r.vehicleId)
+        .filter((id) => id != null),
+    );
+    return vehicles.filter((v) => ids.has(v.id));
+  }, [view, normalizedAffaire, vehicles, reservations]);
 
   // ═══ DATA HOOK ═══
   const {
@@ -79,7 +122,14 @@ const Calendar = ({
     availabilityCount,
     allVehicleBlocks,
     gridColumns,
-  } = useCalendarData({ view, currentDate, reservations, maintenances, vehicles, windowWidth });
+  } = useCalendarData({
+    view: effectiveView,
+    currentDate,
+    reservations,
+    maintenances,
+    vehicles: effectiveVehicles,
+    windowWidth,
+  });
 
   // ═══ DRAG HOOK ═══
   const {
@@ -128,7 +178,7 @@ const Calendar = ({
   const goToPrevious = useCallback(() => {
     const d = new Date(currentDate);
     if (view === 'day') d.setDate(d.getDate() - 1);
-    else if (view === 'week') d.setDate(d.getDate() - 7);
+    else if (view === 'week' || view === 'affaire') d.setDate(d.getDate() - 7);
     else if (view === 'month') d.setMonth(d.getMonth() - 1);
     else d.setFullYear(d.getFullYear() - 1);
     startTransition(() => setCurrentDate(d));
@@ -137,7 +187,7 @@ const Calendar = ({
   const goToNext = useCallback(() => {
     const d = new Date(currentDate);
     if (view === 'day') d.setDate(d.getDate() + 1);
-    else if (view === 'week') d.setDate(d.getDate() + 7);
+    else if (view === 'week' || view === 'affaire') d.setDate(d.getDate() + 7);
     else if (view === 'month') d.setMonth(d.getMonth() + 1);
     else d.setFullYear(d.getFullYear() + 1);
     startTransition(() => setCurrentDate(d));
@@ -151,7 +201,7 @@ const Calendar = ({
   const getDateLabel = () => {
     let label = '';
     if (view === 'day') label = format(currentDate, 'EEEE d MMMM yyyy', { locale: fr });
-    else if (view === 'week')
+    else if (view === 'week' || view === 'affaire')
       label = format(currentDate, "'Semaine du' d MMMM yyyy", { locale: fr });
     else if (view === 'month') label = format(currentDate, 'MMMM yyyy', { locale: fr });
     else label = format(currentDate, 'yyyy', { locale: fr });
@@ -161,7 +211,8 @@ const Calendar = ({
   const isCurrentPeriod = () => {
     const today = new Date();
     if (view === 'day') return isSameDay(currentDate, today);
-    if (view === 'week') return isSameWeek(currentDate, today, { weekStartsOn: 1 });
+    if (view === 'week' || view === 'affaire')
+      return isSameWeek(currentDate, today, { weekStartsOn: 1 });
     if (view === 'month') return isSameMonth(currentDate, today);
     return isSameYear(currentDate, today);
   };
@@ -361,7 +412,7 @@ const Calendar = ({
   // ═══ SHARED PROPS for CalendarVehicleRow ═══
   const rowProps = {
     days,
-    view,
+    view: effectiveView,
     resizeState,
     blockDragState,
     blockDragPreview,
@@ -421,6 +472,14 @@ const Calendar = ({
           >
             Mois
           </Button>
+          <Button
+            variant="ghost"
+            className={`cal-nav-view-btn ${view === 'affaire' ? 'active' : ''}`}
+            onClick={() => setView('affaire')}
+            title="Filtrer les véhicules par affaire (semaine)"
+          >
+            <Briefcase size={14} /> Affaire
+          </Button>
         </div>
         <div className="cal-nav-date">
           <Button
@@ -476,6 +535,33 @@ const Calendar = ({
         )}
       </div>
 
+      {view === 'affaire' && (
+        <div className="cal-affaire-selector">
+          <Briefcase size={14} />
+          <span className="cal-affaire-label">Affaire :</span>
+          <EntityCombobox
+            className="cal-affaire-combobox"
+            value={selectedAffaire}
+            onChange={(val) => setSelectedAffaire(val || '')}
+            options={affairesList.map((a) => {
+              const num = a.numeroAffaire || a.numero_affaire || '';
+              const nom = a.nom || a.titre || a.eventName || a.event_name || '';
+              const client = a.client || '';
+              const label = [num, client, nom].filter(Boolean).join(' · ');
+              return { id: num, label: label || num };
+            })}
+            placeholder="Sélectionner une affaire..."
+            allowClear
+          />
+          {selectedAffaire && (
+            <span className="cal-affaire-count">
+              {effectiveVehicles.length} véhicule{effectiveVehicles.length > 1 ? 's' : ''} lié
+              {effectiveVehicles.length > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="calendar">
         {/* Headers */}
         <div className="calendar-headers-row">
@@ -496,7 +582,7 @@ const Calendar = ({
             </Button>
           </div>
           <CalendarHeaders
-            view={view}
+            view={effectiveView}
             days={days}
             currentDate={currentDate}
             gridColumns={gridColumns}
@@ -522,7 +608,7 @@ const Calendar = ({
 
           <div className="calendar-scroll-area" onScroll={handleScroll}>
             <div
-              className={`calendar-grid ${view}-view u-relative`}
+              className={`calendar-grid ${effectiveView}-view u-relative`}
               style={{ gridTemplateColumns: gridColumns }}
             >
               {!collapsedSections.company &&

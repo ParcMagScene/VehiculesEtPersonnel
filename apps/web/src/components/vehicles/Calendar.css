@@ -22,6 +22,32 @@
   flex-shrink: 0;
 }
 
+.cal-affaire-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-4);
+  background: var(--theme-bg-card);
+  border-bottom: 1px solid var(--theme-border);
+  flex-shrink: 0;
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+}
+.cal-affaire-selector .cal-affaire-label {
+  font-weight: 600;
+  color: var(--theme-text-primary);
+}
+.cal-affaire-combobox {
+  flex: 1;
+  min-width: 240px;
+  max-width: 480px;
+}
+.cal-affaire-count {
+  margin-left: auto;
+  font-size: var(--font-xs);
+  color: var(--theme-text-muted);
+}
+
 .cal-nav-views {
   display: flex;
   gap: 2px;

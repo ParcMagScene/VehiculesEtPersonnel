@@ -2,7 +2,7 @@ import './Calendar.css';
 
 import { format, isSameDay, isSameMonth, isSameWeek, isSameYear, setMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Briefcase, ChevronLeft, ChevronRight, Link, Truck } from 'lucide-react';
+import { Briefcase, ChevronLeft, ChevronRight, Link, Plus, Truck } from 'lucide-react';
 import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button, EntityCombobox, Tooltip } from '@/design-system';
@@ -559,6 +559,31 @@ const Calendar = ({
               {effectiveVehicles.length > 1 ? 's' : ''}
             </span>
           )}
+          <Button
+            variant="primary"
+            className="cal-affaire-new-reservation"
+            onClick={() => {
+              const today = new Date(currentDate);
+              setSelectedReservation(null);
+              setSelectedSlot({
+                date: today,
+                startDate: today,
+                endDate: today,
+                period: 'AM',
+                startPeriod: 'AM',
+                endPeriod: 'PM',
+                affaire: selectedAffaire,
+              });
+            }}
+            disabled={!selectedAffaire}
+            title={
+              selectedAffaire
+                ? `Créer une réservation liée à ${selectedAffaire}`
+                : 'Sélectionner une affaire pour créer une réservation'
+            }
+          >
+            <Plus size={14} /> Nouvelle réservation
+          </Button>
         </div>
       )}
 

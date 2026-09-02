@@ -47,6 +47,19 @@
   font-size: var(--font-xs);
   color: var(--theme-text-muted);
 }
+.cal-affaire-new-reservation {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px 12px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cal-affaire-new-reservation:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .cal-nav-views {
   display: flex;

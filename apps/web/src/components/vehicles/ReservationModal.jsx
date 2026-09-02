@@ -82,6 +82,8 @@ const ReservationModal = ({
       return [reservation.affaire];
     } else if (googleEvent?.affaire) {
       return [googleEvent.affaire];
+    } else if (slot?.affaire) {
+      return [slot.affaire];
     }
     return [];
   };

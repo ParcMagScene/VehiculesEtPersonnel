@@ -221,7 +221,10 @@ export const PlanningTaskRow = React.memo(
     const affaireClient = linkedAffaire?.client || '';
     const rawNom = fullTitle || affaireNom || '-';
     const displayNom = rawNom.charAt(0).toUpperCase() + rawNom.slice(1);
-    const displayClient = affaireClient;
+    // Priorise le client saisi/modifié sur la tâche (client_name),
+    // puis celui du display event (event_client), puis celui de l'affaire liée.
+    const displayClient =
+      task.clientName || task.client_name || task.eventClient || task.event_client || affaireClient;
     const inlineNotes = String(task.notes || '')
       .replace(/\s*\[report(?:e|ée)(?:\s+depuis\s+\d{4}-\d{2}-\d{2})?\]/gi, '')
       .trim();

@@ -139,3 +139,6 @@ scripts/_cleanup-*.cjs
 
 # Certificats SSL/TLS
 ssl/
+
+# Runtime display data (sneaky photos/messages)
+apps/api/display-data/

@@ -56,10 +56,77 @@ export function setupTaskRoutes(app, authenticateToken) {
   // PLANIFICATION — TÂCHES — CRUD
   // ═══════════════════════════════════════════════
 
+  // Matérialise les tâches récurrentes actives pour chaque date de la plage
+  // demandée (idempotent : ignore les tâches déjà générées). Nécessaire pour
+  // que la vue semaine et toute vue future affichent les récurrentes sans
+  // attendre le cron 00h00 du jour concerné.
+  function materializeRecurringForRange(fromDate, toDate) {
+    if (!fromDate || !toDate) return;
+    const start = new Date(fromDate + 'T00:00:00');
+    const end = new Date(toDate + 'T00:00:00');
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) return;
+    // Garde-fou : cap à 92 jours pour éviter tout abus (une saison max).
+    if (end - start > 92 * 24 * 3600 * 1000) return;
+
+    const recurring = db.prepare('SELECT * FROM recurring_tasks WHERE active = 1').all();
+    if (recurring.length === 0) return;
+
+    const insertStmt = db.prepare(`
+      INSERT INTO task_assignments (id, date, period, time, section, title, notes, source_type, source_id, status, visible, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'recurring', ?, 'pending', 1, datetime('now'))
+    `);
+    const existsStmt = db.prepare(
+      "SELECT 1 FROM task_assignments WHERE source_type = 'recurring' AND source_id = ? AND date = ?",
+    );
+
+    const cur = new Date(start);
+    while (cur <= end) {
+      const y = cur.getFullYear();
+      const m = String(cur.getMonth() + 1).padStart(2, '0');
+      const d = String(cur.getDate()).padStart(2, '0');
+      const dateStr = `${y}-${m}-${d}`;
+      const dayOfWeek = cur.getDay();
+      const dayOfMonth = cur.getDate();
+
+      for (const rt of recurring) {
+        let shouldGenerate = false;
+        if (rt.recurrence === 'daily') shouldGenerate = true;
+        else if (rt.recurrence === 'weekly' && rt.day_of_week === dayOfWeek) shouldGenerate = true;
+        else if (rt.recurrence === 'monthly' && rt.day_of_month === dayOfMonth)
+          shouldGenerate = true;
+        if (!shouldGenerate) continue;
+        if (existsStmt.get(rt.id, dateStr)) continue;
+        insertStmt.run(
+          crypto.randomUUID().replace(/-/g, ''),
+          dateStr,
+          rt.period,
+          rt.time,
+          rt.section,
+          rt.title,
+          rt.notes,
+          rt.id,
+        );
+      }
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+
   // ─── GET /api/planning/tasks ───
   // Filtres : date, dateFrom, dateTo, person_id, section, status
   app.get('/api/planning/tasks', authenticateToken, (req, res) => {
     try {
+      // Matérialiser les récurrentes pour la plage demandée avant la lecture,
+      // afin que la vue semaine (dateFrom/dateTo) ou une vue jour future les affiche.
+      try {
+        if (req.query.dateFrom && req.query.dateTo) {
+          materializeRecurringForRange(req.query.dateFrom, req.query.dateTo);
+        } else if (req.query.date) {
+          materializeRecurringForRange(req.query.date, req.query.date);
+        }
+      } catch (e) {
+        logger.warn('materializeRecurringForRange error:', e.message);
+      }
+
       let query = `
       SELECT ta.*, 
              dde.affaire_id AS event_affaire_id,

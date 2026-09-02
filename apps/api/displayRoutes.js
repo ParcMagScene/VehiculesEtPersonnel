@@ -82,19 +82,30 @@ const EMOJI_RE =
 const SECTION_LABEL_RE =
   /^(Pr[eé]paration|Chargement|D[eé]part|Enl[eè]vement|Retour|R[eé]cup[eé]ration|Installation|Livraison|Montage|D[eé]montage|Prioritaires?|Secondaires?|Courses?|Divers)\s*[—–\-:]?\s*/i;
 
+// Retire toute occurrence "AF<digits>" du texte (fournie via affaire_num si connue, sinon détectée génériquement).
+function stripAfFromText(text, affaireNum) {
+  if (!text) return text;
+  let out = text;
+  const applyStrip = (num) => {
+    if (!num) return;
+    const digits = num.replace(/^AF/i, '');
+    if (!digits) return;
+    const flexDigits = digits.split('').join('\\s*');
+    const pattern = new RegExp('\\bAF\\s*' + flexDigits + '\\b', 'gi');
+    out = out.replace(pattern, '');
+  };
+  applyStrip(affaireNum);
+  // Filet de sécurité : toute AF\d{3,} restante
+  out = out.replace(/\bAF\s*\d{3,}\b/gi, '');
+  return out;
+}
+
 function cleanTvTitle(t) {
   // Priorité : titre édité par l'utilisateur > titre Google
   let title = (t.title || t.google_event_title || '').replace(EMOJI_RE, '').trim();
   title = title.replace(SECTION_LABEL_RE, '').trim();
   const affNum = t.affaire_num || '';
-  if (affNum) {
-    const digits = affNum.replace(/^AF/i, '');
-    if (digits) {
-      const flexDigits = digits.split('').join('\\s*');
-      const pattern = new RegExp('\\bAF\\s*' + flexDigits + '\\b', 'gi');
-      title = title.replace(pattern, '');
-    }
-  }
+  title = stripAfFromText(title, affNum);
   title = title
     .replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '')
     .replace(/^[\s—–-]+/, '')
@@ -109,6 +120,13 @@ function cleanTvTitle(t) {
       (t.event_client || '').trim() ||
       t.notes ||
       '-';
+  // Le fallback peut lui aussi contenir le numéro AF : re-nettoyage final.
+  title = stripAfFromText(title, affNum)
+    .replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '')
+    .replace(/^[\s—–-]+/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (!title) title = '-';
   // Auto-majuscule
   return title.charAt(0).toUpperCase() + title.slice(1);
 }

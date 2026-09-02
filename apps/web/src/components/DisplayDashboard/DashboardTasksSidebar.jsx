@@ -114,8 +114,14 @@ function cleanTaskDisplayTitle(task, affaireName) {
     if (t) return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
-  // 3. Fallback : nom de l'affaire > notes
-  const fallback = affaireName || task.notes || '-';
+  // 3. Fallback : nom de l'affaire > notes (peut contenir un AF à retirer)
+  const fallbackRaw = affaireName || task.notes || '-';
+  const fallback =
+    stripAfNum(fallbackRaw, task)
+      .replace(/\s*[—–-]\s*(?=[—–-]|$)/g, '')
+      .replace(/^[\s—–-]+/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim() || '-';
   return fallback.charAt(0).toUpperCase() + fallback.slice(1);
 }
 

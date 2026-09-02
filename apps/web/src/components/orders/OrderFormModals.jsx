@@ -22,6 +22,7 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
       type: order?.type || 'purchase',
       supplier_id: order?.supplier_id || '',
       supplier_order_number: order?.supplier_order_number || '',
+      name: order?.name || '',
       affaire_id: order?.affaire_id || '',
       status: order?.status || 'draft',
       order_date: order?.order_date || new Date().toISOString().slice(0, 10),
@@ -105,6 +106,16 @@ export const OrderFormModal = React.memo(({ order, suppliers, onSave, onClose })
                 onChange={(e) => setForm((f) => ({ ...f, supplier_order_number: e.target.value }))}
                 placeholder="Référence du fournisseur (optionnel)"
                 maxLength={100}
+              />
+            </div>
+            <div className="form-field">
+              <label>Libellé</label>
+              <Input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="Nom de la commande (optionnel)"
+                maxLength={255}
               />
             </div>
             <div className="form-field">

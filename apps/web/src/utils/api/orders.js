@@ -33,6 +33,10 @@ export function registerOrdersMethods(ApiClient) {
     async getMyLinkedOrders() {
       return this.request('/orders/my-linked', { skipCamelCase: true });
     },
+    async getOpenOrders(params = {}) {
+      const qs = new URLSearchParams(params).toString();
+      return this.request(`/orders/open${qs ? '?' + qs : ''}`, { skipCamelCase: true });
+    },
     async getOrdersStats() {
       return this.request('/orders/stats', { skipCamelCase: true });
     },

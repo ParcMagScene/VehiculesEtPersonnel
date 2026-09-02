@@ -45,6 +45,7 @@ export const OrderDetailDialog = React.memo(
         <ModalHeader onClose={onClose}>
           <div className="order-detail-title">
             <span>{order.reference}</span>
+            {order.name ? <span className="order-detail-name">— {order.name}</span> : null}
             <StatusBadge color={status.color}>
               {status.icon} {status.label}
             </StatusBadge>

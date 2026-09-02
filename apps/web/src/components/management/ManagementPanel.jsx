@@ -245,6 +245,75 @@ const ManagementPanel = ({
     }
   };
 
+  // Upload d'une photo véhicule depuis n'importe quel picker (newItem ou editingItem).
+  const photoUploadInputRef = useRef(null);
+  const photoUploadTargetRef = useRef(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const openPhotoUpload = (target) => {
+    photoUploadTargetRef.current = target;
+    photoUploadInputRef.current?.click();
+  };
+
+  const handlePhotoUploadChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    try {
+      const res = await api.uploadVehiclePhoto(file);
+      const filename = res?.filename;
+      if (!filename) throw new Error('Upload sans nom de fichier');
+      const photos = await getAvailablePhotos();
+      setAvailablePhotos(photos);
+      if (photoUploadTargetRef.current === 'edit') {
+        setEditingItem((prev) => (prev ? { ...prev, photo: filename } : prev));
+      } else {
+        setNewItem((prev) => ({ ...prev, photo: filename }));
+      }
+      toast.success(`Photo « ${filename} » importée`);
+    } catch (err) {
+      toast.error(`Import photo impossible : ${err.message}`);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  // Boutons "Importer" + "Rafraîchir" partagés par les 4 pickers photo véhicule.
+  const renderPhotoPickerActions = (target) => (
+    <>
+      <Button
+        variant="ghost"
+        type="button"
+        className="upload-photo-btn"
+        title="Importer une photo depuis mon ordinateur"
+        onClick={() => openPhotoUpload(target)}
+        disabled={isUploadingPhoto}
+      >
+        <Upload size={16} />
+      </Button>
+      <Button
+        variant="ghost"
+        type="button"
+        className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
+        onClick={refreshPhotoList}
+        title="Rafraîchir la liste des photos"
+      >
+        <RefreshCw size={16} />
+      </Button>
+    </>
+  );
+
+  const photoUploadHiddenInput = (
+    <input
+      type="file"
+      ref={photoUploadInputRef}
+      accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
+      className="u-hidden"
+      onChange={handlePhotoUploadChange}
+    />
+  );
+
   // Les lieux utilisent maintenant LocationDialog avec PlaceAutocompleteElement
 
   const tabs =
@@ -923,15 +992,8 @@ const ManagementPanel = ({
                       </option>
                     ))}
                   </Select>
-                  <Button
-                    variant="ghost"
-                    type="button"
-                    className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                    onClick={refreshPhotoList}
-                    title="Rafraîchir la liste des photos"
-                  >
-                    <RefreshCw size={16} />
-                  </Button>
+                  {renderPhotoPickerActions('edit')}
+                  {photoUploadHiddenInput}
                 </div>
               </div>
               <div className="color-picker-inline">
@@ -1194,15 +1256,8 @@ const ManagementPanel = ({
                                 </option>
                               ))}
                             </Select>
-                            <Button
-                              variant="ghost"
-                              type="button"
-                              className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                              onClick={refreshPhotoList}
-                              title="Rafraîchir la liste des photos"
-                            >
-                              <RefreshCw size={16} />
-                            </Button>
+                            {renderPhotoPickerActions('new')}
+                            {photoUploadHiddenInput}
                           </div>
                         </div>
                         <div className="color-picker">
@@ -1546,15 +1601,8 @@ const ManagementPanel = ({
                                               </option>
                                             ))}
                                           </Select>
-                                          <Button
-                                            variant="ghost"
-                                            type="button"
-                                            className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                                            onClick={refreshPhotoList}
-                                            title="Rafraîchir la liste des photos"
-                                          >
-                                            <RefreshCw size={16} />
-                                          </Button>
+                                          {renderPhotoPickerActions('edit')}
+                                          {photoUploadHiddenInput}
                                         </div>
                                       </div>
                                       <div className="color-picker-inline">
@@ -1871,15 +1919,8 @@ const ManagementPanel = ({
                                           </option>
                                         ))}
                                       </Select>
-                                      <Button
-                                        variant="ghost"
-                                        type="button"
-                                        className={`refresh-photos-btn ${isRefreshingPhotos ? 'refreshing' : ''}`}
-                                        onClick={refreshPhotoList}
-                                        title="Rafraîchir la liste des photos"
-                                      >
-                                        <RefreshCw size={16} />
-                                      </Button>
+                                      {renderPhotoPickerActions('edit')}
+                                      {photoUploadHiddenInput}
                                     </div>
                                   </div>
                                   <div className="color-picker-inline">

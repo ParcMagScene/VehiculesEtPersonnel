@@ -435,6 +435,31 @@
   animation: spin 1s linear infinite;
 }
 
+.upload-photo-btn {
+  padding: 0.75rem;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-color);
+  border: none;
+  border-radius: var(--btn-radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--btn-transition);
+  min-width: 44px;
+  height: 44px;
+}
+
+.upload-photo-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--btn-primary-hover-shadow);
+}
+
+.upload-photo-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .color-picker {
   display: flex;
   flex-direction: column;

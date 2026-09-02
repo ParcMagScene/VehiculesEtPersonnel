@@ -2,19 +2,22 @@
  * Récupère la liste des photos de véhicules disponibles
  */
 
-export async function getAvailablePhotos() {
-  try {
-    // Charger la liste depuis le fichier JSON généré
-    const response = await fetch('/photos-list.json');
-    if (!response.ok) {
-      throw new Error('Impossible de charger la liste des photos');
-    }
+import api from './api';
 
-    const photos = await response.json();
-    return photos;
+export async function getAvailablePhotos() {
+  // Source de vérité runtime : API backend qui liste /public/Photos.
+  try {
+    const data = await api.getVehiclePhotos();
+    if (data && Array.isArray(data.photos)) return data.photos;
+  } catch {
+    /* fallback JSON statique */
+  }
+  try {
+    const response = await fetch('/photos-list.json');
+    if (!response.ok) throw new Error('Impossible de charger la liste des photos');
+    return await response.json();
   } catch (error) {
     console.error('Erreur lors du chargement de la liste des photos:', error);
-    // Retourner une liste par défaut en cas d'erreur
     return getPhotosSync();
   }
 }

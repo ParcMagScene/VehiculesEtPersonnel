@@ -23,6 +23,16 @@ export function registerVehicleMethods(ApiClient) {
       return this.request(`/vehicles/${id}`, { method: 'DELETE' });
     },
 
+    // Photos de véhicules (galerie /public/Photos)
+    async getVehiclePhotos() {
+      return this.request('/vehicle-photos');
+    },
+    async uploadVehiclePhoto(file) {
+      const formData = new FormData();
+      formData.append('photo', file);
+      return this.requestFormData('/vehicle-photos/upload', formData);
+    },
+
     // Réservations
     async getReservations() {
       return this.request('/reservations');

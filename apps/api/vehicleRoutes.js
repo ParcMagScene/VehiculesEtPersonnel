@@ -1,8 +1,14 @@
+import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
+import multer from 'multer';
+import { dirname, extname, join } from 'path';
+import { fileURLToPath } from 'url';
+
 import { cacheMiddleware, invalidateEntity, listCache } from './cache.js';
 import { reservationsDao } from './dao/reservations.dao.js';
 import db, { addToHistory, getHistory } from './database.js';
 import { alertMaintenanceCreated, alertReservationCreated } from './emailService.js';
 import logger from './logger.js';
+import { validateFileTypes } from './middleware/validateFileType.js';
 import { validate } from './schemas/imports.js';
 import {
   maintenanceSchema,
@@ -10,6 +16,9 @@ import {
   reservationSchema,
   vehicleSchema,
 } from './schemas/vehicles.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Helper : parser les liens Google Drive (rétrocompatible ancien format string simple)
 function parseDriveLinks(value) {
@@ -1481,6 +1490,107 @@ export function setupVehicleRoutes(
     } catch (error) {
       logger.error(error);
       res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // ═══ PHOTOS VÉHICULES (galerie /public/Photos) ═══
+  const vehiclePhotosDir = join(__dirname, '..', '..', 'public', 'Photos');
+  if (!existsSync(vehiclePhotosDir)) mkdirSync(vehiclePhotosDir, { recursive: true });
+
+  const vehiclePhotoStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, vehiclePhotosDir),
+    filename: (_req, file, cb) => {
+      const ext = extname(file.originalname).toLowerCase();
+      const baseName = file.originalname
+        .replace(/\.[^.]+$/, '')
+        .replace(/[^a-zA-Z0-9_\-().]/g, '_');
+      let finalName = baseName + ext;
+      let counter = 1;
+      while (existsSync(join(vehiclePhotosDir, finalName))) {
+        finalName = `${baseName}_${counter}${ext}`;
+        counter++;
+      }
+      cb(null, finalName);
+    },
+  });
+
+  const uploadVehiclePhoto = multer({
+    storage: vehiclePhotoStorage,
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+      if (
+        /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(file.originalname) &&
+        allowedMimes.includes(file.mimetype)
+      ) {
+        cb(null, true);
+      } else {
+        cb(new Error('Format non supporté. Formats acceptés : jpg, png, gif, webp, avif'));
+      }
+    },
+  });
+
+  // GET /api/vehicle-photos — Liste des photos disponibles dans /public/Photos (racine, hors sous-dossiers)
+  app.get('/api/vehicle-photos', authenticateToken, (_req, res) => {
+    try {
+      let photos = [];
+      try {
+        photos = readdirSync(vehiclePhotosDir, { withFileTypes: true })
+          .filter((d) => d.isFile() && /\.(jpg|jpeg|png|gif|webp|avif)$/i.test(d.name))
+          .map((d) => d.name)
+          .sort((a, b) => a.localeCompare(b));
+      } catch (_e) {
+        /* dossier absent */
+      }
+      res.json({ photos });
+    } catch (error) {
+      logger.error('GET /api/vehicle-photos error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // POST /api/vehicle-photos/upload — Upload d'une photo véhicule
+  app.post(
+    '/api/vehicle-photos/upload',
+    authenticateToken,
+    uploadVehiclePhoto.single('photo'),
+    validateFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif']),
+    (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ success: false, error: 'Aucun fichier reçu' });
+        }
+        res.json({ success: true, filename: req.file.filename });
+      } catch (error) {
+        logger.error('POST /api/vehicle-photos/upload error:', error);
+        res.status(500).json({ success: false, error: "Erreur lors de l'upload" });
+      }
+    },
+  );
+
+  // DELETE /api/vehicle-photos/:filename — Supprimer une photo (admin)
+  app.delete('/api/vehicle-photos/:filename', authenticateToken, (req, res) => {
+    try {
+      if (!req.user?.isAdmin) {
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      }
+      const filename = decodeURIComponent(req.params.filename);
+      if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+        return res.status(400).json({ success: false, error: 'Nom de fichier invalide' });
+      }
+      const filePath = join(vehiclePhotosDir, filename);
+      try {
+        unlinkSync(filePath);
+      } catch (err) {
+        if (err.code === 'ENOENT')
+          return res.status(404).json({ success: false, error: 'Photo introuvable' });
+        throw err;
+      }
+      db.prepare('UPDATE vehicles SET photo = NULL WHERE photo = ?').run(filename);
+      res.json({ success: true, deleted: filename });
+    } catch (error) {
+      logger.error('DELETE /api/vehicle-photos error:', error);
+      res.status(500).json({ success: false, error: 'Erreur lors de la suppression' });
     }
   });
 } // end setupVehicleRoutes

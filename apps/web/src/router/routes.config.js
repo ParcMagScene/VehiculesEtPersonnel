@@ -57,7 +57,7 @@ export const DEFAULT_STOCK_SUBTAB = 'vente';
 /**
  * Vues du calendrier véhicules (URL ?view=xxx).
  */
-export const CALENDAR_VIEWS = new Set(['day', 'week', 'month']);
+export const CALENDAR_VIEWS = new Set(['day', 'week', 'month', 'affaire']);
 export const DEFAULT_CALENDAR_VIEW = 'week';
 
 // ─────────────────────────────────────────────────────────────────────────────

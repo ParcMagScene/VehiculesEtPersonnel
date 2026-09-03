@@ -419,8 +419,7 @@
 
 .user-management .action-buttons {
   display: inline-flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
+  flex-flow: row nowrap;
   gap: 2px;
   align-items: center;
   line-height: 0;
@@ -632,7 +631,7 @@
 }
 
 .create-personnel-subtitle {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   font-size: var(--font-base);
   color: var(--theme-text-gray);
   line-height: 1.4;

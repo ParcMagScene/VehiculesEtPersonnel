@@ -1,9 +1,6 @@
 .event-details-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--surface-overlay);
   backdrop-filter: blur(4px);
   isolation: isolate;
@@ -86,10 +83,8 @@
 /* Body */
 .event-details-modal .event-details-body {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding: var(--space-5);
-  padding-right: var(--space-5);
   scroll-padding: 12px;
 }
 

@@ -16,6 +16,7 @@
 .lt-loading svg {
   animation: lt-spin 1.2s linear infinite;
 }
+
 @keyframes lt-spin {
   to {
     transform: rotate(360deg);
@@ -66,6 +67,7 @@
   padding: 0 6px;
   animation: lt-pulse 2s ease-in-out infinite;
 }
+
 @keyframes lt-pulse {
   0%,
   100% {

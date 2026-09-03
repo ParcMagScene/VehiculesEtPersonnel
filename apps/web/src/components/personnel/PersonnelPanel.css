@@ -1473,8 +1473,7 @@
 
 .pp-headers-scroll {
   flex: 1;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden auto;
   pointer-events: none;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
@@ -1514,7 +1513,7 @@
 .pp-header-cell {
   background: var(--theme-gradient);
   color: var(--theme-text-inverse);
-  padding: 0.5rem 0.5rem;
+  padding: 0.5rem;
   font-weight: 600;
   text-align: center;
   border-right: 1px solid var(--glass-light);
@@ -1528,7 +1527,7 @@
 /* Cellule jour */
 .pp-header-cell.day-header {
   font-size: var(--font-base);
-  padding: 0.5rem 0.5rem;
+  padding: 0.5rem;
   height: 3.5rem;
   background: linear-gradient(
     135deg,
@@ -1627,8 +1626,7 @@
 .pp-person-column {
   width: 250px;
   flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: clip;
+  overflow: clip auto;
   border-right: 2px solid var(--theme-border-medium);
   scrollbar-width: none;
   background: var(--theme-bg-card);
@@ -2149,21 +2147,19 @@
 /* ===== Interaction globale : empêcher sélection texte pendant drag ===== */
 .pp-grid.pp-dragging {
   user-select: none;
-  -webkit-user-select: none;
 }
 
 .pp-grid.pp-dragging .pp-slot {
   cursor: crosshair;
 }
 
-.pp-grid.pp-dragging .pp-assignment-block:not(.pp-ghost):not(.pp-preview) {
+.pp-grid.pp-dragging .pp-assignment-block:not(.pp-ghost, .pp-preview) {
   pointer-events: none;
 }
 
 /* Curseur ew-resize pendant le resize */
 .pp-grid.pp-resizing {
   user-select: none;
-  -webkit-user-select: none;
   cursor: ew-resize !important;
 }
 
@@ -2171,6 +2167,6 @@
   cursor: ew-resize !important;
 }
 
-.pp-grid.pp-resizing .pp-assignment-block:not(.pp-ghost):not(.pp-preview) {
+.pp-grid.pp-resizing .pp-assignment-block:not(.pp-ghost, .pp-preview) {
   pointer-events: none;
 }

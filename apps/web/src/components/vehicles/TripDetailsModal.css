@@ -48,8 +48,7 @@
 }
 
 .trip-details-form {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding: 1.5rem;
   flex: 1;
 }
@@ -62,7 +61,7 @@
 }
 
 .trip-event-info-inline {
-  margin: 0.5rem 0 0 0;
+  margin: 0.5rem 0 0;
   background: transparent;
   padding: 0;
 }
@@ -131,7 +130,7 @@
 }
 
 .event-info h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.5rem;
   color: var(--theme-text-heading);
 }
 
@@ -205,7 +204,7 @@
 }
 
 .trip-section h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: var(--theme-text-heading);
   font-size: var(--font-lg);
   display: flex;
@@ -514,7 +513,7 @@
 }
 
 .timeline-title {
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.75rem;
   font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-body);
@@ -717,7 +716,7 @@
 }
 
 .timeline-hint {
-  margin: 0.5rem 0 0 0;
+  margin: 0.5rem 0 0;
   font-size: 0.7rem;
   color: var(--theme-text-muted);
   font-style: italic;
@@ -748,7 +747,6 @@
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  border: 2px solid transparent;
   border-radius: var(--radius-sm);
   background: var(--theme-bg-card);
   color: var(--theme-text-gray);

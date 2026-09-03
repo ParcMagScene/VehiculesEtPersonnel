@@ -339,6 +339,7 @@
   background: color-mix(in srgb, var(--theme-success) 12%, transparent);
   animation: rowHighlightFade 4s ease-out forwards;
 }
+
 @keyframes rowHighlightFade {
   0% {
     background: color-mix(in srgb, var(--theme-success) 20%, transparent);
@@ -1715,6 +1716,7 @@
 .supplier-slide-panel {
   display: none;
 }
+
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
@@ -2236,6 +2238,7 @@
   border-color: var(--theme-success-alt) !important;
   animation: alertPulse 2s ease-in-out infinite;
 }
+
 @keyframes alertPulse {
   0%,
   100% {

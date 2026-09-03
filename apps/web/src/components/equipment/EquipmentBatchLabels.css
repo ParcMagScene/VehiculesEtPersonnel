@@ -440,7 +440,7 @@
   width: 140px;
   height: 70px;
   display: block;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-xs);
 }

@@ -223,14 +223,13 @@
   left: 0;
   width: 100%;
   height: 16px;
-  -webkit-appearance: none;
   appearance: none;
   background: transparent;
   cursor: pointer;
   margin: 0;
 }
 .sonos-pinput::-webkit-slider-thumb {
-  -webkit-appearance: none;
+  appearance: none;
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -293,7 +292,6 @@
 .sonos-vol-slider {
   width: 90px;
   height: 4px;
-  -webkit-appearance: none;
   appearance: none;
   background: var(--theme-border);
   border-radius: 2px;
@@ -301,7 +299,7 @@
   cursor: pointer;
 }
 .sonos-vol-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
+  appearance: none;
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -776,6 +774,7 @@
 .sonos-sources-playable:hover {
   background: var(--theme-primary-light, rgba(var(--theme-primary-rgb, 59, 130, 246), 0.08));
 }
+
 @keyframes sonos-spin-anim {
   from {
     transform: rotate(0deg);

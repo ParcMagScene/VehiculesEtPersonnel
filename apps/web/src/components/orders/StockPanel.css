@@ -173,7 +173,7 @@
 }
 
 .stock-dashboard-section h3 {
-  margin: 0 0 14px 0;
+  margin: 0 0 14px;
   font-size: 0.95rem;
   color: var(--theme-text-dark);
 }
@@ -679,7 +679,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 0 0 14px 0;
+  margin: 0 0 14px;
   font-size: 0.95rem;
   color: var(--theme-text-dark);
 }
@@ -709,7 +709,7 @@
 .stock-detail-desc {
   color: var(--theme-text-secondary);
   font-size: 0.88rem;
-  margin: 0 0 14px 0;
+  margin: 0 0 14px;
 }
 
 .stock-detail-grid {
@@ -1372,7 +1372,6 @@
   .stock-modal {
     max-width: 100%;
     max-height: 100vh;
-    max-height: 100dvh;
     max-height: 100dvh;
     border-radius: 0;
   }

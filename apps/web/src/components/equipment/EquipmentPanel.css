@@ -2067,10 +2067,7 @@
 /* ═══ PANNEAU DE GESTION MATÉRIEL ═══ */
 .eq-management-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: var(--theme-overlay-dark, var(--theme-overlay));
   display: flex;
   justify-content: flex-end;
@@ -2086,8 +2083,7 @@
   max-width: 1400px;
   height: 100vh;
   height: 100dvh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   display: flex;
   flex-direction: column;
   box-shadow: -4px 0 20px var(--shadow-sm);
@@ -2227,7 +2223,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 0 0 10px 0;
+  margin: 0 0 10px;
   font-size: var(--font-md);
   font-weight: 600;
   color: var(--theme-text-primary);
@@ -2831,8 +2827,7 @@
 /* header dialog – gradient du thème */
 .eq-dialog-header {
   display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
+  flex-flow: row nowrap !important;
   align-items: center;
   justify-content: space-between;
   padding: var(--space-5) var(--space-6);
@@ -2845,8 +2840,7 @@
 
 .eq-dialog-title-row {
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
+  flex-flow: row nowrap;
   align-items: center;
   gap: var(--space-3);
   flex: 1;
@@ -3634,10 +3628,7 @@
 /* Preview overlay */
 .eq-media-preview-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--overlay-opaque);
   display: flex;
   align-items: center;
@@ -3838,6 +3829,7 @@
     opacity: 1;
   }
 }
+
 @keyframes eqSlideUp {
   from {
     opacity: 0;
@@ -4180,12 +4172,9 @@ tr.eq-sav-row-clickable {
   margin: 0;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  inset: auto 0 0;
   max-height: 92vh;
   display: flex;
   flex-direction: column;
   transform: none;
-  top: auto;
 }

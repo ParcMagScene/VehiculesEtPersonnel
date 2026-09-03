@@ -172,7 +172,7 @@
   padding: 0.35rem 0.65rem;
   background: var(--theme-primary, #4f46e5);
   border: 1px solid var(--theme-primary-dark, #4338ca);
-  color: #ffffff;
+  color: #fff;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--font-xs);
@@ -365,8 +365,7 @@
   flex: 1;
   max-width: calc(100vw - var(--planning-vehicle-column-width));
   min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto hidden;
   scrollbar-width: none;
   position: relative;
   min-height: 0;
@@ -596,10 +595,7 @@
 .event-block-span.linked::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   border: 2px solid var(--success-tint-bold);
   border-radius: var(--radius-xs);
   pointer-events: none;
@@ -622,13 +618,13 @@
 }
 
 .auth-prompt h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.5rem;
   color: var(--theme-text-body);
   font-size: var(--font-lg);
 }
 
 .auth-prompt p {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: var(--theme-text-gray);
   font-size: var(--font-base);
 }

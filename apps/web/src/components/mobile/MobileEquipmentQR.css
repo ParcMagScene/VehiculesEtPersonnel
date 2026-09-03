@@ -4,11 +4,10 @@
 .m-eq-qr {
   min-height: 100vh;
   min-height: 100dvh;
-  min-height: 100dvh;
   background: var(--theme-bg-page);
   color: var(--theme-text-primary);
   padding-bottom: env(safe-area-inset-bottom, 20px);
-  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -81,7 +80,6 @@
 .m-eq-qr-header button {
   background: rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border: none;
   color: var(--theme-text-inverse);
   cursor: pointer;
@@ -537,7 +535,6 @@
   font-size: var(--font-md);
   font-family: inherit;
   box-sizing: border-box;
-  -webkit-appearance: none;
   appearance: none;
   transition:
     border-color 0.2s,

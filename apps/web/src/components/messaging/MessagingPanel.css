@@ -64,7 +64,7 @@
 .msg-emoji-btn svg,
 .msg-send-btn svg {
   display: block;
-  stroke: currentColor;
+  stroke: currentcolor;
 }
 
 .msg-header-btn:hover {

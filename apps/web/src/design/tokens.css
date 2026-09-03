@@ -62,17 +62,14 @@
   --feedback-success-bg: var(--theme-success-bg);
   --feedback-success-text: var(--theme-success-text);
   --feedback-success-border: var(--theme-success-border);
-
   --feedback-error: var(--theme-danger);
   --feedback-error-bg: var(--theme-danger-bg);
   --feedback-error-text: var(--theme-danger-text);
   --feedback-error-border: var(--theme-danger-border);
-
   --feedback-warning: var(--theme-warning);
   --feedback-warning-bg: var(--theme-warning-bg);
   --feedback-warning-text: var(--theme-warning-text);
   --feedback-warning-border: var(--theme-warning-border);
-
   --feedback-info: var(--theme-info);
   --feedback-info-bg: var(--theme-info-bg);
   --feedback-info-text: var(--theme-info-text);
@@ -300,7 +297,7 @@
   /* Noirs / Blancs */
   --mgmt-color-35: #1f2937;
   --mgmt-color-36: #111827;
-  --mgmt-color-37: #000000;
+  --mgmt-color-37: #000;
   --mgmt-color-38: #e5e7eb;
   --mgmt-color-39: #f3f4f6;
 

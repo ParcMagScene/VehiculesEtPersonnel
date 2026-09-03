@@ -3,7 +3,6 @@
 .qr-landing {
   min-height: 100vh;
   min-height: 100dvh;
-  min-height: 100dvh;
   background: linear-gradient(
     135deg,
     var(--theme-bg-darker) 0%,
@@ -14,7 +13,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-5);
-  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
 }
 

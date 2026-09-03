@@ -496,6 +496,7 @@
 .spin {
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -586,10 +587,9 @@
   color: var(--text-secondary, var(--theme-text-secondary));
 }
 .camera-settings-form .form-group--inline {
-  flex-direction: row;
+  flex-flow: row wrap;
   align-items: center;
   gap: var(--space-4);
-  flex-wrap: wrap;
 }
 .camera-settings-form .form-group--inline label {
   display: flex;

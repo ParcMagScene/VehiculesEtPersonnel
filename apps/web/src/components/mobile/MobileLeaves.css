@@ -388,7 +388,7 @@
   font-size: 0.95rem;
   color: var(--theme-text-primary);
   outline: none;
-  -webkit-appearance: none;
+  appearance: none;
 }
 
 .ml-input:focus {

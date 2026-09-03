@@ -154,11 +154,10 @@
 }
 
 .csv-preview-table-wrapper {
-  overflow-x: auto;
+  overflow: auto;
   border: 1px solid var(--border-primary, var(--theme-border-medium));
   border-radius: var(--radius-md);
   max-height: 350px;
-  overflow-y: auto;
 }
 
 .csv-preview-table {

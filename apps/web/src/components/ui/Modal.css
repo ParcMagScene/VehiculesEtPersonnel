@@ -98,7 +98,7 @@
   /* Rouge unifié pour le bouton Fermer du Design System (light + dark) */
   background: var(--theme-danger, #ef4444);
   border: 1px solid var(--theme-danger-dark, #dc2626);
-  color: #ffffff;
+  color: #fff;
   cursor: pointer;
   transition:
     background var(--duration-fast),

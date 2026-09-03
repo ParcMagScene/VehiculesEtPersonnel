@@ -1,9 +1,6 @@
 .maintenance-dialog-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--theme-overlay);
   display: flex;
   align-items: center;
@@ -121,8 +118,7 @@
 
 .maintenance-dialog-content {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding: var(--space-6);
   padding-right: var(--space-5);
   scroll-padding: 12px;
@@ -738,10 +734,7 @@
 /* Dialogue d'avertissement de conflit */
 .conflict-warning-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--theme-overlay);
   display: flex;
   align-items: center;

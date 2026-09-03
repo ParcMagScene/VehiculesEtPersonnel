@@ -49,7 +49,7 @@
   --theme-text-body: #374151;
   --theme-text-subtle: #475569;
   --theme-text-gray: #6b7280;
-  --theme-text-inverse: #ffffff;
+  --theme-text-inverse: #fff;
 
   /* ─── Fonds — étendus ─── */
   --theme-bg-secondary: #f9fafb;
@@ -671,10 +671,7 @@
 /* Overlay standard */
 .theme-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--theme-overlay-dark);
   backdrop-filter: blur(4px);
   display: flex;
@@ -1180,7 +1177,7 @@
   font-size: var(--font-sm);
   font-weight: 700;
   color: var(--theme-primary-dark);
-  margin: 0 0 12px 0;
+  margin: 0 0 12px;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--theme-bg-indigo-light);
   text-transform: uppercase;

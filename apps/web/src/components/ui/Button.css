@@ -85,7 +85,7 @@
    Fond plein + texte blanc → contraste WCAG AAA en light & dark. */
 .ui-btn--danger {
   background: var(--theme-danger);
-  color: #ffffff;
+  color: #fff;
   border: 1px solid var(--theme-danger-dark);
 }
 .ui-btn--danger:hover:not(:disabled) {
@@ -97,7 +97,7 @@
    Fond plein + texte blanc → contraste WCAG AAA en light & dark. */
 .ui-btn--success {
   background: var(--theme-success);
-  color: #ffffff;
+  color: #fff;
   border: 1px solid var(--theme-success-dark);
 }
 .ui-btn--success:hover:not(:disabled) {
@@ -124,6 +124,7 @@
   animation: ui-btn-spin 1s linear infinite;
   flex-shrink: 0;
 }
+
 @keyframes ui-btn-spin {
   to {
     transform: rotate(360deg);

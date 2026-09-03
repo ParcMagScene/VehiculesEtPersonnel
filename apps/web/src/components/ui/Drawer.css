@@ -62,10 +62,7 @@
 */
 .ui-drawer--inline {
   position: relative;
-  top: auto;
-  bottom: auto;
-  right: auto;
-  left: auto;
+  inset: auto;
   height: 100%;
   align-self: stretch;
   flex-shrink: 0;

@@ -80,7 +80,6 @@
   border-radius: var(--radius-full);
   border: none;
   background: var(--theme-bg-tertiary);
-  color: var(--theme-text-primary);
   color: var(--theme-text-body);
   cursor: pointer;
 }

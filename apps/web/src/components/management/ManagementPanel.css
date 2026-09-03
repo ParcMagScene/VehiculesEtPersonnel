@@ -1,9 +1,6 @@
 .management-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: var(--theme-overlay-dark);
   display: flex;
   justify-content: flex-end;
@@ -18,8 +15,7 @@
   max-width: 1400px;
   height: 100vh;
   height: 100dvh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   box-shadow: -4px 0 20px var(--shadow-sm);
   animation: slideIn 0.3s ease-out;
   scroll-padding: 12px;
@@ -98,8 +94,7 @@
   border-bottom: none;
   border-right: 1px solid var(--theme-border-medium);
   position: static;
-  overflow-x: visible;
-  overflow-y: auto;
+  overflow: visible auto;
   padding: 0.75rem 0;
   box-shadow: none;
   top: auto;
@@ -142,8 +137,7 @@
   flex: 1;
   min-width: 0;
   padding: 1.25rem 1.5rem;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
 }
 
 @keyframes modalFadeIn {
@@ -208,10 +202,7 @@
 .tab-button::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--tab-color);
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -307,8 +298,7 @@
 .management-content {
   padding: 2rem;
   flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
+  overflow: auto;
   min-height: 0;
 }
 
@@ -525,7 +515,7 @@
 }
 
 .items-section h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: var(--theme-bg-dark);
   font-size: var(--font-lg);
 }
@@ -569,7 +559,7 @@
 }
 
 .vehicles-subsection h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: var(--theme-bg-dark);
   font-size: var(--font-lg);
   padding-bottom: 0.5rem;
@@ -601,7 +591,7 @@
   position: relative;
 }
 
-.item-info > div:not(.item-photo):not(.item-color) {
+.item-info > div:not(.item-photo, .item-color) {
   display: grid;
   grid-template-columns: 150px 100px 120px 200px;
   gap: 0.5rem 1rem;
@@ -900,7 +890,7 @@
 }
 
 .sync-section h3 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: var(--theme-bg-dark);
   font-size: var(--font-xl);
 }
@@ -1001,7 +991,7 @@
 }
 
 .sync-instructions h4 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: var(--theme-warning-text);
 }
 
@@ -1034,7 +1024,7 @@
 }
 
 .sync-tips h4 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: var(--theme-text-body);
 }
 
@@ -1243,7 +1233,7 @@
     font-size: var(--font-xl);
   }
 
-  .item-info > div:not(.item-photo):not(.item-color) {
+  .item-info > div:not(.item-photo, .item-color) {
     grid-template-columns: 120px 80px 100px 1fr;
     gap: 0.35rem 0.5rem;
   }
@@ -1296,7 +1286,7 @@
     padding: 1rem;
   }
 
-  .item-info > div:not(.item-photo):not(.item-color) {
+  .item-info > div:not(.item-photo, .item-color) {
     grid-template-columns: 1fr;
     gap: 0.25rem;
   }
@@ -1350,8 +1340,7 @@
     min-width: unset;
     border-right: none;
     border-bottom: 1px solid var(--theme-border-medium);
-    overflow-x: auto;
-    overflow-y: visible;
+    overflow: auto visible;
     padding: 0.25rem 0;
   }
 

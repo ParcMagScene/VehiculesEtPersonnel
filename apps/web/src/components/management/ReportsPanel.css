@@ -183,6 +183,7 @@
 .rp-spin {
   animation: rp-spin 1s linear infinite;
 }
+
 @keyframes rp-spin {
   to {
     transform: rotate(360deg);

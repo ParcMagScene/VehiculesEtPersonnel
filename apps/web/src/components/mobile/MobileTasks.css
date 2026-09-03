@@ -39,6 +39,7 @@
 .mobile-tasks-refresh .spin {
   animation: mt-spin 0.8s linear infinite;
 }
+
 @keyframes mt-spin {
   to {
     transform: rotate(360deg);

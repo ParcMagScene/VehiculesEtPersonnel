@@ -66,23 +66,19 @@
   --btn-height-sm: 26px;
   --btn-height-md: 32px;
   --btn-height-lg: 40px;
-
   --btn-padding: 6px 14px;
   --btn-padding-xs: 2px 6px;
   --btn-padding-sm: 4px 10px;
   --btn-padding-md: 6px 14px;
   --btn-padding-lg: 8px 18px;
-
   --btn-font-size: var(--font-sm);
   --btn-font-size-xs: 10px;
   --btn-font-size-sm: 11px;
   --btn-font-size-md: 13px;
   --btn-font-size-lg: 14px;
-
   --btn-icon-size: 28px;
   --btn-icon-size-sm: 22px;
   --btn-icon-size-lg: 32px;
-
   --close-btn-size: 30px;
 }
 

@@ -40,29 +40,29 @@
   --theme-gradient-alt: #00838f;
 
   /* ─── Texte : blanc pur haute visibilité ─── */
-  --theme-text-primary: #ffffff;
+  --theme-text-primary: #fff;
   --theme-text-secondary: #b0bec5;
   --theme-text-muted: #78909c;
-  --theme-text-heading: #ffffff;
+  --theme-text-heading: #fff;
   --theme-text-dark: #eceff1;
   --theme-text-body: #e0e0e0;
   --theme-text-subtle: #90a4ae;
   --theme-text-gray: #9e9e9e;
-  --theme-text-inverse: #000000;
+  --theme-text-inverse: #000;
 
   /* ─── Fonds : noir profond ─── */
-  --theme-bg-page: #000000;
+  --theme-bg-page: #000;
   --theme-bg-card: #0a1929;
   --theme-bg-secondary: #0d2137;
   --theme-bg-tertiary: #132f4c;
   --theme-bg-hover: #1a3a5c;
-  --theme-bg-dark: #000000;
-  --theme-bg-darker: #000000;
+  --theme-bg-dark: #000;
+  --theme-bg-darker: #000;
   --theme-bg-muted: #37474f;
   --theme-bg-active: #004d40;
   --theme-bg-selected: #003d33;
-  --theme-bg-indigo-light: #002233;
-  --theme-bg-indigo-lighter: #003344;
+  --theme-bg-indigo-light: #023;
+  --theme-bg-indigo-lighter: #034;
   --theme-bg-card-translucent: rgba(10, 25, 41, 0.95);
 
   /* ─── Bordures : visibles, épaisses ─── */
@@ -78,22 +78,19 @@
   --theme-danger-bg: #3e0000;
   --theme-danger-border: #b71c1c;
   --theme-danger-text: #ff8a80;
-
   --theme-success: #69f0ae;
   --theme-success-dark: #00e676;
-  --theme-success-bg: #003300;
+  --theme-success-bg: #030;
   --theme-success-border: #1b5e20;
   --theme-success-text: #a5d6a7;
-
   --theme-warning: #ffd740;
   --theme-warning-dark: #ffc400;
   --theme-warning-bg: #332b00;
   --theme-warning-border: #f57f17;
   --theme-warning-text: #fff59d;
-
   --theme-info: #40c4ff;
   --theme-info-dark: #00b0ff;
-  --theme-info-bg: #002233;
+  --theme-info-bg: #023;
   --theme-info-border: #0277bd;
   --theme-info-text: #80d8ff;
 
@@ -119,10 +116,10 @@
 
   /* ─── Modal header plat ─── */
   --modal-header-bg: #00838f;
-  --modal-header-color: #ffffff;
+  --modal-header-color: #fff;
   --close-btn-bg: rgba(255, 255, 255, 0.1);
   --close-btn-border: rgba(255, 255, 255, 0.2);
-  --close-btn-color: #ffffff;
+  --close-btn-color: #fff;
   --close-btn-hover-bg: rgba(255, 255, 255, 0.25);
 
   /* ─── Boutons ─── */
@@ -138,7 +135,7 @@
 
   /* ─── Couleurs complémentaires ─── */
   --theme-cyan: #00e5ff;
-  --theme-cyan-bg: #002233;
+  --theme-cyan-bg: #023;
   --theme-cyan-text: #80deea;
   --theme-cyan-border: #006064;
   --theme-amber: #ffd740;
@@ -191,16 +188,13 @@
   --btn-height-sm: 40px;
   --btn-height-md: 48px;
   --btn-height-lg: 56px;
-
   --btn-padding: 12px 24px;
   --btn-padding-sm: 8px 16px;
   --btn-padding-lg: 16px 32px;
-
   --btn-font-size: var(--font-md);
   --btn-font-size-sm: 14px;
   --btn-font-size-lg: 18px;
   --btn-radius: 4px;
-
   --btn-icon-size: 40px;
   --btn-icon-size-sm: 32px;
   --btn-icon-size-lg: 48px;

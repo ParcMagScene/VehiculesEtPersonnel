@@ -124,14 +124,13 @@
 .mobile-sonos-seek {
   flex: 1;
   height: 6px;
-  -webkit-appearance: none;
   appearance: none;
   background: var(--theme-border);
   border-radius: 3px;
   outline: none;
 }
 .mobile-sonos-seek::-webkit-slider-thumb {
-  -webkit-appearance: none;
+  appearance: none;
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -197,14 +196,13 @@
 .mobile-sonos-volume-slider {
   flex: 1;
   height: 6px;
-  -webkit-appearance: none;
   appearance: none;
   background: var(--theme-border);
   border-radius: 3px;
   outline: none;
 }
 .mobile-sonos-volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
+  appearance: none;
   width: 20px;
   height: 20px;
   border-radius: 50%;

@@ -42,10 +42,7 @@
 /* Loading overlay pour code splitting */
 .loading-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--theme-overlay);
   display: flex;
   flex-direction: column;
@@ -71,7 +68,6 @@
 .header {
   background: var(--theme-bg-card-translucent, var(--theme-bg-card-translucent));
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--theme-border);
   padding: 0.75rem 2rem;
   box-shadow:
@@ -414,7 +410,7 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px var(--shadow-xl);
-  border: 2px solid currentColor;
+  border: 2px solid currentcolor;
   padding: 0 3px;
 }
 
@@ -448,10 +444,7 @@
 /* Popup des notifications — positionnée en popover sous le header */
 .notifications-popup-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--theme-overlay);
   display: flex;
   align-items: flex-start;
@@ -577,7 +570,7 @@
   font-size: var(--font-md);
   font-weight: 700;
   color: var(--theme-text-heading);
-  margin: 0 0 12px 0;
+  margin: 0 0 12px;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--theme-border-medium);
   display: flex;
@@ -739,8 +732,7 @@
 }
 
 .notification-actions.reject-form {
-  flex-direction: column;
-  flex-wrap: nowrap;
+  flex-flow: column nowrap;
 }
 
 .notification-actions.reported-actions {

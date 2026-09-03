@@ -193,8 +193,7 @@
 
 /* ─── ScrollArea ─── */
 .ui-scroll-area {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
 }
@@ -222,8 +221,7 @@
 }
 
 .ui-scroll-area--horizontal {
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: auto hidden;
 }
 
 .ui-scroll-area--horizontal::-webkit-scrollbar {

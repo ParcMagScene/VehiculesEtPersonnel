@@ -35,7 +35,7 @@
 
   /* ─── Fonds (VS Code Light+ exact) ─── */
   --theme-bg-page: #f3f3f3; /* sideBar.background */
-  --theme-bg-card: #ffffff; /* editor.background */
+  --theme-bg-card: #fff; /* editor.background */
   --theme-bg-card-translucent: rgba(255, 255, 255, 0.97);
   --theme-bg-secondary: #f3f3f3; /* panel.background */
   --theme-bg-tertiary: #e8e8e8; /* list.hoverBackground */
@@ -49,7 +49,7 @@
   --theme-text-secondary: #616161; /* descriptionForeground */
   --theme-text-muted: #858585;
   --theme-text-heading: #1e1e1e;
-  --theme-text-dark: #333333;
+  --theme-text-dark: #333;
   --theme-text-body: #3b3b3b;
   --theme-text-subtle: #6e6e6e;
   --theme-text-gray: #858585;
@@ -58,7 +58,7 @@
   --theme-border: #e5e5e5;
   --theme-border-light: #f0f0f0;
   --theme-border-medium: #d4d4d4;
-  --theme-border-muted: #cccccc;
+  --theme-border-muted: #ccc;
   --theme-border-focus: #0078d4; /* focusBorder */
 
   /* ─── Purple/Accent → VS Code Blue ─── */
@@ -92,7 +92,7 @@
   --focus-ring: 0 0 0 2px rgba(0, 120, 212, 0.25);
 
   /* ─── Couleurs syntaxiques VS Code (utilitaires) ─── */
-  --vscode-keyword: #0000ff; /* if, return, const */
+  --vscode-keyword: #00f; /* if, return, const */
   --vscode-string: #a31515; /* "hello" */
   --vscode-number: #098658; /* 42, 3.14 */
   --vscode-function: #795e26; /* myFunction() */
@@ -100,7 +100,7 @@
   --vscode-comment: #008000; /* // comment */
   --vscode-variable: #001080; /* myVar */
   --vscode-property: #001080;
-  --vscode-operator: #000000;
+  --vscode-operator: #000;
 
   /* ─── Status colors ─── */
   --vscode-error: #e51400;
@@ -113,24 +113,24 @@
 
   /* ─── Badges ─── */
   --vscode-badge-bg: #0078d4;
-  --vscode-badge-fg: #ffffff;
+  --vscode-badge-fg: #fff;
 
   /* ─── Tab/Panel ─── */
-  --vscode-tab-active-bg: #ffffff;
+  --vscode-tab-active-bg: #fff;
   --vscode-tab-inactive-bg: #ececec;
   --vscode-tab-border: #f3f3f3;
-  --vscode-panel-bg: #ffffff;
+  --vscode-panel-bg: #fff;
   --vscode-panel-border: #e5e5e5;
   --vscode-sidebar-bg: #f3f3f3;
   --vscode-activitybar-bg: #2c2c2c;
-  --vscode-activitybar-fg: #ffffff;
+  --vscode-activitybar-fg: #fff;
   --vscode-statusbar-bg: #007acc;
-  --vscode-statusbar-fg: #ffffff;
-  --vscode-titlebar-bg: #dddddd;
-  --vscode-titlebar-fg: #333333;
+  --vscode-statusbar-fg: #fff;
+  --vscode-titlebar-bg: #ddd;
+  --vscode-titlebar-fg: #333;
 
   /* ─── Input ─── */
-  --vscode-input-bg: #ffffff;
+  --vscode-input-bg: #fff;
   --vscode-input-fg: #616161;
   --vscode-input-border: #cecece;
   --vscode-input-focus-border: #0078d4;
@@ -173,11 +173,11 @@
 
   /* ─── Texte ─── */
   --theme-text-primary: #d4d4d4; /* editor.foreground */
-  --theme-text-secondary: #cccccc; /* descriptionForeground */
+  --theme-text-secondary: #ccc; /* descriptionForeground */
   --theme-text-muted: #9a9a9a; /* WCAG AA 5.92:1 on #1e1e1e */
   --theme-text-heading: #e2e2e2;
   --theme-text-dark: #d4d4d4;
-  --theme-text-body: #cccccc;
+  --theme-text-body: #ccc;
   --theme-text-subtle: #9e9e9e;
   --theme-text-gray: #9a9a9a;
 
@@ -208,7 +208,7 @@
   --btn-primary-shadow: 0 1px 4px rgba(0, 120, 212, 0.35);
   --btn-primary-hover-shadow: 0 2px 8px rgba(0, 120, 212, 0.5);
   --btn-secondary-bg: #3c3c3c;
-  --btn-secondary-color: #cccccc;
+  --btn-secondary-color: #ccc;
   --btn-secondary-border: 1px solid #474747;
   --btn-secondary-hover-bg: #474747;
 
@@ -240,7 +240,7 @@
 
   /* ─── Badges ─── */
   --vscode-badge-bg: #007acc;
-  --vscode-badge-fg: #ffffff;
+  --vscode-badge-fg: #fff;
 
   /* ─── Tab/Panel ─── */
   --vscode-tab-active-bg: #1e1e1e;
@@ -249,16 +249,16 @@
   --vscode-panel-bg: #1e1e1e;
   --vscode-panel-border: #3c3c3c;
   --vscode-sidebar-bg: #252526;
-  --vscode-activitybar-bg: #333333;
-  --vscode-activitybar-fg: #ffffff;
+  --vscode-activitybar-bg: #333;
+  --vscode-activitybar-fg: #fff;
   --vscode-statusbar-bg: #007acc;
-  --vscode-statusbar-fg: #ffffff;
+  --vscode-statusbar-fg: #fff;
   --vscode-titlebar-bg: #3c3c3c;
-  --vscode-titlebar-fg: #cccccc;
+  --vscode-titlebar-fg: #ccc;
 
   /* ─── Input ─── */
   --vscode-input-bg: #3c3c3c;
-  --vscode-input-fg: #cccccc;
+  --vscode-input-fg: #ccc;
   --vscode-input-border: #3c3c3c;
   --vscode-input-focus-border: #007fd4;
 
@@ -295,11 +295,11 @@
   --theme-bg-hover: #2a2d2e;
   --theme-bg-muted: #3c3c3c;
   --theme-text-primary: #d4d4d4;
-  --theme-text-secondary: #cccccc;
+  --theme-text-secondary: #ccc;
   --theme-text-muted: #9a9a9a; /* WCAG AA */
   --theme-text-heading: #e2e2e2;
   --theme-text-dark: #d4d4d4;
-  --theme-text-body: #cccccc;
+  --theme-text-body: #ccc;
   --theme-text-subtle: #9e9e9e;
   --theme-text-gray: #9a9a9a;
   --theme-border: #3c3c3c;
@@ -311,7 +311,7 @@
   --shadow-modal: 0 8px 30px rgba(0, 0, 0, 0.4);
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.2);
   --btn-secondary-bg: #3c3c3c;
-  --btn-secondary-color: #cccccc;
+  --btn-secondary-color: #ccc;
   --btn-secondary-border: 1px solid #474747;
   --btn-secondary-hover-bg: #474747;
 }
@@ -322,7 +322,7 @@
    ═══════════════════════════════════════════════════════ */
 [data-palette='vscode-light'][data-theme='dark'] {
   --theme-bg-page: #f3f3f3;
-  --theme-bg-card: #ffffff;
+  --theme-bg-card: #fff;
   --theme-bg-card-translucent: rgba(255, 255, 255, 0.97);
   --theme-bg-secondary: #f3f3f3;
   --theme-bg-tertiary: #e8e8e8;
@@ -332,14 +332,14 @@
   --theme-text-secondary: #616161;
   --theme-text-muted: #737373; /* WCAG AA */
   --theme-text-heading: #1e1e1e;
-  --theme-text-dark: #333333;
+  --theme-text-dark: #333;
   --theme-text-body: #3b3b3b;
   --theme-text-subtle: #6e6e6e;
   --theme-text-gray: #737373;
   --theme-border: #e5e5e5;
   --theme-border-light: #f0f0f0;
   --theme-border-medium: #d4d4d4;
-  --theme-border-muted: #cccccc;
+  --theme-border-muted: #ccc;
   --theme-overlay: rgba(30, 30, 30, 0.4);
   --theme-overlay-dark: rgba(0, 0, 0, 0.55);
   --shadow-modal: 0 8px 30px rgba(0, 0, 0, 0.12);
@@ -565,6 +565,7 @@
   /* Typographie monospace compacte */
   font-family: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
   font-size: var(--font-sm);
+
   --font-2xs: 10px;
   --font-xs: 11px;
   --font-sm: 12px;
@@ -601,7 +602,7 @@
 
   /* Boutons plats (pas de gradient) */
   --btn-primary-bg: var(--theme-primary);
-  --btn-primary-color: #ffffff;
+  --btn-primary-color: #fff;
   --btn-transition: all 0.1s ease;
   --transition-fast: 0.1s ease;
   --transition-normal: 0.1s ease;
@@ -644,7 +645,6 @@
 [data-palette^='vscode'] .header {
   background: var(--vscode-titlebar-bg);
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   border-bottom: 1px solid var(--theme-border);
   padding: 0 12px;
   min-height: 0;
@@ -831,7 +831,7 @@
 
 [data-palette^='vscode'] .theme-btn-primary {
   background: var(--theme-primary);
-  color: #ffffff;
+  color: #fff;
   border-color: var(--theme-primary);
 }
 [data-palette^='vscode'] .theme-btn-primary:hover {
@@ -856,7 +856,7 @@
 }
 [data-palette^='vscode'] .theme-btn-danger:hover {
   background: var(--vscode-error);
-  color: #ffffff;
+  color: #fff;
   transform: none;
 }
 
@@ -888,7 +888,6 @@
 }
 
 [data-palette^='vscode'] select {
-  -webkit-appearance: none;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23808080' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
   background-repeat: no-repeat;

@@ -8,6 +8,7 @@
   color: var(--theme-primary);
   flex-shrink: 0;
 }
+
 @keyframes ui-spin {
   to {
     transform: rotate(360deg);

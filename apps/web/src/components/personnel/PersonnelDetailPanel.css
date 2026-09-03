@@ -82,8 +82,7 @@
 /* ═══ Body ═══ */
 .pdp-slide-body {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding: var(--space-4);
 }
 

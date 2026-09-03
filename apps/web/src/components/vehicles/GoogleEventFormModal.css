@@ -1,9 +1,6 @@
 .event-form-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--theme-overlay);
   backdrop-filter: blur(4px);
   display: flex;
@@ -166,10 +163,7 @@
 .event-form-slider {
   position: absolute;
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: var(--theme-border);
   border-radius: 22px;
   transition: 0.3s;

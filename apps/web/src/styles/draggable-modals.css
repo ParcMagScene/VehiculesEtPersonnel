@@ -8,7 +8,6 @@
 .modal-drag-handle {
   cursor: grab !important;
   user-select: none;
-  -webkit-user-select: none;
 }
 .modal-drag-handle:active,
 .modal-dragging .modal-drag-handle {
@@ -48,8 +47,7 @@
 .modal-draggable-enhanced > .pdf-export-body,
 .modal-draggable-enhanced > .etm-body,
 .modal-draggable-enhanced > .tem-body {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
 }
 
 /* --- Resize handles ---------------------------------------------- */
@@ -83,7 +81,7 @@
   height: 8px;
   border-right: 2px solid var(--drag-handle-color, var(--gray-overlay));
   border-bottom: 2px solid var(--drag-handle-color, var(--gray-overlay));
-  border-radius: 0 0 2px 0;
+  border-radius: 0 0 2px;
 }
 
 .modal-resize-sw {
@@ -140,7 +138,7 @@
   height: 8px;
   border-left: 2px solid var(--drag-handle-color, var(--gray-overlay));
   border-top: 2px solid var(--drag-handle-color, var(--gray-overlay));
-  border-radius: 2px 0 0 0;
+  border-radius: 2px 0 0;
 }
 
 /* Edge handles (bandes fines sur les bords) */
@@ -243,14 +241,13 @@
 .modal-draggable-enhanced[style*='height'] > [class$='-body'],
 .modal-draggable-enhanced[style*='height'] > .modal-body {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   min-height: 0;
 }
 
 /* --- Transition douce pour le reset (double-click) --------------- */
 
-.modal-draggable-enhanced:not(.modal-dragging):not(.modal-resizing) {
+.modal-draggable-enhanced:not(.modal-dragging, .modal-resizing) {
   transition:
     left 0.3s ease,
     top 0.3s ease,

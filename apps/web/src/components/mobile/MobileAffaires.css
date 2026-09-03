@@ -52,7 +52,6 @@
   border-radius: var(--radius-full);
   border: none;
   background: var(--theme-bg-tertiary);
-  color: var(--theme-text-primary);
   color: var(--theme-text-body);
   cursor: pointer;
 }
@@ -364,11 +363,9 @@
   background-image: none !important;
   box-shadow: none !important;
   filter: none !important;
-  -webkit-filter: none !important;
   mask: none !important;
-  -webkit-mask: none !important;
   color: inherit;
-  -webkit-text-fill-color: currentColor;
+  -webkit-text-fill-color: currentcolor;
 }
 
 .maff-card-title::before,

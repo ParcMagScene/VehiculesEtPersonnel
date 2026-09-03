@@ -128,8 +128,7 @@
   flex: 1 1 0;
   min-height: 0;
   height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   -webkit-overflow-scrolling: touch;
   padding: 0 var(--space-6) var(--space-4);
 }
@@ -1472,8 +1471,7 @@
   min-height: 0;
   gap: 0;
   padding: var(--space-2);
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: auto;
 }
 
 /* ── Rangée de colonnes (jours) ── */
@@ -1731,7 +1729,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  border-bottom: var(--space-px) solid color-mix(in srgb, currentColor 18%, transparent);
+  border-bottom: var(--space-px) solid color-mix(in srgb, currentcolor 18%, transparent);
   margin-bottom: var(--space-px);
 }
 
@@ -1781,7 +1779,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-bottom: var(--space-px) solid color-mix(in srgb, currentColor 18%, transparent);
+  border-bottom: var(--space-px) solid color-mix(in srgb, currentcolor 18%, transparent);
   margin-bottom: var(--space-0-5);
 }
 .wk-task-group-label span {
@@ -1802,12 +1800,14 @@
     min-width: 100%;
   }
 }
+
 @media (max-width: 768px) {
   .wk-day-col {
     min-width: calc(50% - 4px);
     flex: 1 1 calc(50% - 4px);
   }
 }
+
 @media (max-width: 480px) {
   .wk-day-col {
     min-width: 100%;
@@ -2185,6 +2185,7 @@
 .task-planning-panel .ical-refresh-btn .spinning {
   animation: spin-icon 1s linear infinite;
 }
+
 @keyframes spin-icon {
   from {
     transform: rotate(0deg);
@@ -2544,6 +2545,7 @@
   overflow: hidden;
   animation: popFadeIn 0.15s ease;
 }
+
 @keyframes popFadeIn {
   from {
     opacity: 0;

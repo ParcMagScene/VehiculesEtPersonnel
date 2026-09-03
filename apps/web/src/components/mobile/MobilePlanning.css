@@ -1,9 +1,6 @@
 .mobile-planning {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: var(--theme-bg-page);
   z-index: var(--z-overlay);
   display: flex;
@@ -30,7 +27,6 @@
   background: var(--theme-bg-tertiary);
   border: none;
   border-radius: var(--radius-md);
-  color: var(--theme-text-primary);
   width: 36px;
   height: 36px;
   display: flex;
@@ -102,8 +98,7 @@
 /* Wrapper scrollable horizontal et vertical */
 .mobile-planning-scroll-wrapper {
   flex: 1;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: auto;
 }
 
 .mobile-planning-scroll-content {

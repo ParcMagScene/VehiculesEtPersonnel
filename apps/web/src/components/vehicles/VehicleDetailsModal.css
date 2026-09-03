@@ -79,10 +79,8 @@
 /* .vehicle-details-modal .close-button base + hover → .shared-close-btn (theme.css) */
 
 .vehicle-details-modal .modal-body {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding: var(--space-5);
-  padding-right: var(--space-5);
   flex: 1;
   scroll-padding: 12px;
 }

@@ -248,7 +248,7 @@
   height: 18px;
   border-radius: 50%;
   background: var(--theme-primary);
-  border: 2px solid #ffffff;
+  border: 2px solid #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 
@@ -257,7 +257,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #ffffff;
+  background: #fff;
   border: 2px solid var(--theme-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
@@ -548,7 +548,6 @@
 .map-radius-slider {
   width: 100%;
   height: 4px;
-  -webkit-appearance: none;
   appearance: none;
   background: var(--theme-bg-secondary);
   border-radius: 2px;
@@ -557,7 +556,7 @@
 }
 
 .map-radius-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
+  appearance: none;
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -988,6 +987,7 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   pointer-events: none;
   position: relative;
+
   --map-tooltip-connector-color: var(--theme-text-secondary);
 }
 
@@ -1106,7 +1106,6 @@
   /* Empêcher le glissement de la modal quand on interagit avec la carte */
   touch-action: none;
   user-select: none;
-  -webkit-user-select: none;
 }
 
 /* ── En-tête ── */
@@ -1307,10 +1306,7 @@
    ═══════════════════════════════════════════════ */
 .map-offscreen-layer {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   pointer-events: none;
   z-index: 800;
 }

@@ -12,11 +12,11 @@
     0 2px 8px var(--shadow-sm);
   min-width: 220px;
   padding: 6px;
-  animation: contextMenuIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: context-menu-in 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid var(--shadow-sm);
 }
 
-@keyframes contextMenuIn {
+@keyframes context-menu-in {
   from {
     opacity: 0;
     transform: scale(0.92) translateY(-4px);

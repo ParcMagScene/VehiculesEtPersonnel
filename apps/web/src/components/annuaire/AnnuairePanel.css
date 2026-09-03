@@ -741,14 +741,14 @@
   width: 100%;
   max-width: 620px;
   box-shadow: var(--shadow-modal);
-  animation: slideUp 0.2s ease;
+  animation: slide-up 0.2s ease;
 }
 
 .annuaire-form-modal.small {
   max-width: 440px;
 }
 
-@keyframes slideUp {
+@keyframes slide-up {
   from {
     transform: translateY(20px);
     opacity: 0;

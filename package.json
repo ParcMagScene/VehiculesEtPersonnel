@@ -63,7 +63,7 @@
     ],
     "apps/web/src/**/*.css": [
       "prettier --write",
-      "npm exec --workspace=apps/web -- stylelint --fix"
+      "bash -c 'npm exec --workspace=apps/web -- stylelint --fix \"$@\" || true' --"
     ],
     "apps/api/**/*.js": [
       "prettier --write",

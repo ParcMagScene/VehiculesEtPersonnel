@@ -176,10 +176,10 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-overlay);
-  animation: catalogFadeIn 0.2s ease;
+  animation: catalog-fade-in 0.2s ease;
 }
 
-@keyframes catalogFadeIn {
+@keyframes catalog-fade-in {
   from {
     opacity: 0;
   }
@@ -198,10 +198,10 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
-  animation: catalogSlideUp 0.25s ease;
+  animation: catalog-slide-up 0.25s ease;
 }
 
-@keyframes catalogSlideUp {
+@keyframes catalog-slide-up {
   from {
     transform: translateY(20px);
     opacity: 0;
@@ -503,7 +503,7 @@
 }
 
 .catalog-settings-section {
-  animation: fadeIn 0.2s ease;
+  animation: fade-in 0.2s ease;
 }
 
 .catalog-settings-section h3 {
@@ -743,7 +743,7 @@
   animation: spin 1s linear infinite;
 }
 
-@keyframes fadeIn {
+@keyframes fade-in {
   from {
     opacity: 0;
     transform: translateY(4px);

@@ -14,10 +14,10 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: var(--shadow-modal, 0 24px 48px rgba(0, 0, 0, 0.2));
-  animation: genOrdersFade 0.2s ease;
+  animation: gen-orders-fade 0.2s ease;
 }
 
-@keyframes genOrdersFade {
+@keyframes gen-orders-fade {
   from {
     opacity: 0;
     transform: translateY(12px);

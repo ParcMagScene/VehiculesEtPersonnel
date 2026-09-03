@@ -3,7 +3,7 @@
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay);
   z-index: var(--z-tooltip);
-  animation: fadeIn 0.15s ease;
+  animation: fade-in 0.15s ease;
 }
 
 .display-dialog {
@@ -15,7 +15,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 12px 48px var(--shadow-modal);
-  animation: slideUp 0.2s ease;
+  animation: slide-up 0.2s ease;
 }
 
 .display-dialog .dialog-header {

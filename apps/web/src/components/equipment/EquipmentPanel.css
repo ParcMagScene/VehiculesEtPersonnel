@@ -1543,7 +1543,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
-  animation: themeModalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: theme-modal-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
 
@@ -2074,7 +2074,7 @@
   z-index: var(--z-overlay);
   backdrop-filter: blur(4px);
   isolation: isolate;
-  animation: fadeIn 0.2s ease;
+  animation: fade-in 0.2s ease;
 }
 
 .eq-management-panel {
@@ -2087,7 +2087,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: -4px 0 20px var(--shadow-sm);
-  animation: slideIn 0.3s ease-out;
+  animation: slide-in 0.3s ease-out;
   position: relative;
   z-index: var(--z-base);
 }
@@ -3634,7 +3634,7 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-tooltip);
-  animation: fadeIn 0.2s;
+  animation: fade-in 0.2s;
 }
 
 .eq-media-preview-content {
@@ -3738,7 +3738,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: eqFadeIn 0.2s ease;
+  animation: eq-fade-in 0.2s ease;
 }
 .eq-depot-map-modal {
   background: #1a1a2e;
@@ -3751,7 +3751,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 25px 80px var(--theme-overlay-dark);
-  animation: eqSlideUp 0.25s ease;
+  animation: eq-slide-up 0.25s ease;
   overflow: hidden;
 }
 .eq-depot-map-modal-header {
@@ -3821,7 +3821,7 @@
   border-left: var(--space-0-5) var(--space-0-5) var(--space-0-5) solid var(--theme-primary);
 }
 
-@keyframes eqFadeIn {
+@keyframes eq-fade-in {
   from {
     opacity: 0;
   }
@@ -3830,7 +3830,7 @@
   }
 }
 
-@keyframes eqSlideUp {
+@keyframes eq-slide-up {
   from {
     opacity: 0;
     transform: translateY(30px) scale(0.97);

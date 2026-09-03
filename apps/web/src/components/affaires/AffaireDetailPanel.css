@@ -972,11 +972,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1-5);
-  animation: taskFieldsExpand 0.15s ease-out;
+  animation: task-fields-expand 0.15s ease-out;
   transform-origin: top;
 }
 
-@keyframes taskFieldsExpand {
+@keyframes task-fields-expand {
   from {
     opacity: 0;
     transform: scaleY(0.92) translateY(-4px);
@@ -1118,7 +1118,7 @@
   font-size: var(--font-sm);
   font-weight: 600;
   margin-bottom: var(--space-3);
-  animation: feedbackSlideIn 0.2s ease-out;
+  animation: feedback-slide-in 0.2s ease-out;
 }
 
 .action-feedback.success {
@@ -1133,7 +1133,7 @@
   border: var(--space-px) solid var(--btn-danger-hover-bg);
 }
 
-@keyframes feedbackSlideIn {
+@keyframes feedback-slide-in {
   from {
     opacity: 0;
     transform: translateY(-8px);
@@ -1201,7 +1201,7 @@
   border-radius: var(--radius-md-lg);
   padding: var(--space-3);
   margin-bottom: var(--space-2-5);
-  animation: feedbackSlideIn 0.2s ease-out;
+  animation: feedback-slide-in 0.2s ease-out;
 }
 
 .inline-form-row {

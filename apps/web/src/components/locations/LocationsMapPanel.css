@@ -15,10 +15,10 @@
   justify-content: center;
   padding: var(--space-4);
   overflow: hidden;
-  animation: mapOverlayIn 0.2s ease-out;
+  animation: map-overlay-in 0.2s ease-out;
 }
 
-@keyframes mapOverlayIn {
+@keyframes map-overlay-in {
   from {
     opacity: 0;
   }
@@ -39,7 +39,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: mapPanelIn 0.25s ease-out;
+  animation: map-panel-in 0.25s ease-out;
 }
 
 /* ModalBody n'est pas un conteneur flex par défaut : on le force ici
@@ -50,7 +50,7 @@
   min-height: 0;
 }
 
-@keyframes mapPanelIn {
+@keyframes map-panel-in {
   from {
     transform: scale(0.95) translateY(10px);
     opacity: 0;
@@ -177,7 +177,7 @@
 
 .locations-map-tab.active {
   background: var(--theme-primary);
-  color: white;
+  color: #fff;
 }
 
 /* ── Corps (carte) ── */
@@ -349,7 +349,7 @@
   border-radius: 10px;
   font-size: 0.7rem;
   font-weight: 600;
-  color: white;
+  color: #fff;
   letter-spacing: 0.02em;
 }
 
@@ -360,7 +360,7 @@
   font-size: 0.7rem;
   font-weight: 600;
   background: var(--theme-gradient, linear-gradient(135deg, #667eea, #764ba2));
-  color: white;
+  color: #fff;
 }
 
 .map-popup-title {
@@ -408,7 +408,7 @@
 
 .map-popup-btn-edit {
   background: var(--theme-primary);
-  color: white;
+  color: #fff;
   border-color: var(--theme-primary);
 }
 
@@ -588,7 +588,7 @@
 
 .map-radius-preset.active {
   background: var(--theme-primary);
-  color: white;
+  color: #fff;
   border-color: var(--theme-primary);
 }
 
@@ -723,7 +723,7 @@
   padding: 1px 6px;
   border-radius: 8px;
   background: var(--theme-success);
-  color: white;
+  color: #fff;
   flex-shrink: 0;
 }
 
@@ -769,7 +769,7 @@
 .map-route-toggle-btn:hover,
 .map-route-toggle-btn.active {
   background: var(--theme-primary);
-  color: white;
+  color: #fff;
   border-color: var(--theme-primary);
 }
 
@@ -864,7 +864,7 @@
 
 .map-route-swap:hover {
   background: var(--theme-primary);
-  color: white;
+  color: #fff;
   border-color: var(--theme-primary);
 }
 
@@ -880,7 +880,7 @@
   border: none;
   border-radius: 6px;
   background: var(--theme-primary);
-  color: white;
+  color: #fff;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -1165,7 +1165,7 @@
 
 .dual-print-btn-print {
   background: var(--theme-primary);
-  color: white;
+  color: #fff;
 }
 
 .dual-print-btn-print:hover:not(:disabled) {

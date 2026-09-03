@@ -20,10 +20,10 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
-  animation: atm-slideIn 0.2s ease;
+  animation: atm-slide-in 0.2s ease;
 }
 
-@keyframes atm-slideIn {
+@keyframes atm-slide-in {
   from {
     transform: translateY(20px);
     opacity: 0;

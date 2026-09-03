@@ -8,10 +8,10 @@
   justify-content: center;
   z-index: var(--z-modal-nested);
   padding: var(--space-5);
-  animation: eventFormFadeIn 0.2s ease-out;
+  animation: event-form-fade-in 0.2s ease-out;
 }
 
-@keyframes eventFormFadeIn {
+@keyframes event-form-fade-in {
   from {
     opacity: 0;
   }
@@ -29,11 +29,11 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px var(--shadow-xl);
-  animation: eventFormSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: event-form-slide-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
 
-@keyframes eventFormSlideUp {
+@keyframes event-form-slide-up {
   from {
     transform: translateY(20px);
     opacity: 0;

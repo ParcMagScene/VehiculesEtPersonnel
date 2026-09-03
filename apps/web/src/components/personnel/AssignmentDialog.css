@@ -22,11 +22,11 @@
     0 20px 60px color-mix(in srgb, var(--theme-primary) 16%, transparent),
     0 10px 30px var(--shadow-lg);
   border: 1px solid color-mix(in srgb, var(--theme-primary) 16%, var(--border-default));
-  animation: ad-slideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: ad-slide-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
 
-@keyframes ad-slideUp {
+@keyframes ad-slide-up {
   from {
     transform: translateY(30px) scale(0.95);
     opacity: 0;
@@ -664,11 +664,11 @@
 
 .asd-skill-checkbox:hover {
   border-color: var(--skill-color, var(--theme-text-gray));
-  background: color-mix(in srgb, var(--skill-color, var(--theme-text-gray)) 8%, white);
+  background: color-mix(in srgb, var(--skill-color, var(--theme-text-gray)) 8%, #fff);
 }
 
 .asd-skill-checkbox.checked {
-  background: color-mix(in srgb, var(--skill-color, var(--theme-text-gray)) 15%, white);
+  background: color-mix(in srgb, var(--skill-color, var(--theme-text-gray)) 15%, #fff);
   border-color: var(--skill-color, var(--theme-text-gray));
   color: var(--skill-color, var(--theme-text-gray));
   font-weight: 600;

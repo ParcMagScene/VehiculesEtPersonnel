@@ -22,10 +22,10 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
-  animation: csvDialogIn 0.2s ease-out;
+  animation: csv-dialog-in 0.2s ease-out;
 }
 
-@keyframes csvDialogIn {
+@keyframes csv-dialog-in {
   from {
     opacity: 0;
     transform: translateY(16px) scale(0.97);
@@ -234,10 +234,10 @@
   border: 3px solid var(--border-primary, var(--theme-border-medium));
   border-top-color: var(--color-primary, var(--theme-warning));
   border-radius: var(--radius-full);
-  animation: csvSpin 0.8s linear infinite;
+  animation: csv-spin 0.8s linear infinite;
 }
 
-@keyframes csvSpin {
+@keyframes csv-spin {
   to {
     transform: rotate(360deg);
   }

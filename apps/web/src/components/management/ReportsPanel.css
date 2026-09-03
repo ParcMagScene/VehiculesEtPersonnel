@@ -44,7 +44,7 @@
   padding: var(--space-2) 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--theme-border, var(--theme-border));
-  background: var(--theme-bg-card, white);
+  background: var(--theme-bg-card, #fff);
   color: var(--theme-text-primary, var(--theme-text-dark));
   font-size: 0.82rem;
   font-weight: 500;
@@ -98,7 +98,7 @@
   gap: var(--space-2);
   flex-wrap: wrap;
   padding: var(--space-3) var(--space-4);
-  background: var(--theme-bg-card, white);
+  background: var(--theme-bg-card, #fff);
   border: 1px solid var(--theme-border, var(--theme-border));
   border-radius: var(--radius-md-lg);
   font-size: 0.82rem;
@@ -150,7 +150,7 @@
   gap: 6px;
   padding: 9px var(--space-4);
   border: 1px solid var(--theme-border, var(--theme-border));
-  background: var(--theme-bg-card, white);
+  background: var(--theme-bg-card, #fff);
   border-radius: var(--radius-md-lg);
   font-size: 0.82rem;
   font-weight: 500;
@@ -192,7 +192,7 @@
 
 /* Section */
 .rp-section {
-  background: var(--theme-bg-card, white);
+  background: var(--theme-bg-card, #fff);
   border: 1px solid var(--theme-border, var(--theme-border));
   border-radius: var(--radius-lg);
   padding: var(--space-5);

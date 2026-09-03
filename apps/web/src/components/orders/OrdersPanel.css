@@ -337,10 +337,10 @@
 }
 .orders-table tr.row-new-highlight {
   background: color-mix(in srgb, var(--theme-success) 12%, transparent);
-  animation: rowHighlightFade 4s ease-out forwards;
+  animation: row-highlight-fade 4s ease-out forwards;
 }
 
-@keyframes rowHighlightFade {
+@keyframes row-highlight-fade {
   0% {
     background: color-mix(in srgb, var(--theme-success) 20%, transparent);
   }
@@ -691,7 +691,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal, var(--shadow-modal));
-  animation: themeModalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: theme-modal-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .order-form-modal {
   max-width: 800px;
@@ -1378,7 +1378,7 @@
 }
 .catalog-search-btn:hover {
   background: var(--theme-accent, var(--theme-info));
-  color: white;
+  color: #fff;
 }
 
 /* ═══ Catalog Picker Modal ═══ */
@@ -1390,7 +1390,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.15s ease;
+  animation: fade-in 0.15s ease;
 }
 .catalog-picker-modal {
   background: var(--theme-bg-card);
@@ -1402,7 +1402,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
-  animation: slideUp 0.2s ease;
+  animation: slide-up 0.2s ease;
   overflow: hidden;
 }
 .catalog-picker-header {
@@ -1593,7 +1593,7 @@
 }
 .catalog-picker-select-btn:hover {
   background: var(--theme-accent, var(--theme-info));
-  color: white;
+  color: #fff;
 }
 
 .catalog-picker-pagination {
@@ -1618,7 +1618,7 @@
 }
 .catalog-picker-pagination button:hover:not(:disabled) {
   background: var(--theme-accent, var(--theme-info));
-  color: white;
+  color: #fff;
   border-color: transparent;
 }
 .catalog-picker-pagination button:disabled {
@@ -1717,7 +1717,7 @@
   display: none;
 }
 
-@keyframes slideInRight {
+@keyframes slide-in-right {
   from {
     transform: translateX(100%);
   }
@@ -2086,7 +2086,7 @@
 }
 .doc-upload-btn.accent:hover {
   background: var(--theme-success-alt);
-  color: white;
+  color: #fff;
 }
 
 /* ═══ Supplier orders section ═══ */
@@ -2226,7 +2226,7 @@
 }
 .alert-preview-item button:hover {
   background: var(--theme-success-alt);
-  color: white;
+  color: #fff;
 }
 .alerts-more {
   font-size: var(--font-sm);
@@ -2236,10 +2236,10 @@
 .alert-stat {
   cursor: pointer;
   border-color: var(--theme-success-alt) !important;
-  animation: alertPulse 2s ease-in-out infinite;
+  animation: alert-pulse 2s ease-in-out infinite;
 }
 
-@keyframes alertPulse {
+@keyframes alert-pulse {
   0%,
   100% {
     opacity: 1;

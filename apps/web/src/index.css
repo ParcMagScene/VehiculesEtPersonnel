@@ -165,12 +165,12 @@ code {
   padding: 1rem;
   backdrop-filter: blur(4px);
   isolation: isolate;
-  animation: overlayFadeIn 0.2s ease-out;
+  animation: overlay-fade-in 0.2s ease-out;
 }
 
 /* Animation pour les modals */
 .modal-content {
-  animation: fadeIn 0.2s ease-out;
+  animation: fade-in 0.2s ease-out;
 }
 
 /* Style pour les tooltips — voir theme.css .emag-tooltip */

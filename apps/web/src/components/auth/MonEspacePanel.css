@@ -17,10 +17,10 @@
   flex-direction: column;
   box-shadow: var(--shadow-modal);
   overflow: hidden;
-  animation: mepSlideIn 0.2s ease-out;
+  animation: mep-slide-in 0.2s ease-out;
 }
 
-@keyframes mepSlideIn {
+@keyframes mep-slide-in {
   from {
     opacity: 0;
     transform: translateY(12px) scale(0.98);
@@ -378,10 +378,10 @@
 }
 
 .mep-spin {
-  animation: mepSpin 1s linear infinite;
+  animation: mep-spin 1s linear infinite;
 }
 
-@keyframes mepSpin {
+@keyframes mep-spin {
   from {
     transform: rotate(0deg);
   }
@@ -488,10 +488,10 @@
 .mep-card-details {
   padding: 0 14px 14px;
   border-top: 1px solid var(--theme-border);
-  animation: mepExpand 0.15s ease-out;
+  animation: mep-expand 0.15s ease-out;
 }
 
-@keyframes mepExpand {
+@keyframes mep-expand {
   from {
     opacity: 0;
     max-height: 0;

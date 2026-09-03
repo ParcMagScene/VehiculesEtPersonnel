@@ -9,7 +9,7 @@
   justify-content: center;
   z-index: var(--z-overlay);
   backdrop-filter: blur(4px);
-  animation: overlayFadeIn 0.2s ease-out;
+  animation: overlay-fade-in 0.2s ease-out;
 }
 
 .bl-loc-modal {
@@ -21,7 +21,7 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
-  animation: themeModalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: theme-modal-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
 
@@ -320,10 +320,10 @@
   background: var(--theme-warning, var(--theme-warning));
   border-radius: 2px;
   transition: width 0.3s;
-  animation: progressPulse 1.5s ease-in-out infinite;
+  animation: progress-pulse 1.5s ease-in-out infinite;
 }
 
-@keyframes progressPulse {
+@keyframes progress-pulse {
   0%,
   100% {
     opacity: 1;

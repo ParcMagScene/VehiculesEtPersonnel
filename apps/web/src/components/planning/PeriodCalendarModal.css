@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-popover);
-  animation: fadeIn 0.2s ease;
+  animation: fade-in 0.2s ease;
 }
 
 .pcm-modal {
@@ -23,11 +23,11 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px var(--shadow-xl);
-  animation: pcmSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: pcm-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
 
-@keyframes pcmSlideUp {
+@keyframes pcm-slide-up {
   from {
     opacity: 0;
     transform: translateY(20px) scale(0.97);
@@ -370,7 +370,7 @@
   font-size: var(--font-sm);
   font-weight: 500;
   color: var(--feedback-success-text);
-  animation: fadeIn 0.2s ease;
+  animation: fade-in 0.2s ease;
 }
 
 /* ── Footer ── */

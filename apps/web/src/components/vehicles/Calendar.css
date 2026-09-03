@@ -1185,11 +1185,11 @@
   );
   background-size: 10px 10px;
   pointer-events: none;
-  animation: moveStripes 0.5s linear infinite;
+  animation: move-stripes 0.5s linear infinite;
   z-index: 16;
 }
 
-@keyframes moveStripes {
+@keyframes move-stripes {
   0% {
     background-position: 0 0;
   }

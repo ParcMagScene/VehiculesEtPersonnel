@@ -8,7 +8,7 @@
   z-index: var(--z-modal);
   backdrop-filter: blur(4px);
   isolation: isolate;
-  animation: fadeIn 0.2s ease-out;
+  animation: fade-in 0.2s ease-out;
 }
 
 .month-selector-modal {
@@ -19,7 +19,7 @@
   width: 90%;
   max-height: 90vh;
   overflow: auto;
-  animation: slideUp 0.3s ease-out;
+  animation: slide-up 0.3s ease-out;
   position: relative;
   z-index: var(--z-base);
 }

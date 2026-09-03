@@ -14,7 +14,7 @@
   /* La position fixed + top/right est appliqu\u00e9e inline depuis HeaderActions.jsx
      (calcul\u00e9 d'apr\u00e8s le rect de l'avatar) car le menu est portalis\u00e9 hors du
      stacking context du header sticky. */
-  background: var(--theme-bg-card, white);
+  background: var(--theme-bg-card, #fff);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 20px var(--shadow-xl);
   overflow: hidden;
@@ -47,7 +47,7 @@
   width: 100%;
   padding: var(--space-3) var(--space-4);
   border: none;
-  background: var(--theme-bg-card, white);
+  background: var(--theme-bg-card, #fff);
   text-align: left;
   cursor: pointer;
   font-size: var(--font-base);

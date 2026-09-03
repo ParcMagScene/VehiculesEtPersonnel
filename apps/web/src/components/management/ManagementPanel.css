@@ -17,7 +17,7 @@
   height: 100dvh;
   overflow: hidden auto;
   box-shadow: -4px 0 20px var(--shadow-sm);
-  animation: slideIn 0.3s ease-out;
+  animation: slide-in 0.3s ease-out;
   scroll-padding: 12px;
   position: relative;
   z-index: var(--z-base);
@@ -42,7 +42,7 @@
   background: var(--scrollbar-thumb-hover);
 }
 
-@keyframes slideIn {
+@keyframes slide-in {
   from {
     transform: translateX(100%);
   }
@@ -65,7 +65,7 @@
   max-height: 88dvh;
   border-radius: 16px;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
-  animation: modalFadeIn 0.25s ease-out;
+  animation: modal-fade-in 0.25s ease-out;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -140,7 +140,7 @@
   overflow: hidden auto;
 }
 
-@keyframes modalFadeIn {
+@keyframes modal-fade-in {
   from {
     opacity: 0;
     transform: scale(0.95) translateY(12px);

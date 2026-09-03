@@ -425,7 +425,7 @@
   border: 1px solid var(--theme-border);
   z-index: var(--z-dropdown);
   overflow: hidden;
-  animation: tooltipFadeIn 0.15s ease-out;
+  animation: tooltip-fade-in 0.15s ease-out;
 }
 
 .msg-emoji-tabs {

@@ -212,10 +212,10 @@
   padding: var(--space-3);
   border-radius: var(--radius-md);
   font-size: var(--font-base);
-  animation: loginStatusFadeIn 0.2s ease;
+  animation: login-status-fade-in 0.2s ease;
 }
 
-@keyframes loginStatusFadeIn {
+@keyframes login-status-fade-in {
   from {
     opacity: 0;
     transform: translateY(-4px);

@@ -72,7 +72,7 @@
   padding: 6px 8px;
   border: 1px solid var(--theme-border);
   border-radius: var(--radius-md);
-  background: white;
+  background: #fff;
   color: var(--theme-text);
 }
 
@@ -85,12 +85,12 @@
 .pp-filter-select.ui-select option {
   padding: 4px 8px;
   color: var(--theme-text);
-  background: white;
+  background: #fff;
 }
 
 .pp-filter-select.ui-select option:hover {
   background: var(--theme-primary);
-  color: white;
+  color: #fff;
 }
 
 /* ─── Filter Badge ─── */

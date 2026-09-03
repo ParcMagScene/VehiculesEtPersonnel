@@ -155,7 +155,7 @@
 
 .help-trigger-btn:hover {
   color: var(--theme-primary-dark);
-  border-color: color-mix(in srgb, var(--theme-primary) 60%, white);
+  border-color: color-mix(in srgb, var(--theme-primary) 60%, #fff);
   box-shadow: 0 2px 8px var(--accent-tint-vivid);
 }
 
@@ -214,7 +214,7 @@
   display: flex;
   gap: 0.75rem;
   align-items: center;
-  animation: fadeIn 0.3s ease-out;
+  animation: fade-in 0.3s ease-out;
 }
 
 .notification-badge {
@@ -451,7 +451,7 @@
   justify-content: center;
   z-index: var(--z-overlay);
   padding-top: 100px;
-  animation: fadeIn 0.2s ease-out;
+  animation: fade-in 0.2s ease-out;
 }
 
 .notifications-popover-backdrop {
@@ -492,12 +492,12 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
-  animation: slideDown 0.3s ease-out;
+  animation: slide-down 0.3s ease-out;
   margin-right: 8px;
   margin-top: var(--header-height, 56px);
 }
 
-@keyframes slideDown {
+@keyframes slide-down {
   from {
     opacity: 0;
     transform: translateY(-20px);

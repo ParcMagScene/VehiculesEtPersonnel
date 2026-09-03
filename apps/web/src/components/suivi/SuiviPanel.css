@@ -1615,7 +1615,7 @@
   border-radius: 8px;
   border: none;
   background: var(--accent);
-  color: white;
+  color: #fff;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;

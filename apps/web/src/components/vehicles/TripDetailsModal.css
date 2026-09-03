@@ -9,10 +9,10 @@
   padding: 1rem;
   backdrop-filter: blur(4px);
   isolation: isolate;
-  animation: tdOverlayFadeIn 0.2s ease-out;
+  animation: td-overlay-fade-in 0.2s ease-out;
 }
 
-@keyframes tdOverlayFadeIn {
+@keyframes td-overlay-fade-in {
   from {
     opacity: 0;
   }
@@ -33,10 +33,10 @@
   position: relative;
   z-index: var(--z-base);
   box-shadow: 0 20px 60px var(--shadow-xl);
-  animation: tripModalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: trip-modal-slide-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes tripModalSlideUp {
+@keyframes trip-modal-slide-up {
   from {
     opacity: 0;
     transform: translateY(30px) scale(0.95);

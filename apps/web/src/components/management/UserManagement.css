@@ -607,7 +607,7 @@
   max-width: 95vw;
   box-shadow: var(--shadow-modal);
   overflow: hidden;
-  animation: slideUp 0.2s ease;
+  animation: slide-up 0.2s ease;
 }
 
 .create-personnel-modal-header {

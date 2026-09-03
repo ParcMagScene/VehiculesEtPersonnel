@@ -28,10 +28,10 @@
   width: 100%;
   max-width: 380px;
   overflow: hidden;
-  animation: qrLandingSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: qr-landing-slide-up 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes qrLandingSlideUp {
+@keyframes qr-landing-slide-up {
   from {
     opacity: 0;
     transform: translateY(30px) scale(0.95);
@@ -91,10 +91,10 @@
 }
 
 .qr-spinner {
-  animation: qrSpin 1s linear infinite;
+  animation: qr-spin 1s linear infinite;
 }
 
-@keyframes qrSpin {
+@keyframes qr-spin {
   from {
     transform: rotate(0deg);
   }

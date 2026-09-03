@@ -4,10 +4,10 @@
   /* position, inset, display, align-items, justify-content → .shared-overlay (theme.css) */
   background: var(--theme-overlay);
   z-index: var(--z-modal-nested);
-  animation: mr-fadeIn 0.2s ease;
+  animation: mr-fade-in 0.2s ease;
 }
 
-@keyframes mr-fadeIn {
+@keyframes mr-fade-in {
   from {
     opacity: 0;
   }

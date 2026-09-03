@@ -1003,7 +1003,7 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  animation: themeModalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: theme-modal-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
 }
 
@@ -3742,7 +3742,7 @@
   width: 16px;
   left: 2px;
   top: 2px;
-  background: white;
+  background: #fff;
   border-radius: 50%;
   transition: transform 0.2s;
 }

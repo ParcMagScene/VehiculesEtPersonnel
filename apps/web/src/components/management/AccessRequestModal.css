@@ -10,10 +10,10 @@
   box-shadow: var(--shadow-modal);
   position: relative;
   z-index: var(--z-base);
-  animation: arModalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: ar-modal-slide-up 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes arModalSlideUp {
+@keyframes ar-modal-slide-up {
   from {
     opacity: 0;
     transform: translateY(30px) scale(0.95);

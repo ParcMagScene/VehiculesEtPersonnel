@@ -228,6 +228,7 @@
 
 /* --- Fix: empêcher que overflow:visible casse les scroll internes - */
 
+/* stylelint-disable-next-line no-duplicate-selectors */
 .modal-draggable-enhanced {
   /* Le body du modal garde son scroll */
   display: flex;

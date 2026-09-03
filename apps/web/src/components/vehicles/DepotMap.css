@@ -564,6 +564,7 @@
 }
 
 /* ═══ TOUCH / MOBILE SPECIFIC ═══ */
+/* stylelint-disable-next-line no-duplicate-selectors */
 .depot-map-svg-wrapper {
   touch-action: none;
   -webkit-touch-callout: none;

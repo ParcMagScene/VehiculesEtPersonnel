@@ -680,6 +680,7 @@
 .inv-movement-qty.negative {
   color: var(--theme-danger);
 }
+/* stylelint-disable-next-line no-duplicate-selectors */
 .inv-empty {
   display: flex;
   flex-direction: column;

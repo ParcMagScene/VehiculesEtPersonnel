@@ -1142,7 +1142,7 @@
   font-weight: 600;
   font-size: var(--font-base);
   text-align: right;
-  word-break: break-word;
+  overflow-wrap: break-word;
   overflow-wrap: anywhere;
   display: flex;
   align-items: center;
@@ -1161,7 +1161,7 @@
 .eq-detail-field strong {
   color: var(--theme-text-dark);
   margin-left: auto;
-  word-break: break-word;
+  overflow-wrap: break-word;
   overflow-wrap: anywhere;
   text-align: right;
 }
@@ -2311,7 +2311,7 @@
   color: var(--theme-text-primary);
   flex: 1;
   min-width: 0;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .eq-cat-badge-sub,
@@ -2378,7 +2378,7 @@
   color: var(--theme-text-dark);
   flex: 1;
   min-width: 0;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* ── Catégorie feuille (niveau 3) ── */
@@ -2407,7 +2407,7 @@
   color: var(--theme-text-secondary);
   flex: 1;
   min-width: 0;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* ── Édition inline catégories ── */
@@ -3991,7 +3991,7 @@ tr.eq-sav-row-clickable {
 .eq-sav-equip-field {
   margin-bottom: 1rem;
   position: relative;
-  z-index: 100;
+  z-index: var(--z-dropdown);
 }
 
 .eq-sav-selected-card {
@@ -4035,7 +4035,7 @@ tr.eq-sav-row-clickable {
 
 .eq-sav-search-wrap {
   position: relative;
-  z-index: 100;
+  z-index: var(--z-dropdown);
 }
 
 .eq-sav-search-inner {
@@ -4060,7 +4060,7 @@ tr.eq-sav-row-clickable {
   position: absolute;
   left: 0;
   right: 0;
-  z-index: 200;
+  z-index: var(--z-sticky);
   margin-top: -1px;
   background: var(--theme-bg-card);
   border: var(--space-px) solid var(--theme-border);
@@ -4129,7 +4129,7 @@ tr.eq-sav-row-clickable {
 
 .eq-sav-dropdown-empty {
   position: relative;
-  z-index: 200;
+  z-index: var(--z-sticky);
   margin-top: -1px;
   background: var(--theme-bg-card);
   border: var(--space-px) solid var(--theme-border);

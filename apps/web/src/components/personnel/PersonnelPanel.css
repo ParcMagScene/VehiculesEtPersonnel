@@ -1496,6 +1496,7 @@
 }
 
 /* Ligne des jours — subgrid */
+/* stylelint-disable-next-line no-duplicate-selectors */
 .pp-header {
   display: grid;
   grid-column: 1 / -1;

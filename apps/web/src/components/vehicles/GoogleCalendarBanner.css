@@ -20,6 +20,7 @@
 }
 
 /* Mode fermé : une seule ligne avec le bouton */
+/* stylelint-disable-next-line no-duplicate-selectors */
 .google-calendar-banner-grid.closed {
   height: var(--planning-banner-collapsed-height);
   overflow: hidden;

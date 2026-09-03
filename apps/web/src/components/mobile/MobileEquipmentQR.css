@@ -364,7 +364,7 @@
   font-size: var(--font-base);
   color: var(--theme-text-primary);
   font-weight: 600;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .m-eq-qr-fiche-grid code {

@@ -692,7 +692,6 @@
 [data-palette^='vscode'] .header-title-container .module-tab.active {
   color: var(--theme-text-primary);
   background: transparent;
-  border-bottom-color: var(--theme-primary);
   border-color: transparent;
   border-bottom: 2px solid var(--theme-primary);
 }

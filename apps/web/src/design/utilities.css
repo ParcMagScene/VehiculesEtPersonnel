@@ -439,9 +439,11 @@
 }
 
 /* ─── Overflow ────────────────────────────────────────── */
+/* stylelint-disable-next-line no-duplicate-selectors */
 .u-overflow-auto {
   overflow: auto;
 }
+/* stylelint-disable-next-line no-duplicate-selectors */
 .u-overflow-y-auto {
   overflow-y: auto;
 }

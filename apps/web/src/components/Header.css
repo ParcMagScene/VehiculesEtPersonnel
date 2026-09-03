@@ -7,7 +7,7 @@
   inset: 0;
   /* Au-dessus du header sticky (var(--z-overlay)=1000) mais sous les modals
      bloquants (ModalManager: backdrop >=9000). Portalis\u00e9 sur #emag-modal-root. */
-  z-index: 8000;
+  z-index: var(--z-header-menu);
 }
 
 .user-menu-dropdown {
@@ -19,7 +19,7 @@
   box-shadow: 0 4px 20px var(--shadow-xl);
   overflow: hidden;
   min-width: 200px;
-  z-index: 8001;
+  z-index: calc(var(--z-header-menu) + 1);
   border: 1px solid var(--theme-border, var(--theme-border-medium));
 }
 

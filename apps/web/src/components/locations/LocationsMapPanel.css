@@ -7,7 +7,7 @@
 .locations-map-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1100;
+  z-index: calc(var(--z-overlay) + 100);
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   display: flex;
@@ -226,7 +226,7 @@
   position: absolute;
   bottom: 12px;
   left: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: var(--theme-bg-primary);
   padding: 6px var(--space-3);
   border-radius: var(--theme-radius, 8px);
@@ -452,7 +452,7 @@
   border: 1px solid var(--theme-border);
   border-radius: var(--theme-radius, 8px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  z-index: 1200;
+  z-index: calc(var(--z-overlay) + 200);
   padding: var(--space-1);
 }
 
@@ -525,7 +525,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: var(--theme-bg-primary);
   border: 1px solid var(--theme-border);
   border-radius: var(--theme-radius, 8px);
@@ -600,7 +600,7 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   width: 320px;
   max-width: calc(100% - 240px);
 }
@@ -743,7 +743,7 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
 }
 
 /* Quand le contrôle du rayon est présent (carte locale), décaler le toggle */
@@ -777,7 +777,7 @@
   position: absolute;
   top: 58px;
   right: 12px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   width: 280px;
   background: var(--theme-bg-primary);
   border: 1px solid var(--theme-border);
@@ -1083,7 +1083,7 @@
 .dual-print-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: calc(var(--z-overlay) + 200);
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
@@ -1229,7 +1229,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--theme-border);
   border-radius: 6px;
@@ -1308,7 +1308,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 800;
+  z-index: calc(var(--z-overlay) - 200);
 }
 
 .map-offscreen-pill {

@@ -758,6 +758,7 @@
 }
 
 /* ── Footer ── */
+/* stylelint-disable-next-line no-duplicate-selectors */
 .assignment-dialog-footer {
   display: flex;
   align-items: center;

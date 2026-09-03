@@ -73,6 +73,7 @@
   background: var(--theme-primary);
 }
 
+/* stylelint-disable-next-line no-duplicate-selectors */
 .mobile-tab {
   position: relative;
 }

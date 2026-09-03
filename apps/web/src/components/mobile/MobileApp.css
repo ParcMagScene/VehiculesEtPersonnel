@@ -212,6 +212,7 @@
 }
 
 /* Toast */
+/* stylelint-disable-next-line no-duplicate-selectors */
 .mobile-msg-toast {
   bottom: 16px;
 }

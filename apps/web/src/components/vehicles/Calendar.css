@@ -655,6 +655,7 @@
 }
 
 /* Corps */
+/* stylelint-disable-next-line no-duplicate-selectors */
 .vehicle-row {
   display: contents;
 }

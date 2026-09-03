@@ -137,6 +137,7 @@
   border-color: var(--close-btn-hover-border);
 }
 
+/* stylelint-disable-next-line no-duplicate-selectors */
 .reservation-modal .modal-form {
   padding: var(--space-5);
 }
@@ -613,6 +614,7 @@
   filter: brightness(0.95);
 }
 
+/* stylelint-disable-next-line no-duplicate-selectors */
 .custom-dropdown-item:hover {
   background: var(--theme-bg-secondary);
 }

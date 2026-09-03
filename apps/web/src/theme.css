@@ -281,10 +281,13 @@
   --z-dropdown: 100;
   --z-sticky: 200;
   --z-overlay: 1000;
+  --z-notifications-popup: 1300;
   --z-modal: 2000;
   --z-popover: 3000;
   --z-toast: 5000;
+  --z-header-menu: 8000;
   --z-tooltip: 9999;
+  --z-critical-alert: 10000;
 
   /* ─── [AUDIT] Breakpoints (conventions, pas de var en @media) ───
      xs:  480px   — mobile petit

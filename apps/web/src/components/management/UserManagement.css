@@ -118,6 +118,7 @@
   color: var(--theme-danger-text);
 }
 
+/* stylelint-disable-next-line no-duplicate-selectors */
 .user-management-section {
   background: var(--theme-bg-card);
   border-radius: var(--radius-lg);

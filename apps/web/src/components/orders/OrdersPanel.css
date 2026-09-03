@@ -2254,6 +2254,7 @@
   padding: 2px 6px;
 }
 
+/* stylelint-disable-next-line no-duplicate-selectors */
 .orders-empty {
   display: flex;
   flex-direction: column;

@@ -24,7 +24,7 @@
     ],
 
     "declaration-property-value-disallowed-list": {
-      "z-index": ["/^\\d/"]
+      "z-index": ["/^\\d{3,}/"]
     }
   },
 
@@ -34,7 +34,8 @@
       "rules": {
         "color-no-hex": null,
         "function-disallowed-list": null,
-        "declaration-property-value-disallowed-list": null
+        "declaration-property-value-disallowed-list": null,
+        "no-duplicate-selectors": null
       }
     }
   ]

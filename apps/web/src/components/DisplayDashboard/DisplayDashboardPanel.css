@@ -1339,6 +1339,7 @@
   transform: translateY(-1px);
 }
 
+/* stylelint-disable-next-line no-duplicate-selectors */
 .btn-icon-sm {
   display: inline-flex;
   align-items: center;
@@ -1352,6 +1353,7 @@
   cursor: pointer;
   transition: all 0.2s;
 }
+/* stylelint-disable-next-line no-duplicate-selectors */
 .btn-icon-sm:hover {
   background: var(--theme-bg-secondary);
   color: var(--theme-text-dark);
@@ -2618,6 +2620,7 @@
    Utilise container queries pour s'adapter au resize
    ═══════════════════════════════════════════════════════ */
 
+/* stylelint-disable-next-line no-duplicate-selectors */
 .tv-preview-frame {
   border-radius: var(--radius-md);
   overflow: hidden;

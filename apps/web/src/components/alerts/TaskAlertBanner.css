@@ -8,7 +8,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 10000;
+  z-index: var(--z-critical-alert);
   background: linear-gradient(180deg, #d32f2f 0%, #b71c1c 100%);
   color: #fff;
   box-shadow: 0 4px 16px rgba(211, 47, 47, 0.55);
@@ -152,7 +152,7 @@
   position: fixed;
   top: 0.5em;
   right: 0.5em;
-  z-index: 10000;
+  z-index: var(--z-critical-alert);
   display: inline-flex;
   align-items: center;
   gap: 0.35em;

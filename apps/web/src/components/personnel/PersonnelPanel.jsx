@@ -3,72 +3,14 @@ import '../../styles/person-sidebar.css';
 import '../equipment/EquipmentPanel.css';
 import '../vehicles/Calendar.css';
 
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import {
-  AlertTriangle,
-  Award,
-  Briefcase,
-  CalendarDays,
-  CalendarOff,
-  Check,
-  CheckCircle,
-  Clock,
-  Edit2,
-  Plus,
-  Save,
-  Star,
-  Trash2,
-  Upload,
-  User,
-  Users,
-} from 'lucide-react';
-import React, {
-  Suspense,
-  forwardRef,
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { TableVirtuoso } from 'react-virtuoso';
+import { Award, Briefcase, CalendarDays, CalendarOff, Clock, Users } from 'lucide-react';
+import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 
-import {
-  Avatar,
-  Button,
-  EmptyState,
-  FormField,
-  InlineAlert,
-  Input,
-  ModalLayout,
-  SearchBar,
-  Select,
-  Spinner,
-  Textarea,
-  Tooltip,
-} from '@/design-system';
+import { Button, InlineAlert, Spinner } from '@/design-system';
 
-import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
-import { useConfirmDialog } from '../../hooks/useConfirmDialog';
-import { useDirtyForm } from '../../hooks/useDirtyForm';
-import usePersonnelFavorites from '../../hooks/usePersonnelFavorites';
 import { useToast } from '../../hooks/useToast';
-import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
-import { computeGridColumnsCss } from '../../utils/planningGridColumns';
-import { refreshBus } from '../../utils/refresh-bus';
-import LeaveRequestForm from '../leaves/LeaveRequestForm';
-import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
-import LeaveValidationPanel from '../leaves/LeaveValidationPanel';
-import MonthSelector from '../MonthSelector';
-import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
-import PeriodCalendarModal from '../planning/PeriodCalendarModal';
-import WeekSelector from '../WeekSelector';
-import YearSelector from '../YearSelector';
-import AssignmentDialog from './AssignmentDialog';
 const PlanningTab = lazy(() =>
   import('./PersonnelPlanningView').then((m) => ({ default: m.PlanningTab })),
 );
@@ -77,19 +19,7 @@ const PersonsTab = lazy(() =>
 );
 const PersonnelAgenda = lazy(() => import('./PersonnelAgenda'));
 const PersonnelPlanningEditModal = lazy(() => import('./PersonnelPlanningEditModal'));
-import {
-  CONTRACT_TYPES,
-  getCategoryColor,
-  NON_PERMANENT_TYPES,
-  PERMANENT_TYPES,
-  PERSON_TYPES,
-  POSITION_CATEGORIES,
-  SKILL_LEVELS,
-} from './personnelConstants';
-import PersonnelContextMenu from './PersonnelContextMenu';
-import { PersonnelSlidePanel } from './PersonnelDetailPanel';
-import PersonnelFormModal from './PersonnelFormModal';
-import PersonnelImportModal from './PersonnelImportModal';
+
 const PositionsTab = lazy(() => import('./PositionsTab'));
 const SkillsTab = lazy(() => import('./SkillsTab'));
 const LeavesTab = lazy(() => import('../leaves/LeavesTab'));

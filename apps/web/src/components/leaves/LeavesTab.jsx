@@ -14,29 +14,16 @@ import {
   Calendar,
   CalendarOff,
   CheckCircle,
-  ChevronDown,
   Clock,
-  Download,
   Eye,
   Plus,
   RefreshCw,
   Shield,
-  Trash2,
-  TrendingUp,
   Users,
-  XCircle,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import {
-  Button,
-  Card,
-  DetailRow,
-  EmptyState,
-  InlineAlert,
-  SectionHeader,
-  Tooltip,
-} from '@/design-system';
+import { Button, Card, InlineAlert, SectionHeader, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -46,18 +33,17 @@ import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import { sanitizePrintHtml } from '../../utils/safePrintWindow';
 import { usePrintPreview } from '../ui/PrintPreviewProvider';
-import { LEAVE_TYPE_LABELS, STATUS_CONFIG } from './leaveConstants';
+import LeaveAdminOverview from './LeaveAdminOverview';
 import LeaveRequestForm from './LeaveRequestForm';
+import LeaveRequestsList from './LeaveRequestsList';
 import LeaveRequestsPanel from './LeaveRequestsPanel';
 import LeaveValidationPanel from './LeaveValidationPanel';
-import LeaveAdminOverview from './LeaveAdminOverview';
-import LeaveRequestsList from './LeaveRequestsList';
 
 // ═══════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════
 
-const fmtDate = (d) => {
+const _fmtDate = (d) => {
   if (!d) return '—';
   try {
     return format(parseISO(d), 'd MMM yyyy', { locale: fr });

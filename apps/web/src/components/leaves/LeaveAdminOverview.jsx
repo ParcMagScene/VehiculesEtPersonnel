@@ -1,8 +1,8 @@
-import { Calendar, Clock, Shield, TrendingUp, Users, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Calendar, Clock, TrendingUp, Users } from 'lucide-react';
 
-import { Button, Card, SectionHeader, Tooltip } from '@/design-system';
+import { Button, SectionHeader, Tooltip } from '@/design-system';
 
 import { LEAVE_TYPE_LABELS } from './leaveConstants';
 

@@ -37,7 +37,7 @@ import MapOffScreenIndicators from './MapOffScreenIndicators';
 
 // Constantes module-scope pour stabiliser les deps des hooks (cf react-hooks/exhaustive-deps)
 const DIRECTIONS = ['top', 'right', 'bottom', 'left', 'top'];
-const DIR_OFFSETS = {
+const _DIR_OFFSETS = {
   top: [0, -12],
   right: [12, 0],
   bottom: [0, 12],

@@ -1,7 +1,6 @@
-import React from 'react';
-import { Ban, Briefcase, Calendar as CalIcon, MapPin, Palmtree } from 'lucide-react';
-import { isToday, isWeekend, format } from 'date-fns';
+import { format, isToday, isWeekend } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Ban, Briefcase, Calendar as CalIcon, MapPin, Palmtree } from 'lucide-react';
 
 import { EVENT_COLORS } from './PersonnelAgenda';
 

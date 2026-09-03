@@ -7,7 +7,6 @@ import {
   endOfMonth,
   endOfWeek,
   format,
-  isSameMonth,
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
@@ -15,16 +14,15 @@ import { fr } from 'date-fns/locale';
 import { Clock, Users } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button, EmptyState } from '@/design-system';
-
-import PersonnelAgendaSidebar from './PersonnelAgendaSidebar';
-import PersonnelAgendaToolbar from './PersonnelAgendaToolbar';
-import PersonnelAgendaWeekView from './PersonnelAgendaWeekView';
-import PersonnelAgendaMonthView from './PersonnelAgendaMonthView';
+import { EmptyState } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { STATUS_COLORS } from '../../constants/colors';
 import api from '../../utils/api';
+import PersonnelAgendaMonthView from './PersonnelAgendaMonthView';
+import PersonnelAgendaSidebar from './PersonnelAgendaSidebar';
+import PersonnelAgendaToolbar from './PersonnelAgendaToolbar';
+import PersonnelAgendaWeekView from './PersonnelAgendaWeekView';
 
 // Couleurs par type d'événement
 const EVENT_COLORS = {

@@ -102,7 +102,7 @@ const ManagementPanel = ({
   initialVehicleToEdit = null,
 }) => {
   const toast = useToast();
-  const [colors, setColors] = useState(getMgmtColors());
+  const [colors, _setColors] = useState(getMgmtColors());
   const [activeTab, setActiveTab] = useState(() => {
     if (panelType === 'settings') return 'account';
     return 'vehicles';

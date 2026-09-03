@@ -1,5 +1,7 @@
-import { Users, Filter } from 'lucide-react';
-import { Button, SearchBar, Select } from '@/design-system';
+import { Filter } from 'lucide-react';
+
+import { SearchBar, Select } from '@/design-system';
+
 import { PERSON_TYPES } from './personnelConstants';
 
 // ═══════════════════════════════════════════════════════════════

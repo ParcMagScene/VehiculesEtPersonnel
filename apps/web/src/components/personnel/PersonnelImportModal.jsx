@@ -102,7 +102,7 @@ const PersonnelImportModal = ({ onClose, onImportDone }) => {
   const [loading, setLoading] = useState(false);
   const [filterAction, setFilterAction] = useState('all'); // all | create | update | conflict
 
-  const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const { confirm, ConfirmDialogRenderer: _ConfirmDialogRenderer } = useConfirmDialog();
   const { resetDirty, guardClose } = useDirtyForm(
     { step, rowsCount: csvData?.rows?.length || 0 },
     { confirmer: confirm },

@@ -16,7 +16,7 @@ import React from 'react';
 import { Button, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { STATUS_COLORS, GOOGLE_COLORS } from '../../constants/colors';
+import { GOOGLE_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { AFFAIRE_TYPE_INFO } from '../../utils/affaireConstants';
 import { safeParseDate } from '../../utils/dateUtils';
 import AffaireBadge from '../AffaireBadge';

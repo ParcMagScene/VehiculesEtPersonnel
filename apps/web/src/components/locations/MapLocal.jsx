@@ -16,6 +16,7 @@ import {
 
 import { Button, Input } from '@/design-system';
 
+import { computeLabelPlacements } from './map-label-placement';
 import {
   filterNearby,
   getLocationTypeClass,
@@ -24,7 +25,6 @@ import {
   TILE_DARK,
   TILE_LIGHT,
 } from './map-utils';
-import { computeLabelPlacements } from './map-label-placement';
 import { createHQIcon, createLocationIcon } from './MapMarkers';
 import MapOffScreenIndicators from './MapOffScreenIndicators';
 import MapPopup from './MapPopup';

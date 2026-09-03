@@ -20,7 +20,7 @@ import {
   Upload,
   Wrench,
 } from 'lucide-react';
-import React, { Suspense, lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 
 import {
   Button,
@@ -40,6 +40,9 @@ import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { usePrintPreview } from '../ui/PrintPreviewProvider';
+import CategoryCascadeFilter from './CategoryCascadeFilter';
+import { SAV_STATUS } from './equipmentConstants';
+import EquipmentGrid from './EquipmentGrid';
 import {
   MobileSavRequestForm,
   SavDetailDialog,
@@ -47,9 +50,6 @@ import {
   SavTicketFormModal,
   SavTicketsList,
 } from './EquipmentSAV';
-import CategoryCascadeFilter from './CategoryCascadeFilter';
-import { SAV_STATUS } from './equipmentConstants';
-import EquipmentGrid from './EquipmentGrid';
 import { buildEquipmentSheetHtml } from './EquipmentSheetPrint';
 import { useEquipment } from './useEquipment';
 

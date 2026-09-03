@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
 import { Check, Save, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { Button, FormField, Input, ModalLayout, Select, Textarea } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import api from '../../utils/api';
+import { refreshBus } from '../../utils/refresh-bus';
+import PhoneInput from '../PhoneInput';
 import {
   CONTRACT_TYPES,
   getCategoryColor,
@@ -11,9 +14,6 @@ import {
   POSITION_CATEGORIES,
   SKILL_LEVELS,
 } from './personnelConstants';
-import api from '../../utils/api';
-import { refreshBus } from '../../utils/refresh-bus';
-import PhoneInput from '../PhoneInput';
 
 const createFormFromPerson = (person) => {
   if (!person) {

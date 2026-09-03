@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
 import { Users } from 'lucide-react';
+import { useMemo } from 'react';
 
 import { Avatar, Button, SearchBar } from '@/design-system';
 

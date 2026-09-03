@@ -1,15 +1,15 @@
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import {
   Calendar,
-  ChevronDown,
   CheckCircle,
+  ChevronDown,
   Clock,
   Download,
   Plus,
   Trash2,
   XCircle,
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
 import { Button, DetailRow, EmptyState } from '@/design-system';
 
@@ -31,7 +31,7 @@ const fmtDate = (d) => {
   }
 };
 
-const fmtShortDate = (d) => {
+const _fmtShortDate = (d) => {
   if (!d) return '—';
   try {
     return format(parseISO(d), 'd MMM', { locale: fr });

@@ -1,6 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 // ControlPerformModal.jsx — Modale "Effectuer un contrôle"
 // ═══════════════════════════════════════════════════════════════
+import './ControlPerformModal.css';
+
 import { CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -21,7 +23,6 @@ import { useDirtyForm } from '../../hooks/useDirtyForm';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import { todayIso } from './utils';
-import './ControlPerformModal.css';
 
 export default function ControlPerformModal({ control, onClose, onDone }) {
   const [date, setDate] = useState(todayIso());

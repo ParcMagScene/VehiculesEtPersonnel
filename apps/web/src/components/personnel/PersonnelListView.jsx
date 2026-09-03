@@ -1,5 +1,3 @@
-import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
-import { TableVirtuoso } from 'react-virtuoso';
 import {
   AlertTriangle,
   CheckCircle,
@@ -11,25 +9,27 @@ import {
   User,
   Users,
 } from 'lucide-react';
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
+import { TableVirtuoso } from 'react-virtuoso';
 
 import { Avatar, Button, EmptyState, SearchBar, Select, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
-import { POSITION_CATEGORIES } from './personnelConstants';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
-import PhoneInput, { formatPhoneDisplay } from '../PhoneInput';
-import { PersonnelSlidePanel } from './PersonnelDetailPanel';
-import PersonnelFormModal from './PersonnelFormModal';
-import PersonnelImportModal from './PersonnelImportModal';
+import { formatPhoneDisplay } from '../PhoneInput';
+import { POSITION_CATEGORIES } from './personnelConstants';
 import {
   CONTRACT_TYPES,
   NON_PERMANENT_TYPES,
   PERMANENT_TYPES,
   PERSON_TYPES,
 } from './personnelConstants';
+import { PersonnelSlidePanel } from './PersonnelDetailPanel';
+import PersonnelFormModal from './PersonnelFormModal';
+import PersonnelImportModal from './PersonnelImportModal';
 
 // ═══════════════════════════════════════
 // Composants TableVirtuoso pour la liste personnel

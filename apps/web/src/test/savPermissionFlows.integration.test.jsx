@@ -3,8 +3,8 @@ import { userEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import EquipmentPanel from '../components/equipment/EquipmentPanel.jsx';
-import MobileEquipmentQR from '../components/mobile/MobileEquipmentQR.jsx';
 import { useEquipment } from '../components/equipment/useEquipment';
+import MobileEquipmentQR from '../components/mobile/MobileEquipmentQR.jsx';
 
 const { apiMock, toastMock, refreshPublishMock } = vi.hoisted(() => ({
   apiMock: {

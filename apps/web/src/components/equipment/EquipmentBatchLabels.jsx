@@ -361,13 +361,13 @@ const EquipmentBatchLabels = ({ equipment = [], _onPrintSingle }) => {
 
     // Largeurs textLength dérivées de la plaque de référence (en mm)
     const REF_CHAR_W = 1.92; // ref text font 3.20
-    const MAG_CHAR_W = 3.9; // mag text font 6.50
+    const _MAG_CHAR_W = 3.9; // mag text font 6.50
     const UID_CHAR_W = 1.68; // uid text font 2.80
     const SN_CHAR_W = 1.353; // sn text font 2.25
     const REF_MAX = 17.28; // ≈ 9 caractères max
     const UID_MAX = 16.8;
     const SN_MAX = 23.0;
-    const MAG_MAX = 11.7;
+    const _MAG_MAX = 11.7;
     const fitLen = (s, perChar, max) => {
       const n = (s || '').length;
       if (!n) return 0;

@@ -1,3 +1,4 @@
+/* eslint-disable no-misleading-character-class */
 import './TaskPDFExportModal.css';
 
 import {
@@ -367,7 +368,6 @@ function TaskPDFExportModal({
     // 2. Retirer label de section (redondant avec le bandeau)
     if (sectionInfo?.affaireOnly) {
       title = title
-        // eslint-disable-next-line no-misleading-character-class
         .replace(
           /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
           '',
@@ -447,7 +447,6 @@ function TaskPDFExportModal({
         else if (task.eventType && EVENT_COURSE[task.eventType])
           courseType = EVENT_COURSE[task.eventType];
         else {
-          // eslint-disable-next-line no-misleading-character-class
           const m = (task.title || '').match(
             /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]*\s*(Livraison|R(?:e|é)cup(?:e|é)ration|Recuperation|Enl(?:e|è)vement|Enlevement|Retour)\b/iu,
           );
@@ -472,7 +471,6 @@ function TaskPDFExportModal({
       if (courseType) {
         displayTitle =
           displayTitle
-            // eslint-disable-next-line no-misleading-character-class
             .replace(
               /^[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier_Base}\p{Emoji_Component}\u200d\ufe0f]+\s*/u,
               '',

@@ -18,10 +18,10 @@ import {
   startOfYear,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarDays, CalendarOff, Check, Clock, Plus, Star, Trash2 } from 'lucide-react';
+import { CalendarDays, Clock, Plus, Star, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, EmptyState, Input, SearchBar, Select, Textarea, Tooltip } from '@/design-system';
+import { Button, EmptyState, SearchBar, Tooltip } from '@/design-system';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
@@ -31,9 +31,11 @@ import { useToast } from '../../hooks/useToast';
 import useWindowWidth from '../../hooks/useWindowWidth';
 import api from '../../utils/api';
 import { computeGridColumnsCss } from '../../utils/planningGridColumns';
+import LeaveRequestForm from '../leaves/LeaveRequestForm';
+import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
+import LeaveValidationPanel from '../leaves/LeaveValidationPanel';
 import PeriodCalendarModal from '../planning/PeriodCalendarModal';
 import AssignmentDialog from './AssignmentDialog';
-import PersonnelAgenda from './PersonnelAgenda';
 import {
   CONTRACT_TYPES,
   NON_PERMANENT_TYPES,
@@ -42,12 +44,9 @@ import {
 } from './personnelConstants';
 import PersonnelContextMenu from './PersonnelContextMenu';
 import { PersonnelSlidePanel } from './PersonnelDetailPanel';
-import LeaveRequestForm from '../leaves/LeaveRequestForm';
-import LeaveValidationPanel from '../leaves/LeaveValidationPanel';
-import LeaveRequestsPanel from '../leaves/LeaveRequestsPanel';
-import useDragHandlers from './useDragHandlers';
 import { PlanningHeader } from './PlanningHeader';
 import { PlanningToolbar } from './PlanningToolbar';
+import useDragHandlers from './useDragHandlers';
 
 // ═══════════════════════════════════════
 // Personnel Planning View (extracted from PlanningTab)

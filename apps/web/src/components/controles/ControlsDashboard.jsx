@@ -1,6 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 // ControlsDashboard.jsx — Tableau de bord des contrôles périodiques
 // ═══════════════════════════════════════════════════════════════
+import './ControlsDashboard.css';
+
 import {
   AlertTriangle,
   ArrowDown,
@@ -36,7 +38,6 @@ import { refreshBus } from '../../utils/refresh-bus';
 import { toThumbUrl } from '../equipment/equipmentUtils';
 import ControlEditorModal from './ControlEditorModal';
 import ControlHistoryModal from './ControlHistoryModal';
-import './ControlsDashboard.css';
 import { formatDateFR, formatRelativeDays, STATUS_COLORS, STATUS_LABELS } from './utils';
 
 // Lazy : le panneau d'import PV n'est utile qu'aux admins, on n'embarque pas

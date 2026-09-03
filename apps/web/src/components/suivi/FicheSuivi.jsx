@@ -10,7 +10,6 @@ import {
   GripVertical,
   Loader2,
   Plus,
-  Save,
   Square,
   Trash2,
 } from 'lucide-react';

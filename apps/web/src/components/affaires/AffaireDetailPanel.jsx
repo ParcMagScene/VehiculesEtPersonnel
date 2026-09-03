@@ -3159,7 +3159,7 @@ const AffaireDetailModal = ({
   currentUser,
 }) => {
   const [missions, setMissions] = useState([]);
-  const [isClosing, setIsClosing] = useState(false);
+  const [_isClosing, setIsClosing] = useState(false);
   const [showBLImport, setShowBLImport] = useState(false);
   const [showDisplayDialog, setShowDisplayDialog] = useState(false);
   const [hasBLImports, setHasBLImports] = useState(false);

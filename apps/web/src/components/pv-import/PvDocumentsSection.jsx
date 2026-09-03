@@ -12,11 +12,12 @@
 // Cliquer sur un lien ouvre le PDF dans un nouvel onglet ; l'auth
 // passe par le cookie httpOnly `auth_token` (cf. middleware/authenticate.js).
 
+import './PvDocumentsSection.css';
+
 import { ExternalLink, FileText, FolderOpen, Package } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import api from '../../utils/api';
-import './PvDocumentsSection.css';
 
 function safeJson(s) {
   if (!s) return [];

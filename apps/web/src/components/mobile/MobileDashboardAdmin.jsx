@@ -187,7 +187,7 @@ function SneakyPhotoSection() {
         <div className="mda-sneaky-active-block">
           {status.path && (
             <div className="mda-sneaky-preview">
-              <img src={`${status.path}?t=${Date.now()}`} alt="Photo furtive active" />
+              <img src={`${status.path}?t=${Date.now()}`} alt="Aperçu furtif actif" />
             </div>
           )}
           <div className="mda-sneaky-expires">

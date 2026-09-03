@@ -1,5 +1,4 @@
-import React from 'react';
-import { isToday, isSameMonth, isWeekend, format } from 'date-fns';
+import { format, isSameMonth, isToday, isWeekend } from 'date-fns';
 
 import { EVENT_COLORS } from './PersonnelAgenda';
 

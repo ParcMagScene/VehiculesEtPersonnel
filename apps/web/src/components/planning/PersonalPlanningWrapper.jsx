@@ -3,6 +3,8 @@
    Gère l'authentification personnelle et le filtrage des tâches
    ═══════════════════════════════════════════════════════════════ */
 
+import './PersonalPlanningWrapper.css';
+
 import { AlertCircle, LogOut } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
@@ -12,7 +14,6 @@ import { usePersonalAuth } from '../../contexts/PersonalAuthContext.jsx';
 import { usePersonalAuthWithAutoLogout } from '../../hooks/usePersonalAuthWithAutoLogout.js';
 import PersonalLoginModal from '../suivi/PersonalLoginModal';
 import TaskPlanningPanel from './TaskPlanningPanel';
-import './PersonalPlanningWrapper.css';
 
 /**
  * Wrapper pour TaskPlanningPanel avec gestion de l'authentification personnelle

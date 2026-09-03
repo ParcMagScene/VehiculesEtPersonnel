@@ -18,6 +18,8 @@
 // (équipements, véhicules, types de contrôle) sont chargées paresseusement
 // à l'ouverture du panneau.
 
+import './PvImportPanel.css';
+
 import { CheckCircle2, FileText, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -38,7 +40,6 @@ import {
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
-import './PvImportPanel.css';
 
 const STATUS_LABELS = {
   pending_resolution: 'À résoudre',

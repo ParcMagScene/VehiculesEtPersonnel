@@ -3,6 +3,8 @@
    Gère l'authentification personnelle et le filtrage des données
    ═══════════════════════════════════════════════════════════════ */
 
+import './PersonalSuiviWrapper.css';
+
 import { AlertCircle, LogOut } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
@@ -12,7 +14,6 @@ import { usePersonalAuth } from '../../contexts/PersonalAuthContext.jsx';
 import { usePersonalAuthWithAutoLogout } from '../../hooks/usePersonalAuthWithAutoLogout.js';
 import PersonalLoginModal from './PersonalLoginModal';
 import SuiviPanel from './SuiviPanel';
-import './PersonalSuiviWrapper.css';
 
 /**
  * Wrapper pour SuiviPanel avec gestion de l'authentification personnelle

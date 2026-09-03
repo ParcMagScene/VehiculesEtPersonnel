@@ -3,10 +3,10 @@
 // marqueurs hors champ visible de la carte
 // ═══════════════════════════════════════════════════════════════
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { Button } from '@/design-system';
 import { createPortal } from 'react-dom';
 import { useMap, useMapEvents } from 'react-leaflet';
+
+import { Button } from '@/design-system';
 
 export default function MapOffScreenIndicators({ locations }) {
   const map = useMap();

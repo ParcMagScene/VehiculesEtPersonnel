@@ -62,7 +62,8 @@
       "npm exec --workspace=apps/web -- eslint --quiet --fix"
     ],
     "apps/web/src/**/*.css": [
-      "prettier --write"
+      "prettier --write",
+      "npm exec --workspace=apps/web -- stylelint --fix"
     ],
     "apps/api/**/*.js": [
       "prettier --write",

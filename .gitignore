@@ -142,3 +142,6 @@ ssl/
 
 # Runtime display data (sneaky photos/messages)
 apps/api/display-data/
+
+# Prevent phantom nested apps dir (legacy runtime logs)
+apps/api/apps/

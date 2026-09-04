@@ -141,6 +141,22 @@
 
 .mobile-module-content .orders-tabs {
   padding: var(--space-1-5) var(--space-2);
+  gap: var(--space-1);
+  overflow: auto hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+
+.mobile-module-content .orders-tab {
+  flex-shrink: 0;
+  padding: var(--space-1-5) var(--space-3);
+  font-size: var(--font-sm);
+  scroll-snap-align: start;
+}
+
+.mobile-module-content .orders-header-stats {
+  display: none;
 }
 
 .mobile-module-content .orders-panel {

@@ -252,7 +252,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
     confirm({
       title: 'Réinitialiser le mot de passe',
       message:
-        "Marquer ce compte pour réinitialisation ? L'utilisateur devra définir un nouveau mot de passe lors de sa prochaine connexion.",
+        "Marquer ce compte pour réinitialisation ? L'utilisateur pourra définir directement son nouveau mot de passe à sa prochaine connexion (aucun email ni code n'est envoyé).",
       variant: 'confirm',
       confirmLabel: 'Réinitialiser',
       onConfirm: async () => {
@@ -263,7 +263,7 @@ const UserManagement = ({ onAccessRequestChange, onNavigateToPersonnel }) => {
 
           const data = response;
           toast.success(
-            `Réinitialisation demandée L'utilisateur ${data.email} devra définir un nouveau mot de passe lors de sa prochaine connexion.`,
+            `Compte ${data.email} marqué pour réinitialisation. Il pourra définir son mot de passe à sa prochaine connexion.`,
           );
           loadData(true);
           loadPersonsMap();

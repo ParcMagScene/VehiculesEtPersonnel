@@ -32,6 +32,8 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
   const [conflictUser, setConflictUser] = useState(null);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetFormEmail, setResetFormEmail] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetNewPasswordConfirm, setResetNewPasswordConfirm] = useState('');
   const [loginMode, setLoginMode] = useState('password');
   const [pin, setPin] = useState('');
   const [_resetFormName, setResetFormName] = useState('');
@@ -162,14 +164,24 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
   const handleSelfResetPassword = async (e) => {
     e.preventDefault();
     setResetError('');
+    if (resetNewPassword.length < 8) {
+      setResetError('Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
+    if (resetNewPassword !== resetNewPasswordConfirm) {
+      setResetError('Les deux mots de passe ne correspondent pas.');
+      return;
+    }
     setLoading(true);
     try {
-      await api.selfResetPassword(resetFormEmail);
+      await api.selfResetPassword(resetFormEmail, resetNewPassword);
       setShowResetPassword(false);
+      setResetNewPassword('');
+      setResetNewPasswordConfirm('');
       setResetError('');
-      setError('Code de réinitialisation envoyé par email.');
+      setError('Mot de passe défini. Vous pouvez maintenant vous connecter.');
     } catch (err) {
-      setResetError(err.message);
+      setResetError(err?.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -453,14 +465,11 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
           </ModalHeader>
           <ModalBody>
             <p className="login-modal-text">
-              Entrez votre adresse email pour recevoir un code de réinitialisation par email.
+              Votre compte a été réinitialisé par un administrateur. Choisissez votre nouveau mot de
+              passe.
             </p>
             <form onSubmit={handleSelfResetPassword}>
-              <FormField
-                className="form-group login-form-field-spacing-last"
-                label="Adresse email"
-                htmlFor="reset-email"
-              >
+              <FormField className="form-group" label="Adresse email" htmlFor="reset-email">
                 <Input
                   id="reset-email"
                   type="email"
@@ -472,9 +481,34 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                   className="login-reset-input"
                 />
               </FormField>
-              <div className="login-reset-note">
-                Le nouveau mot de passe se définira après réception du code.
-              </div>
+              <FormField className="form-group" label="Nouveau mot de passe" htmlFor="reset-new-pw">
+                <Input
+                  id="reset-new-pw"
+                  type="password"
+                  value={resetNewPassword}
+                  onChange={(e) => setResetNewPassword(e.target.value)}
+                  placeholder="Minimum 8 caractères"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </FormField>
+              <FormField
+                className="form-group login-form-field-spacing-last"
+                label="Confirmer le nouveau mot de passe"
+                htmlFor="reset-new-pw-confirm"
+              >
+                <Input
+                  id="reset-new-pw-confirm"
+                  type="password"
+                  value={resetNewPasswordConfirm}
+                  onChange={(e) => setResetNewPasswordConfirm(e.target.value)}
+                  placeholder="Ressaisir le mot de passe"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </FormField>
               {resetError && <InlineAlert className="login-modal-alert">{resetError}</InlineAlert>}
               <ModalFooter>
                 <Button
@@ -483,13 +517,21 @@ const LoginForm = ({ onLogin, onLoginPin }) => {
                   onClick={() => {
                     setShowResetPassword(false);
                     setResetError('');
+                    setResetNewPassword('');
+                    setResetNewPasswordConfirm('');
                   }}
                   disabled={loading}
                 >
                   Annuler
                 </Button>
-                <Button variant="primary" type="submit" disabled={loading || !resetFormEmail}>
-                  {loading ? 'Envoi...' : 'Envoyer le code'}
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={
+                    loading || !resetFormEmail || !resetNewPassword || !resetNewPasswordConfirm
+                  }
+                >
+                  {loading ? 'Enregistrement…' : 'Définir le mot de passe'}
                 </Button>
               </ModalFooter>
             </form>

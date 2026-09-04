@@ -21,6 +21,8 @@ function MobileLogin({ onLogin }) {
   const [showAccessRequest, setShowAccessRequest] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetFormEmail, setResetFormEmail] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetNewPasswordConfirm, setResetNewPasswordConfirm] = useState('');
   const [_resetFormName, setResetFormName] = useState('');
   const [resetError, setResetError] = useState('');
 
@@ -189,19 +191,32 @@ function MobileLogin({ onLogin }) {
       >
         <div className="mobile-sheet-form">
           <p className="mobile-sheet-desc">
-            Entrez votre adresse email pour recevoir un code de réinitialisation par email.
+            Votre compte a été réinitialisé par un administrateur. Choisissez votre nouveau mot de
+            passe.
           </p>
           <form
             onSubmit={async (e) => {
               e.preventDefault();
-              setIsLoading(true);
               setResetError('');
+              if (resetNewPassword.length < 8) {
+                setResetError('Le mot de passe doit contenir au moins 8 caractères.');
+                return;
+              }
+              if (resetNewPassword !== resetNewPasswordConfirm) {
+                setResetError('Les deux mots de passe ne correspondent pas.');
+                return;
+              }
+              setIsLoading(true);
               try {
-                await api.selfResetPassword(resetFormEmail);
+                await api.selfResetPassword(resetFormEmail, resetNewPassword);
                 setShowResetPassword(false);
-                setError('Code de réinitialisation envoyé par email.');
+                setResetNewPassword('');
+                setResetNewPasswordConfirm('');
+                setError('Mot de passe défini. Vous pouvez maintenant vous connecter.');
               } catch (err) {
-                if (err?.response?.data?.error) {
+                if (err?.response?.data?.message) {
+                  setResetError(err.response.data.message);
+                } else if (err?.response?.data?.error) {
                   setResetError(err.response.data.error);
                 } else {
                   setResetError(err.message || 'Erreur lors de la réinitialisation');
@@ -222,9 +237,30 @@ function MobileLogin({ onLogin }) {
                 autoFocus
               />
             </FormField>
-            <div className="mobile-sheet-note">
-              Le nouveau mot de passe se définira après réception du code.
-            </div>
+            <FormField className="form-group" label="Nouveau mot de passe" htmlFor="reset-new-pw">
+              <Input
+                id="reset-new-pw"
+                type="password"
+                value={resetNewPassword}
+                onChange={(e) => setResetNewPassword(e.target.value)}
+                placeholder="Minimum 8 caractères"
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </FormField>
+            <FormField className="form-group" label="Confirmer" htmlFor="reset-new-pw-confirm">
+              <Input
+                id="reset-new-pw-confirm"
+                type="password"
+                value={resetNewPasswordConfirm}
+                onChange={(e) => setResetNewPasswordConfirm(e.target.value)}
+                placeholder="Ressaisir le mot de passe"
+                required
+                minLength={8}
+                autoComplete="new-password"
+              />
+            </FormField>
             {resetError && <InlineAlert>{resetError}</InlineAlert>}
             <div className="mobile-sheet-form-actions">
               <Button
@@ -234,6 +270,8 @@ function MobileLogin({ onLogin }) {
                 onClick={() => {
                   setShowResetPassword(false);
                   setResetError('');
+                  setResetNewPassword('');
+                  setResetNewPasswordConfirm('');
                 }}
                 disabled={isLoading}
               >
@@ -243,9 +281,11 @@ function MobileLogin({ onLogin }) {
                 variant="ghost"
                 type="submit"
                 className="login-button"
-                disabled={isLoading || !resetFormEmail}
+                disabled={
+                  isLoading || !resetFormEmail || !resetNewPassword || !resetNewPasswordConfirm
+                }
               >
-                {isLoading ? 'Envoi...' : 'Envoyer le code'}
+                {isLoading ? 'Enregistrement…' : 'Définir le mot de passe'}
               </Button>
             </div>
           </form>

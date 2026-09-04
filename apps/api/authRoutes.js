@@ -176,17 +176,53 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
         });
       }
 
-      // Si un ancien client envoie encore un nouveau mot de passe, forcer le flow OTP.
+      // Si le compte a été marqué reset par un admin, on accepte le nouveau mot de passe
+      // directement (pas d'OTP). Sinon on impose le flow OTP historique.
       if (typeof newPassword === 'string' && newPassword.length > 0) {
-        logger.warn(
-          `🔒 Reset direct refusé pour user ${user.id} (${user.email}) depuis IP ${req.ip}`,
-        );
-        return res.status(410).json({
-          success: false,
-          error: 'FLUX_REINITIALISATION_MODIFIE',
-          message:
-            'La réinitialisation se fait désormais par code envoyé par email. Demandez un code puis définissez votre nouveau mot de passe.',
-          requireOtp: true,
+        if (user.password_reset_required !== 1) {
+          logger.warn(
+            `🔒 Reset direct refusé pour user ${user.id} (${user.email}) depuis IP ${req.ip}`,
+          );
+          return res.status(410).json({
+            success: false,
+            error: 'FLUX_REINITIALISATION_MODIFIE',
+            message:
+              'La réinitialisation doit être demandée par un administrateur avant de définir un nouveau mot de passe.',
+            requireOtp: true,
+          });
+        }
+
+        const pwError = validatePassword(newPassword);
+        if (pwError) {
+          return res.status(400).json({ success: false, error: pwError });
+        }
+
+        const passwordHash = await bcrypt.hash(newPassword, 12);
+        db.prepare(
+          `UPDATE users
+             SET password_hash = ?,
+                 password_reset_required = 0,
+                 reset_token_hash = NULL,
+                 reset_token_expires = NULL,
+                 password_changed_at = CURRENT_TIMESTAMP
+           WHERE id = ?`,
+        ).run(passwordHash, user.id);
+        db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);
+
+        auditLog({
+          actorId: user.id,
+          actorEmail: user.email,
+          action: AUDIT_ACTIONS.PASSWORD_RESET_COMPLETE,
+          targetType: 'user',
+          targetId: user.id,
+          details: { mode: 'direct-admin-reset' },
+          req,
+        });
+        logger.info(`✅ Mot de passe redéfini pour ${user.email} (reset admin direct)`);
+
+        return res.json({
+          success: true,
+          message: 'Mot de passe défini. Vous pouvez vous connecter.',
         });
       }
 

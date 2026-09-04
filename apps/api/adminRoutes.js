@@ -5,7 +5,11 @@ import jwt from 'jsonwebtoken';
 import { AUDIT_ACTIONS, auditLog } from './auditLog.js';
 import { ALL_CACHES, getAllCacheStats } from './cache.js';
 import db from './database.js';
-import { alertAccessRequest, getTransporter, initEmailTransporter } from './emailService.js';
+import {
+  alertAccessRequest,
+  getTransporter as _getTransporter,
+  initEmailTransporter,
+} from './emailService.js';
 import logger from './logger.js';
 import {
   getSlowRequests,
@@ -688,7 +692,8 @@ export function setupAdminRoutes(
   });
 
   // Demander une réinitialisation de mot de passe (admin)
-  // Génère un OTP, l'envoie par email à l'utilisateur, ferme ses sessions et marque le compte.
+  // Marque le compte pour reset ; l'utilisateur choisira son nouveau mot de passe
+  // directement lors de sa prochaine connexion (pas d'OTP, pas d'email).
   app.post('/api/users/:id/reset-password', authenticateToken, requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
@@ -698,50 +703,15 @@ export function setupAdminRoutes(
         return res.status(404).json({ success: false, error: 'Utilisateur introuvable' });
       }
 
-      // Générer OTP + hash + expiration 15 min
-      const otp = String(crypto.randomInt(100000, 999999));
-      const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-
-      // Marquer le compte + stocker le hash OTP
       db.prepare(
         `UPDATE users
             SET password_reset_required = 1,
-                reset_token_hash = ?,
-                reset_token_expires = ?
+                reset_token_hash = NULL,
+                reset_token_expires = NULL
           WHERE id = ?`,
-      ).run(otpHash, expiresAt, id);
+      ).run(id);
 
-      // Invalider toutes les sessions
       db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(id);
-
-      // Envoyer l'OTP par email à l'utilisateur
-      let emailSent = false;
-      try {
-        const { transporter, emailConfig } = getTransporter();
-        if (transporter && emailConfig?.enabled) {
-          await transporter.sendMail({
-            from: `"${emailConfig.from_name || 'eM@g'}" <${emailConfig.smtp_user}>`,
-            to: user.email,
-            subject: '[eM@g] Réinitialisation de votre mot de passe',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
-                <h2 style="color: #2563eb;">🔑 Réinitialisation de mot de passe</h2>
-                <p>Bonjour <strong>${user.name}</strong>,</p>
-                <p>Un administrateur a demandé la réinitialisation de votre mot de passe.</p>
-                <p>Votre code de vérification est :</p>
-                <div style="background: #f0f4ff; border: 2px solid #2563eb; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
-                  <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">${otp}</span>
-                </div>
-                <p><strong>Ce code expire dans 15 minutes.</strong></p>
-                <p style="color: #666; font-size: 12px;">Connectez-vous, saisissez votre email puis ce code dans l'écran « Réinitialiser le mot de passe » pour définir un nouveau mot de passe.</p>
-              </div>`,
-          });
-          emailSent = true;
-        }
-      } catch (emailErr) {
-        logger.warn('Erreur envoi email reset (admin):', emailErr.message);
-      }
 
       auditLog({
         actorId: req.user.id,
@@ -749,18 +719,16 @@ export function setupAdminRoutes(
         action: AUDIT_ACTIONS.USER_PASSWORD_RESET,
         targetType: 'user',
         targetId: id,
-        details: { email: user.email, emailSent },
+        details: { email: user.email, mode: 'direct-no-otp' },
         req,
       });
-      logger.info(`🔄 Réinitialisation déclenchée pour user ${id} (email envoyé: ${emailSent})`);
+      logger.info(`🔄 Compte ${user.email} marqué pour reset direct (par admin ${req.user.email})`);
 
       res.json({
         success: true,
-        message: emailSent
-          ? `Code OTP envoyé à ${user.email}. L'utilisateur doit le saisir dans l'écran de réinitialisation.`
-          : `Compte marqué pour réinitialisation. ⚠ Email non envoyé (SMTP indisponible). Code: ${otp}`,
+        message:
+          "Compte marqué pour réinitialisation. L'utilisateur pourra définir son nouveau mot de passe à sa prochaine connexion.",
         email: user.email,
-        emailSent,
       });
     } catch (error) {
       logger.error('Erreur demande réinitialisation:', error);

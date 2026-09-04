@@ -618,8 +618,9 @@ export class ApiClient {
     });
   }
 
-  async selfResetPassword(email, captchaToken) {
+  async selfResetPassword(email, newPassword, captchaToken) {
     const body = { email };
+    if (typeof newPassword === 'string' && newPassword.length > 0) body.newPassword = newPassword;
     if (captchaToken) body.captchaToken = captchaToken;
     return this.request('/auth/self-reset-password', {
       method: 'POST',

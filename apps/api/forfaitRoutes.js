@@ -5,7 +5,6 @@
 
 import db from './database.js';
 import logger from './logger.js';
-import { validate } from './schemas/imports.js';
 import {
   calcEntreeSchema,
   calcRachatSchema,
@@ -20,6 +19,7 @@ import {
   updateEntretienSchema,
   validatePoseSchema,
 } from './schemas/forfait.js';
+import { validate } from './schemas/imports.js';
 import {
   computeForfaitReduit,
   computeProrataEntree,

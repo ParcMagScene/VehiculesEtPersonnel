@@ -138,9 +138,9 @@ export function computeProrataEntree({
 export function computeProrataSortie({
   db,
   year,
-  forfaitPlein,
+  forfaitPlein: _forfaitPlein,
   cpOuvresFullYear,
-  reposClassiquesFullYear,
+  reposClassiquesFullYear: _reposClassiquesFullYear,
   feriesHorsWeekendFullYear,
   dateSortie,
   salaireAnnuel,

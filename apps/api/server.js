@@ -72,12 +72,12 @@ import {
 } from './equipmentRoutes.js';
 import { startEshopCatalogAutoSync, stopEshopCatalogAutoSync } from './eshopCatalogSync.js';
 import { setupEshopRoutes } from './eshopRoutes.js';
+import { setupForfaitRoutes } from './forfaitRoutes.js';
 import { setupGaragesRoutes } from './garagesRoutes.js';
 import { setupGoogleRoutes } from './googleRoutes.js';
 import { setupInventoryRoutes } from './inventoryRoutes.js';
 import { setupLabelsRoutes } from './labelsRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
-import { setupForfaitRoutes } from './forfaitRoutes.js';
 import { setupLocationsRoutes } from './locationsRoutes.js';
 import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
 import logger from './logger.js';

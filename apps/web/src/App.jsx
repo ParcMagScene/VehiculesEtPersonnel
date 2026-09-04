@@ -32,6 +32,7 @@ import { useSilentRefresh } from './hooks/useSilentRefresh';
 import { useTheme } from './hooks/useTheme';
 import { ToastProvider } from './hooks/useToast';
 import { useVSCodeTheme } from './hooks/useVSCodeTheme';
+import UpdateAvailableBanner from './components/UpdateAvailableBanner';
 import { useSearchParamState } from './router/RouterCompat';
 import {
   ALLOWED_MODULES,
@@ -612,6 +613,7 @@ function AppContent() {
   return (
     <ErrorBoundary>
       <ToastProvider toast={toast}>
+        <UpdateAvailableBanner />
         <Suspense fallback={<AppShellFallback label="Chargement..." />}>
           <AppChrome
             onNavigateToEntity={handleNavigateToEntity}

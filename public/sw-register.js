@@ -12,8 +12,6 @@
 (function () {
   if (!('serviceWorker' in navigator)) return;
 
-  // Au premier load après deploy : le nouveau SW devient "controller".
-  // On recharge UNE fois pour garantir que la page utilise les nouveaux assets.
   var reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', function () {
     if (reloaded) return;
@@ -21,18 +19,26 @@
     window.location.reload();
   });
 
+  function notifyUpdate() {
+    try {
+      window.dispatchEvent(new CustomEvent('emag-sw-update-available'));
+    } catch (_) {
+      /* noop */
+    }
+  }
+
   window.addEventListener('load', function () {
     navigator.serviceWorker
       .register('/sw.js', { scope: '/' })
       .then(function (reg) {
-        // Re-check updates quand l'onglet redevient visible.
         document.addEventListener('visibilitychange', function () {
           if (document.visibilityState === 'visible') {
             reg.update().catch(function () {});
           }
         });
-        // Si un SW est déjà en attente, on lui dit de prendre la main.
         if (reg.waiting) {
+          // Un nouveau SW attend déjà : on prévient l'UI et on lance skipWaiting.
+          notifyUpdate();
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
         reg.addEventListener('updatefound', function () {
@@ -40,6 +46,7 @@
           if (!sw) return;
           sw.addEventListener('statechange', function () {
             if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+              notifyUpdate();
               sw.postMessage({ type: 'SKIP_WAITING' });
             }
           });

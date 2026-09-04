@@ -203,8 +203,7 @@ export function setupAuthRoutes(app, authenticateToken, { JWT_SECRET, JWT_EXPIRY
              SET password_hash = ?,
                  password_reset_required = 0,
                  reset_token_hash = NULL,
-                 reset_token_expires = NULL,
-                 password_changed_at = CURRENT_TIMESTAMP
+                 reset_token_expires = NULL
            WHERE id = ?`,
         ).run(passwordHash, user.id);
         db.prepare('DELETE FROM active_sessions WHERE user_id = ?').run(user.id);

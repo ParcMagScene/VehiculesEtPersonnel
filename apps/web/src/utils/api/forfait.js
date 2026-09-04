@@ -13,6 +13,9 @@ export function registerForfaitMethods(ApiClient) {
     async getForfaitHolidays(year) {
       return this.request(`/forfait/holidays/${year}`);
     },
+    async getForfaitReferenceTable() {
+      return this.request('/forfait/reference-table');
+    },
     async calcForfaitEntree(payload) {
       return this.request('/forfait/calc/entree', {
         method: 'POST',

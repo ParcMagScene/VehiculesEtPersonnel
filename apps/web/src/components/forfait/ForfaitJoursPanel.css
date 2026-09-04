@@ -162,3 +162,17 @@
   color: var(--theme-text-primary);
   font-weight: 700;
 }
+
+/* Encart légal dans les calculateurs */
+.forfait-calc-legal {
+  padding: var(--space-2) var(--space-3);
+  background: color-mix(in srgb, var(--theme-info, #2563eb) 8%, transparent);
+  border-left: var(--space-1) solid var(--theme-info, #2563eb);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+  line-height: 1.5;
+}
+.forfait-calc-legal strong {
+  color: var(--theme-text-primary);
+}

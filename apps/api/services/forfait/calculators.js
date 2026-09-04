@@ -21,17 +21,54 @@ import {
   countHolidaysExcludingWeekendInRange,
   countWeekendDaysInRange,
   daysInYear,
+  isLeapYear,
 } from './holidays.js';
 
 /**
  * Défauts métier (surchargables par contrat individuel).
+ * Réf. Art. 5.7.3 de la convention (avenant n° 3 du 22-4-2025, JO 12-6-2026).
  */
 export const FORFAIT_DEFAULTS = Object.freeze({
   FULL_FORFAIT_DAYS: 218,
   CP_LEGAL_DAYS_OUVRES: 25,
   RACHAT_MIN_MAJORATION_PCT: 10.0,
+  RACHAT_MAX_TOTAL_DAYS: 235,
   WEEKEND_DAYS_PER_YEAR: 104,
 });
+
+/**
+ * Barème conventionnel des jours de repos (art. 5.7.3 3°a).
+ * Clé = nb de jours ouvrés fériés dans l'année.
+ * Valeur = jours de repos pour une année complète non bissextile.
+ * Année bissextile : ajouter +1 jour de repos.
+ */
+export const CONVENTIONAL_REST_DAYS_TABLE = Object.freeze({
+  1: 17,
+  2: 16,
+  3: 15,
+  4: 14,
+  5: 13,
+  6: 12,
+  7: 11,
+  8: 10,
+  9: 9,
+  10: 8,
+  11: 7,
+});
+
+/**
+ * Renvoie les jours de repos conventionnels selon le nombre de fériés hors WE et l'année.
+ * Applique le +1 automatique pour les années bissextiles (art. 5.7.3 note (1)).
+ *
+ * @param {number} nbFeriesHorsWeekend
+ * @param {number} year
+ * @returns {number|null} null si hors barème (ex : 0 ou >11 fériés — impossible en pratique)
+ */
+export function getConventionalRestDays(nbFeriesHorsWeekend, year) {
+  const base = CONVENTIONAL_REST_DAYS_TABLE[nbFeriesHorsWeekend];
+  if (base === undefined) return null;
+  return base + (isLeapYear(year) ? 1 : 0);
+}
 
 /**
  * 1. Calcul du prorata forfait pour une ENTRÉE en cours d'année.
@@ -166,10 +203,14 @@ export function computeRestAnnualDays({
 }
 
 /**
- * 4. Calcul du rachat de jours de repos (art. L.3121-59).
+ * 4. Calcul du rachat de jours de repos (art. L.3121-59, art. 5.7.3 4°).
  * Feuille "Rachat jours de repos".
- * Formule salaire journalier réf. : Salaire annuel / (365 − 104 − fériés hors WE − 25 CP).
+ * Formule salaire journalier réf. : Salaire annuel / (calendaires − 104 − fériés hors WE − CP).
  * Total rachat = jours × salaireJournalierRef × (1 + majoration%).
+ *
+ * Garde-fous conventionnels :
+ *   - Majoration ≥ 10% (art. 5.7.3 4°).
+ *   - forfaitPlein + nbJoursARacheter ≤ 235 (plafond annuel de travail).
  *
  * @param {object} params
  * @param {import('better-sqlite3').Database} params.db
@@ -180,18 +221,38 @@ export function computeRestAnnualDays({
  * @param {number} params.salaireAnnuel
  * @param {number} [params.majorationPct=10]
  * @param {number} params.nbJoursARacheter
- * @returns {{ salaireJournalierRef: number, totalRachat: number }}
+ * @returns {{ salaireJournalierRef: number, totalRachat: number, warnings: string[] }}
+ * @throws {Error} Si la majoration est inférieure au minimum conventionnel
+ *                 ou si forfaitPlein + nbJoursARacheter dépasse 235.
  */
 export function computeRachat({
   db: _db,
   year,
-  forfaitPlein: _forfaitPlein,
+  forfaitPlein,
   cpOuvresFullYear,
   feriesHorsWeekendFullYear,
   salaireAnnuel,
   majorationPct = FORFAIT_DEFAULTS.RACHAT_MIN_MAJORATION_PCT,
   nbJoursARacheter,
 }) {
+  // Garde-fou majoration min. — art. 5.7.3 4°.
+  if (majorationPct < FORFAIT_DEFAULTS.RACHAT_MIN_MAJORATION_PCT) {
+    const err = new Error(
+      `Majoration insuffisante : ${majorationPct}% < ${FORFAIT_DEFAULTS.RACHAT_MIN_MAJORATION_PCT}% (minimum conventionnel art. 5.7.3 4°).`,
+    );
+    err.code = 'RACHAT_MAJORATION_TOO_LOW';
+    throw err;
+  }
+  // Garde-fou plafond annuel — art. 5.7.3 4° : max 235 jours travaillés.
+  const totalJoursTravailles = forfaitPlein + nbJoursARacheter;
+  if (totalJoursTravailles > FORFAIT_DEFAULTS.RACHAT_MAX_TOTAL_DAYS) {
+    const err = new Error(
+      `Plafond dépassé : ${forfaitPlein} + ${nbJoursARacheter} = ${totalJoursTravailles} > ${FORFAIT_DEFAULTS.RACHAT_MAX_TOTAL_DAYS} jours (max annuel conventionnel art. 5.7.3 4°).`,
+    );
+    err.code = 'RACHAT_TOTAL_TOO_HIGH';
+    throw err;
+  }
+
   const baseJours =
     daysInYear(year) -
     FORFAIT_DEFAULTS.WEEKEND_DAYS_PER_YEAR -
@@ -200,9 +261,19 @@ export function computeRachat({
   const salaireJournalierRef = baseJours > 0 ? salaireAnnuel / baseJours : 0;
   const totalRachat =
     Math.round(nbJoursARacheter * salaireJournalierRef * (1 + majorationPct / 100) * 100) / 100;
+
+  const warnings = [];
+  const maxRachat = FORFAIT_DEFAULTS.RACHAT_MAX_TOTAL_DAYS - forfaitPlein;
+  if (nbJoursARacheter > maxRachat / 2) {
+    warnings.push(
+      `Rachat élevé (${nbJoursARacheter} j sur ${maxRachat} j maximum). Vérifier l'accord écrit du salarié (art. 5.7.3 4°).`,
+    );
+  }
+
   return {
     salaireJournalierRef: Math.round(salaireJournalierRef * 100) / 100,
     totalRachat,
+    warnings,
   };
 }
 

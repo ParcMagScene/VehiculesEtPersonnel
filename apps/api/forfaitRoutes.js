@@ -20,7 +20,9 @@ import {
   computeProrataSortie,
   computeRachat,
   computeRestAnnualDays,
+  CONVENTIONAL_REST_DAYS_TABLE,
   FORFAIT_DEFAULTS,
+  getConventionalRestDays,
 } from './services/forfait/calculators.js';
 import {
   computeFrenchHolidays,
@@ -158,18 +160,33 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
       if (!Number.isFinite(year) || year < 2000 || year > 2100)
         return res.status(400).json({ success: false, error: 'Année invalide' });
       const holidays = getHolidaysForYear(db, year);
+      const feriesHorsWeekend = countHolidaysExcludingWeekend(db, year);
       res.json({
         year,
         isLeap: isLeapYear(year),
         daysInYear: daysInYear(year),
         holidays,
-        holidaysHorsWeekend: countHolidaysExcludingWeekend(db, year),
+        holidaysHorsWeekend: feriesHorsWeekend,
+        conventionalRestDays: getConventionalRestDays(feriesHorsWeekend, year),
         computed: computeFrenchHolidays(year),
       });
     } catch (error) {
       logger.error('GET forfait/holidays error:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
+  });
+
+  // ─── GET /api/forfait/reference-table ──────────────────────────
+  // Barème conventionnel art. 5.7.3 3°a — table de référence légale.
+  app.get('/api/forfait/reference-table', authenticateToken, (_req, res) => {
+    res.json({
+      article: 'Art. 5.7.3 3°a (avenant n° 3 du 22-4-2025)',
+      formule:
+        'Jours de repos = Calendaires - Repos hebdo (104) - Fériés hors WE - CP légaux (25) - Forfait (218)',
+      table: CONVENTIONAL_REST_DAYS_TABLE,
+      note: 'Année bissextile : +1 jour de repos (art. 5.7.3 note (1)).',
+      defaults: FORFAIT_DEFAULTS,
+    });
   });
 
   // ─── Les 5 calculateurs ──────────────────────────────────────
@@ -223,6 +240,12 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
       try {
         res.json(computeRachat({ db, ...req.body }));
       } catch (error) {
+        if (
+          error?.code === 'RACHAT_MAJORATION_TOO_LOW' ||
+          error?.code === 'RACHAT_TOTAL_TOO_HIGH'
+        ) {
+          return res.status(400).json({ success: false, error: error.message, code: error.code });
+        }
         logger.error('calc rachat error:', error);
         res.status(500).json({ success: false, error: 'Erreur serveur' });
       }

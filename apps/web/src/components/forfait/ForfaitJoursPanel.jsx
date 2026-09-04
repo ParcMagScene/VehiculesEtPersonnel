@@ -604,10 +604,17 @@ function CalcRachat({ year, defaults, salaire, forfaitPlein, majoration }) {
   const [maj, setMaj] = useState(majoration);
   const [nb, setNb] = useState(5);
   const [res, setRes] = useState(null);
+  const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  const maxRachat = (defaults.RACHAT_MAX_TOTAL_DAYS ?? 235) - Number(forfaitPlein);
+  const isMinMaj = Number(maj) >= (defaults.RACHAT_MIN_MAJORATION_PCT ?? 10);
+  const isMaxOK = Number(nb) <= maxRachat;
 
   const run = async () => {
     setBusy(true);
+    setErr(null);
+    setRes(null);
     try {
       const r = await api.calcForfaitRachat({
         year,
@@ -619,6 +626,8 @@ function CalcRachat({ year, defaults, salaire, forfaitPlein, majoration }) {
         nbJoursARacheter: Number(nb),
       });
       setRes(r);
+    } catch (e) {
+      setErr(e?.error || e?.message || 'Erreur inconnue');
     } finally {
       setBusy(false);
     }
@@ -626,6 +635,12 @@ function CalcRachat({ year, defaults, salaire, forfaitPlein, majoration }) {
 
   return (
     <div className="forfait-calc-form">
+      <div className="forfait-calc-legal" style={{ gridColumn: '1 / -1' }}>
+        <strong>Art. 5.7.3 4° :</strong> majoration ≥ <strong>10 %</strong> · &nbsp;plafond annuel{' '}
+        <strong>235 jours</strong> travaillés (soit <strong>{maxRachat}</strong> jours rachetables
+        maximum pour un forfait plein de {forfaitPlein} j) · &nbsp;versement avant le 31 décembre ·
+        accord écrit du salarié requis.
+      </div>
       <FormField label="Salaire annuel brut (€)">
         <Input type="number" value={salaireY} onChange={(e) => setSalaireY(e.target.value)} />
       </FormField>
@@ -636,20 +651,48 @@ function CalcRachat({ year, defaults, salaire, forfaitPlein, majoration }) {
         <Input type="number" value={feries} onChange={(e) => setFeries(e.target.value)} />
       </FormField>
       <FormField label="Majoration rachat (%)">
-        <Input type="number" value={maj} onChange={(e) => setMaj(e.target.value)} step="0.1" />
+        <Input
+          type="number"
+          value={maj}
+          onChange={(e) => setMaj(e.target.value)}
+          step="0.1"
+          min={10}
+        />
       </FormField>
-      <FormField label="Nombre de jours à racheter">
-        <Input type="number" value={nb} onChange={(e) => setNb(e.target.value)} min={1} />
+      <FormField label={`Nombre de jours à racheter (max ${maxRachat})`}>
+        <Input
+          type="number"
+          value={nb}
+          onChange={(e) => setNb(e.target.value)}
+          min={1}
+          max={maxRachat}
+        />
       </FormField>
-      <Button variant="primary" onClick={run} disabled={busy}>
+      <Button variant="primary" onClick={run} disabled={busy || !isMinMaj || !isMaxOK}>
         <Calculator size={14} /> Calculer
       </Button>
+      {!isMinMaj && (
+        <InlineAlert variant="warning" style={{ gridColumn: '1 / -1' }}>
+          Majoration inférieure au minimum conventionnel (10 %).
+        </InlineAlert>
+      )}
+      {!isMaxOK && (
+        <InlineAlert variant="warning" style={{ gridColumn: '1 / -1' }}>
+          Nombre de jours supérieur au plafond annuel (235 - {forfaitPlein} = {maxRachat} j).
+        </InlineAlert>
+      )}
+      {err && (
+        <InlineAlert variant="error" style={{ gridColumn: '1 / -1' }}>
+          {err}
+        </InlineAlert>
+      )}
       {res && (
         <ResultTable
           title="Rachat de jours de repos"
           rows={[
             ['Salaire journalier de référence', fmtEur(res.salaireJournalierRef)],
             ['Total à payer', <strong key="t">{fmtEur(res.totalRachat)}</strong>],
+            ...(res.warnings || []).map((w, i) => [`⚠️ Avertissement ${i + 1}`, w]),
           ]}
         />
       )}

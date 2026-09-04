@@ -53,7 +53,9 @@ export const calcRachatSchema = z.object({
   cpOuvresFullYear: z.number().int().min(0).max(60),
   feriesHorsWeekendFullYear: z.number().int().min(0).max(20),
   salaireAnnuel: positiveNum,
-  majorationPct: z.number().min(0).max(200).optional(),
+  // Minimum conventionnel art. 5.7.3 4° = 10%.
+  majorationPct: z.number().min(10).max(200).optional(),
+  // Plafond annuel de travail : forfaitPlein + nbJoursARacheter ≤ 235 (validation runtime).
   nbJoursARacheter: z.number().int().min(1).max(50),
 });
 

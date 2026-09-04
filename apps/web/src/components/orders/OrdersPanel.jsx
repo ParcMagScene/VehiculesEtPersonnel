@@ -96,10 +96,12 @@ const SupplierFormModal = lazy(() =>
   import('./SupplierModals').then((m) => ({ default: m.SupplierFormModal })),
 );
 
-function OrdersPanel({ currentUser, isMobile }) {
+function OrdersPanel({ currentUser, isMobile: _isMobile }) {
   const toast = useToast();
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
-  const isSimpleUser = isMobile && !currentUser?.isAdmin;
+  // Un non-admin ne voit que ses propres demandes + le suivi des commandes qui
+  // le concernent, quel que soit le device.
+  const isSimpleUser = !currentUser?.isAdmin;
   const [activeTab, setActiveTab] = useState(isSimpleUser ? 'requests' : 'orders');
   const [orders, setOrders] = useState([]);
   const [quotes, setQuotes] = useState([]);

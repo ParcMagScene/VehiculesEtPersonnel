@@ -14,8 +14,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   FormField,
-  Input,
   InlineAlert,
+  Input,
   SectionHeader,
   Select,
   Tabs,
@@ -737,7 +737,7 @@ function CalcRachat({ year, defaults, salaire, forfaitPlein, majoration }) {
   );
 }
 
-function CalcReduit({ forfaitPlein, defaults }) {
+function CalcReduit({ forfaitPlein, defaults: _defaults }) {
   const [forfait, setForfait] = useState(forfaitPlein);
   const [taux, setTaux] = useState(80);
   const [res, setRes] = useState(null);

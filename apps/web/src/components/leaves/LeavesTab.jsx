@@ -32,7 +32,6 @@ import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import { sanitizePrintHtml } from '../../utils/safePrintWindow';
-import ForfaitJoursPanel from '../forfait/ForfaitJoursPanel';
 import { usePrintPreview } from '../ui/PrintPreviewProvider';
 import LeaveAdminOverview from './LeaveAdminOverview';
 import LeaveRequestForm from './LeaveRequestForm';
@@ -447,46 +446,8 @@ const LeavesTab = ({ persons = [], currentUser }) => {
           onRefresh={() => loadData()}
         />
       )}
-
-      <ForfaitJoursSection persons={persons} currentUser={currentUser} isAdmin={isAdmin} />
     </div>
   );
 };
-
-// ═══════════════════════════════════════
-// Section Forfait-jours
-// ═══════════════════════════════════════
-function ForfaitJoursSection({ persons, currentUser, isAdmin }) {
-  const [selectedPersonId, setSelectedPersonId] = useState(() => {
-    if (!isAdmin && currentUser?.personId) return currentUser.personId;
-    return persons?.find((p) => p.type === 'permanent')?.id ?? persons?.[0]?.id ?? null;
-  });
-  const selectedPerson = persons?.find((p) => p.id === selectedPersonId);
-  if (!selectedPerson) return null;
-
-  return (
-    <div className="lt-forfait-section">
-      {isAdmin && persons.length > 1 && (
-        <div className="lt-forfait-picker">
-          <label htmlFor="forfait-person">Salarié :</label>
-          <select
-            id="forfait-person"
-            value={selectedPersonId ?? ''}
-            onChange={(e) => setSelectedPersonId(Number(e.target.value))}
-          >
-            {persons
-              .filter((p) => p.type === 'permanent')
-              .map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.first_name} {p.last_name}
-                </option>
-              ))}
-          </select>
-        </div>
-      )}
-      <ForfaitJoursPanel person={selectedPerson} isAdmin={isAdmin} />
-    </div>
-  );
-}
 
 export default LeavesTab;

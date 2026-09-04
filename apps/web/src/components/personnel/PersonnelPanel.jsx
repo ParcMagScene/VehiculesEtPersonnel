@@ -3,7 +3,7 @@ import '../../styles/person-sidebar.css';
 import '../equipment/EquipmentPanel.css';
 import '../vehicles/Calendar.css';
 
-import { Award, Briefcase, CalendarDays, CalendarOff, Clock, Users } from 'lucide-react';
+import { Award, Briefcase, CalendarDays, CalendarOff, Clock, Timer, Users } from 'lucide-react';
 import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 
 import { Button, InlineAlert, Spinner } from '@/design-system';
@@ -23,6 +23,7 @@ const PersonnelPlanningEditModal = lazy(() => import('./PersonnelPlanningEditMod
 const PositionsTab = lazy(() => import('./PositionsTab'));
 const SkillsTab = lazy(() => import('./SkillsTab'));
 const LeavesTab = lazy(() => import('../leaves/LeavesTab'));
+const ForfaitJoursTab = lazy(() => import('../forfait/ForfaitJoursTab'));
 
 // ═══════════════════════════════════════
 // Composant principal
@@ -80,6 +81,7 @@ const PersonnelPanel = ({
     { id: 'planning', label: 'Planning', icon: CalendarDays, color: STATUS_COLORS.success },
     { id: 'agenda', label: 'Agenda', icon: Clock, color: ACCENT_COLORS.cyan },
     { id: 'leaves', label: 'Congés', icon: CalendarOff, color: STATUS_COLORS.danger },
+    { id: 'forfait', label: 'Forfait-jours', icon: Timer, color: ACCENT_COLORS.violet },
   ];
   const subTabs =
     mode === 'management'
@@ -319,6 +321,17 @@ const PersonnelPanel = ({
             }
           >
             <LeavesTab persons={persons} currentUser={currentUser} />
+          </Suspense>
+        )}
+        {subTab === 'forfait' && (
+          <Suspense
+            fallback={
+              <div className="personnel-loading">
+                <Spinner size="lg" />
+              </div>
+            }
+          >
+            <ForfaitJoursTab persons={persons} currentUser={currentUser} />
           </Suspense>
         )}
       </div>

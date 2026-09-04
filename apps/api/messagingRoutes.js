@@ -691,6 +691,96 @@ export function setupMessagingRoutes(app, authenticateToken) {
     }
   });
 
+  // POST /api/messaging/conversations/:id/participants — Ajouter des participants
+  // Réservé aux participants actuels. Une conversation 'direct' devient 'group' auto.
+  app.post('/api/messaging/conversations/:id/participants', authenticateToken, (req, res) => {
+    try {
+      const convId = Number(req.params.id);
+      const { userIds } = req.body || {};
+      if (!Number.isFinite(convId)) {
+        return res.status(400).json({ success: false, error: 'ID conversation invalide' });
+      }
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ success: false, error: 'userIds requis (array non vide)' });
+      }
+
+      const conv = db.prepare('SELECT id, type, title FROM conversations WHERE id = ?').get(convId);
+      if (!conv) return res.status(404).json({ success: false, error: 'Conversation introuvable' });
+
+      const isParticipant = db
+        .prepare(
+          'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?',
+        )
+        .get(convId, req.user.id);
+      if (!isParticipant) {
+        return res.status(403).json({ success: false, error: 'Non autorisé' });
+      }
+
+      const validUserIds = userIds
+        .map((n) => Number(n))
+        .filter((n) => Number.isFinite(n) && n > 0 && n !== req.user.id);
+
+      const existing = new Set(
+        db
+          .prepare('SELECT user_id FROM conversation_participants WHERE conversation_id = ?')
+          .all(convId)
+          .map((r) => r.user_id),
+      );
+      const toAdd = validUserIds.filter((id) => !existing.has(id));
+
+      const usersFound = db
+        .prepare(
+          `SELECT id, name FROM users WHERE id IN (${toAdd.map(() => '?').join(',') || 'NULL'})`,
+        )
+        .all(...toAdd);
+      const foundIds = new Set(usersFound.map((u) => u.id));
+      const validToAdd = toAdd.filter((id) => foundIds.has(id));
+
+      if (validToAdd.length === 0) {
+        return res.json({ success: true, added: 0, conversation: conv });
+      }
+
+      const insertStmt = db.prepare(
+        'INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)',
+      );
+      const totalParticipants = existing.size + validToAdd.length;
+      const shouldUpgradeToGroup = conv.type === 'direct' && totalParticipants > 2;
+
+      const tx = db.transaction((ids) => {
+        for (const uid of ids) insertStmt.run(convId, uid);
+        if (shouldUpgradeToGroup) {
+          db.prepare(
+            "UPDATE conversations SET type = 'group', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+          ).run(convId);
+        } else {
+          db.prepare('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
+            convId,
+          );
+        }
+      });
+      tx(validToAdd);
+
+      logger.info(
+        `👥 ${req.user.email} a ajouté ${validToAdd.length} participant(s) à la conversation ${convId}`,
+      );
+
+      const refreshed = db
+        .prepare('SELECT id, type, title FROM conversations WHERE id = ?')
+        .get(convId);
+
+      res.status(201).json({
+        success: true,
+        added: validToAdd.length,
+        addedUserIds: validToAdd,
+        conversation: refreshed,
+        upgradedToGroup: shouldUpgradeToGroup,
+      });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // PUT /api/messaging/messages/:id — Modifier un message (auteur uniquement)
   app.put(
     '/api/messaging/messages/:id',

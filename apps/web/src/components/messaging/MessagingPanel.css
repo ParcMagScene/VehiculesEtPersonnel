@@ -684,3 +684,18 @@
     right: -100vw;
   }
 }
+
+/* Bouton invite dans header chat */
+.msg-chat-invite-btn {
+  margin-left: auto;
+}
+
+.msg-user-option-check {
+  margin-left: auto;
+  color: var(--theme-success, #10b981);
+  font-weight: 700;
+}
+
+.msg-user-option.selected {
+  background: color-mix(in srgb, var(--theme-primary, #4f46e5) 12%, transparent);
+}

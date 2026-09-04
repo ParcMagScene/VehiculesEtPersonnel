@@ -12,6 +12,7 @@ import {
   Plus,
   Send,
   Smile,
+  UserPlus,
   Users,
   X,
 } from 'lucide-react';
@@ -1276,6 +1277,9 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
   const [showNewConv, setShowNewConv] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteSelectedIds, setInviteSelectedIds] = useState([]);
+  const [inviteBusy, setInviteBusy] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -1436,6 +1440,50 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
     }
   };
 
+  // Modal invitation : charger les users qui ne sont pas déjà participants
+  const openInviteModal = async () => {
+    if (!activeConversation) return;
+    try {
+      const users = await api.request('/users/names');
+      const participantIds = new Set(
+        (activeConversation.participants || []).map((p) => p.user_id ?? p.id),
+      );
+      // On exclut l'utilisateur courant et les participants existants.
+      participantIds.add(currentUser?.id);
+      setAllUsers(users.filter((u) => !participantIds.has(u.id)));
+      setInviteSelectedIds([]);
+      setShowInvite(true);
+    } catch (err) {
+      console.error('Erreur chargement utilisateurs:', err);
+      toast.error('Impossible de charger les utilisateurs.');
+    }
+  };
+
+  const toggleInviteSelected = (id) => {
+    setInviteSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const handleInviteConfirm = async () => {
+    if (!activeConversation || inviteSelectedIds.length === 0) return;
+    setInviteBusy(true);
+    try {
+      const res = await api.addConversationParticipants(activeConversation.id, inviteSelectedIds);
+      toast.success(
+        `${res.added} participant(s) ajouté(s)${res.upgradedToGroup ? ' — conversation devenue groupe' : ''}.`,
+      );
+      setShowInvite(false);
+      setInviteSelectedIds([]);
+      await loadConversations();
+      await loadMessages(activeConversation.id);
+    } catch (err) {
+      toast.error(err?.response?.data?.error || err.message || "Erreur lors de l'invitation");
+    } finally {
+      setInviteBusy(false);
+    }
+  };
+
   // Touche Entrée pour envoyer
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1566,6 +1614,17 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 <ArrowLeft size={18} />
               </Button>
               <span className="msg-chat-title">{getConversationName(activeConversation)}</span>
+              <Tooltip content="Inviter des participants">
+                <Button
+                  variant="ghost"
+                  iconOnly
+                  className="msg-chat-invite-btn"
+                  onClick={openInviteModal}
+                  aria-label="Inviter des participants"
+                >
+                  <UserPlus size={18} />
+                </Button>
+              </Tooltip>
             </div>
 
             <div className="msg-messages">
@@ -1751,6 +1810,58 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
             </Button>
             <Button variant="primary" onClick={handleNewConversation} disabled={!selectedUserId}>
               Démarrer
+            </Button>
+          </div>
+        </ModalBody>
+      </Modal>
+
+      {/* Modal Inviter des participants */}
+      <Modal open={showInvite} onClose={() => setShowInvite(false)} size="sm">
+        <ModalHeader onClose={() => setShowInvite(false)}>Inviter des participants</ModalHeader>
+        <ModalBody>
+          <div className="msg-user-list">
+            {allUsers.map((user) => (
+              <div
+                key={user.id}
+                className={`msg-user-option ${inviteSelectedIds.includes(user.id) ? 'selected' : ''}`}
+                onClick={() => toggleInviteSelected(user.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleInviteSelected(user.id);
+                  }
+                }}
+              >
+                <div className="msg-user-option-avatar">{getInitials(user.name)}</div>
+                <span className="msg-user-option-name">{user.name}</span>
+                {inviteSelectedIds.includes(user.id) && (
+                  <span className="msg-user-option-check">✓</span>
+                )}
+              </div>
+            ))}
+            {allUsers.length === 0 && (
+              <p className="msg-empty">Tous les utilisateurs sont déjà participants.</p>
+            )}
+          </div>
+          <div className="msg-new-actions">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowInvite(false);
+                setInviteSelectedIds([]);
+              }}
+              disabled={inviteBusy}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleInviteConfirm}
+              disabled={inviteBusy || inviteSelectedIds.length === 0}
+            >
+              {inviteBusy ? 'Ajout…' : `Ajouter (${inviteSelectedIds.length})`}
             </Button>
           </div>
         </ModalBody>

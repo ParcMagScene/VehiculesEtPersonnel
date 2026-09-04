@@ -21,6 +21,12 @@ export function registerMessagingMethods(ApiClient) {
         body: JSON.stringify({ type, title, participantIds }),
       });
     },
+    async addConversationParticipants(conversationId, userIds) {
+      return this.request(`/messaging/conversations/${conversationId}/participants`, {
+        method: 'POST',
+        body: JSON.stringify({ userIds }),
+      });
+    },
     async getMessages(conversationId, limit = 50, before = null) {
       let url = `/messaging/conversations/${conversationId}/messages?limit=${limit}`;
       if (before) url += `&before=${before}`;

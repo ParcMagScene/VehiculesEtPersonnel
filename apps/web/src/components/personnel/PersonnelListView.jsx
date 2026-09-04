@@ -140,13 +140,30 @@ export const PersonsTab = ({
 
   const handleSave = async (payload) => {
     try {
+      const forfaitPatch = payload._forfait;
+      const cleanPayload = { ...payload };
+      delete cleanPayload._forfait;
+
+      let personId;
       if (editingPerson) {
-        const updated = await api.updatePerson(editingPerson.id, payload);
+        const updated = await api.updatePerson(editingPerson.id, cleanPayload);
         setPersons((prev) => prev.map((p) => (p.id === editingPerson.id ? updated : p)));
+        personId = editingPerson.id;
       } else {
-        const created = await api.createPerson(payload);
+        const created = await api.createPerson(cleanPayload);
         setPersons((prev) => [...prev, created]);
+        personId = created?.id;
       }
+
+      if (forfaitPatch && personId) {
+        try {
+          await api.updateForfaitConfig(personId, forfaitPatch);
+        } catch (fErr) {
+          const msg = fErr?.error || fErr?.message || 'Erreur config forfait';
+          toast.error(`Personnel enregistré, forfait non appliqué : ${msg}`);
+        }
+      }
+
       refreshBus.publish('persons');
       setShowFormModal(false);
       setEditingPerson(null);

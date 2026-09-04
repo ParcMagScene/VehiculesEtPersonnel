@@ -2171,3 +2171,23 @@
 .pp-grid.pp-resizing .pp-assignment-block:not(.pp-ghost, .pp-preview) {
   pointer-events: none;
 }
+
+/* Toggle forfait-jours dans PersonnelFormModal */
+.pf-forfait-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-weight: 500;
+}
+.pf-forfait-toggle input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+.pf-forfait-hint {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--theme-text-secondary);
+}

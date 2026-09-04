@@ -74,6 +74,12 @@ export const PersonnelFormModal = ({
       socialSecurityNumber: person?.socialSecurityNumber || person?.social_security_number || '',
       iban: person?.iban || '',
       hrNotes: person?.hrNotes || person?.hr_notes || '',
+      // Forfait-jours (admin, permanents uniquement)
+      isForfaitJours: Boolean(person?.isForfaitJours ?? person?.is_forfait_jours),
+      classificationLevel: person?.classificationLevel ?? person?.classification_level ?? '',
+      forfaitAnnualSalary: person?.forfaitAnnualSalary ?? person?.forfait_annual_salary ?? '',
+      forfaitMinAnnualSalary:
+        person?.forfaitMinAnnualSalary ?? person?.forfait_min_annual_salary ?? '',
     };
   });
 
@@ -110,6 +116,18 @@ export const PersonnelFormModal = ({
       payload.social_security_number = form.socialSecurityNumber || null;
       payload.iban = form.iban || null;
       payload.hr_notes = form.hrNotes || null;
+      if (form.type === 'permanent') {
+        // Traite séparément côté parent (PUT /api/forfait/config).
+        payload._forfait = {
+          is_forfait_jours: Boolean(form.isForfaitJours),
+          classification_level:
+            form.classificationLevel === '' ? null : Number(form.classificationLevel),
+          forfait_annual_salary:
+            form.forfaitAnnualSalary === '' ? null : Number(form.forfaitAnnualSalary),
+          forfait_min_annual_salary:
+            form.forfaitMinAnnualSalary === '' ? null : Number(form.forfaitMinAnnualSalary),
+        };
+      }
     }
     resetDirty();
     onSave(payload);
@@ -383,6 +401,71 @@ export const PersonnelFormModal = ({
                         onChange={(e) => setForm({ ...form, hrNotes: e.target.value })}
                       />
                     </FormField>
+                    {form.type === 'permanent' && (
+                      <>
+                        <FormField
+                          className="eq-form-field eq-form-full"
+                          label="⏱ Forfait annuel en jours (admin)"
+                        >
+                          <label className="pf-forfait-toggle">
+                            <input
+                              type="checkbox"
+                              checked={form.isForfaitJours}
+                              onChange={(e) =>
+                                setForm({ ...form, isForfaitJours: e.target.checked })
+                              }
+                            />
+                            <span>Activer le forfait-jours (art. L.3121-58)</span>
+                          </label>
+                          <small className="pf-forfait-hint">
+                            Niveau ≥ 4 requis · rémunération ≥ salaire mini catégorie + 20 %
+                          </small>
+                        </FormField>
+                        {form.isForfaitJours && (
+                          <>
+                            <FormField
+                              className="eq-form-field"
+                              label="Niveau classification (≥ 4)"
+                            >
+                              <Input
+                                type="number"
+                                min={1}
+                                max={15}
+                                value={form.classificationLevel}
+                                onChange={(e) =>
+                                  setForm({ ...form, classificationLevel: e.target.value })
+                                }
+                              />
+                            </FormField>
+                            <FormField className="eq-form-field" label="Salaire annuel brut (€)">
+                              <Input
+                                type="number"
+                                min={0}
+                                step={100}
+                                value={form.forfaitAnnualSalary}
+                                onChange={(e) =>
+                                  setForm({ ...form, forfaitAnnualSalary: e.target.value })
+                                }
+                              />
+                            </FormField>
+                            <FormField
+                              className="eq-form-field eq-form-full"
+                              label="Salaire mini catégorie (€ / an — base référence +20 %)"
+                            >
+                              <Input
+                                type="number"
+                                min={0}
+                                step={100}
+                                value={form.forfaitMinAnnualSalary}
+                                onChange={(e) =>
+                                  setForm({ ...form, forfaitMinAnnualSalary: e.target.value })
+                                }
+                              />
+                            </FormField>
+                          </>
+                        )}
+                      </>
+                    )}
                   </>
                 )}
               </>

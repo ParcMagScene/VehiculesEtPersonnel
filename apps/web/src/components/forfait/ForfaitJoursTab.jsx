@@ -11,14 +11,17 @@ import ForfaitJoursPanel from './ForfaitJoursPanel';
 
 export default function ForfaitJoursTab({ persons = [], currentUser }) {
   const isAdmin = Boolean(currentUser?.isAdmin);
+  const currentUserId = currentUser?.id ?? null;
 
-  const eligibleCandidates = useMemo(
-    () => (persons || []).filter((p) => p.type === 'permanent'),
-    [persons],
-  );
+  // Non-admin : seul son propre profil est accessible (backend renvoie 403 sinon).
+  const eligibleCandidates = useMemo(() => {
+    const permanents = (persons || []).filter((p) => p.type === 'permanent');
+    if (isAdmin) return permanents;
+    return permanents.filter((p) => p.user_id === currentUserId);
+  }, [persons, isAdmin, currentUserId]);
 
   const [selectedPersonId, setSelectedPersonId] = useState(() => {
-    if (!isAdmin && currentUser?.personId) return currentUser.personId;
+    if (!isAdmin) return eligibleCandidates[0]?.id ?? null;
     const activated = eligibleCandidates.find((p) => p.is_forfait_jours);
     return activated?.id ?? eligibleCandidates[0]?.id ?? null;
   });
@@ -29,8 +32,10 @@ export default function ForfaitJoursTab({ persons = [], currentUser }) {
     return (
       <div className="forfait-tab-wrapper">
         <InlineAlert variant="info">
-          <Info size={14} /> Aucun personnel permanent disponible. Le forfait-jours s'applique
-          uniquement aux cadres permanents ayant signé un avenant (art. L.3121-58).
+          <Info size={14} />{' '}
+          {isAdmin
+            ? "Aucun personnel permanent disponible. Le forfait-jours s'applique uniquement aux cadres permanents ayant signé un avenant (art. L.3121-58)."
+            : "Vous n'êtes pas configuré en forfait annuel en jours. Contactez votre administrateur RH si vous devez y être basculé (art. 5.7.1)."}
         </InlineAlert>
       </div>
     );

@@ -59,9 +59,15 @@ import {
 // Un utilisateur peut consulter/modifier sa propre config forfait si :
 // - il est admin, OU
 // - il est propriétaire (persons.user_id === req.user.id).
+// Note : le JWT actuel ne contient pas is_admin ; on relit is_admin depuis la DB.
 function canAccessPersonForfait(personId, user) {
   if (!user) return false;
   if (user.isAdmin) return true;
+  const admin = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(user.id);
+  if (admin?.is_admin) {
+    user.isAdmin = true;
+    return true;
+  }
   const row = db.prepare('SELECT user_id FROM persons WHERE id = ?').get(personId);
   return row && row.user_id === user.id;
 }
@@ -148,19 +154,33 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
         }
 
         // Éligibilité conventionnelle (art. 5.7.1) : niveau ≥ 4 + rémunération ≥ min+20%.
-        // Vérifiée uniquement lors d'une activation.
+        // Vérifiée uniquement lors d'une activation. On combine les valeurs du body
+        // (mise à jour en cours) et celles déjà en DB, car les nouvelles colonnes
+        // ne sont pas encore appliquées à cet instant.
         if (body.is_forfait_jours === 1 || body.is_forfait_jours === true) {
           const eligRow = db
             .prepare(
-              `SELECT classification_level, forfait_min_annual_salary
+              `SELECT classification_level, forfait_min_annual_salary, forfait_annual_salary
                  FROM persons WHERE id = ?`,
             )
             .get(personId);
+          const classificationLevel =
+            body.classification_level !== undefined
+              ? body.classification_level
+              : eligRow?.classification_level;
+          const annualSalary =
+            body.forfait_annual_salary !== undefined
+              ? body.forfait_annual_salary
+              : eligRow?.forfait_annual_salary;
+          const minCategorySalary =
+            body.forfait_min_annual_salary !== undefined
+              ? body.forfait_min_annual_salary
+              : eligRow?.forfait_min_annual_salary;
           const eligibility = checkForfaitEligibility({
             type: existing.type,
-            classificationLevel: eligRow?.classification_level,
-            annualSalary: body.forfait_annual_salary,
-            minCategorySalary: eligRow?.forfait_min_annual_salary,
+            classificationLevel,
+            annualSalary,
+            minCategorySalary,
           });
           if (!eligibility.ok) {
             return res.status(400).json({

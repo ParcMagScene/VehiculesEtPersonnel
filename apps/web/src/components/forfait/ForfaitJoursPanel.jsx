@@ -110,7 +110,23 @@ export default function ForfaitJoursPanel({ person, isAdmin = false }) {
       toast.success('Configuration forfait mise à jour');
       await loadConfig();
     } catch (e) {
-      toast.error(`Sauvegarde impossible : ${e.message}`);
+      // Le backend renvoie eligibility.errors[] avec les codes conventionnels.
+      const errs = e?.response?.data?.eligibility?.errors || [];
+      if (errs.length > 0) {
+        const msgs = errs.map((err) => {
+          if (err.code === 'NOT_PERMANENT') return 'Le salarié doit être de type permanent';
+          if (err.code === 'CLASSIFICATION_TOO_LOW')
+            return `Niveau classification ≥ ${err.min} requis (à renseigner sur la fiche)`;
+          if (err.code === 'SALARY_BELOW_MIN')
+            return `Salaire annuel doit être ≥ ${err.required} € (min catégorie + ${err.premiumPct} %)`;
+          return err.code;
+        });
+        toast.error(`Éligibilité forfait : ${msgs.join(' · ')}`);
+      } else {
+        toast.error(
+          `Sauvegarde impossible : ${e?.response?.data?.error || e?.message || 'erreur'}`,
+        );
+      }
     } finally {
       setSaving(false);
     }

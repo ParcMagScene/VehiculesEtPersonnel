@@ -159,8 +159,20 @@ export const PersonsTab = ({
         try {
           await api.updateForfaitConfig(personId, forfaitPatch);
         } catch (fErr) {
-          const msg = fErr?.error || fErr?.message || 'Erreur config forfait';
-          toast.error(`Personnel enregistré, forfait non appliqué : ${msg}`);
+          const errs = fErr?.response?.data?.eligibility?.errors || [];
+          if (errs.length > 0) {
+            const msgs = errs.map((err) => {
+              if (err.code === 'CLASSIFICATION_TOO_LOW') return `niveau ≥ ${err.min} requis`;
+              if (err.code === 'SALARY_BELOW_MIN')
+                return `salaire ≥ ${err.required} € (min + ${err.premiumPct} %)`;
+              if (err.code === 'NOT_PERMANENT') return 'type permanent requis';
+              return err.code;
+            });
+            toast.warning(`Fiche enregistrée. Forfait-jours non activé : ${msgs.join(' · ')}`);
+          } else {
+            const msg = fErr?.response?.data?.error || fErr?.message || 'Erreur config forfait';
+            toast.error(`Fiche enregistrée, forfait non appliqué : ${msg}`);
+          }
         }
       }
 

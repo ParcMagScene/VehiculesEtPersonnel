@@ -12,7 +12,13 @@ import {
   calcReduitSchema,
   calcReposAnnuelsSchema,
   calcSortieSchema,
+  createAlertSchema,
+  createEntretienSchema,
+  createPoseSchema,
   forfaitConfigSchema,
+  resolveAlertSchema,
+  updateEntretienSchema,
+  validatePoseSchema,
 } from './schemas/forfait.js';
 import {
   computeForfaitReduit,
@@ -31,6 +37,24 @@ import {
   getHolidaysForYear,
   isLeapYear,
 } from './services/forfait/holidays.js';
+import {
+  countPosesByType,
+  createAlert,
+  createEntretien,
+  createRestPose,
+  getEntretienComplianceForYear,
+  listAlerts,
+  listEntretiens,
+  listRestPoses,
+  resolveAlert,
+  updateEntretien,
+} from './services/forfait/repository.js';
+import {
+  checkForfaitEligibility,
+  hoursToWorkedDays,
+  REST_POSE_DEFAULTS,
+  validateRestPose,
+} from './services/forfait/validation.js';
 
 // Un utilisateur peut consulter/modifier sa propre config forfait si :
 // - il est admin, OU
@@ -55,6 +79,7 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
       const row = db
         .prepare(
           `SELECT id, first_name, last_name, type, contract_type,
+                  classification_level, forfait_min_annual_salary,
                   is_forfait_jours, forfait_jours_annual, forfait_jours_reduced_pct,
                   forfait_annual_salary, forfait_rachat_majoration_pct,
                   forfait_start_date, forfait_end_date
@@ -79,8 +104,11 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
           forfaitRachatMajorationPct: row.forfait_rachat_majoration_pct,
           forfaitStartDate: row.forfait_start_date,
           forfaitEndDate: row.forfait_end_date,
+          classificationLevel: row.classification_level,
+          forfaitMinAnnualSalary: row.forfait_min_annual_salary,
         },
         defaults: FORFAIT_DEFAULTS,
+        restPoseDefaults: REST_POSE_DEFAULTS,
       });
     } catch (error) {
       logger.error('GET forfait/config error:', error);
@@ -119,6 +147,30 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
           });
         }
 
+        // Éligibilité conventionnelle (art. 5.7.1) : niveau ≥ 4 + rémunération ≥ min+20%.
+        // Vérifiée uniquement lors d'une activation.
+        if (body.is_forfait_jours === 1 || body.is_forfait_jours === true) {
+          const eligRow = db
+            .prepare(
+              `SELECT classification_level, forfait_min_annual_salary
+                 FROM persons WHERE id = ?`,
+            )
+            .get(personId);
+          const eligibility = checkForfaitEligibility({
+            type: existing.type,
+            classificationLevel: eligRow?.classification_level,
+            annualSalary: body.forfait_annual_salary,
+            minCategorySalary: eligRow?.forfait_min_annual_salary,
+          });
+          if (!eligibility.ok) {
+            return res.status(400).json({
+              success: false,
+              error: 'Conditions conventionnelles non remplies',
+              eligibility,
+            });
+          }
+        }
+
         const toInt01 = (v) => (v === true || v === 1 ? 1 : 0);
         db.prepare(
           `UPDATE persons SET
@@ -129,6 +181,8 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
              forfait_rachat_majoration_pct = COALESCE(?, forfait_rachat_majoration_pct),
              forfait_start_date = COALESCE(?, forfait_start_date),
              forfait_end_date = COALESCE(?, forfait_end_date),
+             classification_level = COALESCE(?, classification_level),
+             forfait_min_annual_salary = COALESCE(?, forfait_min_annual_salary),
              modified_by = ?,
              modified_at = datetime('now')
            WHERE id = ?`,
@@ -142,6 +196,8 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
             : null,
           body.forfait_start_date !== undefined ? body.forfait_start_date : null,
           body.forfait_end_date !== undefined ? body.forfait_end_date : null,
+          body.classification_level !== undefined ? body.classification_level : null,
+          body.forfait_min_annual_salary !== undefined ? body.forfait_min_annual_salary : null,
           req.user.id,
           personId,
         );
@@ -374,6 +430,214 @@ export function setupForfaitRoutes(app, authenticateToken, requireAdmin) {
       });
     } catch (error) {
       logger.error('GET forfait/bilan error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // Couches 4 & 5 — Poses, entretiens, alertes
+  // ═══════════════════════════════════════════════════════════════
+
+  // ─── POST /api/forfait/validate-pose ─────────────────────────
+  // Vérifie prévenance (14 j), plafond 5 j consécutifs, échéance 31/12.
+  app.post(
+    '/api/forfait/validate-pose',
+    authenticateToken,
+    validate(validatePoseSchema),
+    (req, res) => {
+      try {
+        const { personId, scheduledDate, requestDate } = req.body;
+        if (!canAccessPersonForfait(personId, req.user))
+          return res.status(403).json({ success: false, error: 'Accès refusé' });
+
+        // Construction de dailyWork sur ±10 jours autour de la pose.
+        const from = new Date(`${scheduledDate}T00:00:00Z`);
+        from.setUTCDate(from.getUTCDate() - 10);
+        const to = new Date(`${scheduledDate}T00:00:00Z`);
+        to.setUTCDate(to.getUTCDate() + 10);
+        const fromISO = from.toISOString().slice(0, 10);
+        const toISO = to.toISOString().slice(0, 10);
+        const poses = listRestPoses(db, personId, { fromDate: fromISO, toDate: toISO });
+        const posesByDate = new Map();
+        for (const p of poses) posesByDate.set(p.pose_date, p);
+
+        const dailyWork = [];
+        for (let d = new Date(from); d <= to; d.setUTCDate(d.getUTCDate() + 1)) {
+          const iso = d.toISOString().slice(0, 10);
+          const wd = d.getUTCDay();
+          const isWeekend = wd === 0 || wd === 6;
+          const pose = posesByDate.get(iso);
+          const isRest = pose && ['repos_conv', 'conge', 'ferie'].includes(pose.pose_type);
+          dailyWork.push({ date: iso, isWorked: !isWeekend && !isRest });
+        }
+
+        const result = validateRestPose({
+          scheduledDate,
+          requestDate: requestDate || new Date().toISOString().slice(0, 10),
+          dailyWork,
+        });
+        res.json(result);
+      } catch (error) {
+        logger.error('POST forfait/validate-pose error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
+
+  // ─── GET /api/forfait/poses/:personId ─────────────────────────
+  app.get('/api/forfait/poses/:personId', authenticateToken, (req, res) => {
+    try {
+      const personId = Number(req.params.personId);
+      if (!canAccessPersonForfait(personId, req.user))
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      const { from, to, type } = req.query;
+      const poses = listRestPoses(db, personId, { fromDate: from, toDate: to, type });
+      res.json({ poses });
+    } catch (error) {
+      logger.error('GET forfait/poses error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  // ─── POST /api/forfait/poses ─────────────────────────────────
+  app.post('/api/forfait/poses', authenticateToken, validate(createPoseSchema), (req, res) => {
+    try {
+      const body = req.body;
+      if (!canAccessPersonForfait(body.personId, req.user))
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+
+      // Journée type : > 4h = 1 jour, ≤ 4h = 1/2 (art. 5.7.3 3°b).
+      const workedEquiv =
+        body.hoursWorked != null ? hoursToWorkedDays(body.hoursWorked) : undefined;
+      const pose = createRestPose(db, { ...body, workedDaysEquiv: workedEquiv }, req.user.id);
+      res.status(201).json({ success: true, pose });
+    } catch (error) {
+      if (error?.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+        return res
+          .status(409)
+          .json({ success: false, error: 'Une pose existe déjà à cette date/période' });
+      }
+      logger.error('POST forfait/poses error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  // ─── GET /api/forfait/entretiens/:personId ───────────────────
+  app.get('/api/forfait/entretiens/:personId', authenticateToken, (req, res) => {
+    try {
+      const personId = Number(req.params.personId);
+      if (!canAccessPersonForfait(personId, req.user))
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      const year = req.query.year ? Number(req.query.year) : null;
+      const entretiens = listEntretiens(db, personId, year);
+      const compliance = year ? getEntretienComplianceForYear(db, personId, year) : null;
+      res.json({ entretiens, compliance });
+    } catch (error) {
+      logger.error('GET forfait/entretiens error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  // ─── POST /api/forfait/entretiens ────────────────────────────
+  app.post(
+    '/api/forfait/entretiens',
+    authenticateToken,
+    requireAdmin,
+    validate(createEntretienSchema),
+    (req, res) => {
+      try {
+        const entretien = createEntretien(db, req.body, req.user.id);
+        res.status(201).json({ success: true, entretien });
+      } catch (error) {
+        logger.error('POST forfait/entretiens error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
+
+  // ─── PATCH /api/forfait/entretiens/:id ───────────────────────
+  app.patch(
+    '/api/forfait/entretiens/:id',
+    authenticateToken,
+    requireAdmin,
+    validate(updateEntretienSchema),
+    (req, res) => {
+      try {
+        const id = Number(req.params.id);
+        const entretien = updateEntretien(db, id, req.body, req.user.id);
+        if (!entretien)
+          return res.status(404).json({ success: false, error: 'Entretien introuvable' });
+        res.json({ success: true, entretien });
+      } catch (error) {
+        logger.error('PATCH forfait/entretiens error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
+
+  // ─── GET /api/forfait/alerts/:personId ───────────────────────
+  app.get('/api/forfait/alerts/:personId', authenticateToken, (req, res) => {
+    try {
+      const personId = Number(req.params.personId);
+      if (!canAccessPersonForfait(personId, req.user))
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      const { status, year } = req.query;
+      const alerts = listAlerts(db, personId, { status, year: year ? Number(year) : null });
+      res.json({ alerts });
+    } catch (error) {
+      logger.error('GET forfait/alerts error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  // ─── POST /api/forfait/alerts ────────────────────────────────
+  // Un salarié peut déclencher une alerte pour lui-même (droit d'alerte).
+  app.post('/api/forfait/alerts', authenticateToken, validate(createAlertSchema), (req, res) => {
+    try {
+      const body = req.body;
+      if (!canAccessPersonForfait(body.personId, req.user))
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      const alert = createAlert(db, body, req.user.id);
+      res.status(201).json({ success: true, alert });
+    } catch (error) {
+      logger.error('POST forfait/alerts error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur' });
+    }
+  });
+
+  // ─── POST /api/forfait/alerts/:id/resolve ────────────────────
+  app.post(
+    '/api/forfait/alerts/:id/resolve',
+    authenticateToken,
+    requireAdmin,
+    validate(resolveAlertSchema),
+    (req, res) => {
+      try {
+        const id = Number(req.params.id);
+        const alert = resolveAlert(db, id, req.body, req.user.id);
+        if (!alert) return res.status(404).json({ success: false, error: 'Alerte introuvable' });
+        res.json({ success: true, alert });
+      } catch (error) {
+        logger.error('POST forfait/alerts/resolve error:', error);
+        res.status(500).json({ success: false, error: 'Erreur serveur' });
+      }
+    },
+  );
+
+  // ─── GET /api/forfait/compliance/:personId/:year ─────────────
+  // Bilan de conformité entretiens + alertes ouvertes + charge de poses.
+  app.get('/api/forfait/compliance/:personId/:year', authenticateToken, (req, res) => {
+    try {
+      const personId = Number(req.params.personId);
+      const year = Number(req.params.year);
+      if (!canAccessPersonForfait(personId, req.user))
+        return res.status(403).json({ success: false, error: 'Accès refusé' });
+      const entretiens = getEntretienComplianceForYear(db, personId, year);
+      const alertsOpen = listAlerts(db, personId, { status: 'open', year });
+      const posesByType = countPosesByType(db, personId, `${year}-01-01`, `${year}-12-31`);
+      res.json({ year, entretiens, alertsOpen, posesByType });
+    } catch (error) {
+      logger.error('GET forfait/compliance error:', error);
       res.status(500).json({ success: false, error: 'Erreur serveur' });
     }
   });

@@ -51,3 +51,59 @@ export function registerForfaitMethods(ApiClient) {
     },
   });
 }
+// ─── Extension : forfait couches 4 & 5 (poses, entretiens, alertes) ───
+export function registerForfaitLayer45(ApiClient) {
+  Object.assign(ApiClient.prototype, {
+    async validateForfaitPose(payload) {
+      return this.request('/forfait/validate-pose', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async listForfaitPoses(personId, params = {}) {
+      const q = new URLSearchParams(params).toString();
+      return this.request(`/forfait/poses/${personId}${q ? `?${q}` : ''}`);
+    },
+    async createForfaitPose(payload) {
+      return this.request('/forfait/poses', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async listForfaitEntretiens(personId, year) {
+      const q = year ? `?year=${year}` : '';
+      return this.request(`/forfait/entretiens/${personId}${q}`);
+    },
+    async createForfaitEntretien(payload) {
+      return this.request('/forfait/entretiens', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async updateForfaitEntretien(id, payload) {
+      return this.request(`/forfait/entretiens/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+    },
+    async listForfaitAlerts(personId, params = {}) {
+      const q = new URLSearchParams(params).toString();
+      return this.request(`/forfait/alerts/${personId}${q ? `?${q}` : ''}`);
+    },
+    async createForfaitAlert(payload) {
+      return this.request('/forfait/alerts', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async resolveForfaitAlert(id, payload) {
+      return this.request(`/forfait/alerts/${id}/resolve`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async getForfaitCompliance(personId, year) {
+      return this.request(`/forfait/compliance/${personId}/${year}`);
+    },
+  });
+}

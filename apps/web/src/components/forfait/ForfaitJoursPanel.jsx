@@ -23,6 +23,7 @@ import {
 
 import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
+import { AlertesTab, EntretiensTab, PosesTab } from './ForfaitComplianceTabs';
 
 // Constantes d'affichage.
 const DEFAULT_YEAR = new Date().getFullYear();
@@ -203,6 +204,9 @@ export default function ForfaitJoursPanel({ person, isAdmin = false }) {
         options={[
           { value: 'config', label: 'Contrat' },
           { value: 'calc', label: 'Calculateurs' },
+          { value: 'poses', label: 'Poses', disabled: !config?.isForfaitJours },
+          { value: 'entretiens', label: 'Entretiens', disabled: !config?.isForfaitJours },
+          { value: 'alertes', label: 'Alertes', disabled: !config?.isForfaitJours },
           { value: 'bilan', label: 'Bilan', disabled: !config?.isForfaitJours },
         ]}
       />
@@ -225,6 +229,9 @@ export default function ForfaitJoursPanel({ person, isAdmin = false }) {
           config={config}
         />
       )}
+      {tab === 'poses' && <PosesTab personId={person.id} year={year} />}
+      {tab === 'entretiens' && <EntretiensTab personId={person.id} year={year} isAdmin={isAdmin} />}
+      {tab === 'alertes' && <AlertesTab personId={person.id} year={year} isAdmin={isAdmin} />}
       {tab === 'bilan' && bilan && (
         <BilanTab bilan={bilan} year={year} onYearChange={setYear} onExport={exportBilanCsv} />
       )}
@@ -323,6 +330,34 @@ function ConfigTab({ config, defaults, disabled, onSave, saving }) {
             disabled={disabled}
           />
         </FormField>
+        <FormField label="Niveau classification (≥ 4 requis)" htmlFor="classification_level">
+          <Input
+            type="number"
+            id="classification_level"
+            value={local.classificationLevel ?? ''}
+            onChange={(e) =>
+              set({ classificationLevel: e.target.value ? Number(e.target.value) : null })
+            }
+            placeholder="Ex : 4"
+            disabled={disabled}
+            min={1}
+            max={15}
+          />
+        </FormField>
+        <FormField label="Salaire min. catégorie (€ / an)" htmlFor="min_salary">
+          <Input
+            type="number"
+            id="min_salary"
+            value={local.forfaitMinAnnualSalary ?? ''}
+            onChange={(e) =>
+              set({ forfaitMinAnnualSalary: e.target.value ? Number(e.target.value) : null })
+            }
+            placeholder="Base catégorie — salaire réel doit être ≥ base + 20 %"
+            disabled={disabled}
+            min={0}
+            step="100"
+          />
+        </FormField>
       </div>
       {!disabled && (
         <Button variant="primary" onClick={submit} disabled={saving}>
@@ -341,6 +376,8 @@ function toPayload(local) {
     forfait_rachat_majoration_pct: local.forfaitRachatMajorationPct ?? null,
     forfait_start_date: local.forfaitStartDate ?? null,
     forfait_end_date: local.forfaitEndDate ?? null,
+    classification_level: local.classificationLevel ?? null,
+    forfait_min_annual_salary: local.forfaitMinAnnualSalary ?? null,
   };
 }
 

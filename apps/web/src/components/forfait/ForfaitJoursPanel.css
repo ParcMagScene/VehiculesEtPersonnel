@@ -176,3 +176,73 @@
 .forfait-calc-legal strong {
   color: var(--theme-text-primary);
 }
+
+/* Onglets couches 4 & 5 (poses, entretiens, alertes) */
+.forfait-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.forfait-pose-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--theme-surface-subtle, transparent);
+  border-radius: var(--radius-md);
+}
+
+.forfait-pose-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+  grid-column: 1 / -1;
+}
+
+.forfait-validation-result {
+  margin: var(--space-2) 0;
+}
+
+.forfait-validation-errors {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+}
+
+.forfait-poses-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-sm);
+}
+
+.forfait-poses-table th,
+.forfait-poses-table td {
+  padding: var(--space-2);
+  text-align: left;
+  border-bottom: 1px solid var(--theme-border, #e5e7eb);
+}
+
+.forfait-poses-table th {
+  background: var(--theme-surface-subtle, transparent);
+  font-weight: 600;
+}
+
+.forfait-poses-table .badge-open,
+.forfait-poses-table .badge-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--font-xs);
+}
+
+.forfait-poses-table .badge-open {
+  background: color-mix(in srgb, var(--theme-warning, #f59e0b) 15%, transparent);
+  color: var(--theme-warning-strong, #b45309);
+}
+
+.forfait-poses-table .badge-ok {
+  background: color-mix(in srgb, var(--theme-success, #10b981) 15%, transparent);
+  color: var(--theme-success-strong, #047857);
+}

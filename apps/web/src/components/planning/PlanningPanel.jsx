@@ -1,6 +1,6 @@
 import './PlanningPanel.css';
 
-import { Calendar, ClipboardCheck, ClipboardList, Tv2, Users } from 'lucide-react';
+import { Calendar, ClipboardCheck, ClipboardList, Timer, Tv2, Users } from 'lucide-react';
 import { lazy, Suspense, useEffect, useState, useTransition } from 'react';
 
 import { Button } from '@/design-system';
@@ -14,6 +14,7 @@ const PersonnelPanel = lazy(() => import('../personnel/PersonnelPanel'));
 const DisplayDashboardPanel = lazy(() => import('../DisplayDashboard/DisplayDashboardPanel'));
 const PersonalSuiviWrapper = lazy(() => import('../suivi/PersonalSuiviWrapper'));
 const PersonalPlanningWrapper = lazy(() => import('./PersonalPlanningWrapper'));
+const ForfaitJoursTab = lazy(() => import('../forfait/ForfaitJoursTab'));
 
 // ═══ Composant Principal ═══
 function PlanningPanel({
@@ -73,6 +74,7 @@ function PlanningPanel({
     { id: 'personnel', label: 'Planning', icon: Users },
     { id: 'suivi', label: 'Suivi', icon: ClipboardCheck },
     { id: 'tasks', label: 'Tâches', icon: ClipboardList, count: stats?.tasksPending || 0 },
+    { id: 'forfait', label: 'Forfait-jours', icon: Timer },
     { id: 'dashboard', label: 'Dashboard Écrans', icon: Tv2 },
   ];
 
@@ -153,6 +155,13 @@ function PlanningPanel({
                   googleEvents={googleEvents}
                   onNavigateToEntity={onNavigateToEntity}
                 />
+              </Suspense>
+            </ErrorBoundary>
+          )}
+          {activeSubTab === 'forfait' && (
+            <ErrorBoundary moduleName="Planning · Forfait-jours">
+              <Suspense fallback={null}>
+                <ForfaitJoursTab persons={personnel} currentUser={currentUser} />
               </Suspense>
             </ErrorBoundary>
           )}

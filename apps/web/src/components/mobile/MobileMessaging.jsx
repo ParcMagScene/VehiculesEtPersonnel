@@ -588,43 +588,57 @@ function MobileMessaging({ currentUser, onBack }) {
             }
 
             const isSent = item.sender_id === currentUser?.id;
+            const senderLabel = isSent
+              ? currentUser?.name || currentUser?.email || 'Moi'
+              : item.sender_name;
+            const avatarColor = getAvatarColor(senderLabel);
 
             return (
               <div key={item.id} className={`mmsg-bubble-wrap ${isSent ? 'sent' : 'received'}`}>
-                {!isSent && <span className="mmsg-sender">{item.sender_name}</span>}
-                <div className="mmsg-bubble">
-                  {item.type === 'text' && item.content}
-                  {item.type === 'image' && item.attachments?.[0] && (
-                    <img
-                      src={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
-                      alt={item.attachments[0].original_name}
-                      loading="lazy"
-                      className="mmsg-img"
-                      onClick={() =>
-                        window.open(
-                          `${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`,
-                          '_blank',
-                        )
-                      }
-                    />
-                  )}
-                  {(item.type === 'file' || item.type === 'video') && item.attachments?.[0] && (
-                    <a
-                      href={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mmsg-file-link"
-                    >
-                      {item.type === 'video' ? <Image size={14} /> : <File size={14} />}
-                      <span>{item.attachments[0].original_name}</span>
-                      <span className="mmsg-file-size">
-                        {formatFileSize(item.attachments[0].size)}
-                      </span>
-                      <Download size={12} />
-                    </a>
-                  )}
+                <div
+                  className="mmsg-bubble-avatar"
+                  style={{ background: avatarColor }}
+                  title={senderLabel}
+                  aria-label={senderLabel}
+                >
+                  {getInitials(senderLabel)}
                 </div>
-                <span className="mmsg-time">{formatMsgTime(item.created_at)}</span>
+                <div className="mmsg-bubble-content">
+                  {!isSent && <span className="mmsg-sender">{item.sender_name}</span>}
+                  <div className="mmsg-bubble">
+                    {item.type === 'text' && item.content}
+                    {item.type === 'image' && item.attachments?.[0] && (
+                      <img
+                        src={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
+                        alt={item.attachments[0].original_name}
+                        loading="lazy"
+                        className="mmsg-img"
+                        onClick={() =>
+                          window.open(
+                            `${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`,
+                            '_blank',
+                          )
+                        }
+                      />
+                    )}
+                    {(item.type === 'file' || item.type === 'video') && item.attachments?.[0] && (
+                      <a
+                        href={`${API_BASE_URL.replace('/api', '')}/messaging-uploads/${item.attachments[0].filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mmsg-file-link"
+                      >
+                        {item.type === 'video' ? <Image size={14} /> : <File size={14} />}
+                        <span>{item.attachments[0].original_name}</span>
+                        <span className="mmsg-file-size">
+                          {formatFileSize(item.attachments[0].size)}
+                        </span>
+                        <Download size={12} />
+                      </a>
+                    )}
+                  </div>
+                  <span className="mmsg-time">{formatMsgTime(item.created_at)}</span>
+                </div>
               </div>
             );
           })}

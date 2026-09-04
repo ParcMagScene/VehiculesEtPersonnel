@@ -31,6 +31,7 @@ import {
 
 import { useToast } from '../../hooks/useToast';
 import api, { getApiUrl } from '../../utils/api';
+import { AVATAR_COLORS } from '../../constants/colors';
 
 const API_BASE_URL = getApiUrl();
 
@@ -1262,6 +1263,15 @@ const getInitials = (name) => {
     .slice(0, 2);
 };
 
+// Couleur stable dérivée du nom (hash déterministe → même couleur pour un même
+// interlocuteur d'une session à l'autre).
+const getAvatarColor = (name) => {
+  if (!name) return AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+};
+
 const formatFileSize = (bytes) => {
   if (bytes < 1024) return bytes + ' o';
   if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' Ko';
@@ -1641,13 +1651,19 @@ const MessagingPanel = ({ isOpen, onClose, currentUser }) => {
                 const senderLabel = isSent
                   ? currentUser?.name || currentUser?.email || 'Moi'
                   : item.sender_name;
+                const avatarColor = getAvatarColor(senderLabel);
 
                 return (
                   <div
                     key={item.id}
                     className={`msg-bubble-wrapper ${isSent ? 'sent' : 'received'}`}
                   >
-                    <div className="msg-bubble-avatar" title={senderLabel} aria-label={senderLabel}>
+                    <div
+                      className="msg-bubble-avatar"
+                      style={{ background: avatarColor }}
+                      title={senderLabel}
+                      aria-label={senderLabel}
+                    >
                       {getInitials(senderLabel)}
                     </div>
                     <div className="msg-bubble-content">

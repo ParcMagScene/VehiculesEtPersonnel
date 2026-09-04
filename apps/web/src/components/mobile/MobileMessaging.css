@@ -251,18 +251,49 @@
 
 .mmsg-bubble-wrap {
   display: flex;
-  flex-direction: column;
-  max-width: 80%;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: 85%;
   margin-bottom: var(--space-0-5);
 }
 
 .mmsg-bubble-wrap.sent {
   align-self: flex-end;
-  align-items: flex-end;
+  flex-direction: row-reverse;
 }
 
 .mmsg-bubble-wrap.received {
   align-self: flex-start;
+  flex-direction: row;
+}
+
+.mmsg-bubble-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--theme-text-inverse, #fff);
+  flex-shrink: 0;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.mmsg-bubble-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mmsg-bubble-wrap.sent .mmsg-bubble-content {
+  align-items: flex-end;
+}
+
+.mmsg-bubble-wrap.received .mmsg-bubble-content {
   align-items: flex-start;
 }
 

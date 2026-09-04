@@ -258,14 +258,7 @@
   flex-shrink: 0;
   user-select: none;
   text-transform: uppercase;
-}
-
-.msg-bubble-wrapper.sent .msg-bubble-avatar {
   background: var(--theme-primary, #4f46e5);
-}
-
-.msg-bubble-wrapper.received .msg-bubble-avatar {
-  background: var(--theme-accent-cyan, #06b6d4);
 }
 
 .msg-bubble-content {

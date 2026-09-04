@@ -1,0 +1,164 @@
+/* ═══ ForfaitJoursPanel ═══ */
+.forfait-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--theme-bg-card);
+  border-radius: var(--radius-lg);
+}
+
+.forfait-loading,
+.forfait-empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--theme-text-muted);
+}
+
+.forfait-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--space-px) solid var(--theme-border);
+}
+.forfait-header svg {
+  color: var(--theme-primary);
+}
+.forfait-title {
+  font-weight: 700;
+  font-size: var(--font-md);
+  color: var(--theme-text-primary);
+}
+.forfait-status {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.forfait-status.on {
+  background: color-mix(in srgb, var(--theme-success, #16a34a) 15%, transparent);
+  color: var(--theme-success, #16a34a);
+}
+.forfait-status.off {
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-muted);
+}
+.forfait-toggle-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.forfait-config,
+.forfait-calc,
+.forfait-bilan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.forfait-config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+.forfait-calc-picker {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2);
+  background: var(--theme-bg-secondary);
+  border-radius: var(--radius-md);
+}
+.forfait-year-info {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--theme-text-muted);
+  font-size: var(--font-sm);
+  margin-left: auto;
+}
+
+.forfait-calc-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--theme-bg-secondary);
+  border-radius: var(--radius-md);
+}
+.forfait-calc-form button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.forfait-result {
+  grid-column: 1 / -1;
+  background: var(--theme-bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  border: var(--space-px) solid var(--theme-border);
+}
+.forfait-result table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.forfait-result th {
+  text-align: left;
+  padding: var(--space-1) var(--space-2);
+  color: var(--theme-text-secondary);
+  font-weight: 500;
+  border-bottom: var(--space-px) solid var(--theme-border-light);
+}
+.forfait-result td {
+  padding: var(--space-1) var(--space-2);
+  text-align: right;
+  border-bottom: var(--space-px) solid var(--theme-border-light);
+}
+
+.forfait-bilan-header {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  justify-content: space-between;
+}
+.forfait-bilan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+.forfait-bilan-card {
+  padding: var(--space-3);
+  background: var(--theme-bg-secondary);
+  border-radius: var(--radius-md);
+}
+.forfait-bilan-card h4 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--theme-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.forfait-bilan-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.forfait-bilan-card li {
+  padding: var(--space-1) 0;
+  font-size: var(--font-sm);
+  color: var(--theme-text-secondary);
+  border-bottom: var(--space-px) dashed var(--theme-border-light);
+}
+.forfait-bilan-card li:last-child {
+  border-bottom: none;
+}
+.forfait-bilan-card strong {
+  color: var(--theme-text-primary);
+  font-weight: 700;
+}

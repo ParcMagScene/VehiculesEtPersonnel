@@ -77,6 +77,7 @@ import { setupGoogleRoutes } from './googleRoutes.js';
 import { setupInventoryRoutes } from './inventoryRoutes.js';
 import { setupLabelsRoutes } from './labelsRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
+import { setupForfaitRoutes } from './forfaitRoutes.js';
 import { setupLocationsRoutes } from './locationsRoutes.js';
 import { setupLocmatImportRoutes } from './locmatImportRoutes.js';
 import logger from './logger.js';
@@ -440,6 +441,7 @@ setupAssignmentsRoutes(app, authenticateToken);
 
 // Routes Module Congés — Code du travail / IDCC 3252
 setupLeaveRoutes(app, authenticateToken, requireAdmin);
+setupForfaitRoutes(app, authenticateToken, requireAdmin);
 
 // Routes Parc Matériel + SAV
 setupEquipmentCategoriesRoutes(app, authenticateToken, requireAdmin);

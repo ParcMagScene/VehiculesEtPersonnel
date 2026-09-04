@@ -2191,3 +2191,37 @@
   font-size: var(--font-xs);
   color: var(--theme-text-secondary);
 }
+
+/* Vue année : badges compteurs par cellule mensuelle */
+.pp-year-cell-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.pp-year-stat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm, 4px);
+  font-size: var(--font-xs, 11px);
+  font-weight: 600;
+  line-height: 1;
+}
+.pp-year-stat-mission {
+  background: color-mix(in srgb, var(--theme-success, #10b981) 20%, transparent);
+  color: var(--theme-success-strong, #047857);
+}
+.pp-year-stat-absence {
+  background: color-mix(in srgb, var(--theme-danger, #ef4444) 20%, transparent);
+  color: var(--theme-danger-strong, #b91c1c);
+}
+.pp-year-stat-task {
+  background: color-mix(in srgb, var(--theme-info, #2563eb) 20%, transparent);
+  color: var(--theme-info-strong, #1d4ed8);
+}

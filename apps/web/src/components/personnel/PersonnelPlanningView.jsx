@@ -208,14 +208,15 @@ export const PlanningTab = ({
     try {
       if (days.length === 0) return;
       const startStr = format(days[0], 'yyyy-MM-dd');
-      const endStr = format(days[days.length - 1], 'yyyy-MM-dd');
+      const lastDay = view === 'year' ? endOfMonth(days[days.length - 1]) : days[days.length - 1];
+      const endStr = format(lastDay, 'yyyy-MM-dd');
       const data = await api.getPersonnelPlanning({ startDate: startStr, endDate: endStr });
       setPlanningData(data || { missions: [], availabilities: [], taskAssignments: [] });
     } catch (err) {
       console.error('Erreur chargement planning:', err);
       toast.error('Erreur chargement du planning');
     }
-  }, [days, toast]);
+  }, [days, toast, view]);
 
   useEffect(() => {
     loadPlanning();
@@ -407,6 +408,72 @@ export const PlanningTab = ({
     });
     return map;
   }, [planningData.taskAssignments, days, view]);
+
+  // Vue année : agrégats mensuels (compteurs par personne × mois).
+  const yearStats = useMemo(() => {
+    const map = {};
+    if (view !== 'year' || days.length === 0) return map;
+    const bucket = (personId, monthIdx) => {
+      const key = `${personId}_${monthIdx}`;
+      if (!map[key]) map[key] = { missions: 0, absences: 0, tasks: 0, absencesByType: {} };
+      return map[key];
+    };
+    const monthIndexOf = (isoDate) => {
+      try {
+        const d = parseISO(isoDate);
+        return days.findIndex(
+          (m) => d.getFullYear() === m.getFullYear() && d.getMonth() === m.getMonth(),
+        );
+      } catch {
+        return -1;
+      }
+    };
+    (planningData.missions || []).forEach((mission) => {
+      (mission.assignments || []).forEach((a) => {
+        const personId = a.personId || a.person_id;
+        if (!personId) return;
+        const start = mission.startDate || mission.start_date;
+        const end = mission.endDate || mission.end_date;
+        if (!start) return;
+        const sIdx = monthIndexOf(start);
+        const eIdx = end ? monthIndexOf(end) : sIdx;
+        if (sIdx === -1) return;
+        for (let i = sIdx; i <= (eIdx === -1 ? sIdx : eIdx); i += 1) {
+          bucket(personId, i).missions += 1;
+        }
+      });
+    });
+    (planningData.availabilities || []).forEach((avail) => {
+      if (avail.status === STATUS.REJECTED) return;
+      const personId = avail.person_id || avail.personId;
+      if (!personId) return;
+      const start = avail.start_date || avail.startDate;
+      const end = avail.end_date || avail.endDate;
+      const sIdx = monthIndexOf(start);
+      const eIdx = end ? monthIndexOf(end) : sIdx;
+      if (sIdx === -1) return;
+      const type = avail.type || 'unavailable';
+      for (let i = sIdx; i <= (eIdx === -1 ? sIdx : eIdx); i += 1) {
+        const b = bucket(personId, i);
+        b.absences += 1;
+        b.absencesByType[type] = (b.absencesByType[type] || 0) + 1;
+      }
+    });
+    (planningData.taskAssignments || []).forEach((ta) => {
+      const personId = ta.person_id || ta.personId;
+      if (!personId) return;
+      const idx = monthIndexOf(ta.date);
+      if (idx === -1) return;
+      bucket(personId, idx).tasks += 1;
+    });
+    return map;
+  }, [
+    view,
+    days,
+    planningData.missions,
+    planningData.availabilities,
+    planningData.taskAssignments,
+  ]);
 
   const coveredSlotsForPerson = useCallback(
     (personId) => {
@@ -733,6 +800,39 @@ export const PlanningTab = ({
                   : {}),
               }}
             >
+              {view === 'year' &&
+                (() => {
+                  const s = yearStats[`${person.id}_${slotIndex}`];
+                  if (!s || (s.missions === 0 && s.absences === 0 && s.tasks === 0)) return null;
+                  return (
+                    <div className="pp-year-cell-stats">
+                      {s.missions > 0 && (
+                        <span
+                          className="pp-year-stat pp-year-stat-mission"
+                          title={`${s.missions} mission(s)`}
+                        >
+                          {s.missions}M
+                        </span>
+                      )}
+                      {s.absences > 0 && (
+                        <span
+                          className="pp-year-stat pp-year-stat-absence"
+                          title={`${s.absences} absence(s)`}
+                        >
+                          {s.absences}A
+                        </span>
+                      )}
+                      {s.tasks > 0 && (
+                        <span
+                          className="pp-year-stat pp-year-stat-task"
+                          title={`${s.tasks} tâche(s)`}
+                        >
+                          {s.tasks}T
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               {hasAbsence && !isCovered && (
                 <span
                   className="pp-absence-label"

@@ -329,19 +329,20 @@ main {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 2px solid currentColor;
-  border-radius: var(--radius-md-lg);
-  background: rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
-  overflow: hidden;
-  padding: var(--space-1);
+  overflow: visible;
+  padding: 0;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 .col-location .location-icon img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
+  transform: scale(1.6);
+  transform-origin: center;
 }
 .col-title {
   font-weight: 500;

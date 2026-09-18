@@ -240,6 +240,34 @@ describe('EquipmentGrid', () => {
     expect(screen.getByText('DXS15 SUB_1_4')).toBeInTheDocument();
   });
 
+  it('rend une référence uniquement non sérialisée déployable', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <EquipmentGrid
+        {...defaultProps}
+        equipment={[
+          makeEquipment({
+            id: 10,
+            name: 'K2',
+            reference: 'K2-',
+            serialNumber: null,
+            uid: null,
+            stockQuantity: 8,
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /ouvrir la ligne K2-/i })).toBeInTheDocument();
+    expect(container.querySelector('.eq-table-qty')?.textContent).toBe('8');
+
+    await user.click(screen.getByRole('button', { name: /ouvrir la ligne K2-/i }));
+
+    expect(
+      [...container.querySelectorAll('.eq-table-qty')].map((cell) => cell.textContent.trim()),
+    ).toEqual(['8', '8']);
+  });
+
   it('affiche le placeholder photo quand pas de photo', () => {
     const { container } = render(<EquipmentGrid {...defaultProps} equipment={[makeEquipment()]} />);
     expect(container.querySelector('.eq-table-photo-placeholder')).toBeInTheDocument();

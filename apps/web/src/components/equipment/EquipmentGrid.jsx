@@ -204,12 +204,19 @@ const buildEquipmentRows = (equipment) => {
   const rows = [...standalone];
   for (const group of byReference.values()) {
     const serialized = group.items.filter((item) => getSerializedNumber(item));
-    if (serialized.length <= 1) {
+    const nonSerialized = group.items.filter((item) => !getSerializedNumber(item));
+    const nonSerializedQuantity = nonSerialized.reduce(
+      (sum, item) => sum + getEquipmentQuantity(item),
+      0,
+    );
+    const totalQuantity = nonSerialized.length > 0 ? nonSerializedQuantity : serialized.length;
+
+    if (totalQuantity <= 1 && serialized.length <= 1 && group.items.length <= 1) {
       rows.push(...group.items);
       continue;
     }
 
-    const representative = serialized[0];
+    const representative = nonSerialized[0] || serialized[0];
     const serializedRows = serialized.map((item) => ({
       ...item,
       stockQuantity: 1,
@@ -217,12 +224,6 @@ const buildEquipmentRows = (equipment) => {
       isGroupChild: true,
       groupId: `reference:${group.reference}`,
     }));
-    const nonSerialized = group.items.filter((item) => !getSerializedNumber(item));
-    const nonSerializedQuantity = nonSerialized.reduce(
-      (sum, item) => sum + getEquipmentQuantity(item),
-      0,
-    );
-    const totalQuantity = Math.max(serialized.length, nonSerializedQuantity);
     const remainingQuantity = Math.max(totalQuantity - serialized.length, 0);
     rows.push({
       ...representative,
@@ -237,22 +238,22 @@ const buildEquipmentRows = (equipment) => {
       numero_mag: null,
       stockQuantity: totalQuantity,
       stock_quantity: totalQuantity,
-      location_zone: commonValue(serialized, ['location_zone', 'locationZone']),
-      location_depot: commonValue(serialized, ['location_depot', 'locationDepot']),
-      location_floor: commonValue(serialized, ['location_floor', 'locationFloor']),
-      location_code: commonValue(serialized, ['location_code', 'locationCode']),
-      location: commonValue(serialized, ['location']),
-      brand: commonValue(serialized, ['brand']),
-      brand_canonical: commonValue(serialized, ['brand_canonical']),
-      categoryName: commonValue(serialized, ['categoryName', 'category_name']),
-      purchaseDate: commonValue(serialized, ['purchaseDate', 'purchase_date']),
-      purchase_date: commonValue(serialized, ['purchase_date', 'purchaseDate']),
-      purchasePrice: commonValue(serialized, ['purchasePrice', 'purchase_price']),
-      purchase_price: commonValue(serialized, ['purchase_price', 'purchasePrice']),
-      warrantyEnd: commonValue(serialized, ['warrantyEnd', 'warranty_end']),
-      warranty_end: commonValue(serialized, ['warranty_end', 'warrantyEnd']),
-      notes: commonValue(serialized, ['notes']),
-      status: commonValue(serialized, ['status']) || 'available',
+      location_zone: commonValue(group.items, ['location_zone', 'locationZone']),
+      location_depot: commonValue(group.items, ['location_depot', 'locationDepot']),
+      location_floor: commonValue(group.items, ['location_floor', 'locationFloor']),
+      location_code: commonValue(group.items, ['location_code', 'locationCode']),
+      location: commonValue(group.items, ['location']),
+      brand: commonValue(group.items, ['brand']),
+      brand_canonical: commonValue(group.items, ['brand_canonical']),
+      categoryName: commonValue(group.items, ['categoryName', 'category_name']),
+      purchaseDate: commonValue(group.items, ['purchaseDate', 'purchase_date']),
+      purchase_date: commonValue(group.items, ['purchase_date', 'purchaseDate']),
+      purchasePrice: commonValue(group.items, ['purchasePrice', 'purchase_price']),
+      purchase_price: commonValue(group.items, ['purchase_price', 'purchasePrice']),
+      warrantyEnd: commonValue(group.items, ['warrantyEnd', 'warranty_end']),
+      warranty_end: commonValue(group.items, ['warranty_end', 'warrantyEnd']),
+      notes: commonValue(group.items, ['notes']),
+      status: commonValue(group.items, ['status']) || 'available',
     });
 
     rows.push(...serializedRows);

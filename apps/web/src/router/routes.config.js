@@ -30,7 +30,7 @@ import {
  */
 export const DESKTOP_MODULES = [
   { id: 'vehicles', label: 'Véhicules', icon: Truck },
-  { id: 'planning', label: 'Personnel', icon: Radio },
+  { id: 'planning', label: 'Planning', icon: Radio },
   { id: 'equipment', label: 'Équipements', icon: Package },
   { id: 'affaires', label: 'Affaires', icon: Briefcase },
   { id: 'orders', label: 'Commandes', icon: ShoppingCart },

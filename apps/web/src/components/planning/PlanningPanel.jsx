@@ -71,7 +71,7 @@ function PlanningPanel({
   }, [activeSubTab]);
 
   const subTabs = [
-    { id: 'personnel', label: 'Planning', icon: Users },
+    { id: 'personnel', label: 'Personnels', icon: Users },
     { id: 'suivi', label: 'Suivi', icon: ClipboardCheck },
     { id: 'tasks', label: 'Tâches', icon: ClipboardList, count: stats?.tasksPending || 0 },
     { id: 'forfait', label: 'Forfait-jours', icon: Timer },

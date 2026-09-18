@@ -537,20 +537,24 @@ const EquipmentPanel = ({
                   clearTimeout(clickTimerRef.current);
                   if (isMobile) {
                     setDialogEquipment(eq);
-                    api
-                      .getEquipmentById(eq.id)
-                      .then((detail) => setDialogEquipment(detail))
-                      .catch(() => {});
+                    if (!eq.isReferenceGroup) {
+                      api
+                        .getEquipmentById(eq.id)
+                        .then((detail) => setDialogEquipment(detail))
+                        .catch(() => {});
+                    }
                   } else {
                     clickTimerRef.current = setTimeout(() => {
                       if (selectedEquipment?.id === eq.id) {
                         setSelectedEquipment(null);
                       } else {
                         setSelectedEquipment(eq);
-                        api
-                          .getEquipmentById(eq.id)
-                          .then((detail) => setSelectedEquipment(detail))
-                          .catch(() => {});
+                        if (!eq.isReferenceGroup) {
+                          api
+                            .getEquipmentById(eq.id)
+                            .then((detail) => setSelectedEquipment(detail))
+                            .catch(() => {});
+                        }
                       }
                     }, 200);
                   }
@@ -559,10 +563,12 @@ const EquipmentPanel = ({
                   clearTimeout(clickTimerRef.current);
                   setSelectedEquipment(null);
                   setDialogEquipment(eq);
-                  api
-                    .getEquipmentById(eq.id)
-                    .then((detail) => setDialogEquipment(detail))
-                    .catch(() => {});
+                  if (!eq.isReferenceGroup) {
+                    api
+                      .getEquipmentById(eq.id)
+                      .then((detail) => setDialogEquipment(detail))
+                      .catch(() => {});
+                  }
                 }}
               />
             )}

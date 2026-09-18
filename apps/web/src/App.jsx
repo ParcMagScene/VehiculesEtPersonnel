@@ -33,6 +33,7 @@ import { useTheme } from './hooks/useTheme';
 import { ToastProvider } from './hooks/useToast';
 import { useVSCodeTheme } from './hooks/useVSCodeTheme';
 import UpdateAvailableBanner from './components/UpdateAvailableBanner';
+import { PrintPreviewProvider } from './components/ui/PrintPreviewProvider';
 import { useSearchParamState } from './router/RouterCompat';
 import {
   ALLOWED_MODULES,
@@ -530,15 +531,19 @@ function AppContent() {
   if (isMobile) {
     return (
       <ErrorBoundary>
-        <Suspense fallback={<AppShellFallback label="Chargement..." />}>
-          <MobileApp
-            onSwitchToDesktop={() => {
-              sessionStorage.setItem('forceDesktop', 'true');
-              window.location.hash = '';
-              setIsMobile(false);
-            }}
-          />
-        </Suspense>
+        <ToastProvider toast={toast}>
+          <PrintPreviewProvider>
+            <Suspense fallback={<AppShellFallback label="Chargement..." />}>
+              <MobileApp
+                onSwitchToDesktop={() => {
+                  sessionStorage.setItem('forceDesktop', 'true');
+                  window.location.hash = '';
+                  setIsMobile(false);
+                }}
+              />
+            </Suspense>
+          </PrintPreviewProvider>
+        </ToastProvider>
       </ErrorBoundary>
     );
   }

@@ -233,7 +233,7 @@ function mergePreviewOverrides(state) {
 // ===============================================
 //  ALERTES SUR TACHES (Phase 2 — synchro avec activeAlerts du backend)
 // ===============================================
-// Cle : taskId, valeur : { audio, blinkTimer, blinkExpired, soundPath }.
+// Cle : taskId, valeur : { audio, soundPath }.
 // Sync a chaque tick loadTVState : les alertes du server pilotent le state.
 const activeTaskAlerts = new Map();
 
@@ -272,29 +272,18 @@ function startTaskAlert(alert) {
     console.warn('Audio init alerte:', e.message);
   }
 
-  const state = { audio, blinkTimer: null, blinkExpired: false, soundPath: alert.soundPath };
-
-  // blinkDurationSec === -1 : blink infini jusqu'a ack ou done
-  const dur = Number(alert.blinkDurationSec);
-  if (Number.isFinite(dur) && dur > 0) {
-    state.blinkTimer = setTimeout(() => {
-      // Fin auto du blink : on retire l'UI mais on garde l'entree active
-      // pour ne PAS rejouer le son au prochain tick tant que l'alerte
-      // reste server-side. C'est resolu quand la tache passe done ou ack.
-      removeTaskAlertUI(taskId);
-      state.blinkExpired = true;
-    }, dur * 1000);
-  }
+  // Le réglage de durée ne désactive pas l'alerte visuelle : elle reste rouge
+  // et clignotante jusqu'à ce que le serveur confirme l'acquittement.
+  const state = { audio, soundPath: alert.soundPath };
 
   activeTaskAlerts.set(taskId, state);
   applyTaskAlertUI(taskId);
-  console.log(`\u{1F514} Alerte demarree : tache ${taskId} (son=${alert.soundPath}, blink=${dur}s)`);
+  console.log(`\u{1F514} Alerte demarree : tache ${taskId} (son=${alert.soundPath})`);
 }
 
 function stopTaskAlert(taskId) {
   const state = activeTaskAlerts.get(taskId);
   if (!state) return;
-  if (state.blinkTimer) clearTimeout(state.blinkTimer);
   if (state.audio) {
     try {
       state.audio.pause();
@@ -317,8 +306,7 @@ function syncTaskAlerts(activeAlerts) {
     if (!activeTaskAlerts.has(id)) {
       startTaskAlert(alert);
     } else {
-      const st = activeTaskAlerts.get(id);
-      if (!st.blinkExpired) applyTaskAlertUI(id);
+      applyTaskAlertUI(id);
     }
   }
 }

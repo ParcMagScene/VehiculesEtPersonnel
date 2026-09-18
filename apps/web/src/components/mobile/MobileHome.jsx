@@ -59,16 +59,14 @@ function MobileHome({ onNavigate, currentUser }) {
           <Users size={28} />
           <span>Personnel</span>
         </Button>
-        {canManageEquipment && (
-          <Button
-            type="button"
-            className="home-grid-item equipment"
-            onClick={() => onNavigate('equipment')}
-          >
-            <Package size={28} />
-            <span>Équipements</span>
-          </Button>
-        )}
+        <Button
+          type="button"
+          className="home-grid-item equipment"
+          onClick={() => onNavigate('equipment')}
+        >
+          <Package size={28} />
+          <span>Équipements</span>
+        </Button>
         {canManageEquipment && (
           <Button type="button" className="home-grid-item sav" onClick={() => onNavigate('sav')}>
             <Wrench size={28} />

@@ -144,14 +144,100 @@ describe('EquipmentGrid', () => {
     expect(screen.getByText('5')).toBeInTheDocument();
   });
 
+  it('regroupe plusieurs unités d une meme reference sous une ligne generique expandable', async () => {
+    const user = userEvent.setup();
+    const rows = [
+      makeEquipment({
+        id: 1,
+        name: 'RAVEN XIP',
+        reference: 'RAVEN XIP',
+        serialNumber: 'SN-001',
+        uid: 'EMAG-001',
+        numeroMag: 'MAG-001',
+        stockQuantity: 1,
+      }),
+      makeEquipment({
+        id: 2,
+        name: 'RAVEN XIP',
+        reference: 'RAVEN XIP',
+        serialNumber: 'SN-002',
+        uid: 'EMAG-002',
+        numeroMag: 'MAG-002',
+        stockQuantity: 1,
+      }),
+      makeEquipment({
+        id: 3,
+        name: 'RAVEN XIP',
+        reference: 'RAVEN XIP',
+        serialNumber: 'SN-003',
+        uid: 'EMAG-003',
+        numeroMag: 'MAG-003',
+        stockQuantity: 1,
+      }),
+    ];
+
+    render(<EquipmentGrid {...defaultProps} equipment={rows} />);
+
+    expect(screen.getAllByText('RAVEN XIP')).toHaveLength(2);
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.queryByText('SN-001')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /ouvrir la ligne/i }));
+
+    expect(screen.getByText('SN-001')).toBeInTheDocument();
+    expect(screen.getByText('SN-002')).toBeInTheDocument();
+    expect(screen.getByText('SN-003')).toBeInTheDocument();
+  });
+
   it('affiche plusieurs equipements', () => {
     const list = [
       makeEquipment({ id: 1, name: 'Projecteur LED' }),
-      makeEquipment({ id: 2, name: 'Enceinte JBL', uid: 'EMAG-002' }),
+      makeEquipment({ id: 2, name: 'Enceinte JBL', uid: 'EMAG-002', reference: 'REF-200' }),
     ];
     render(<EquipmentGrid {...defaultProps} equipment={list} />);
     expect(screen.getByText('Projecteur LED')).toBeInTheDocument();
     expect(screen.getByText('Enceinte JBL')).toBeInTheDocument();
+  });
+
+  it('affiche 1 par unité sérialisée et le reliquat non sérialisé', async () => {
+    const user = userEvent.setup();
+    const rows = [
+      makeEquipment({
+        id: 1,
+        name: 'DXS15 SUB',
+        reference: 'DXS15 SUB',
+        serialNumber: null,
+        uid: null,
+        stockQuantity: 4,
+      }),
+      makeEquipment({
+        id: 2,
+        name: 'DXS15 SUB',
+        reference: 'DXS15 SUB',
+        serialNumber: 'DXS15 SUB_1_1',
+        uid: 'EMAG-101',
+        stockQuantity: 1,
+      }),
+      makeEquipment({
+        id: 3,
+        name: 'DXS15 SUB',
+        reference: 'DXS15 SUB',
+        serialNumber: 'DXS15 SUB_1_4',
+        uid: 'EMAG-104',
+        stockQuantity: 7,
+      }),
+    ];
+
+    const { container } = render(<EquipmentGrid {...defaultProps} equipment={rows} />);
+    expect(container.querySelector('.eq-table-qty')?.textContent).toBe('4');
+
+    await user.click(screen.getByRole('button', { name: /ouvrir la ligne/i }));
+
+    const quantities = [...container.querySelectorAll('.eq-table-qty')].map((cell) =>
+      cell.textContent.trim(),
+    );
+    expect(quantities).toEqual(['4', '1', '1', '2']);
+    expect(screen.getByText('DXS15 SUB_1_4')).toBeInTheDocument();
   });
 
   it('affiche le placeholder photo quand pas de photo', () => {

@@ -148,6 +148,7 @@ const EquipmentDetailContent = ({
   categories: catList,
 }) => {
   const st = EQUIPMENT_STATUS[eq.status] || EQUIPMENT_STATUS.available;
+  const isReferenceGroup = Boolean(eq.isReferenceGroup);
   const [showQR, setShowQR] = useState(false);
   const photo = matchPhotoToEquipment(photosList || [], eq);
   const logo = matchLogoToBrand(logosList || [], eq.brand_canonical || eq.brand);
@@ -185,7 +186,7 @@ const EquipmentDetailContent = ({
               />
             )}
           </div>
-          {eq.uid && (
+          {eq.uid && !isReferenceGroup && (
             <div className="eq-detail-uid-row">
               <Hash size={14} />
               <code className="eq-uid-code">{eq.uid}</code>
@@ -280,7 +281,7 @@ const EquipmentDetailContent = ({
             <span className="eq-field-value">{eq.reference}</span>
           </div>
         )}
-        {(eq.serialNumber || eq.serial_number) && (
+        {(eq.serialNumber || eq.serial_number) && !isReferenceGroup && (
           <div className="eq-detail-field">
             <span className="eq-field-label">
               <Clipboard size={14} /> N° série
@@ -288,7 +289,7 @@ const EquipmentDetailContent = ({
             <span className="eq-field-value">{eq.serialNumber || eq.serial_number}</span>
           </div>
         )}
-        {(eq.numeroMag || eq.numero_mag) && (
+        {(eq.numeroMag || eq.numero_mag) && !isReferenceGroup && (
           <div className="eq-detail-field">
             <span className="eq-field-label">
               <Hash size={14} /> N° MAG
@@ -375,97 +376,99 @@ const EquipmentDetailContent = ({
       )}
 
       {/* Contrôles périodiques (VGP levage, EPI, Q18 électrique, etc.) */}
-      <EquipmentControlsSection equipmentId={eq.id} />
+      {!isReferenceGroup && <EquipmentControlsSection equipmentId={eq.id} />}
 
       {/* PV de contrôle importés (rapports DEKRA / Apave / Socotec…) */}
-      <PvDocumentsSection entityType="equipment" entityId={eq.id} />
+      {!isReferenceGroup && <PvDocumentsSection entityType="equipment" entityId={eq.id} />}
 
       {/* Interventions SAV */}
-      {(() => {
-        const tickets = eq.savTickets || [];
-        const activeTickets = tickets.filter(
-          (t) => t.status === 'open' || t.status === 'in_progress' || t.status === 'waiting_parts',
-        );
-        const historyTickets = tickets.filter(
-          (t) => t.status === 'closed' || t.status === 'resolved',
-        );
-
-        if (tickets.length === 0)
-          return (
-            <div className="eq-detail-section">
-              <h3>
-                <Wrench size={16} /> Interventions SAV
-              </h3>
-              <p className="eq-detail-empty">Aucune intervention</p>
-            </div>
+      {!isReferenceGroup &&
+        (() => {
+          const tickets = eq.savTickets || [];
+          const activeTickets = tickets.filter(
+            (t) =>
+              t.status === 'open' || t.status === 'in_progress' || t.status === 'waiting_parts',
+          );
+          const historyTickets = tickets.filter(
+            (t) => t.status === 'closed' || t.status === 'resolved',
           );
 
-        const renderTicket = (t) => {
-          const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
-          const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
-          return (
-            <div
-              key={t.id}
-              className={`eq-ticket-item ${onOpenTicketDialog ? 'eq-clickable-ticket' : ''}`}
-              role="button"
-              tabIndex={0}
-              onClick={() => onOpenTicketDialog && onOpenTicketDialog(t)}
-              style={onOpenTicketDialog ? { cursor: 'pointer' } : {}}
-            >
-              <div className="eq-ticket-header">
-                <span className="eq-ticket-type">{SAV_TYPES[t.type] || t.type}</span>
-                <span className="eq-ticket-priority" style={{ color: pri.color }}>
-                  {pri.label}
-                </span>
-                <span className="eq-ticket-status" style={{ background: tst.color }}>
-                  {tst.label}
-                </span>
-              </div>
-              <strong>{t.title}</strong>
-              {!compact && t.description && <p>{t.description}</p>}
-              {!compact && t.resolution && (
-                <p className="eq-ticket-resolution">✅ {t.resolution}</p>
-              )}
-              <div className="eq-ticket-meta">
-                <span>
-                  {safeDate(t.createdAt)} → {safeDate(t.resolvedAt)}
-                </span>
-                {t.cost != null && t.cost > 0 && <span>{parseFloat(t.cost).toFixed(2)} €</span>}
-              </div>
-            </div>
-          );
-        };
-
-        return (
-          <>
-            {activeTickets.length > 0 && (
+          if (tickets.length === 0)
+            return (
               <div className="eq-detail-section">
-                <h3 className="eq-interventions-title">
-                  <Wrench size={16} /> Interventions en cours ({activeTickets.length})
+                <h3>
+                  <Wrench size={16} /> Interventions SAV
                 </h3>
-                <div className="eq-detail-list">{activeTickets.map(renderTicket)}</div>
+                <p className="eq-detail-empty">Aucune intervention</p>
               </div>
-            )}
-            <div className="eq-detail-section">
-              <h3>
-                <Wrench size={16} /> Historique interventions ({historyTickets.length})
-              </h3>
-              {historyTickets.length === 0 ? (
-                <p className="eq-detail-empty">Aucun historique</p>
-              ) : (
-                <div className="eq-detail-list">
-                  {(compact ? historyTickets.slice(0, 5) : historyTickets).map(renderTicket)}
-                  {compact && historyTickets.length > 5 && (
-                    <p className="eq-detail-empty eq-detail-empty-more">
-                      + {historyTickets.length - 5} autre(s)… Double-cliquez pour tout voir
-                    </p>
-                  )}
+            );
+
+          const renderTicket = (t) => {
+            const tst = SAV_STATUS[t.status] || SAV_STATUS.open;
+            const pri = SAV_PRIORITY[t.priority] || SAV_PRIORITY.medium;
+            return (
+              <div
+                key={t.id}
+                className={`eq-ticket-item ${onOpenTicketDialog ? 'eq-clickable-ticket' : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => onOpenTicketDialog && onOpenTicketDialog(t)}
+                style={onOpenTicketDialog ? { cursor: 'pointer' } : {}}
+              >
+                <div className="eq-ticket-header">
+                  <span className="eq-ticket-type">{SAV_TYPES[t.type] || t.type}</span>
+                  <span className="eq-ticket-priority" style={{ color: pri.color }}>
+                    {pri.label}
+                  </span>
+                  <span className="eq-ticket-status" style={{ background: tst.color }}>
+                    {tst.label}
+                  </span>
+                </div>
+                <strong>{t.title}</strong>
+                {!compact && t.description && <p>{t.description}</p>}
+                {!compact && t.resolution && (
+                  <p className="eq-ticket-resolution">✅ {t.resolution}</p>
+                )}
+                <div className="eq-ticket-meta">
+                  <span>
+                    {safeDate(t.createdAt)} → {safeDate(t.resolvedAt)}
+                  </span>
+                  {t.cost != null && t.cost > 0 && <span>{parseFloat(t.cost).toFixed(2)} €</span>}
+                </div>
+              </div>
+            );
+          };
+
+          return (
+            <>
+              {activeTickets.length > 0 && (
+                <div className="eq-detail-section">
+                  <h3 className="eq-interventions-title">
+                    <Wrench size={16} /> Interventions en cours ({activeTickets.length})
+                  </h3>
+                  <div className="eq-detail-list">{activeTickets.map(renderTicket)}</div>
                 </div>
               )}
-            </div>
-          </>
-        );
-      })()}
+              <div className="eq-detail-section">
+                <h3>
+                  <Wrench size={16} /> Historique interventions ({historyTickets.length})
+                </h3>
+                {historyTickets.length === 0 ? (
+                  <p className="eq-detail-empty">Aucun historique</p>
+                ) : (
+                  <div className="eq-detail-list">
+                    {(compact ? historyTickets.slice(0, 5) : historyTickets).map(renderTicket)}
+                    {compact && historyTickets.length > 5 && (
+                      <p className="eq-detail-empty eq-detail-empty-more">
+                        + {historyTickets.length - 5} autre(s)… Double-cliquez pour tout voir
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
     </div>
   );
 };

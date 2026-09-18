@@ -681,6 +681,36 @@ export function setupVehicleRoutes(
     }
   });
 
+  // PATCH /api/reservations/:id/status — marque active/cancelled (soft-cancel).
+  app.patch('/api/reservations/:id/status', authenticateToken, (req, res) => {
+    try {
+      const { status } = req.body || {};
+      if (!['active', 'cancelled'].includes(status)) {
+        return res.status(400).json({ success: false, error: 'Statut invalide' });
+      }
+      const existing = db.prepare('SELECT id FROM reservations WHERE id = ?').get(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ success: false, error: 'Réservation introuvable' });
+      }
+      db.prepare(
+        'UPDATE reservations SET status = ?, modified_by = ?, modified_at = CURRENT_TIMESTAMP WHERE id = ?',
+      ).run(status, req.user.id, req.params.id);
+      addToHistory(
+        'reservation',
+        req.params.id,
+        status === 'cancelled' ? 'cancelled' : 'reactivated',
+        { status },
+        req.user.id,
+        req.user.name,
+      );
+      invalidateEntity('reservations');
+      res.json({ success: true, id: req.params.id, status });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   app.delete('/api/reservations/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
       // Vérification existence (cf. AUDIT-MUTATIONS-BACKEND-2026-05-18 §4.1)

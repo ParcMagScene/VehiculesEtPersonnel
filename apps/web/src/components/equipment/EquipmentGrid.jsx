@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Eye, MapPin, Package, Star } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronUp, Eye, MapPin, Package, Star } from 'lucide-react';
 import { forwardRef, useMemo, useState } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 
@@ -53,7 +53,7 @@ const VirtuosoTableRow = ({ item, context, ...rest }) => {
   return (
     <tr
       {...rest}
-      className={`eq-table-row${selectedId === item?.id ? ' selected' : ''}`}
+      className={`eq-table-row${selectedId === item?.id ? ' selected' : ''}${item?.isGroupChild ? ' eq-table-row-child' : ''}${item?.isReferenceGroup ? ' eq-table-row-group' : ''}`}
       onClick={() => item && onSelect && onSelect(item)}
       onDoubleClick={() => item && onDoubleClick && onDoubleClick(item)}
     />
@@ -178,6 +178,107 @@ const resolveEquipmentLocation = (eq, depotZones, allDepotZones) => {
   };
 };
 
+const getSerializedNumber = (eq) => eq.serialNumber || eq.serial_number || '';
+const getEquipmentQuantity = (eq) => Number(eq.stockQuantity ?? eq.stock_quantity ?? 1) || 1;
+
+const commonValue = (items, keys) => {
+  const values = items.map((item) => keys.map((key) => item[key]).find(Boolean) || '');
+  return values.every((value) => value === values[0]) ? values[0] : '';
+};
+
+const buildEquipmentRows = (equipment) => {
+  const byReference = new Map();
+  const standalone = [];
+
+  for (const item of equipment) {
+    const reference = String(item.reference || '').trim();
+    if (!reference) {
+      standalone.push(item);
+      continue;
+    }
+    const group = byReference.get(reference) || { reference, items: [] };
+    group.items.push(item);
+    byReference.set(reference, group);
+  }
+
+  const rows = [...standalone];
+  for (const group of byReference.values()) {
+    const serialized = group.items.filter((item) => getSerializedNumber(item));
+    if (serialized.length <= 1) {
+      rows.push(...group.items);
+      continue;
+    }
+
+    const representative = serialized[0];
+    const serializedRows = serialized.map((item) => ({
+      ...item,
+      stockQuantity: 1,
+      stock_quantity: 1,
+      isGroupChild: true,
+      groupId: `reference:${group.reference}`,
+    }));
+    const nonSerialized = group.items.filter((item) => !getSerializedNumber(item));
+    const nonSerializedQuantity = nonSerialized.reduce(
+      (sum, item) => sum + getEquipmentQuantity(item),
+      0,
+    );
+    const totalQuantity = Math.max(serialized.length, nonSerializedQuantity);
+    const remainingQuantity = Math.max(totalQuantity - serialized.length, 0);
+    rows.push({
+      ...representative,
+      id: `reference:${group.reference}`,
+      isReferenceGroup: true,
+      groupReference: group.reference,
+      children: serializedRows,
+      uid: null,
+      serialNumber: null,
+      serial_number: null,
+      numeroMag: null,
+      numero_mag: null,
+      stockQuantity: totalQuantity,
+      stock_quantity: totalQuantity,
+      location_zone: commonValue(serialized, ['location_zone', 'locationZone']),
+      location_depot: commonValue(serialized, ['location_depot', 'locationDepot']),
+      location_floor: commonValue(serialized, ['location_floor', 'locationFloor']),
+      location_code: commonValue(serialized, ['location_code', 'locationCode']),
+      location: commonValue(serialized, ['location']),
+      brand: commonValue(serialized, ['brand']),
+      brand_canonical: commonValue(serialized, ['brand_canonical']),
+      categoryName: commonValue(serialized, ['categoryName', 'category_name']),
+      purchaseDate: commonValue(serialized, ['purchaseDate', 'purchase_date']),
+      purchase_date: commonValue(serialized, ['purchase_date', 'purchaseDate']),
+      purchasePrice: commonValue(serialized, ['purchasePrice', 'purchase_price']),
+      purchase_price: commonValue(serialized, ['purchase_price', 'purchasePrice']),
+      warrantyEnd: commonValue(serialized, ['warrantyEnd', 'warranty_end']),
+      warranty_end: commonValue(serialized, ['warranty_end', 'warrantyEnd']),
+      notes: commonValue(serialized, ['notes']),
+      status: commonValue(serialized, ['status']) || 'available',
+    });
+
+    rows.push(...serializedRows);
+
+    if (remainingQuantity > 0) {
+      rows.push({
+        ...representative,
+        id: `reference:${group.reference}:unserialized`,
+        name: representative.name || group.reference,
+        uid: null,
+        serialNumber: null,
+        serial_number: null,
+        numeroMag: null,
+        numero_mag: null,
+        stockQuantity: remainingQuantity,
+        stock_quantity: remainingQuantity,
+        isGroupChild: true,
+        isUnserializedRemainder: true,
+        groupId: `reference:${group.reference}`,
+      });
+    }
+  }
+
+  return rows;
+};
+
 const EquipmentGrid = ({
   equipment,
   depotZones,
@@ -195,6 +296,7 @@ const EquipmentGrid = ({
 }) => {
   const [sortCol, setSortCol] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
+  const [expandedGroups, setExpandedGroups] = useState(() => new Set());
 
   // Largeurs de colonnes redimensionnables (persistées en localStorage)
   const EQ_COLS = useMemo(
@@ -304,7 +406,12 @@ const EquipmentGrid = ({
     return arr;
   }, [equipment, sortCol, sortDir, depotZones, allDepotZones]);
 
-  if (sorted.length === 0) {
+  const displayRows = useMemo(() => {
+    const grouped = buildEquipmentRows(sorted);
+    return grouped.filter((item) => !item.isGroupChild || expandedGroups.has(item.groupId));
+  }, [sorted, expandedGroups]);
+
+  if (displayRows.length === 0) {
     return (
       <EmptyState
         icon={<Package size={48} strokeWidth={1} />}
@@ -430,10 +537,30 @@ const EquipmentGrid = ({
     const isWatch = watchIds.has(eq.id);
     const location = resolveEquipmentLocation(eq, depotZones, allDepotZones);
 
+    const isExpanded = eq.isReferenceGroup && expandedGroups.has(eq.id);
+
     return (
       <>
         <td className="eq-table-thumb">
-          {photo || genericImg ? (
+          {eq.isReferenceGroup ? (
+            <button
+              type="button"
+              className="eq-group-toggle"
+              aria-label={`${isExpanded ? 'Réduire' : 'Ouvrir'} la ligne ${eq.reference}`}
+              aria-expanded={isExpanded}
+              onClick={(event) => {
+                event.stopPropagation();
+                setExpandedGroups((current) => {
+                  const next = new Set(current);
+                  if (next.has(eq.id)) next.delete(eq.id);
+                  else next.add(eq.id);
+                  return next;
+                });
+              }}
+            >
+              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+          ) : photo || genericImg ? (
             <img
               src={photo ? toThumbUrl(photo, 80) : genericImg}
               alt=""
@@ -446,7 +573,7 @@ const EquipmentGrid = ({
             </span>
           )}
         </td>
-        <td className="eq-table-name">
+        <td className={`eq-table-name${eq.isGroupChild ? ' eq-table-name-child' : ''}`}>
           <div className="eq-table-name-cell">
             <span>{cleanName(eq.name)}</span>
             <div className="eq-table-list-icons">
@@ -557,7 +684,7 @@ const EquipmentGrid = ({
     <div className="eq-table-wrap">
       <TableVirtuoso
         style={{ height: '100%' }}
-        data={sorted}
+        data={displayRows}
         overscan={200}
         increaseViewportBy={200}
         components={tableComponents}

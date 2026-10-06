@@ -177,8 +177,8 @@
   padding-left: var(--space-2-5);
 }
 .task-planning-panel .tp-columns-header .ev-col-h-vehicle {
-  width: 140px;
-  flex: 0 0 140px;
+  width: 220px;
+  flex: 0 0 220px;
   border-left: var(--space-px) solid var(--border-default);
   padding-left: var(--space-2-5);
 }
@@ -942,10 +942,11 @@
   padding-left: var(--space-2-5);
 }
 .task-planning-panel .ev-col-vehicle {
-  width: 140px;
-  flex: 0 0 140px;
+  width: 220px;
+  flex: 0 0 220px;
   border-left: var(--space-px) solid var(--border-default);
   padding-left: var(--space-2-5);
+  gap: var(--space-1);
 }
 /* Col: Spacer (espace entre Client et Heure) */
 .task-planning-panel .ev-col-spacer {
@@ -1021,11 +1022,16 @@
   vertical-align: middle;
 }
 .task-planning-panel .ev-col-vehicle .vehicle-badge,
-.task-planning-panel .ev-col-vehicle .task-charge-vehicle-badge {
+.task-planning-panel .ev-col-vehicle .vehicle-registration-badge {
   margin-left: 0;
   margin-right: 0;
 }
-.task-planning-panel .task-charge-vehicle-badge {
+.task-planning-panel .ev-col-vehicle .vehicle-badge {
+  max-width: 145px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task-planning-panel .vehicle-registration-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;

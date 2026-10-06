@@ -179,11 +179,9 @@ export const PlanningTaskRow = React.memo(
     displayTitle = stripAffaireNum(displayTitle);
 
     const linkedAffaire = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
-    const isChargementSection = taskSection === 'chargement';
     const vehicleReg = task.reservationVehicleReg || task.reservation_vehicle_reg || '';
     const vehicleName = task.reservationVehicleName || task.reservation_vehicle_name || '';
-    const vehicleBadgeText = vehicleReg || vehicleName;
-    const showGreenVehicleBadge = isChargementSection && !!vehicleBadgeText;
+    const vehicleTooltip = [vehicleName, vehicleReg].filter(Boolean).join(' · ');
     const isGenericTitle =
       !displayTitle ||
       /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(displayTitle);
@@ -412,23 +410,23 @@ export const PlanningTaskRow = React.memo(
           <span className="ev-col ev-col-client" title={displayClient}>
             {displayClient}
           </span>
-          <span className="ev-col ev-col-vehicle" title={vehicleBadgeText || undefined}>
-            {vehicleBadgeText &&
-              (showGreenVehicleBadge ? (
-                <span
-                  className="task-charge-vehicle-badge"
-                  title={`🚗 ${vehicleName ? `${vehicleName} ` : ''}${vehicleReg || vehicleBadgeText}`}
-                >
-                  {vehicleBadgeText}
-                </span>
-              ) : (
-                <span
-                  className="vehicle-badge"
-                  title={`🚗 ${vehicleName || vehicleReg}${vehicleReg ? ` (${vehicleReg})` : ''}`}
-                >
-                  <Truck size={11} /> {vehicleName || vehicleReg}
-                </span>
-              ))}
+          <span className="ev-col ev-col-vehicle" title={vehicleTooltip || undefined}>
+            {vehicleReg && (
+              <span
+                className="vehicle-registration-badge"
+                title={`Immatriculation : ${vehicleReg}`}
+              >
+                {vehicleReg}
+              </span>
+            )}
+            {vehicleName && (
+              <span
+                className="vehicle-badge"
+                title={`Véhicule : ${vehicleName}${vehicleReg ? ` (${vehicleReg})` : ''}`}
+              >
+                <Truck size={11} /> {vehicleName}
+              </span>
+            )}
           </span>
           <span className="ev-col ev-col-spacer" />
 

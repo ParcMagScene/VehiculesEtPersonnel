@@ -201,6 +201,23 @@ describe('PlanningTaskRow', () => {
     ).toBeTruthy();
   });
 
+  it('affiche la plaque quand les champs véhicule sont en camelCase', () => {
+    render(
+      <PlanningTaskRow
+        {...baseProps}
+        task={makeTask({
+          section: 'chargement',
+          affaireNum: 'AF32718',
+          reservationVehicleName: 'Atego',
+          reservationVehicleReg: 'GG-043-YZ',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('GG-043-YZ')).toHaveClass('task-charge-vehicle-badge');
+    expect(screen.getByTestId('affaire-badge')).toHaveTextContent('AF32718');
+  });
+
   it('affiche le vehicule quand reservation_vehicle_name', () => {
     render(
       <PlanningTaskRow {...baseProps} task={makeTask({ reservation_vehicle_name: 'Camion 1' })} />,

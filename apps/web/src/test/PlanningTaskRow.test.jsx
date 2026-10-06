@@ -92,7 +92,22 @@ const makeTask = (overrides = {}) => ({
 describe('PlanningTaskRow', () => {
   it('affiche le titre de la tache', () => {
     render(<PlanningTaskRow {...baseProps} task={makeTask({ title: 'Ranger le depot' })} />);
-    expect(screen.getByText(/Ranger le depot/)).toBeInTheDocument();
+    expect(screen.getByText('Ranger le Depot')).toBeInTheDocument();
+  });
+
+  it('normalise le titre affiché sans modifier le numéro d’affaire lié', () => {
+    render(
+      <PlanningTaskRow
+        {...baseProps}
+        task={makeTask({
+          title: 'Liv afterworks opéra AF33891',
+          affaireNum: 'AF33891',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Afterworks Opéra')).toBeInTheDocument();
+    expect(screen.getByTestId('affaire-badge')).toHaveTextContent('AF33891');
   });
 
   it('affiche le badge Affaire quand affaireNum present', () => {

@@ -1104,9 +1104,21 @@ function TaskPlanningPanel({
               </Button>
             </Tooltip>
           </div>
+          <Button
+            variant="secondary"
+            className="tp-today-btn"
+            onClick={() => setSelectedDate(todayStr())}
+          >
+            <CalendarDays size={15} /> Aujourd'hui
+          </Button>
+          {totalTasks > 0 && (
+            <span className="u-text-secondary tp-progress-mini">
+              {doneTasks}/{totalTasks} terminée{doneTasks > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+        <div className="tp-toolbar-date" aria-label="Navigation par date">
           <div className="tp-date-nav">
-            {/* Flèches navigation : variant=secondary pour avoir une bordure visible
-                cohérente avec les autres modules (cf. .date-nav dans PlanningPanel.css). */}
             <Button
               variant="secondary"
               className="tp-nav-arrow"
@@ -1116,16 +1128,22 @@ function TaskPlanningPanel({
             >
               <ChevronLeft size={16} />
             </Button>
-            <Tooltip content="Aujourd'hui" position="bottom">
-              <span
-                className="tp-current-date"
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelectedDate(todayStr())}
-              >
-                {viewMode === 'week'
-                  ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
-                  : formatDateFr(selectedDate)}
+            <span className="tp-current-date" aria-live="polite">
+              {viewMode === 'week'
+                ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
+                : formatDateFr(selectedDate)}
+            </span>
+            <Tooltip content="Choisir une date" position="bottom">
+              <span className="tp-calendar-picker">
+                <CalendarDays size={16} aria-hidden="true" />
+                <input
+                  type="date"
+                  aria-label="Choisir une date"
+                  value={selectedDate}
+                  onChange={(event) => {
+                    if (event.target.value) setSelectedDate(event.target.value);
+                  }}
+                />
               </span>
             </Tooltip>
             <Button
@@ -1138,11 +1156,6 @@ function TaskPlanningPanel({
               <ChevronRight size={16} />
             </Button>
           </div>
-          {totalTasks > 0 && (
-            <span className="u-text-secondary tp-progress-mini">
-              {doneTasks}/{totalTasks} terminée{doneTasks > 1 ? 's' : ''}
-            </span>
-          )}
         </div>
         <div className="tp-toolbar-right">
           <Tooltip content="Reporter les tâches non terminées au lendemain" position="bottom">

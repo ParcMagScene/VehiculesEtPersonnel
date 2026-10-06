@@ -514,7 +514,7 @@ const ReservationModal = ({
             googleEventTitle: selectedEvent.summary || '(Sans titre)',
             locationName:
               selectedEvent.detectedLocation || selectedEvent.location || prev.locationName,
-            prestationName: selectedEvent.summary || prev.prestationName,
+            prestationName: prev.prestationName || selectedEvent.summary || '',
             clientName: selectedEvent.detectedClient || prev.clientName,
             affaires: newAffaires,
           };
@@ -1191,7 +1191,7 @@ const ReservationModal = ({
 
                   <FormField
                     className="form-group"
-                    label="Nom de prestation"
+                    label="Nom de la réservation / prestation"
                     htmlFor="prestationName"
                   >
                     <Input
@@ -1200,7 +1200,7 @@ const ReservationModal = ({
                       name="prestationName"
                       value={formData.prestationName}
                       onChange={handleChange}
-                      placeholder="Nom de la prestation"
+                      placeholder="Nom de la réservation"
                       list="prestations-autocomplete"
                     />
                     <datalist id="prestations-autocomplete">

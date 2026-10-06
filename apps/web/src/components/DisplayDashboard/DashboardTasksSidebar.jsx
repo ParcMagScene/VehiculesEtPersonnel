@@ -32,6 +32,7 @@ import { useRefreshSubscription } from '../../hooks/useRefreshSubscription';
 import { useToast } from '../../hooks/useToast';
 import { AFFAIRE_TYPES } from '../../utils/affaireConstants';
 import api from '../../utils/api';
+import { normalizeTaskTitle } from '../../utils/normalizeTaskTitle';
 import { refreshBus } from '../../utils/refresh-bus';
 
 // ─── Sections (depuis colorConstants, labels courts pour sidebar) ───
@@ -100,7 +101,7 @@ function cleanTaskDisplayTitle(task, affaireName) {
       .replace(/^[\s—–-]+/, '')
       .replace(/\s{2,}/g, ' ')
       .trim();
-    if (t) return t.charAt(0).toUpperCase() + t.slice(1);
+    if (t) return normalizeTaskTitle(t);
   }
 
   // 2. Fallback : google_event_title
@@ -113,7 +114,7 @@ function cleanTaskDisplayTitle(task, affaireName) {
       .replace(/^[\s—–-]+/, '')
       .replace(/\s{2,}/g, ' ')
       .trim();
-    if (t) return t.charAt(0).toUpperCase() + t.slice(1);
+    if (t) return normalizeTaskTitle(t);
   }
 
   // 3. Fallback : nom de l'affaire > notes (peut contenir un AF à retirer)
@@ -124,7 +125,7 @@ function cleanTaskDisplayTitle(task, affaireName) {
       .replace(/^[\s—–-]+/, '')
       .replace(/\s{2,}/g, ' ')
       .trim() || '-';
-  return fallback.charAt(0).toUpperCase() + fallback.slice(1);
+  return normalizeTaskTitle(fallback) || '-';
 }
 
 function DashboardTasksSidebar({ refreshKey, style }) {

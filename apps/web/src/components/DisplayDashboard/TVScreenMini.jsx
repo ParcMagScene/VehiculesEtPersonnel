@@ -8,6 +8,7 @@ import { memo, useEffect, useRef, useState } from 'react';
 
 import { STATUS } from '../../constants';
 import { ACCENT_COLORS, STATUS_COLORS } from '../../constants/colors';
+import { normalizeTaskTitle } from '../../utils/normalizeTaskTitle';
 
 const SAMPLE_TASKS = [
   {
@@ -166,6 +167,7 @@ function TVScreenMini({ state = {} }) {
     const affNum = task.affaireNum || task.affaire_num || '';
     const affType = task.affaireType || task.affaire_type || '';
     const badgeColor = AFFAIRE_TYPE_COLORS[affType] || STATUS_COLORS.info;
+    const displayTitle = normalizeTaskTitle(task.title) || task.title;
     return (
       <div
         key={i}
@@ -175,7 +177,7 @@ function TVScreenMini({ state = {} }) {
         <span className="tv-mini-evt-time">{timeDisplay}</span>
         <span className="tv-mini-evt-title">
           {isDone ? '✅ ' : ''}
-          {task.title}
+          {displayTitle}
         </span>
         <span className="tv-mini-evt-loc">
           {iconFile ? (

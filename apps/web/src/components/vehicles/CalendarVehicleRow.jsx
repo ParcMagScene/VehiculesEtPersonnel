@@ -8,6 +8,7 @@ import { STATUS_COLORS } from '../../constants/colors';
 import { getPeriodTimestamp } from '../../utils/dateUtils';
 import { getMaintenanceStatusStyle, getUserInitials } from './calendarUtils';
 import { renderReservationAffaires } from './renderReservationAffaires';
+import { getReservationDisplayName } from './reservationDisplayName';
 
 const CalendarVehicleRow = ({
   vehicle,
@@ -204,10 +205,9 @@ const CalendarVehicleRow = ({
                           block.maintenanceStatus,
                           getMaintenanceConflicts(block).length > 0,
                         ).icon + ' '}
-                      {block.clientName || block.prestationName}
-                      {!block.isMaintenance && block.affaire && (
-                        <span className="reservation-affaire-inline-badge">{block.affaire}</span>
-                      )}
+                      {block.isMaintenance
+                        ? block.prestationName || block.clientName
+                        : getReservationDisplayName(block.prestationName, block.clientName)}
                     </div>
                     {block.locationName && (
                       <div className="reservation-location">{block.locationName}</div>

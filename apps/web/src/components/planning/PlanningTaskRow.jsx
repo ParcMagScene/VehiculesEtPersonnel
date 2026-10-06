@@ -26,6 +26,7 @@ import {
 } from '@/design-system';
 
 import { STATUS } from '../../constants';
+import { normalizeTaskTitle } from '../../utils/normalizeTaskTitle';
 import AffaireBadge from '../AffaireBadge';
 import { EVENT_TYPES, extractAffaireNum, normalizeSection, SECTIONS } from './planningConstants';
 
@@ -223,7 +224,7 @@ export const PlanningTaskRow = React.memo(
     const affaireNom = stripAffaireNum(linkedAffaire?.nom || '');
     const affaireClient = linkedAffaire?.client || '';
     const rawNom = fullTitle || affaireNom || '-';
-    const displayNom = rawNom.charAt(0).toUpperCase() + rawNom.slice(1);
+    const displayNom = normalizeTaskTitle(rawNom) || '-';
     // Priorise le client saisi/modifié sur la tâche (client_name),
     // puis celui du display event (event_client), puis celui de l'affaire liée.
     const displayClient =

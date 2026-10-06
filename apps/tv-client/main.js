@@ -422,6 +422,8 @@ function applyTvScale(raw) {
   el.style.setProperty('--tv-scale', String(scale));
 }
 
+import { getEventBadges } from './eventBadges.js';
+
 // ===============================================
 //  RENDU DES ÉVÉNEMENTS
 // ===============================================
@@ -494,6 +496,12 @@ function createEventElement(event) {
   const eventLocation = escapeHtml(event.location || '');
   const affaireNum = event.affaire_num || '';
   const affaireType = event.affaire_type || '';
+  const { vehicleBadge, affaireBadge } = getEventBadges({
+    section: event.section || '',
+    affaireNum,
+    affaireType,
+    reservationVehicleReg: event.reservation_vehicle_reg || '',
+  });
 
   // Vérifier si terminé (status 'done' dans la planification OU marqué manuellement sur l'écran)
   const isCompleted = event.status === 'done' || completedEvents.includes(eventId);
@@ -514,21 +522,11 @@ function createEventElement(event) {
     locationContent = escapeHtml(event.sectionLabel || '');
   }
 
-  // Badge affaire (couleur selon le type d'affaire)
-  const AFFAIRE_TYPE_COLORS = {
-    Prestation: '#3b82f6', Location: '#f59e0b', Installation: '#10b981',
-    Vente: '#8b5cf6', 'Tournée': '#ec4899',
-  };
-  const badgeColor = AFFAIRE_TYPE_COLORS[affaireType] || '#3b82f6';
-  const affaireBadge = affaireNum
-    ? `<span class="tv-affaire-badge" style="--badge-color:${badgeColor}">${escapeHtml(affaireNum)}</span>`
-    : '';
-
   li.innerHTML = `
     <div class="event-columns">
       <div class="col-time">${timeDisplay}</div>
       <div class="col-title">${isCompleted ? '<span class="completed-icon">✅</span>' : ''}${eventTitle}</div>
-      <div class="col-affaire">${affaireBadge}</div>
+      <div class="col-affaire">${vehicleBadge}${affaireBadge}</div>
       <div class="col-location">${locationContent}</div>
     </div>
   `;

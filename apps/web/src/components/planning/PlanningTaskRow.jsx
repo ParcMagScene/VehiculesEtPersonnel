@@ -179,6 +179,9 @@ export const PlanningTaskRow = React.memo(
     displayTitle = stripAffaireNum(displayTitle);
 
     const linkedAffaire = affaireNum ? affaireByNum.get(affaireNum.toUpperCase()) : null;
+    const isChargementSection = taskSection === 'chargement';
+    const vehicleBadgeText = task.reservation_vehicle_reg || task.reservation_vehicle_name || '';
+    const showVehicleBadgeBeforeAffaire = isChargementSection && !!vehicleBadgeText;
     const isGenericTitle =
       !displayTitle ||
       /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(displayTitle);
@@ -341,6 +344,11 @@ export const PlanningTaskRow = React.memo(
           </Button>
 
           <span className="ev-col ev-col-affaire">
+            {showVehicleBadgeBeforeAffaire && (
+              <span className="task-charge-vehicle-badge" title={`🚗 ${vehicleBadgeText}`}>
+                {vehicleBadgeText}
+              </span>
+            )}
             {affaireNum ? (
               <AffaireBadge
                 numero={affaireNum}
@@ -385,7 +393,7 @@ export const PlanningTaskRow = React.memo(
                   </span>
                 ) : null;
               })()}
-            {task.reservation_vehicle_name && (
+            {!showVehicleBadgeBeforeAffaire && task.reservation_vehicle_name && (
               <span
                 className="vehicle-badge"
                 title={`🚗 ${task.reservation_vehicle_name} ${task.reservation_vehicle_reg || ''}`}

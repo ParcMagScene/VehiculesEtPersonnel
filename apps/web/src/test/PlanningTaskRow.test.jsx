@@ -179,6 +179,28 @@ describe('PlanningTaskRow', () => {
     expect(container.querySelector('.hidden-display')).toBeInTheDocument();
   });
 
+  it("affiche la plaque verte avant l'affaire pour une ligne de chargement", () => {
+    render(
+      <PlanningTaskRow
+        {...baseProps}
+        task={makeTask({
+          section: 'chargement',
+          affaireNum: 'AF12345',
+          reservation_vehicle_name: 'Camion 1',
+          reservation_vehicle_reg: 'AB-123-CD',
+        })}
+      />,
+    );
+
+    const plaque = screen.getByText('AB-123-CD');
+    const affaireBadge = screen.getByTestId('affaire-badge');
+    expect(plaque).toBeInTheDocument();
+    expect(affaireBadge).toHaveTextContent('AF12345');
+    expect(
+      plaque.compareDocumentPosition(affaireBadge) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('affiche le vehicule quand reservation_vehicle_name', () => {
     render(
       <PlanningTaskRow {...baseProps} task={makeTask({ reservation_vehicle_name: 'Camion 1' })} />,

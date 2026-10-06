@@ -183,7 +183,7 @@ export const PlanningTaskRow = React.memo(
     const vehicleReg = task.reservationVehicleReg || task.reservation_vehicle_reg || '';
     const vehicleName = task.reservationVehicleName || task.reservation_vehicle_name || '';
     const vehicleBadgeText = vehicleReg || vehicleName;
-    const showVehicleBadgeBeforeAffaire = isChargementSection && !!vehicleBadgeText;
+    const showGreenVehicleBadge = isChargementSection && !!vehicleBadgeText;
     const isGenericTitle =
       !displayTitle ||
       /^(Location|Prestation|Vente|Installation|Livraison)\s*$/i.test(displayTitle);
@@ -346,11 +346,6 @@ export const PlanningTaskRow = React.memo(
           </Button>
 
           <span className="ev-col ev-col-affaire">
-            {showVehicleBadgeBeforeAffaire && (
-              <span className="task-charge-vehicle-badge" title={`🚗 ${vehicleBadgeText}`}>
-                {vehicleBadgeText}
-              </span>
-            )}
             {affaireNum ? (
               <AffaireBadge
                 numero={affaireNum}
@@ -395,11 +390,6 @@ export const PlanningTaskRow = React.memo(
                   </span>
                 ) : null;
               })()}
-            {!showVehicleBadgeBeforeAffaire && vehicleName && (
-              <span className="vehicle-badge" title={`🚗 ${vehicleName} ${vehicleReg}`}>
-                <Truck size={11} /> {vehicleName}
-              </span>
-            )}
             {displayNom}
             {inlineNotes && <span className="task-notes-inline">({inlineNotes})</span>}
             {rolledTask && (
@@ -421,6 +411,24 @@ export const PlanningTaskRow = React.memo(
 
           <span className="ev-col ev-col-client" title={displayClient}>
             {displayClient}
+          </span>
+          <span className="ev-col ev-col-vehicle" title={vehicleBadgeText || undefined}>
+            {vehicleBadgeText &&
+              (showGreenVehicleBadge ? (
+                <span
+                  className="task-charge-vehicle-badge"
+                  title={`🚗 ${vehicleName ? `${vehicleName} ` : ''}${vehicleReg || vehicleBadgeText}`}
+                >
+                  {vehicleBadgeText}
+                </span>
+              ) : (
+                <span
+                  className="vehicle-badge"
+                  title={`🚗 ${vehicleName || vehicleReg}${vehicleReg ? ` (${vehicleReg})` : ''}`}
+                >
+                  <Truck size={11} /> {vehicleName || vehicleReg}
+                </span>
+              ))}
           </span>
           <span className="ev-col ev-col-spacer" />
 

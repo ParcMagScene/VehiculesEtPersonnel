@@ -327,6 +327,7 @@ export const GoogleRdvRow = React.memo(function GoogleRdvRow({
       <span className="ev-col ev-col-client" title={affaireClient}>
         {affaireClient}
       </span>
+      <span className="ev-col ev-col-vehicle" />
       <span className="ev-col ev-col-spacer" />
       <span className="ev-col ev-col-time">
         <Clock size={11} /> {timeStr}
@@ -440,6 +441,7 @@ export const RdvRow = React.memo(function RdvRow({
       <span className="ev-col ev-col-client" title={displayClient}>
         {displayClient}
       </span>
+      <span className="ev-col ev-col-vehicle" />
       <span className="ev-col ev-col-spacer" />
 
       <span className="ev-col ev-col-time">
@@ -586,6 +588,7 @@ export const IcalEventRow = React.memo(function IcalEventRow({
       <span className="ev-col ev-col-client" title={affaireClient}>
         {affaireClient}
       </span>
+      <span className="ev-col ev-col-vehicle" />
       <span className="ev-col ev-col-spacer" />
       <span className="ev-col ev-col-time">
         <Clock size={11} /> {timeStr}

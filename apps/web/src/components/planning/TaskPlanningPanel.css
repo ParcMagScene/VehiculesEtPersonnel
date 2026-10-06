@@ -176,6 +176,12 @@
   min-width: 180px;
   padding-left: var(--space-2-5);
 }
+.task-planning-panel .tp-columns-header .ev-col-h-vehicle {
+  width: 140px;
+  flex: 0 0 140px;
+  border-left: var(--space-px) solid var(--border-default);
+  padding-left: var(--space-2-5);
+}
 .task-planning-panel .tp-columns-header .ev-col-h-spacer {
   width: 0;
   flex: 0 0 0;
@@ -935,6 +941,12 @@
   text-overflow: ellipsis;
   padding-left: var(--space-2-5);
 }
+.task-planning-panel .ev-col-vehicle {
+  width: 140px;
+  flex: 0 0 140px;
+  border-left: var(--space-px) solid var(--border-default);
+  padding-left: var(--space-2-5);
+}
 /* Col: Spacer (espace entre Client et Heure) */
 .task-planning-panel .ev-col-spacer {
   width: 0;
@@ -1008,6 +1020,11 @@
   line-height: 1.5;
   vertical-align: middle;
 }
+.task-planning-panel .ev-col-vehicle .vehicle-badge,
+.task-planning-panel .ev-col-vehicle .task-charge-vehicle-badge {
+  margin-left: 0;
+  margin-right: 0;
+}
 .task-planning-panel .task-charge-vehicle-badge {
   display: inline-flex;
   align-items: center;
@@ -1016,9 +1033,9 @@
   font-weight: 700;
   padding: var(--space-px) 6px;
   border-radius: var(--radius-md-lg);
-  background: rgba(34, 197, 94, 0.12);
-  color: #166534;
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+  border: 1px solid var(--feedback-success-border);
   white-space: nowrap;
   line-height: 1.5;
   vertical-align: middle;

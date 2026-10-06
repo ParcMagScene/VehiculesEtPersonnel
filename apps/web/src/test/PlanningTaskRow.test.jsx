@@ -179,7 +179,7 @@ describe('PlanningTaskRow', () => {
     expect(container.querySelector('.hidden-display')).toBeInTheDocument();
   });
 
-  it("affiche la plaque verte avant l'affaire pour une ligne de chargement", () => {
+  it('affiche la plaque verte dans la colonne véhicule après le client', () => {
     render(
       <PlanningTaskRow
         {...baseProps}
@@ -194,10 +194,15 @@ describe('PlanningTaskRow', () => {
 
     const plaque = screen.getByText('AB-123-CD');
     const affaireBadge = screen.getByTestId('affaire-badge');
+    const row = plaque.closest('.task-row');
     expect(plaque).toBeInTheDocument();
     expect(affaireBadge).toHaveTextContent('AF12345');
+    expect(plaque.closest('.ev-col-vehicle')).toBeInTheDocument();
     expect(
-      plaque.compareDocumentPosition(affaireBadge) & Node.DOCUMENT_POSITION_FOLLOWING,
+      row
+        .querySelector('.ev-col-client')
+        .compareDocumentPosition(plaque.closest('.ev-col-vehicle')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
@@ -214,15 +219,18 @@ describe('PlanningTaskRow', () => {
       />,
     );
 
-    expect(screen.getByText('GG-043-YZ')).toHaveClass('task-charge-vehicle-badge');
+    const plaque = screen.getByText('GG-043-YZ');
+    expect(plaque).toHaveClass('task-charge-vehicle-badge');
+    expect(plaque.closest('.ev-col-vehicle')).toBeInTheDocument();
     expect(screen.getByTestId('affaire-badge')).toHaveTextContent('AF32718');
   });
 
   it('affiche le vehicule quand reservation_vehicle_name', () => {
-    render(
+    const { container } = render(
       <PlanningTaskRow {...baseProps} task={makeTask({ reservation_vehicle_name: 'Camion 1' })} />,
     );
-    expect(screen.getByText(/Camion 1/)).toBeInTheDocument();
+    expect(screen.getByText(/Camion 1/).closest('.ev-col-vehicle')).toBeInTheDocument();
+    expect(container.querySelector('.ev-col-vehicle')).toHaveTextContent('Camion 1');
   });
 
   it('affiche le lien adresse quand locationAddress', () => {

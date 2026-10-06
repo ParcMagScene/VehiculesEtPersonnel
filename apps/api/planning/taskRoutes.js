@@ -137,8 +137,28 @@ export function setupTaskRoutes(app, authenticateToken) {
              p.first_name AS person_first_name,
              p.last_name AS person_last_name,
              r.vehicle_id AS reservation_vehicle_id,
-             v.name AS reservation_vehicle_name,
-             v.registration AS reservation_vehicle_reg,
+             COALESCE(
+               v.name,
+               (
+                 SELECT GROUP_CONCAT(DISTINCT v2.name)
+                 FROM reservations r2
+                 LEFT JOIN vehicles v2 ON r2.vehicle_id = v2.id
+                 WHERE UPPER(TRIM(r2.affaire)) = UPPER(TRIM(ta.affaire_num))
+                   AND ta.date >= r2.start_date
+                   AND ta.date <= r2.end_date
+               )
+             ) AS reservation_vehicle_name,
+             COALESCE(
+               v.registration,
+               (
+                 SELECT GROUP_CONCAT(DISTINCT v2.registration)
+                 FROM reservations r2
+                 LEFT JOIN vehicles v2 ON r2.vehicle_id = v2.id
+                 WHERE UPPER(TRIM(r2.affaire)) = UPPER(TRIM(ta.affaire_num))
+                   AND ta.date >= r2.start_date
+                   AND ta.date <= r2.end_date
+               )
+             ) AS reservation_vehicle_reg,
              r.start_date AS reservation_start,
              r.end_date AS reservation_end,
              r.driver_name AS reservation_driver,

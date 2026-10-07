@@ -4,7 +4,7 @@ const EMOJI_RE =
   /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu;
 
 const OPERATION_PREFIX =
-  '(?:liv(?:raison)?|r(?:e|é)cup(?:e|é)?(?:ration)?|recup(?:eration)?|enl(?:e|è)vement|enlev(?:ement)?|retour|chargement|pr(?:e|é)pa(?:ration)?|prep(?:aration)?|d(?:e|é)part|installation|montage|d(?:e|é)montage|demontage|courses?)';
+  '(?:liv(?:raison)?|r(?:e|é)cup(?:e|é)?(?:ration)?|recup(?:eration)?|enl(?:e|è)vement|enlev(?:ement)?|retour|chargement|pr(?:e|é)pa(?:ration)?|prep(?:aration)?|d(?:e|é)part|installation|montage|d(?:e|é)montage|demontage|prioritaires?|secondaires?|intervention|autre\\s+tâche|courses?)';
 
 const LOWERCASE_TITLE_WORDS = new Set([
   'à',

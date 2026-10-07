@@ -219,6 +219,10 @@ export const PlanningTaskRow = React.memo(
       demontage: 'demontage',
     };
     const showEventType = taskEventType && SECTION_EVENT_TYPES[taskSection] !== taskEventType;
+    const taskTypeInfo =
+      (courseType && EVENT_TYPES[courseType]) ||
+      (taskEventType && EVENT_TYPES[taskEventType]) ||
+      sectionInfo;
 
     const fullTitle = showSubtitle ? `${displayTitle} — ${cleanEventTitle}` : displayTitle;
     const affaireNom = stripAffaireNum(linkedAffaire?.nom || '');
@@ -358,6 +362,13 @@ export const PlanningTaskRow = React.memo(
               />
             ) : null}
           </span>
+          <span className="ev-col ev-col-type">
+            {taskTypeInfo && (
+              <span className="task-type-badge" style={{ '--task-type-color': taskTypeInfo.color }}>
+                {taskTypeInfo.emoji} {taskTypeInfo.label}
+              </span>
+            )}
+          </span>
 
           <span
             className={`ev-col ev-col-nom ${isDone ? 'done' : ''}`}
@@ -373,22 +384,6 @@ export const PlanningTaskRow = React.memo(
               .filter(Boolean)
               .join('\n')}
           >
-            {courseType &&
-              (() => {
-                const ct = EVENT_TYPES[courseType];
-                return ct ? (
-                  <span
-                    className="course-type-badge"
-                    style={{
-                      background: `${ct.color}18`,
-                      color: ct.color,
-                      borderColor: `${ct.color}40`,
-                    }}
-                  >
-                    {ct.emoji} {ct.label}
-                  </span>
-                ) : null;
-              })()}
             {displayNom}
             {inlineNotes && <span className="task-notes-inline">({inlineNotes})</span>}
             {rolledTask && (

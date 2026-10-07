@@ -552,6 +552,7 @@ const PlanningDayView = React.memo(function PlanningDayView({
       <div className="tp-columns-header">
         <span className="ev-col-h ev-col-h-status">✔</span>
         <span className="ev-col-h ev-col-h-affaire">Affaire</span>
+        <span className="ev-col-h ev-col-h-type">Type</span>
         <span className="ev-col-h ev-col-h-nom">Titre / Nom</span>
         <span className="ev-col-h ev-col-h-client">Client</span>
         <span className="ev-col-h ev-col-h-vehicle">Véhicule</span>

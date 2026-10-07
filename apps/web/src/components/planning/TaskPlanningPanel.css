@@ -209,6 +209,10 @@
   width: 110px;
   flex: 0 0 110px;
 }
+.task-planning-panel .tp-columns-header .ev-col-h-type {
+  width: 132px;
+  flex: 0 0 132px;
+}
 .task-planning-panel .tp-columns-header .ev-col-h-nom {
   flex: 2 1 200px;
   min-width: 140px;
@@ -984,6 +988,10 @@
   width: 110px;
   flex: 0 0 110px;
 }
+.task-planning-panel .ev-col-type {
+  width: 132px;
+  flex: 0 0 132px;
+}
 /* Col: Nom (flex pour absorber l'espace, mais partage avec Client) */
 .task-planning-panel .ev-col-nom {
   flex: 2 1 200px;
@@ -1064,16 +1072,17 @@
   letter-spacing: 0.2px;
 }
 /* Badge type course (Enlèvement, Livraison, Retour, Récupération…) */
-.task-planning-panel .course-type-badge {
+.task-planning-panel .task-type-badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-0-5) var(--space-0-5) var(--space-0-5);
+  gap: var(--space-1);
   font-size: var(--font-xs);
   font-weight: 600;
-  padding: var(--space-px) 7px;
-  margin-left: var(--space-2);
+  padding: var(--space-0-5) var(--space-1-5);
   border-radius: var(--radius-md-lg);
-  border: var(--space-px) solid;
+  border: var(--space-px) solid color-mix(in srgb, var(--task-type-color) 40%, transparent);
+  background: color-mix(in srgb, var(--task-type-color) 12%, var(--surface-primary));
+  color: var(--task-type-color);
   white-space: nowrap;
   line-height: 1.5;
   vertical-align: middle;

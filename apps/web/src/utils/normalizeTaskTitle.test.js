@@ -6,6 +6,7 @@ describe('normalizeTaskTitle', () => {
   it('retire les préfixes opérationnels, le numéro d’affaire et capitalise', () => {
     expect(normalizeTaskTitle('Liv afterworks opéra af33891')).toBe('Afterworks Opéra');
     expect(normalizeTaskTitle('Récup eos Scenetech')).toBe('EOS Scenetech');
+    expect(normalizeTaskTitle('Prioritaire — rappeler le client')).toBe('Rappeler le Client');
   });
 
   it('nettoie les actions répétées et développe les abréviations loc', () => {

@@ -28,7 +28,7 @@ import { refreshBus } from '../../utils/refresh-bus';
 import AffaireBadge from '../AffaireBadge';
 
 // ═══ Définition des étapes opérationnelles ═══
-const TASK_STEPS = [
+export const TASK_STEPS = [
   {
     key: 'preparation',
     label: 'Préparation',
@@ -109,7 +109,57 @@ const TASK_STEPS = [
     color: STATUS_COLORS.dangerDark,
     defaultSection: 'demontage',
   },
+  {
+    key: 'prep_tournees',
+    label: 'Préparation tournée',
+    emoji: '🚐',
+    icon: Truck,
+    color: ACCENT_COLORS.cyanDark,
+    defaultSection: 'prep_tournees',
+  },
+  {
+    key: 'taches_prioritaires',
+    label: 'Prioritaire',
+    emoji: '🔴',
+    icon: AlertCircle,
+    color: STATUS_COLORS.danger,
+    defaultSection: 'taches_prioritaires',
+  },
+  {
+    key: 'taches_secondaires',
+    label: 'Secondaire',
+    emoji: '🟡',
+    icon: Clock,
+    color: STATUS_COLORS.warning,
+    defaultSection: 'taches_secondaires',
+  },
+  {
+    key: 'intervention',
+    label: 'Intervention',
+    emoji: '🛠️',
+    icon: Wrench,
+    color: STATUS_COLORS.info,
+    defaultSection: 'intervention',
+  },
+  {
+    key: 'manual',
+    label: 'Autre tâche',
+    emoji: '📋',
+    icon: Package,
+    color: STATUS_COLORS.info,
+    defaultSection: 'manual',
+  },
 ];
+
+const TASK_STEPS_WITHOUT_DISPLAY_EVENT = new Set([
+  'taches_prioritaires',
+  'taches_secondaires',
+  'intervention',
+  'manual',
+]);
+
+export const getDisplayEventSteps = (steps) =>
+  steps.filter((step) => !TASK_STEPS_WITHOUT_DISPLAY_EVENT.has(step.key));
 
 const SECTION_OPTIONS = Object.entries(PLANNING_SECTIONS).filter(
   ([key]) => !['rdv', 'evenements', 'depot'].includes(key),
@@ -252,6 +302,7 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
   // Mapping step → type d'événement d'affichage
   const STEP_TO_DISPLAY_TYPE = {
     preparation: 'preparation',
+    prep_tournees: 'preparation',
     chargement: 'preparation',
     depart: 'depart',
     enlevement: 'enlevement',
@@ -283,7 +334,8 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       }
 
       // 1) Créer les événements d'affichage correspondants
-      const displayEventsToCreate = enabledSteps.map((step) => {
+      const displayEventSteps = getDisplayEventSteps(enabledSteps);
+      const displayEventsToCreate = displayEventSteps.map((step) => {
         const s = steps[step.key];
         return {
           affaire_id: eventInfo.affaireNum || null,
@@ -299,16 +351,21 @@ function EventTaskModal({ event, existingTasks = [], onSave, onDelete, onClose }
       });
 
       let createdDisplayEvents = [];
-      try {
-        createdDisplayEvents = await api.createDisplayEventsBatch(displayEventsToCreate);
-      } catch (e) {
-        console.warn('Erreur création événements affichage (non bloquant):', e);
+      if (displayEventsToCreate.length > 0) {
+        try {
+          createdDisplayEvents = await api.createDisplayEventsBatch(displayEventsToCreate);
+        } catch (e) {
+          console.warn('Erreur création événements affichage (non bloquant):', e);
+        }
       }
+      const displayEventIds = new Map(
+        displayEventSteps.map((step, index) => [step.key, createdDisplayEvents[index]?.id || null]),
+      );
 
       // 2) Créer les tâches, liées aux display events si possible
-      const tasksToCreate = enabledSteps.map((step, idx) => {
+      const tasksToCreate = enabledSteps.map((step) => {
         const s = steps[step.key];
-        const displayEventId = createdDisplayEvents[idx]?.id || null;
+        const displayEventId = displayEventIds.get(step.key) || null;
         return {
           display_event_id: displayEventId,
           date: s.date,

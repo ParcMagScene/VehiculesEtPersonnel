@@ -115,6 +115,19 @@ describe('PlanningTaskRow', () => {
     expect(screen.getByTestId('affaire-badge')).toHaveTextContent('AF12345');
   });
 
+  it('affiche le type de tâche dans sa propre colonne', () => {
+    const { container } = render(
+      <PlanningTaskRow
+        {...baseProps}
+        task={makeTask({ section: 'taches_prioritaires', title: 'Préparer les flight cases' })}
+      />,
+    );
+
+    const typeColumn = container.querySelector('.ev-col-type');
+    expect(typeColumn).toHaveTextContent('Tâches Prioritaires');
+    expect(container.querySelector('.ev-col-nom')).not.toHaveTextContent('Tâches Prioritaires');
+  });
+
   it('affiche l icone Check quand status done', () => {
     render(<PlanningTaskRow {...baseProps} task={makeTask({ status: 'done' })} />);
     expect(screen.getByTestId('icon-check')).toBeInTheDocument();

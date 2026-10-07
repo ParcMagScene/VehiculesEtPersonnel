@@ -315,6 +315,7 @@ export const GoogleRdvRow = React.memo(function GoogleRdvRow({
           />
         ) : null}
       </span>
+      <span className="ev-col ev-col-type" />
       <span
         className="ev-col ev-col-nom"
         role="button"
@@ -422,6 +423,7 @@ export const RdvRow = React.memo(function RdvRow({
           }
         />
       </span>
+      <span className="ev-col ev-col-type" />
 
       <span
         className="ev-col ev-col-nom"
@@ -576,6 +578,7 @@ export const IcalEventRow = React.memo(function IcalEventRow({
           />
         ) : null}
       </span>
+      <span className="ev-col ev-col-type" />
       <span
         className="ev-col ev-col-nom"
         role="button"

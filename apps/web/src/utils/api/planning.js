@@ -126,8 +126,12 @@ export function registerPlanningMethods(ApiClient) {
     },
 
     // Export PDF tâches
-    async exportTasksPdf(date, taskIds, affaireIds, eventIds, gcalEvents) {
-      const endpoint = `/planning/tasks/export-pdf?date=${date}`;
+    async exportTasksPdf(date, taskIds, affaireIds, eventIds, gcalEvents, options = {}) {
+      const params = new URLSearchParams({ date });
+      if (options.dateFrom) params.set('dateFrom', options.dateFrom);
+      if (options.dateTo) params.set('dateTo', options.dateTo);
+      if (options.orientation) params.set('orientation', options.orientation);
+      const endpoint = `/planning/tasks/export-pdf?${params.toString()}`;
       const body = JSON.stringify({
         taskIds: Array.isArray(taskIds) ? taskIds : [],
         affaireIds: Array.isArray(affaireIds) ? affaireIds : [],

@@ -252,7 +252,10 @@ export function setupTaskRoutes(app, authenticateToken) {
 
   const handleExportPdf = async (req, res) => {
     try {
-      const { date, taskIds, eventIds } = req.query;
+      const { date, dateFrom, dateTo, orientation, taskIds, eventIds } = req.query;
+      const startDate = dateFrom || date;
+      const endDate = dateTo || date;
+      const hasExplicitTaskIds = Array.isArray(req.body?.taskIds);
       const gcalEvents = req.body?.gcalEvents || [];
 
       const parseCsvIds = (value) =>
@@ -276,13 +279,15 @@ export function setupTaskRoutes(app, authenticateToken) {
           : [];
 
       const selectedTaskIds = parseArrayIds(req.body?.taskIds);
-      if (selectedTaskIds.length === 0) selectedTaskIds.push(...parseCsvIds(taskIds));
+      if (!hasExplicitTaskIds && selectedTaskIds.length === 0) {
+        selectedTaskIds.push(...parseCsvIds(taskIds));
+      }
 
       const selectedEventIds = parseArrayIds(req.body?.eventIds);
       if (selectedEventIds.length === 0) selectedEventIds.push(...parseCsvIds(eventIds));
 
-      if (!date) {
-        return res.status(400).json({ success: false, error: 'Le paramètre date est requis' });
+      if (!startDate || !endDate) {
+        return res.status(400).json({ success: false, error: 'La date ou la plage est requise' });
       }
 
       // ── 1) Charger les tâches ──
@@ -333,16 +338,16 @@ export function setupTaskRoutes(app, authenticateToken) {
       FROM task_assignments ta
       LEFT JOIN dynamic_display_events dde ON ta.display_event_id = dde.id
       LEFT JOIN persons p ON ta.person_id = p.id
-      WHERE ta.date = ? AND ta.deleted_at IS NULL
-      ORDER BY ta.section ASC, ta.period ASC, ta.time ASC
+      WHERE ta.date >= ? AND ta.date <= ? AND ta.deleted_at IS NULL
+      ORDER BY ta.section ASC, ta.date ASC, ta.period ASC, ta.time ASC
     `,
         )
-        .all(date);
+        .all(startDate, endDate);
 
       // Exclure les tâches terminées du PDF (ne pas exclure selon le statut du display event lié)
       tasks = tasks.filter((t) => t.status !== 'done');
 
-      if (selectedTaskIds.length > 0) {
+      if (hasExplicitTaskIds || selectedTaskIds.length > 0) {
         const idSet = new Set(selectedTaskIds);
         tasks = tasks.filter((t) => idSet.has(t.id));
       }
@@ -368,7 +373,7 @@ export function setupTaskRoutes(app, authenticateToken) {
       affaires.forEach((a) => {
         if (a.numero_affaire) affaireByNum.set(a.numero_affaire.toUpperCase(), a);
       });
-      // Inclure aussi les affaires de la date (pour enrichir les tâches même si affaire non sélectionnée)
+      // Inclure les affaires actives sur la période pour enrichir les titres.
       const allDateAffaires = db
         .prepare(
           `
@@ -376,7 +381,7 @@ export function setupTaskRoutes(app, authenticateToken) {
       WHERE date_debut <= ? AND (date_fin IS NULL OR date_fin = '' OR date_fin >= ?)
     `,
         )
-        .all(date, date);
+        .all(endDate, startDate);
       allDateAffaires.forEach((a) => {
         if (a.numero_affaire && !affaireByNum.has(a.numero_affaire.toUpperCase())) {
           affaireByNum.set(a.numero_affaire.toUpperCase(), a);
@@ -700,30 +705,39 @@ export function setupTaskRoutes(app, authenticateToken) {
       });
 
       // ── Date en français ──
-      const dateObj = new Date(date + 'T00:00:00');
-      const dateFr = dateObj.toLocaleDateString('fr-FR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
+      const formatDateFr = (dateValue) =>
+        new Date(dateValue + 'T00:00:00').toLocaleDateString('fr-FR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        });
+      const dateFrStart = formatDateFr(startDate);
+      const dateFrEnd = formatDateFr(endDate);
+      const isDateRange = startDate !== endDate;
+      const dateFr = isDateRange ? `du ${dateFrStart} au ${dateFrEnd}` : dateFrStart;
+      const pageOrientation = orientation === 'landscape' && isDateRange ? 'landscape' : 'portrait';
 
       // ── Générer le PDF (tout sur 1 page) ──
       // QR code pré-généré (async) avant d'ouvrir le pipe : permet d'embarquer
       // le PNG directement dans le header sans attente côté stream.
-      const qrBuffer = await generateTasksDayQrBuffer(date);
+      const qrBuffer = await generateTasksDayQrBuffer(startDate);
 
       const doc = new PDFDocument({
         size: 'A4',
+        layout: pageOrientation,
         margins: { top: 25, bottom: 20, left: 25, right: 25 },
         info: {
-          Title: `Fiche du jour - ${dateFr}`,
+          Title: `${isDateRange ? 'Fiche de la semaine' : 'Fiche du jour'} - ${dateFr}`,
           Author: 'eM@g',
           Subject: 'Planification journalière',
         },
       });
 
-      const filename = safeContentDispositionName(`fiche-${date}.pdf`, 'fiche.pdf');
+      const filename = safeContentDispositionName(
+        isDateRange ? `fiche-${startDate}-${endDate}.pdf` : `fiche-${startDate}.pdf`,
+        'fiche.pdf',
+      );
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       doc.pipe(res);
@@ -816,7 +830,10 @@ export function setupTaskRoutes(app, authenticateToken) {
       doc
         .fontSize(16)
         .font('Helvetica-Bold')
-        .text('Fiche du jour', leftX, headerStartY, { width: titleAreaW, align: 'center' });
+        .text(isDateRange ? 'Fiche de la semaine' : 'Fiche du jour', leftX, headerStartY, {
+          width: titleAreaW,
+          align: 'center',
+        });
       doc.moveDown(0.15);
       doc
         .fontSize(10)
@@ -989,6 +1006,17 @@ export function setupTaskRoutes(app, authenticateToken) {
             drawCheckbox(cbX, cbY, t.status === 'done', cbSize);
             // Badge N° affaire (directement après la checkbox)
             let titleX = leftX + cbSize + 8;
+            if (isDateRange) {
+              const taskDay = new Date(`${t.date}T00:00:00`)
+                .toLocaleDateString('fr-FR', {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: '2-digit',
+                })
+                .replace(/\./g, '');
+              const dayBadgeW = drawBadge(taskDay, titleX, rowY, '#6b7280');
+              titleX += dayBadgeW;
+            }
             if (affNum) {
               const badgeW = drawBadge(affNum, titleX, rowY, badgeColor);
               titleX += badgeW;
@@ -999,30 +1027,22 @@ export function setupTaskRoutes(app, authenticateToken) {
               const badgeW = drawBadge(ct.label, titleX, rowY, ct.color);
               titleX += badgeW;
             }
-            const rolledFromMatch = String(t.notes || '').match(
-              /\[report(?:e|ée)\s+depuis\s+(\d{4}-\d{2}-\d{2})\]/i,
-            );
-            const rolledFromRaw = t.rolled_from_date || rolledFromMatch?.[1] || '';
-            const hasRolledFlag =
-              t.is_rolled === 1 ||
-              t.is_rolled === true ||
-              /\[report(?:e|ée)/i.test(String(t.notes || ''));
-            if (rolledFromRaw || hasRolledFlag) {
-              const rolledFromLabel = /^\d{4}-\d{2}-\d{2}$/.test(rolledFromRaw)
-                ? (() => {
-                    const [yy, mm, dd] = rolledFromRaw.split('-');
-                    return `${dd}-${mm}-${yy}`;
-                  })()
-                : rolledFromRaw;
-              const rolledBadgeText = rolledFromLabel
-                ? `Reportée du ${rolledFromLabel}`
-                : 'Reportée';
-              const badgeW = drawBadge(rolledBadgeText, titleX, rowY, '#f59e0b');
-              titleX += badgeW;
-            }
+            const clientBaseFs = fsSmall;
+            const clientTextWidth = showClient
+              ? doc.widthOfString(displayClient, {
+                  font: 'Helvetica-Oblique',
+                  fontSize: clientBaseFs,
+                })
+              : 0;
+            const maxClientColW = Math.max(0, leftX + pageW - titleX - timeColW - personColW - 65);
+            const clientColW = showClient ? Math.min(clientTextWidth + 8, maxClientColW) : 0;
+            const clientFontSize =
+              showClient && clientTextWidth + 8 > clientColW
+                ? Math.max(5, clientBaseFs * ((clientColW - 8) / Math.max(clientTextWidth, 1)))
+                : clientBaseFs;
             // Titre
             const rightInfoW =
-              timeColW + (showClient ? 65 : showLocation ? 55 : 0) + personColW + 8;
+              timeColW + (showClient ? clientColW : showLocation ? 55 : 0) + personColW + 8;
             const titleW = leftX + pageW - titleX - rightInfoW;
             if (t.status === 'done') {
               doc.font('Helvetica-Oblique').fontSize(fs).fillColor('#999999');
@@ -1096,13 +1116,13 @@ export function setupTaskRoutes(app, authenticateToken) {
             }
             // Client/Lieu ensuite (plus à gauche)
             if (showClient) {
-              rightX -= 65;
+              rightX -= clientColW;
               doc
                 .font('Helvetica-Oblique')
-                .fontSize(fsSmall)
+                .fontSize(clientFontSize)
                 .fillColor('#888888')
-                .text(displayClient.slice(0, 18), rightX, rowY + 2, {
-                  width: 63,
+                .text(displayClient, rightX, rowY + 2, {
+                  width: clientColW,
                   lineBreak: false,
                 });
             } else if (showLocation) {

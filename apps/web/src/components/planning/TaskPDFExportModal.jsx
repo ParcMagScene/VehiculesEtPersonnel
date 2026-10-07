@@ -12,6 +12,7 @@ import {
   Loader2,
   MapPin,
   Minus,
+  Printer,
   Square,
   User,
 } from 'lucide-react';
@@ -88,6 +89,8 @@ const _mapAffaireToSection = (affaire) => {
 
 function TaskPDFExportModal({
   date,
+  dateFrom,
+  dateTo,
   tasks,
   affaires = [],
   displayEvents = [],
@@ -101,6 +104,19 @@ function TaskPDFExportModal({
   const [pdfUrl, setPdfUrl] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const pdfFrameRef = useRef(null);
+  const rangeStart = dateFrom || date;
+  const rangeEnd = dateTo || date;
+  const isDateRange = rangeStart !== rangeEnd;
+  const exportOrientation = isDateRange ? 'landscape' : 'portrait';
+
+  const isInExportRange = useCallback(
+    (value) => {
+      const itemDate = String(value || '').slice(0, 10);
+      return itemDate >= rangeStart && itemDate <= rangeEnd;
+    },
+    [rangeStart, rangeEnd],
+  );
 
   // ── Map multi-affectations : "entityType:entityId" → [{personId, firstName, lastName}] ──
   const assignmentsByEntity = useMemo(() => {
@@ -131,7 +147,7 @@ function TaskPDFExportModal({
 
     // 1) Tâches manuelles (exclure uniquement les tâches terminées)
     (tasks || [])
-      .filter((t) => t.status !== STATUS.DONE)
+      .filter((t) => t.status !== STATUS.DONE && isInExportRange(t.date))
       .forEach((t) => {
         const sec = normalizeSection(t.section || 'manual');
         const item = { uid: `task-${t.id}`, type: 'task', section: sec, data: t };
@@ -147,7 +163,9 @@ function TaskPDFExportModal({
       (tasks || []).filter((t) => t.displayEventId).map((t) => t.displayEventId),
     );
     (displayEvents || [])
-      .filter((ev) => !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE)
+      .filter(
+        (ev) => !linkedEventIds.has(ev.id) && ev.status !== STATUS.DONE && isInExportRange(ev.date),
+      )
       .forEach((ev) => {
         const sec = normalizeSection(mapEventToSection(ev));
         const item = { uid: `event-${ev.id}`, type: 'event', section: sec, data: ev };
@@ -157,12 +175,14 @@ function TaskPDFExportModal({
       });
 
     // 4) Google Calendar RDV
-    (googleRdvEvents || []).forEach((ev) => {
-      const item = { uid: `gcal-${ev.id}`, type: 'gcal', section: 'rdv', data: ev };
-      items.push(item);
-      if (!groups.rdv) groups.rdv = [];
-      groups.rdv.push(item);
-    });
+    (googleRdvEvents || [])
+      .filter((ev) => isInExportRange(ev.start?.dateTime || ev.start?.date))
+      .forEach((ev) => {
+        const item = { uid: `gcal-${ev.id}`, type: 'gcal', section: 'rdv', data: ev };
+        items.push(item);
+        if (!groups.rdv) groups.rdv = [];
+        groups.rdv.push(item);
+      });
 
     // 5) Dédupliquer : retirer les tâches dont l'affaire est déjà affichée dans la même section
     const extractAffNum = (str) => {
@@ -198,7 +218,7 @@ function TaskPDFExportModal({
 
     const active = Object.keys(SECTIONS).filter((k) => (groups[k] || []).length > 0);
     return { allItems: dedupedItems, grouped: groups, activeSections: active };
-  }, [tasks, displayEvents, googleRdvEvents]);
+  }, [tasks, displayEvents, googleRdvEvents, isInExportRange]);
 
   // Initialiser avec tout sélectionné (une seule fois)
   useEffect(() => {
@@ -247,6 +267,7 @@ function TaskPDFExportModal({
         sel.affaireIds,
         sel.eventIds,
         sel.gcalEvents,
+        { dateFrom: rangeStart, dateTo: rangeEnd, orientation: exportOrientation },
       );
       if (pdfUrl) URL.revokeObjectURL(pdfUrl);
       setPdfUrl(URL.createObjectURL(blob));
@@ -255,7 +276,7 @@ function TaskPDFExportModal({
     } finally {
       setGenerating(false);
     }
-  }, [date, selectedIds, pdfUrl, getSelectedPayload]);
+  }, [date, rangeStart, rangeEnd, exportOrientation, selectedIds, pdfUrl, getSelectedPayload]);
 
   useEffect(() => {
     if (selectedIds.size === 0) {
@@ -265,7 +286,7 @@ function TaskPDFExportModal({
     const timer = setTimeout(() => generatePreview(), 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIds, date]);
+  }, [selectedIds, date, rangeStart, rangeEnd]);
 
   useEffect(() => {
     return () => {
@@ -321,11 +342,12 @@ function TaskPDFExportModal({
         sel.affaireIds,
         sel.eventIds,
         sel.gcalEvents,
+        { dateFrom: rangeStart, dateTo: rangeEnd, orientation: exportOrientation },
       );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `fiche-${date}.pdf`;
+      a.download = isDateRange ? `fiche-${rangeStart}-${rangeEnd}.pdf` : `fiche-${date}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -337,8 +359,17 @@ function TaskPDFExportModal({
     }
   };
 
+  const handlePrint = () => {
+    const frameWindow = pdfFrameRef.current?.contentWindow;
+    if (!frameWindow) return;
+    frameWindow.focus();
+    frameWindow.print();
+  };
+
   const totalItems = allItems.length;
-  const dateFr = formatDateFr(date);
+  const dateFr = isDateRange
+    ? `${formatDateFr(rangeStart)} au ${formatDateFr(rangeEnd)}`
+    : formatDateFr(date);
   const previewSrc = pdfUrl ? `${pdfUrl}#zoom=80` : null;
 
   // ── Index affaires par numéro pour enrichir les tâches ──
@@ -761,7 +792,9 @@ function TaskPDFExportModal({
     <Modal open={true} onClose={onClose} size="xl" className="pdf-export-modal">
       <ModalHeader icon={<FileDown size={20} />} onClose={onClose} className="pdf-export-header">
         <div className="pdf-header-content">
-          <span>Export PDF — Fiche du jour</span>
+          <span>
+            {isDateRange ? 'Export et impression — Semaine' : 'Export PDF — Fiche du jour'}
+          </span>
           <span className="pdf-export-date">{dateFr}</span>
         </div>
       </ModalHeader>
@@ -827,7 +860,7 @@ function TaskPDFExportModal({
 
             {activeSections.length === 0 && (
               <div className="empty-selection">
-                <p>Aucun élément pour cette date</p>
+                <p>Aucun élément pour cette {isDateRange ? 'période' : 'date'}</p>
               </div>
             )}
           </div>
@@ -842,7 +875,12 @@ function TaskPDFExportModal({
             </div>
           ) : pdfUrl ? (
             <div className="pdf-preview-frame-wrap">
-              <iframe src={previewSrc} className="pdf-preview-frame" title="Aperçu PDF" />
+              <iframe
+                ref={pdfFrameRef}
+                src={previewSrc}
+                className="pdf-preview-frame"
+                title="Aperçu PDF"
+              />
             </div>
           ) : (
             <EmptyState
@@ -862,6 +900,9 @@ function TaskPDFExportModal({
       <ModalFooter className="pdf-export-footer">
         <Button variant="ghost" onClick={onClose}>
           Fermer
+        </Button>
+        <Button variant="secondary" onClick={handlePrint} disabled={!pdfUrl || generating}>
+          <Printer size={15} /> Imprimer
         </Button>
         <Button
           variant="primary"

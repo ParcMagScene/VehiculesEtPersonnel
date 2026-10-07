@@ -210,8 +210,8 @@
   flex: 0 0 110px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-type {
-  width: 132px;
-  flex: 0 0 132px;
+  width: 190px;
+  flex: 0 0 190px;
 }
 .task-planning-panel .tp-columns-header .ev-col-h-nom {
   flex: 2 1 200px;
@@ -989,8 +989,8 @@
   flex: 0 0 110px;
 }
 .task-planning-panel .ev-col-type {
-  width: 132px;
-  flex: 0 0 132px;
+  width: 190px;
+  flex: 0 0 190px;
 }
 /* Col: Nom (flex pour absorber l'espace, mais partage avec Client) */
 .task-planning-panel .ev-col-nom {

@@ -1285,6 +1285,8 @@ function TaskPlanningPanel({
         <Suspense fallback={null}>
           <TaskPDFExportModal
             date={selectedDate}
+            dateFrom={viewMode === 'week' ? weekDays[0] : selectedDate}
+            dateTo={viewMode === 'week' ? weekDays[4] : selectedDate}
             tasks={tasks}
             affaires={affaires}
             displayEvents={displayEvents}

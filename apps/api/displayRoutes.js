@@ -42,6 +42,7 @@ import {
   welcomeMessagesSchema,
 } from './schemas/display.js';
 import { validate } from './schemas/imports.js';
+import { getTaskReservationVehicles } from './services/display/taskVehicles.js';
 
 // Rate limiter dédié pour les endpoints TV publics (écriture)
 const tvWriteLimiter = rateLimit({
@@ -1883,6 +1884,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         manual: 'Divers',
       };
 
+      const reservationVehiclesByTask = getTaskReservationVehicles(db, todayISO);
       const events = dayTasks.map((t) => ({
         id: String(t.id),
         time: t.time ? t.time.substring(0, 5) : '',
@@ -1893,6 +1895,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         status: t.status || 'pending',
         location: t.event_location || '',
         client: t.event_client || '',
+        reservation_vehicles: reservationVehiclesByTask.get(String(t.id)) || [],
         reservation_vehicle_name: t.reservation_vehicle_name || '',
         reservation_vehicle_reg: t.reservation_vehicle_reg || '',
         notes: t.notes || '',
@@ -2211,6 +2214,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         manual: 'Divers',
       };
 
+      const reservationVehiclesByTask = getTaskReservationVehicles(db, todayISO);
       const events = dayTasks.map((t) => ({
         id: String(t.id),
         time: t.time ? t.time.substring(0, 5) : '',
@@ -2221,6 +2225,7 @@ export function setupDisplayRoutes(app, authenticateToken, requireAdmin) {
         status: t.status || 'pending',
         location: t.event_location || '',
         client: t.event_client || '',
+        reservation_vehicles: reservationVehiclesByTask.get(String(t.id)) || [],
         reservation_vehicle_name: t.reservation_vehicle_name || '',
         reservation_vehicle_reg: t.reservation_vehicle_reg || '',
         notes: t.notes || '',

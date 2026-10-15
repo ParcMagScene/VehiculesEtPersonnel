@@ -500,6 +500,7 @@ function createEventElement(event) {
     section: event.section || '',
     affaireNum,
     affaireType,
+    reservationVehicles: event.reservation_vehicles,
     reservationVehicleReg: event.reservation_vehicle_reg || '',
   });
 

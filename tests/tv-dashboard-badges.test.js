@@ -41,3 +41,40 @@ test('n affiche pas le badge véhicule sans immatriculation liée', () => {
   assert.equal(badges.vehicleBadge, '');
   assert.match(badges.affaireBadge, /AF-1245/);
 });
+
+test('affiche une pastille par véhicule lié avec son immatriculation et son nom', () => {
+  const badges = getEventBadges({
+    section: 'chargement',
+    affaireNum: 'AF-1245',
+    reservationVehicles: [
+      { registration: 'AB-123-CD', name: 'Camion 1' },
+      { registration: 'EF-456-GH', name: 'Camion 2' },
+    ],
+    reservationVehicleReg: 'AB-123-CD, EF-456-GH, IJ-789-KL',
+  });
+
+  assert.equal((badges.vehicleBadge.match(/tv-vehicle-badge/g) || []).length, 2);
+  assert.match(badges.vehicleBadge, /AB-123-CD · Camion 1/);
+  assert.match(badges.vehicleBadge, /EF-456-GH · Camion 2/);
+  assert.doesNotMatch(badges.vehicleBadge, /IJ-789-KL/);
+});
+
+test('une liste de véhicules vide ne réaffiche pas l’ancienne liste agrégée', () => {
+  const badges = getEventBadges({
+    section: 'chargement',
+    reservationVehicles: [],
+    reservationVehicleReg: 'AB-123-CD, EF-456-GH',
+  });
+
+  assert.equal(badges.vehicleBadge, '');
+});
+
+test('échappe les noms de véhicules injectés dans le HTML des pastilles', () => {
+  const badges = getEventBadges({
+    section: 'chargement',
+    reservationVehicles: [{ registration: 'AB-123-CD', name: '<Camion>' }],
+  });
+
+  assert.match(badges.vehicleBadge, /&lt;Camion&gt;/);
+  assert.doesNotMatch(badges.vehicleBadge, /<Camion>/);
+});

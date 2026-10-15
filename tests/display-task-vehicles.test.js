@@ -22,9 +22,16 @@ before(() => {
     CREATE TABLE reservations (
       id TEXT PRIMARY KEY,
       affaire TEXT,
+      client_name TEXT,
       vehicle_id TEXT NOT NULL,
       start_date TEXT NOT NULL,
       end_date TEXT NOT NULL
+    );
+    CREATE TABLE affaires (
+      numero_affaire TEXT PRIMARY KEY,
+      client TEXT,
+      nom TEXT,
+      titre TEXT
     );
     CREATE TABLE vehicles (
       id TEXT PRIMARY KEY,
@@ -41,10 +48,17 @@ before(() => {
       ('r2', 'AF-100', 'v2', '2026-10-15', '2026-10-15'),
       ('r3', 'AF-200', 'v3', '2026-10-15', '2026-10-15'),
       ('r4', 'AF-100', 'v3', '2026-10-16', '2026-10-16');
+    UPDATE reservations SET client_name = 'Client Mille' WHERE id IN ('r1', 'r2', 'r3', 'r4');
+    INSERT INTO affaires (numero_affaire, client, nom, titre)
+      VALUES ('AF-400', 'Client Quatre', 'Projet Quatre', 'Concert Quatre');
+    INSERT INTO reservations (id, affaire, client_name, vehicle_id, start_date, end_date) VALUES
+      ('r5', NULL, 'Client Quatre', 'v1', '2026-10-15', '2026-10-15'),
+      ('r6', NULL, 'Client Quatre', 'v2', '2026-10-15', '2026-10-15');
     INSERT INTO task_assignments (id, date, affaire_num) VALUES
       ('t1', '2026-10-15', 'AF-100'),
       ('t2', '2026-10-15', 'AF-200'),
-      ('t3', '2026-10-15', 'AF-300');
+      ('t3', '2026-10-15', 'AF-300'),
+      ('t4', '2026-10-15', 'AF-400');
   `);
 });
 
@@ -61,4 +75,8 @@ test('retourne uniquement les véhicules réservés pour chaque affaire et la da
   ]);
   assert.deepEqual(vehiclesByTask.get('t2'), [{ name: 'Camion 3', registration: 'IJ-789-KL' }]);
   assert.equal(vehiclesByTask.has('t3'), false);
+  assert.deepEqual(vehiclesByTask.get('t4'), [
+    { name: 'Camion 1', registration: 'AB-123-CD' },
+    { name: 'Camion 2', registration: 'EF-456-GH' },
+  ]);
 });

@@ -3,47 +3,14 @@ export function getTaskReservationVehicles(db, date) {
     .prepare(
       `SELECT ta.id AS task_id, v.id AS vehicle_id, v.name, v.registration
        FROM task_assignments ta
-       LEFT JOIN affaires aff
-         ON ta.affaire_num != ''
-         AND UPPER(TRIM(ta.affaire_num)) = UPPER(TRIM(aff.numero_affaire))
        JOIN reservations r
-         ON r.id = ta.reservation_id
-         OR (
-           ta.date >= r.start_date
-           AND ta.date <= r.end_date
-           AND (
-             (
-               ta.affaire_num != ''
-               AND UPPER(TRIM(r.affaire)) = UPPER(TRIM(ta.affaire_num))
-             )
-             OR (
-               (r.affaire IS NULL OR TRIM(r.affaire) = '')
-               AND r.client_name IS NOT NULL
-               AND ta.affaire_num != ''
-               AND (
-                 (
-                   COALESCE(TRIM(aff.client), '') != ''
-                   AND (
-                     INSTR(LOWER(r.client_name), LOWER(TRIM(aff.client))) > 0
-                     OR INSTR(LOWER(TRIM(aff.client)), LOWER(r.client_name)) > 0
-                   )
-                 )
-                 OR (
-                   COALESCE(TRIM(aff.nom), '') != ''
-                   AND (
-                     INSTR(LOWER(r.client_name), LOWER(TRIM(aff.nom))) > 0
-                     OR INSTR(LOWER(TRIM(aff.nom)), LOWER(r.client_name)) > 0
-                   )
-                 )
-                 OR (
-                   COALESCE(TRIM(aff.titre), '') != ''
-                   AND (
-                     INSTR(LOWER(r.client_name), LOWER(TRIM(aff.titre))) > 0
-                     OR INSTR(LOWER(TRIM(aff.titre)), LOWER(r.client_name)) > 0
-                   )
-                 )
-               )
-             )
+         ON ta.date >= r.start_date
+         AND ta.date <= r.end_date
+         AND (
+           r.id = ta.reservation_id
+           OR (
+             ta.affaire_num != ''
+             AND UPPER(TRIM(r.affaire)) = UPPER(TRIM(ta.affaire_num))
            )
          )
        JOIN vehicles v ON v.id = r.vehicle_id

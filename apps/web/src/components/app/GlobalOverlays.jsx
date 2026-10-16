@@ -184,7 +184,6 @@ function GlobalOverlays({
                 setSelectedVehicleForKilometrageControl(response);
               } catch (error) {
                 console.error('Erreur lors de la mise à jour du véhicule:', error);
-                toast.error('Erreur lors de la mise à jour du véhicule');
                 throw error;
               }
             }}

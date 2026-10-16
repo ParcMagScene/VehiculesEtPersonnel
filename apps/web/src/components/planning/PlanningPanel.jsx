@@ -34,7 +34,7 @@ function PlanningPanel({
   googleBanner = null,
 }) {
   const _toast = useToast();
-  const [activeSubTab, setActiveSubTab] = useState('personnel');
+  const [activeSubTab, setActiveSubTab] = useState('tasks');
   const [_isPending, startTransition] = useTransition();
   const [stats, setStats] = useState(null);
   const [displayRefreshKey, _setDisplayRefreshKey] = useState(0);
@@ -71,9 +71,9 @@ function PlanningPanel({
   }, [activeSubTab]);
 
   const subTabs = [
+    { id: 'tasks', label: 'Tâches', icon: ClipboardList },
     { id: 'personnel', label: 'Personnels', icon: Users },
     { id: 'suivi', label: 'Suivi', icon: ClipboardCheck },
-    { id: 'tasks', label: 'Tâches', icon: ClipboardList, count: stats?.tasksPending || 0 },
     { id: 'forfait', label: 'Forfait-jours', icon: Timer },
     { id: 'dashboard', label: 'Dashboard Écrans', icon: Tv2 },
   ];
@@ -94,7 +94,6 @@ function PlanningPanel({
               >
                 <Icon size={16} />
                 {tab.label}
-                {tab.count > 0 && <span className="tab-count">{tab.count}</span>}
               </Button>
             );
           })}

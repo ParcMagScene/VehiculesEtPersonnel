@@ -1104,13 +1104,6 @@ function TaskPlanningPanel({
               </Button>
             </Tooltip>
           </div>
-          <Button
-            variant="secondary"
-            className="tp-today-btn"
-            onClick={() => setSelectedDate(todayStr())}
-          >
-            <CalendarDays size={15} /> Aujourd'hui
-          </Button>
           {totalTasks > 0 && (
             <span className="u-text-secondary tp-progress-mini">
               {doneTasks}/{totalTasks} terminée{doneTasks > 1 ? 's' : ''}
@@ -1133,6 +1126,13 @@ function TaskPlanningPanel({
                 ? `${formatDateShort(weekDays[0])} → ${formatDateShort(weekDays[6])}`
                 : formatDateFr(selectedDate)}
             </span>
+            <Button
+              variant="secondary"
+              className="tp-today-btn"
+              onClick={() => setSelectedDate(todayStr())}
+            >
+              <CalendarDays size={15} /> Aujourd'hui
+            </Button>
             <Tooltip content="Choisir une date" position="bottom">
               <span className="tp-calendar-picker">
                 <CalendarDays size={16} aria-hidden="true" />

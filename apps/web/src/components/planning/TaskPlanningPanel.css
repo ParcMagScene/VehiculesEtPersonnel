@@ -102,10 +102,14 @@
   white-space: nowrap;
 }
 
-.task-planning-panel .tp-today-btn {
+.task-planning-panel .tp-date-nav button.tp-today-btn {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
+  width: max-content;
+  min-width: max-content;
+  flex: 0 0 auto;
+  padding-inline: var(--space-3);
   white-space: nowrap;
   font-weight: 600;
 }

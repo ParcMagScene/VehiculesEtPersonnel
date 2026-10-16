@@ -600,7 +600,7 @@ const ManagementPanel = ({
       setVehicleToMaintain(null);
     } catch (error) {
       console.error('❌ Erreur sauvegarde maintenance:', error);
-      toast.error(`Erreur lors de la sauvegarde: ${error.message}`);
+      throw error;
     }
   };
 

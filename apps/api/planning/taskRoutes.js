@@ -746,6 +746,237 @@ export function setupTaskRoutes(app, authenticateToken) {
       const leftX = doc.page.margins.left;
       const pageH = doc.page.height - doc.page.margins.top - doc.page.margins.bottom;
 
+      if (isDateRange && pageOrientation === 'landscape') {
+        const weeklyDates = Array.from({ length: 5 }, (_, index) => {
+          const day = new Date(`${startDate}T00:00:00`);
+          day.setDate(day.getDate() + index);
+          return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+        });
+        const columns = weeklyDates.map((day) => ({ day, rows: [] }));
+        const columnByDate = new Map(columns.map((column) => [column.day, column]));
+
+        Object.entries(grouped).forEach(([sectionKey, items]) => {
+          items.forEach((item) => {
+            const data = item.data;
+            const itemDate =
+              item.type === 'gcal'
+                ? String(data.start || '').slice(0, 10)
+                : String(data.date || '').slice(0, 10);
+            const column = columnByDate.get(itemDate);
+            if (!column) return;
+
+            const isTask = item.type === 'task';
+            const title = stripEmoji(
+              isTask
+                ? cleanTaskTitle(data, sectionKey)
+                : item.type === 'gcal'
+                  ? data.summary || 'RDV'
+                  : data.comment ||
+                    EVENT_TYPE_LABELS[data.type] ||
+                    SECTIONS[sectionKey]?.label ||
+                    'Événement',
+            );
+            const affaireNumber = isTask
+              ? data.affaire_num || data.affaireNum || ''
+              : item.type === 'gcal'
+                ? data.affaire || ''
+                : data.affaire_id || '';
+            const linkedAffaire = affaireNumber
+              ? affaireByNum.get(String(affaireNumber).toUpperCase())
+              : null;
+            const clientName = stripEmoji(
+              isTask
+                ? data.client_name || data.event_client || linkedAffaire?.client || ''
+                : item.type === 'gcal'
+                  ? data.location || ''
+                  : data.client || '',
+            );
+            const titleLower = title.toLowerCase();
+            const visibleClient =
+              clientName &&
+              !titleLower.includes(clientName.toLowerCase()) &&
+              !clientName.toLowerCase().includes(titleLower)
+                ? clientName
+                : '';
+            const time = isTask
+              ? data.time || (data.all_day === 1 ? 'Journée' : data.period) || ''
+              : item.type === 'gcal'
+                ? String(data.start || '').includes('T')
+                  ? String(data.start).slice(11, 16)
+                  : 'Journée'
+                : data.time || data.period || '';
+            column.rows.push({
+              title: title || '-',
+              clientName: visibleClient,
+              sectionLabel: SECTIONS[sectionKey]?.label || 'Tâche',
+              time,
+              isTask,
+              done: isTask && data.status === 'done',
+              sectionColor: SECTION_COLORS[sectionKey] || [100, 116, 139],
+            });
+          });
+        });
+
+        const getRowLayouts = (scale, innerWidth) =>
+          columns.map((column) => {
+            const rows = column.rows.map((row) => {
+              const titleFontSize = 8.5 * scale;
+              const metaFontSize = 6.5 * scale;
+              const padding = 5 * scale;
+              const textWidth = Math.max(10, innerWidth - (row.isTask ? 9 * scale : 0));
+              doc.font('Helvetica').fontSize(titleFontSize);
+              const titleHeight = Math.max(
+                titleFontSize + 1,
+                doc.heightOfString(row.title, { width: textWidth, lineGap: 0 }),
+              );
+              const meta = [row.sectionLabel, row.time].filter(Boolean).join(' · ');
+              doc.font('Helvetica-Bold').fontSize(metaFontSize);
+              const metaWidth = doc.widthOfString(meta);
+              const fittedMetaFontSize =
+                metaWidth > textWidth ? (metaFontSize * textWidth) / metaWidth : metaFontSize;
+              let clientFontSize = 0;
+              if (row.clientName) {
+                const baseClientFontSize = 7.25 * scale;
+                doc.font('Helvetica-Oblique').fontSize(baseClientFontSize);
+                const clientWidth = doc.widthOfString(row.clientName);
+                clientFontSize =
+                  clientWidth > textWidth
+                    ? (baseClientFontSize * textWidth * 0.97) / clientWidth
+                    : baseClientFontSize;
+              }
+              const clientHeight = row.clientName ? clientFontSize + 2 * scale : 0;
+              const metaHeight = meta ? fittedMetaFontSize + 3 * scale : 0;
+              return {
+                ...row,
+                meta,
+                titleFontSize,
+                titleHeight,
+                metaFontSize: fittedMetaFontSize,
+                metaHeight,
+                clientFontSize,
+                clientHeight,
+                textWidth,
+                padding,
+                height: padding * 2 + metaHeight + titleHeight + clientHeight + 2 * scale,
+              };
+            });
+            return { ...column, rows, height: rows.reduce((sum, row) => sum + row.height, 0) };
+          });
+
+        const titleY = doc.page.margins.top;
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(16)
+          .fillColor('#111111')
+          .text('Tâches de la semaine', leftX, titleY, { width: pageW, align: 'center' });
+        doc
+          .font('Helvetica')
+          .fontSize(9)
+          .fillColor('#555555')
+          .text(dateFr, leftX, titleY + 20, { width: pageW, align: 'center' });
+
+        const tableHeaderY = titleY + 39;
+        const columnHeaderHeight = 24;
+        const bodyTop = tableHeaderY + columnHeaderHeight;
+        const bodyBottom = doc.page.height - doc.page.margins.bottom;
+        const bodyHeight = bodyBottom - bodyTop;
+        const columnWidth = pageW / 5;
+        const cellPaddingX = 5;
+        const innerWidth = columnWidth - cellPaddingX * 2;
+        let scale = 1;
+        let rowLayouts = getRowLayouts(scale, innerWidth);
+        const tallestColumn = () => Math.max(...rowLayouts.map((column) => column.height), 0);
+        for (let attempt = 0; tallestColumn() > bodyHeight && attempt < 8; attempt += 1) {
+          scale *= Math.max(0.45, (bodyHeight / tallestColumn()) * 0.96);
+          rowLayouts = getRowLayouts(scale, innerWidth);
+        }
+
+        rowLayouts.forEach((column, columnIndex) => {
+          const x = leftX + columnIndex * columnWidth;
+          const dayDate = new Date(`${column.day}T00:00:00`);
+          const dayLabel = dayDate.toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+          });
+          doc
+            .rect(x, tableHeaderY, columnWidth, columnHeaderHeight)
+            .fillAndStroke('#e8edf3', '#aeb8c4');
+          doc
+            .font('Helvetica-Bold')
+            .fontSize(8.5)
+            .fillColor('#202833')
+            .text(dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1), x + 4, tableHeaderY + 7, {
+              width: columnWidth - 8,
+              align: 'center',
+              lineBreak: false,
+            });
+          doc
+            .rect(x, bodyTop, columnWidth, bodyHeight)
+            .strokeColor('#aeb8c4')
+            .lineWidth(0.6)
+            .stroke();
+
+          if (column.rows.length === 0) {
+            doc
+              .font('Helvetica-Oblique')
+              .fontSize(7)
+              .fillColor('#888888')
+              .text('Aucune tâche', x + 4, bodyTop + 10, {
+                width: columnWidth - 8,
+                align: 'center',
+                lineBreak: false,
+              });
+            return;
+          }
+
+          let rowY = bodyTop + 2;
+          column.rows.forEach((row, rowIndex) => {
+            const contentX = x + cellPaddingX;
+            const sectionHex = `#${row.sectionColor
+              .map((component) => component.toString(16).padStart(2, '0'))
+              .join('')}`;
+            if (rowIndex % 2 === 0) {
+              doc
+                .rect(x + 1, rowY, columnWidth - 2, row.height)
+                .fillColor('#f8f9fa')
+                .fill();
+            }
+            if (row.isTask) {
+              drawCheckbox(contentX, rowY + row.padding, row.done, Math.max(5, 6 * scale));
+            }
+            const textX = row.isTask ? contentX + 9 * scale : contentX;
+            let textY = rowY + row.padding;
+            doc
+              .font('Helvetica-Bold')
+              .fontSize(row.metaFontSize)
+              .fillColor(sectionHex)
+              .text(row.meta, textX, textY, { width: row.textWidth, lineBreak: false });
+            textY += row.metaHeight;
+            doc
+              .font(row.done ? 'Helvetica-Oblique' : 'Helvetica-Bold')
+              .fontSize(row.titleFontSize)
+              .fillColor(row.done ? '#777777' : '#1f2937')
+              .text(row.title, textX, textY, { width: row.textWidth, height: row.titleHeight });
+            textY += row.titleHeight;
+            if (row.clientName) {
+              doc
+                .font('Helvetica-Oblique')
+                .fontSize(row.clientFontSize)
+                .fillColor('#606b78')
+                .text(row.clientName, textX, textY, {
+                  width: row.textWidth,
+                  lineBreak: false,
+                });
+            }
+            rowY += row.height;
+          });
+        });
+
+        doc.end();
+        return;
+      }
+
       // ── Calcul dynamique pour tenir en 1 page ──
       const nonEmptySections = Object.entries(SECTIONS).filter(
         ([key]) => (grouped[key] || []).length > 0,

@@ -36,7 +36,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
   const [controles, setControles] = useState(initialControles);
 
   const formSnapshot = useMemo(() => ({ kilometrage, controles }), [kilometrage, controles]);
-  const { guardClose } = useDirtyForm(formSnapshot, { confirmer: confirm });
+  const { resetDirty, guardClose } = useDirtyForm(formSnapshot, { confirmer: confirm });
   const handleSafeClose = guardClose(onClose);
   const [newControle, setNewControle] = useState({
     type: '',
@@ -265,6 +265,7 @@ const VehicleMaintenanceModal = ({ vehicle, onClose, onSave }) => {
 
     try {
       await onSave(updatedVehicle);
+      resetDirty();
       // Afficher le message de succès
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);

@@ -1,5 +1,5 @@
 /**
- * SAVImportUpload — Étape 1 : drag-drop ou sélection d'un fichier CSV LocMat.
+ * SAVImportUpload — Étape 1 : drag-drop ou sélection d'un export texte LocMat.
  * Lance le preview et passe le résultat au parent via `onPreviewReady`.
  *
  * Usage :
@@ -22,8 +22,8 @@ export default function SAVImportUpload({ onPreviewReady }) {
   const handleFiles = useCallback((files) => {
     if (!files || files.length === 0) return;
     const f = files[0];
-    if (!f.name.toLowerCase().endsWith('.csv')) {
-      setError('Veuillez sélectionner un fichier .csv');
+    if (!/\.(csv|txt)$/i.test(f.name)) {
+      setError('Veuillez sélectionner un fichier .csv ou .txt exporté depuis LocMat');
       return;
     }
     setError(null);
@@ -58,9 +58,9 @@ export default function SAVImportUpload({ onPreviewReady }) {
     <div style={{ padding: 16 }}>
       <h3 style={{ margin: '0 0 12px 0' }}>Import SAV depuis LocMat</h3>
       <p style={{ marginTop: 0, color: '#666', fontSize: 14 }}>
-        Glissez-déposez un fichier CSV exporté depuis LocMat, ou cliquez pour sélectionner.
+        Glissez-déposez un fichier .csv ou .txt exporté depuis LocMat, ou cliquez pour sélectionner.
         <br />
-        Colonnes attendues :{' '}
+        Colonnes attendues (export tabulé ou séparé par ;/,) :{' '}
         <code>Code Libre;Code Article;Nom Article;Numéro de série;Début;Fin;Coût;A</code>
       </p>
 
@@ -91,13 +91,13 @@ export default function SAVImportUpload({ onPreviewReady }) {
               <span style={{ color: '#9ca3af' }}>({Math.round(file.size / 1024)} Ko)</span>
             </>
           ) : (
-            'Cliquer ou glisser un fichier CSV ici'
+            'Cliquer ou glisser un export LocMat .csv ou .txt ici'
           )}
         </div>
         <Input
           ref={inputRef}
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.txt,text/csv,text/plain"
           style={{ display: 'none' }}
           onChange={(e) => handleFiles(e.target.files)}
         />

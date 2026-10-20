@@ -175,6 +175,12 @@
   flex: 1 1 100%;
 }
 
+.pv-legal-description {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
 .pv-resolution-actions {
   display: flex;
   justify-content: flex-end;

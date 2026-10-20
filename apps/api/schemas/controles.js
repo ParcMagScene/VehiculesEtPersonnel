@@ -66,23 +66,29 @@ export const equipmentControlUpdateSchema = z.object({
 });
 
 // ── Effectuer un contrôle (perform) ──
-export const controlPerformSchema = z.object({
-  performed_at: isoDate,
-  notes: optStr(5000),
-  documents: z
-    .array(
-      z.object({
-        name: z.string().max(255),
-        url: z.string().max(2000),
-        size: z.coerce.number().nonnegative().optional(),
-        type: z.string().max(100).optional(),
-      }),
-    )
-    .max(20)
-    .optional(),
-  // Optionnel : forcer un next_due_date (sinon = performed_at + periodicity_days)
-  next_due_date: isoDate.optional(),
-});
+export const controlPerformSchema = z
+  .object({
+    performed_at: isoDate,
+    status: z.enum(['EFFECTUE', 'MANQUE']).optional(),
+    notes: optStr(5000),
+    documents: z
+      .array(
+        z.object({
+          name: z.string().max(255),
+          url: z.string().max(2000),
+          size: z.coerce.number().nonnegative().optional(),
+          type: z.string().max(100).optional(),
+        }),
+      )
+      .max(20)
+      .optional(),
+    // Optionnel : forcer un next_due_date (sinon = performed_at + periodicity_days)
+    next_due_date: isoDate.optional(),
+  })
+  .refine((data) => data.status !== 'MANQUE' || !!data.notes?.trim(), {
+    path: ['notes'],
+    message: 'Une observation est requise pour demander une intervention.',
+  });
 
 // ── Middleware factory ──
 export function validate(schema) {

@@ -14,6 +14,7 @@ const HISTORY_COLUMNS = [
   { key: 'performed_by_name', label: 'Par' },
   { key: 'next_due_date', label: 'Échéance' },
   { key: 'notes', label: 'Notes' },
+  { key: 'intervention_ticket_id', label: 'Demande SAV' },
 ];
 
 export default function ControlHistoryModal({ control, onClose }) {
@@ -55,6 +56,9 @@ export default function ControlHistoryModal({ control, onClose }) {
               performed_by_name: h.performed_by_name || '—',
               next_due_date: h.next_due_date || '—',
               notes: h.notes || '',
+              intervention_ticket_id: h.intervention_ticket_id
+                ? `Ticket #${h.intervention_ticket_id}`
+                : '—',
             }))}
             emptyMessage="Aucun historique."
             compact

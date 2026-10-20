@@ -2,7 +2,7 @@
  * SAV Comparator — module métier de synchronisation eM@g ↔ LocMat
  *
  * Responsabilités :
- *  - Parser un export CSV LocMat (séparateur `;`).
+ *  - Parser les exports SAV LocMat CSV/TSV (`.csv` ou `.txt`).
  *  - Comparer les lignes du CSV avec l'état courant des tickets eM@g.
  *  - Classer chaque ligne dans :
  *      • newTickets       : ticket inexistant côté eM@g, à créer
@@ -23,6 +23,7 @@
  */
 
 import logger from '../logger.js';
+import { parseMagSerial } from './magNumber.js';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Constantes statuts
@@ -78,7 +79,7 @@ export function mapLocmatStatus(rawText) {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Parse une date FR LocMat « 05/11/2025 AM » ou « 05/11/2025 PM » → ISO `YYYY-MM-DDTHH:mm:ss`.
+ * Parse une date FR LocMat « 05/11/2025 AM » ou « 05/11/25 PM » → ISO `YYYY-MM-DDTHH:mm:ss`.
  * AM = 09:00, PM = 14:00 (convention métier interne, valeurs informatives).
  * Retourne null si la date est vide ou illisible.
  */
@@ -86,13 +87,21 @@ export function parseFrenchDate(input) {
   if (!input) return null;
   const s = String(input).trim();
   if (!s) return null;
-  // Accepte « DD/MM/YYYY [AM|PM] » et « DD/MM/YYYY HH:mm »
-  const re = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(AM|PM|\d{1,2}:\d{2}))?$/i;
+  // LocMat exports may use either four-digit or two-digit years.
+  const re = /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})(?:\s+(AM|PM|\d{1,2}:\d{2}))?$/i;
   const m = s.match(re);
   if (!m) return null;
   const day = String(m[1]).padStart(2, '0');
   const month = String(m[2]).padStart(2, '0');
-  const year = m[3];
+  const year = m[3].length === 2 ? `${Number(m[3]) < 70 ? '20' : '19'}${m[3]}` : m[3];
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (
+    date.getUTCFullYear() !== Number(year) ||
+    date.getUTCMonth() !== Number(month) - 1 ||
+    date.getUTCDate() !== Number(day)
+  ) {
+    return null;
+  }
   let time = '09:00:00';
   if (m[4]) {
     const suffix = m[4].toUpperCase();
@@ -104,10 +113,10 @@ export function parseFrenchDate(input) {
 }
 
 /**
- * Parse contenu CSV LocMat brut (string). Détecte le séparateur (`;` ou `,`).
- * Tolère BOM, lignes vides, en-têtes variants.
+ * Parse contenu LocMat brut (CSV ou TSV). Tolère BOM, retours CR/LF, lignes
+ * vides et en-têtes variants.
  *
- * Format attendu :
+ * Format attendu (séparateur `;`, `,` ou tabulation) :
  *   Code Libre;Code Article;Nom Article;Numéro de série;Début;Fin;Coût;A
  *
  * Retourne `{ rows: Array<NormalizedRow>, errors: Array<{line, message}> }`.
@@ -123,10 +132,13 @@ export function parseLocmatCsv(content) {
     return { rows: [], errors: [{ line: 0, message: 'CSV vide' }] };
   }
 
-  // Détection du séparateur : compte ; vs , dans la 1ère ligne
+  // Détection du séparateur depuis l'en-tête (les exports LocMat peuvent être TSV).
   const headerLine = lines[0];
-  const sep =
-    (headerLine.match(/;/g) || []).length >= (headerLine.match(/,/g) || []).length ? ';' : ',';
+  const separatorCounts = ['\t', ';', ','].map((separator) => ({
+    separator,
+    count: headerLine.split(separator).length - 1,
+  }));
+  const sep = separatorCounts.sort((a, b) => b.count - a.count)[0].separator;
 
   const splitLine = (line) => {
     // Parser CSV minimal supportant les guillemets
@@ -142,7 +154,7 @@ export function parseLocmatCsv(content) {
         } else if (c === '"') {
           inQuotes = false;
         } else cur += c;
-      } else if (c === '"') inQuotes = true;
+      } else if (c === '"' && cur.length === 0) inQuotes = true;
       else if (c === sep) {
         out.push(cur);
         cur = '';
@@ -153,10 +165,23 @@ export function parseLocmatCsv(content) {
   };
 
   // Mapping headers : tolérant
-  const headers = splitLine(headerLine).map((h) => h.toLowerCase().replace(/\s+/g, ' ').trim());
+  const normalizeHeader = (header) =>
+    header
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  const headers = splitLine(headerLine).map(normalizeHeader);
   const findCol = (...candidates) => {
     for (const cand of candidates) {
-      const idx = headers.findIndex((h) => h === cand || h.includes(cand));
+      const normalizedCandidate = normalizeHeader(cand);
+      const idx = headers.findIndex((h) => h === normalizedCandidate);
+      if (idx !== -1) return idx;
+    }
+    for (const cand of candidates.filter((candidate) => normalizeHeader(candidate).length > 2)) {
+      const normalizedCandidate = normalizeHeader(cand);
+      const idx = headers.findIndex((h) => h.includes(normalizedCandidate));
       if (idx !== -1) return idx;
     }
     return -1;
@@ -210,11 +235,16 @@ export function parseLocmatCsv(content) {
     // Décodage SN : "EMAG-XXXXX" → uid ; sinon SN brut
     let uid = null;
     let serial = null;
-    const s = (serialRaw || '').trim();
-    if (s) {
-      const uidMatch = s.match(/^EMAG-(\d+)$/i);
+    let equipmentSerial = null;
+    const rawSerial = (serialRaw || '').trim();
+    if (rawSerial) {
+      const { coreSerial } = parseMagSerial(rawSerial);
+      const uidMatch = coreSerial.match(/^EMAG-(\d+)$/i);
       if (uidMatch) uid = `EMAG-${uidMatch[1].padStart(5, '0')}`;
-      else serial = s;
+      else {
+        serial = rawSerial;
+        equipmentSerial = coreSerial;
+      }
     }
 
     // Statut déduit : si Fin présente → CLOTURE, sinon mapping texte (En cours, …)
@@ -230,6 +260,7 @@ export function parseLocmatCsv(content) {
       code_article: codeArticle || null,
       nom_article: nomArticle || null,
       serial_number: serial,
+      equipment_serial_number: equipmentSerial,
       uid,
       opened_at,
       closed_at,
@@ -354,7 +385,10 @@ export function comparePreview({ rows, existingTickets, equipmentList, importedA
       return;
     }
 
-    const { equipment, matchedBy: equipMatch } = findEquipment(equipmentList, row);
+    const { equipment, matchedBy: equipMatch } = findEquipment(equipmentList, {
+      serial_number: row.equipment_serial_number || row.serial_number,
+      uid: row.uid,
+    });
     const enriched = {
       ...row,
       equipment_id: equipment ? equipment.id : null,

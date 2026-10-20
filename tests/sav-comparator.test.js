@@ -25,10 +25,14 @@ describe('parseFrenchDate', () => {
   it('parse DD/MM/YYYY sans suffixe → 09:00', () => {
     assert.equal(parseFrenchDate('05/11/2025'), '2025-11-05T09:00:00');
   });
+  it('parse les dates LocMat à année sur deux chiffres', () => {
+    assert.equal(parseFrenchDate('19/01/26 AM'), '2026-01-19T09:00:00');
+  });
   it('renvoie null pour vide ou invalide', () => {
     assert.equal(parseFrenchDate(''), null);
     assert.equal(parseFrenchDate(null), null);
     assert.equal(parseFrenchDate('not a date'), null);
+    assert.equal(parseFrenchDate('31/02/2026 AM'), null);
   });
 });
 
@@ -91,6 +95,64 @@ describe('parseLocmatCsv', () => {
     const { rows, errors } = parseLocmatCsv('');
     assert.equal(rows.length, 0);
     assert.equal(errors.length, 1);
+  });
+
+  it('parse un export SAV tabulé à retours chariot seuls et lit la colonne A comme statut', () => {
+    const exportText = [
+      'Code Libre\tCode Article\tNom Article\tNuméro de série\tDébut\tFin\tCoût\tA\t',
+      'IN0001\tPEND9X2.80\tPendrillon\tPEND9X2.80_1_000001\t19/01/26 AM\t\t0\tEn cours\t',
+      'IN0002\tARIANE\tBarre led\tEMAG-02627\t02/04/26 AM\t12/04/26 PM\t25,50\tClôturé\t',
+      'IN0003\tTETRA2\tBarre LED\tT07 -  2400953391\t13/04/26 AM\t\t0\tEn cours\t',
+      'IN0004\t8XT-\tEnceinte 8" • L’ACOUSTICS\t5542\t01/07/26 AM\t\t0\tEn cours\t',
+      '',
+    ].join('\r');
+
+    const { rows, errors } = parseLocmatCsv(exportText);
+
+    assert.equal(errors.length, 0);
+    assert.equal(rows.length, 4);
+    assert.equal(rows[0].locmat_code, 'IN0001');
+    assert.equal(rows[0].code_article, 'PEND9X2.80');
+    assert.equal(rows[0].serial_number, 'PEND9X2.80_1_000001');
+    assert.equal(rows[0].opened_at, '2026-01-19T09:00:00');
+    assert.equal(rows[0].raw_status, 'En cours');
+    assert.equal(rows[0].status, SAV_STATUS.IN_PROGRESS);
+    assert.equal(rows[1].raw_status, 'Clôturé');
+    assert.equal(rows[1].status, SAV_STATUS.CLOSED);
+    assert.equal(rows[1].closed_at, '2026-04-12T14:00:00');
+    assert.equal(rows[1].cost, 25.5);
+    assert.equal(rows[2].serial_number, 'T07 -  2400953391');
+    assert.equal(rows[2].equipment_serial_number, '2400953391');
+    assert.equal(rows[3].nom_article, 'Enceinte 8" • L’ACOUSTICS');
+    assert.equal(rows[3].opened_at, '2026-07-01T09:00:00');
+  });
+
+  it('conserve le numéro MAG brut pour retrouver un ticket SAV existant', () => {
+    const rows = parseLocmatCsv(
+      'Code Libre;Code Article;Nom Article;Numéro de série;Début;Fin;Coût;A\n' +
+        'IN0001;TETRA2;Barre LED;T07 -  2400953391;13/04/26 AM;;0;En cours',
+    ).rows;
+    const result = comparePreview({
+      rows,
+      equipmentList: [
+        { id: 42, name: 'TETRA2', reference: 'TETRA2', serial_number: '2400953391', uid: null },
+      ],
+      existingTickets: [
+        {
+          id: 9,
+          locmat_code: 'PREVIOUS-CODE',
+          serial_number: 'T07 -  2400953391',
+          uid: null,
+          status: SAV_STATUS.IN_PROGRESS,
+          last_modified_source: 'locmat',
+        },
+      ],
+      importedAt: '2026-04-14T10:00:00.000Z',
+    });
+
+    assert.equal(result.newTickets.length, 0);
+    assert.equal(result.updatedTickets.length, 0);
+    assert.equal(result.closedTickets.length, 0);
   });
 });
 

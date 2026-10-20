@@ -10,6 +10,8 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import Database from 'better-sqlite3';
 
 import { runControlesPeriodiquesMigrations } from '../apps/api/migrations/controles-periodiques-v1.js';
+import { runControlInterventionRequestsMigration } from '../apps/api/migrations/control-intervention-requests-v1.js';
+import { createControlInterventionRequest } from '../apps/api/services/controlInterventionRequests.js';
 import {
   addDays,
   computeStatus,
@@ -35,18 +37,30 @@ function setupDb() {
     CREATE TABLE IF NOT EXISTS equipment (
       id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, uid TEXT
     );
+    CREATE TABLE IF NOT EXISTS sav_tickets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      equipment_id INTEGER NOT NULL,
+      reported_by INTEGER,
+      assigned_to INTEGER,
+      type TEXT NOT NULL DEFAULT 'panne',
+      priority TEXT NOT NULL DEFAULT 'medium',
+      status TEXT NOT NULL DEFAULT 'open',
+      title TEXT NOT NULL,
+      description TEXT
+    );
     CREATE TABLE IF NOT EXISTS email_config (
       id INTEGER PRIMARY KEY DEFAULT 1
     );
     INSERT INTO email_config (id) VALUES (1);
   `);
   runControlesPeriodiquesMigrations(db);
+  runControlInterventionRequestsMigration(db);
   return db;
 }
 
 // ─── addDays ──────────────────────────────────────────────────────
 describe('addDays', () => {
-  it('ajoute des jours en respectant l\'UTC', () => {
+  it("ajoute des jours en respectant l'UTC", () => {
     assert.equal(addDays('2026-01-01', 30), '2026-01-31');
     assert.equal(addDays('2026-01-31', 1), '2026-02-01');
     assert.equal(addDays('2026-02-28', 1), '2026-03-01'); // 2026 non bissextile
@@ -65,7 +79,7 @@ describe('computeStatus', () => {
       STATUS.A_FAIRE,
     );
   });
-  it('A_FAIRE quand échéance = aujourd\'hui', () => {
+  it("A_FAIRE quand échéance = aujourd'hui", () => {
     assert.equal(
       computeStatus({ next_due_date: '2026-04-01', missed_after_days: 30 }, today),
       STATUS.A_FAIRE,
@@ -105,7 +119,10 @@ describe('runControlesPeriodiquesMigrations', () => {
   });
 
   it('seed les types standards', () => {
-    const codes = db.prepare('SELECT code FROM control_types').all().map((t) => t.code);
+    const codes = db
+      .prepare('SELECT code FROM control_types')
+      .all()
+      .map((t) => t.code);
     for (const c of ['CT', 'TACHYGRAPHE', 'LIMITEUR', 'ASSURANCE', 'LEVAGE', 'AUTRE']) {
       assert.ok(codes.includes(c), `manque ${c}`);
     }
@@ -115,8 +132,20 @@ describe('runControlesPeriodiquesMigrations', () => {
     runControlesPeriodiquesMigrations(db);
     runControlesPeriodiquesMigrations(db);
     const n = db.prepare('SELECT COUNT(*) AS n FROM control_types').get().n;
-    // 10 types seedés, pas plus
-    assert.equal(n, 10);
+    // 20 types seedés, pas plus.
+    assert.equal(n, 20);
+  });
+
+  it('ajoute les bases réglementaires aux types de contrôles concernés', () => {
+    const types = db
+      .prepare(
+        `SELECT code, description FROM control_types
+          WHERE code IN ('VGP_LEVAGE', 'VGP_ELINGUE', 'VGP_PIED_LEVAGE',
+                         'VGP_EPI_ANTICHUTE', 'Q18_ELECTRIQUE')`,
+      )
+      .all();
+    assert.equal(types.length, 5);
+    assert.ok(types.every((type) => type.description && type.description.includes('France')));
   });
 
   it('ajoute la colonne email_config.alert_controles', () => {
@@ -139,7 +168,9 @@ describe('runControlesPeriodiquesMigrations', () => {
     `);
     runControlesPeriodiquesMigrations(db2);
     const ctrls = db2
-      .prepare("SELECT * FROM equipment_controls WHERE entity_type='vehicle' AND entity_id='AB-123-CD'")
+      .prepare(
+        "SELECT * FROM equipment_controls WHERE entity_type='vehicle' AND entity_id='AB-123-CD'",
+      )
       .all();
     assert.equal(ctrls.length, 2);
     assert.ok(ctrls.every((c) => c.notes && c.notes.startsWith('[migrated:v1]')));
@@ -194,9 +225,70 @@ describe('performControl', () => {
   });
 
   it('lève 404 si contrôle introuvable', () => {
-    assert.throws(
-      () => performControl(db, 999_999, { performed_at: '2026-04-15' }),
-      /introuvable/,
+    assert.throws(() => performControl(db, 999_999, { performed_at: '2026-04-15' }), /introuvable/);
+  });
+
+  it('crée une demande SAV liée aux observations d’un contrôle non conforme', () => {
+    const equipmentId = db
+      .prepare('INSERT INTO equipment (name) VALUES (?)')
+      .run('Palan test').lastInsertRowid;
+    const typeId = db.prepare("SELECT id FROM control_types WHERE code = 'VGP_LEVAGE'").get().id;
+    const controlId = db
+      .prepare(
+        `INSERT INTO equipment_controls
+          (entity_type, entity_id, control_type_id, periodicity_days, next_due_date, status)
+         VALUES ('equipment', ?, ?, 182, '2026-10-01', 'A_FAIRE')`,
+      )
+      .run(String(equipmentId), typeId).lastInsertRowid;
+
+    performControl(db, controlId, {
+      performed_at: '2026-09-10',
+      status: 'MANQUE',
+      notes: 'Câble électrique coupé',
+    });
+
+    const history = db
+      .prepare('SELECT * FROM control_history WHERE equipment_control_id = ?')
+      .get(controlId);
+    const ticket = db.prepare('SELECT * FROM sav_tickets').get();
+    assert.equal(history.status, 'MANQUE');
+    assert.equal(history.intervention_ticket_id, ticket.id);
+    assert.equal(ticket.equipment_id, equipmentId);
+    assert.equal(ticket.priority, 'high');
+    assert.match(ticket.description, /Câble électrique coupé/);
+
+    assert.equal(createControlInterventionRequest(db, history.id), ticket.id);
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sav_tickets').get().n, 1);
+  });
+
+  it('rattrape les observations non conformes importées et ne crée pas de doublons', () => {
+    const equipmentId = db
+      .prepare('INSERT INTO equipment (name) VALUES (?)')
+      .run('Palan importé').lastInsertRowid;
+    const typeId = db.prepare("SELECT id FROM control_types WHERE code = 'VGP_LEVAGE'").get().id;
+    const controlId = db
+      .prepare(
+        `INSERT INTO equipment_controls
+          (entity_type, entity_id, control_type_id, periodicity_days, next_due_date, status)
+         VALUES ('equipment', ?, ?, 182, '2027-03-11', 'MANQUE')`,
+      )
+      .run(String(equipmentId), typeId).lastInsertRowid;
+    db.prepare(
+      `INSERT INTO control_history
+        (equipment_control_id, performed_at, status, notes, documents)
+       VALUES (?, '2026-09-10', 'MANQUE', ?, ?)`,
+    ).run(controlId, 'Sortie de câble abîmée', JSON.stringify([{ url: '/rapport.pdf' }]));
+
+    assert.equal(runControlInterventionRequestsMigration(db), 1);
+    assert.equal(runControlInterventionRequestsMigration(db), 0);
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sav_tickets').get().n, 1);
+    assert.equal(
+      db
+        .prepare(
+          'SELECT intervention_ticket_id FROM control_history WHERE equipment_control_id = ?',
+        )
+        .get(controlId).intervention_ticket_id,
+      db.prepare('SELECT id FROM sav_tickets').get().id,
     );
   });
 });
@@ -220,7 +312,9 @@ describe('recomputeAllStatuses', () => {
     const today = new Date('2026-04-01T12:00:00Z');
     const result = recomputeAllStatuses(db, today);
     assert.ok(result.missed >= 1);
-    const after = db.prepare('SELECT * FROM equipment_controls WHERE id = ?').get(r.lastInsertRowid);
+    const after = db
+      .prepare('SELECT * FROM equipment_controls WHERE id = ?')
+      .get(r.lastInsertRowid);
     assert.equal(after.status, 'A_FAIRE');
     assert.notEqual(after.next_due_date, '2025-01-01');
     const hist = db

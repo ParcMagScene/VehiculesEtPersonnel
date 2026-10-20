@@ -395,6 +395,7 @@ export default function ControlsDashboard({ user }) {
                   >
                     Statut {renderSortIcon('status')}
                   </th>
+                  <th>Observations / interventions</th>
                   <th
                     className="is-sortable"
                     onClick={() => toggleSort('assigned_name')}
@@ -510,6 +511,20 @@ export default function ControlsDashboard({ user }) {
                         >
                           {STATUS_LABELS[c.status] || c.status}
                         </span>
+                      </td>
+                      <td className="ctrl-observations-cell">
+                        {c.observation ? (
+                          <div className="ctrl-observation-text" title={c.observation}>
+                            {c.observation}
+                          </div>
+                        ) : (
+                          <span className="ctrl-muted">—</span>
+                        )}
+                        {c.intervention_ticket_id && (
+                          <div className="ctrl-intervention-ticket">
+                            Demande SAV #{c.intervention_ticket_id}
+                          </div>
+                        )}
                       </td>
                       <td>{c.assigned_name || <span className="ctrl-muted">—</span>}</td>
                       <td>

@@ -152,7 +152,7 @@ export function setupSavRoutes(
         let decisions = {
           acceptNew: true,
           acceptUpdates: true,
-          acceptClosures: false, // par défaut, pas de clôture auto sans accord explicite
+          acceptClosures: true,
           collisionResolutions: {},
         };
         if (req.body && req.body.decisions) {

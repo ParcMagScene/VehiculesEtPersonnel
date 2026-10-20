@@ -3,7 +3,8 @@
 //
 // Workflow :
 //   1. POST   /api/pv-imports/upload    (multipart 1..N PDFs)
-//      → stocke fichier, calcule hash, parse, crée pv_imports
+//      → stocke dans public/Rapports Contrôles/Imports, calcule hash, parse,
+//        crée pv_imports
 //        en status='pending_resolution', renvoie aperçu+candidats match.
 //   2. POST   /api/pv-imports/:id/apply (body: {mapping})
 //      → matérialise les contrôles : updates equipment_controls,
@@ -29,11 +30,22 @@ import db from './database.js';
 import logger from './logger.js';
 import { uploadPv } from './middleware/upload.js';
 import { addDays } from './services/controlesService.js';
-import { computeFileHash, parsePvPdf } from './services/pvParser.js';
+import { createControlInterventionRequest } from './services/controlInterventionRequests.js';
+import { computeFileHash, findSerialMatchesInText, parsePvPdf } from './services/pvParser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PV_DIR_ABS = path.join(__dirname, '..', '..', 'public', 'pv');
+const PUBLIC_DIR_ABS = path.join(__dirname, '..', '..', 'public');
+const PV_DIR_ABS = path.join(PUBLIC_DIR_ABS, 'Rapports Contrôles', 'Imports');
+
+function pvPublicUrl(filePath) {
+  const reportPrefix = 'Rapports Contrôles/';
+  const parts = filePath.split('/').map(encodeURIComponent);
+  if (filePath.startsWith(reportPrefix)) {
+    return `/rapports-controles/${parts.slice(1).join('/')}`;
+  }
+  return `/${parts.join('/')}`;
+}
 
 function safe(handler) {
   return async (req, res) => {
@@ -64,6 +76,7 @@ function findEquipmentCandidates({ serialNumber, reference }) {
            FROM equipment_serials es
            JOIN equipment e ON e.id = es.equipment_id
           WHERE es.serial = ? AND es.status = 'active'
+            AND COALESCE(e.archived, 0) = 0
           LIMIT 5`,
       )
       .all(serialNumber);
@@ -72,10 +85,10 @@ function findEquipmentCandidates({ serialNumber, reference }) {
     // 2. equipment.serial_number (legacy direct)
     const fromDirect = db
       .prepare(
-        `SELECT id, name, reference, serial_number, serial_number AS matched_serial,
+        `SELECT e.id, e.name, e.reference, e.serial_number, e.serial_number AS matched_serial,
                 'equipment.serial_number' AS source
-           FROM equipment
-          WHERE serial_number = ? AND id NOT IN (
+           FROM equipment e
+          WHERE e.serial_number = ? AND COALESCE(e.archived, 0) = 0 AND e.id NOT IN (
             SELECT equipment_id FROM equipment_serials WHERE serial = ? AND status='active'
           )
           LIMIT 5`,
@@ -89,13 +102,72 @@ function findEquipmentCandidates({ serialNumber, reference }) {
         `SELECT id, name, reference, serial_number, NULL AS matched_serial,
                 'equipment.reference' AS source
            FROM equipment
-          WHERE reference = ?
+          WHERE reference = ? AND COALESCE(archived, 0) = 0
           LIMIT 5`,
       )
       .all(reference);
     candidates.push(...fromRef);
   }
   return candidates;
+}
+
+function findEquipmentCandidatesInText(rawText) {
+  const serialRows = db
+    .prepare(
+      `SELECT e.id, e.name, e.reference, e.serial_number, es.serial AS matched_serial,
+              'equipment_serials' AS source
+         FROM equipment_serials es
+         JOIN equipment e ON e.id = es.equipment_id
+        WHERE es.status = 'active'
+          AND COALESCE(e.archived, 0) = 0
+        UNION ALL
+       SELECT e.id, e.name, e.reference, e.serial_number,
+              e.serial_number AS matched_serial, 'equipment.serial_number' AS source
+         FROM equipment e
+        WHERE e.serial_number IS NOT NULL AND e.serial_number != ''
+          AND COALESCE(e.archived, 0) = 0`,
+    )
+    .all();
+  const matchedSerials = new Set(
+    findSerialMatchesInText(
+      rawText,
+      serialRows.map((row) => row.matched_serial),
+    ),
+  );
+  const byEquipment = new Map();
+
+  for (const row of serialRows) {
+    if (!matchedSerials.has(row.matched_serial)) continue;
+    const existing = byEquipment.get(row.id);
+    if (!existing || row.source === 'equipment_serials') {
+      byEquipment.set(row.id, row);
+    }
+  }
+
+  return [...byEquipment.values()];
+}
+
+function markAmbiguousSerialCandidates(candidates) {
+  const normalize = (value) =>
+    String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
+  const owners = new Map();
+
+  for (const candidate of candidates) {
+    const serial = normalize(candidate.matched_serial || candidate.serial_number);
+    if (!serial) continue;
+    const ids = owners.get(serial) || new Set();
+    ids.add(candidate.id);
+    owners.set(serial, ids);
+  }
+
+  return candidates.map((candidate) => {
+    const serial = normalize(candidate.matched_serial || candidate.serial_number);
+    return { ...candidate, ambiguous_serial: (owners.get(serial)?.size || 0) > 1 };
+  });
 }
 
 /**
@@ -155,7 +227,12 @@ function safeUnlink(relPath) {
  */
 function applyMapping(pvImport, mapping, user) {
   const parsed = JSON.parse(pvImport.parsed_data || '{}');
-  const pdfUrl = `/${pvImport.file_path}`; // ex: /pv/pv-xxx.pdf
+  if (!['attach_existing_control', 'create_control', 'lot', 'ignore'].includes(mapping.action)) {
+    const err = new Error(`Action de mapping inconnue : ${mapping.action}`);
+    err.statusCode = 400;
+    throw err;
+  }
+  const pdfUrl = pvPublicUrl(pvImport.file_path);
   const docEntry = {
     name: pvImport.original_name,
     url: pdfUrl,
@@ -163,16 +240,28 @@ function applyMapping(pvImport, mapping, user) {
     type: pvImport.mime_type || 'application/pdf',
     pv_import_id: pvImport.id,
   };
-  const dateDone =
-    mapping.date_done || parsed.dateControle || new Date().toISOString().slice(0, 10);
+  const dateDone = mapping.date_done || parsed.dateControle;
+  if (mapping.action !== 'ignore' && !isValidIsoDate(dateDone)) {
+    const err = new Error('Date du contrôle requise au format YYYY-MM-DD');
+    err.statusCode = 400;
+    throw err;
+  }
+  const requestedNextDue = mapping.next_due_date || parsed.prochainControle;
+  if (mapping.action !== 'ignore' && requestedNextDue && !isValidIsoDate(requestedNextDue)) {
+    const err = new Error('Prochaine échéance invalide : format YYYY-MM-DD attendu');
+    err.statusCode = 400;
+    throw err;
+  }
   // next_due_date : priorité mapping explicite → valeur extraite du PV →
   // calcul dateDone + périodicité du type (control_types.default_periodicity_days).
   // Beaucoup de PV n'indiquent que la date d'intervention ; sans ce calcul,
   // les contrôles seraient créés sans échéance (bug 2026-05-28).
-  let nextDue = mapping.next_due_date || parsed.prochainControle || null;
+  let nextDue = requestedNextDue || null;
   const performedBy = user?.username || user?.name || pvImport.created_by || 'import-pv';
   const statusVal =
-    (mapping.statut || parsed.statut || 'EFFECTUE') === 'NON_CONFORME' ? 'MANQUE' : 'EFFECTUE';
+    mapping.action === 'ignore'
+      ? 'EFFECTUE'
+      : resolveControlStatus(mapping.statut || parsed.statut);
 
   const txn = db.transaction(() => {
     let matched = 0;
@@ -200,21 +289,24 @@ function applyMapping(pvImport, mapping, user) {
                   status = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?`,
         ).run(dateDone, nextDue, statusVal === 'EFFECTUE' ? 'EFFECTUE' : 'MANQUE', ctrl.id);
-        db.prepare(
-          `INSERT INTO control_history
+        const history = db
+          .prepare(
+            `INSERT INTO control_history
             (equipment_control_id, performed_at, performed_by, status,
              previous_due_date, next_due_date, notes, documents)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).run(
-          ctrl.id,
-          dateDone,
-          performedBy,
-          statusVal,
-          previousDue,
-          nextDue,
-          mapping.notes || parsed.organisme || null,
-          JSON.stringify([docEntry]),
-        );
+          )
+          .run(
+            ctrl.id,
+            dateDone,
+            performedBy,
+            statusVal,
+            previousDue,
+            nextDue,
+            mapping.notes || parsed.organisme || null,
+            JSON.stringify([docEntry]),
+          );
+        createControlInterventionRequest(db, history.lastInsertRowid);
         matched = 1;
         break;
       }
@@ -245,21 +337,24 @@ function applyMapping(pvImport, mapping, user) {
             mapping.notes || parsed.organisme || null,
             performedBy,
           );
-        db.prepare(
-          `INSERT INTO control_history
+        const history = db
+          .prepare(
+            `INSERT INTO control_history
             (equipment_control_id, performed_at, performed_by, status,
              previous_due_date, next_due_date, notes, documents)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).run(
-          insRes.lastInsertRowid,
-          dateDone,
-          performedBy,
-          statusVal,
-          null,
-          nextDue,
-          mapping.notes || parsed.organisme || null,
-          JSON.stringify([docEntry]),
-        );
+          )
+          .run(
+            insRes.lastInsertRowid,
+            dateDone,
+            performedBy,
+            statusVal,
+            null,
+            nextDue,
+            mapping.notes || parsed.organisme || null,
+            JSON.stringify([docEntry]),
+          );
+        createControlInterventionRequest(db, history.lastInsertRowid);
         matched = 1;
         break;
       }
@@ -348,7 +443,7 @@ function applyMapping(pvImport, mapping, user) {
               );
               ctrlId = r.lastInsertRowid;
             }
-            insHist.run(
+            const history = insHist.run(
               ctrlId,
               dateDone,
               performedBy,
@@ -358,6 +453,7 @@ function applyMapping(pvImport, mapping, user) {
               mapping.notes || parsed.organisme || null,
               JSON.stringify([docEntry]),
             );
+            createControlInterventionRequest(db, history.lastInsertRowid);
           }
           matched = eqIds.length;
         }
@@ -386,6 +482,34 @@ function applyMapping(pvImport, mapping, user) {
   txn();
 }
 
+function isValidIsoDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function resolveControlStatus(value) {
+  const status = String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_')
+    .trim();
+
+  if (['CONFORME', 'FAVORABLE', 'OK', 'AUCUNE_OBSERVATION', 'EFFECTUE'].includes(status)) {
+    return 'EFFECTUE';
+  }
+  if (
+    ['NON_CONFORME', 'DEFAVORABLE', 'NOK', 'DEFAUT', 'REBUT', 'REBUTE', 'REBUTER'].includes(status)
+  ) {
+    return 'MANQUE';
+  }
+
+  const err = new Error('Résultat du rapport à confirmer : conforme ou non conforme');
+  err.statusCode = 400;
+  throw err;
+}
+
 // ─── Routes ─────────────────────────────────────────────────────
 
 export function setupPvImportRoutes(app, authenticateToken, requireAdmin) {
@@ -408,13 +532,14 @@ export function setupPvImportRoutes(app, authenticateToken, requireAdmin) {
       for (const f of files) {
         const absPath = f.path;
         const relPath = path.relative(path.join(__dirname, '..', '..', 'public'), absPath);
+        let fileHash = null;
         try {
-          const hash = computeFileHash(absPath);
+          fileHash = computeFileHash(absPath);
 
           // Anti-doublon
           const existing = db
             .prepare('SELECT id, status FROM pv_imports WHERE file_hash = ?')
-            .get(hash);
+            .get(fileHash);
           if (existing) {
             safeUnlink(relPath);
             skipped.push({
@@ -441,12 +566,26 @@ export function setupPvImportRoutes(app, authenticateToken, requireAdmin) {
             serialNumber: parsed.serialNumber,
             reference: parsed.reference,
           });
+          for (const candidate of findEquipmentCandidatesInText(parsed.rawText)) {
+            const existing = equipmentCandidates.find((item) => item.id === candidate.id);
+            if (existing) {
+              existing.matched_serial = candidate.matched_serial;
+              existing.source = candidate.source;
+            } else {
+              equipmentCandidates.push(candidate);
+            }
+          }
+          const resolvedEquipmentCandidates = markAmbiguousSerialCandidates(equipmentCandidates);
           const vehicleCandidates = findVehicleCandidates({
             serialNumber: parsed.serialNumber,
             reference: parsed.reference,
           });
 
-          const fullParsed = { ...parsed, equipmentCandidates, vehicleCandidates };
+          const fullParsed = {
+            ...parsed,
+            equipmentCandidates: resolvedEquipmentCandidates,
+            vehicleCandidates,
+          };
 
           const result = db
             .prepare(
@@ -460,7 +599,7 @@ export function setupPvImportRoutes(app, authenticateToken, requireAdmin) {
               f.originalname,
               relPath,
               f.size,
-              hash,
+              fileHash,
               f.mimetype || 'application/pdf',
               JSON.stringify(fullParsed),
               parseError ? 'error' : 'pending_resolution',
@@ -472,11 +611,25 @@ export function setupPvImportRoutes(app, authenticateToken, requireAdmin) {
             id: result.lastInsertRowid,
             original_name: f.originalname,
             file_path: relPath,
+            file_url: pvPublicUrl(relPath),
             parsed: fullParsed,
             status: parseError ? 'error' : 'pending_resolution',
             error: parseError,
           });
         } catch (e) {
+          const duplicate = fileHash
+            ? db.prepare('SELECT id, status FROM pv_imports WHERE file_hash = ?').get(fileHash)
+            : null;
+          if (duplicate) {
+            safeUnlink(relPath);
+            skipped.push({
+              original_name: f.originalname,
+              reason: 'duplicate',
+              existing_id: duplicate.id,
+              existing_status: duplicate.status,
+            });
+            continue;
+          }
           logger.error('PV Import: échec traitement fichier', f.originalname, e);
           safeUnlink(relPath);
           skipped.push({ original_name: f.originalname, reason: 'error', error: e.message });
@@ -554,7 +707,13 @@ export function setupPvImportRoutes(app, authenticateToken, requireAdmin) {
       const total = db
         .prepare(`SELECT COUNT(*) AS c FROM pv_imports ${where}`)
         .get(...(status ? [status] : [])).c;
-      res.json({ success: true, items: rows, total, limit, offset });
+      res.json({
+        success: true,
+        items: rows.map((row) => ({ ...row, file_url: pvPublicUrl(row.file_path) })),
+        total,
+        limit,
+        offset,
+      });
     }),
   );
 
@@ -571,7 +730,10 @@ export function setupPvImportRoutes(app, authenticateToken, requireAdmin) {
       } catch {
         parsed = {};
       }
-      res.json({ success: true, pv_import: { ...row, parsed_data: parsed } });
+      res.json({
+        success: true,
+        pv_import: { ...row, parsed_data: parsed, file_url: pvPublicUrl(row.file_path) },
+      });
     }),
   );
 
@@ -601,7 +763,14 @@ export function setupPvImportRoutes(app, authenticateToken, requireAdmin) {
             ORDER BY date_control DESC`,
         )
         .all(eqId);
-      res.json({ success: true, controls: fromControls, lots: fromLots });
+      res.json({
+        success: true,
+        controls: fromControls,
+        lots: fromLots.map((lot) => ({
+          ...lot,
+          pdf_url: lot.pdf_path ? pvPublicUrl(lot.pdf_path) : null,
+        })),
+      });
     }),
   );
 

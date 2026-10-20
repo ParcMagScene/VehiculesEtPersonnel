@@ -12,6 +12,7 @@
 //                                  sérialisés) — qty_controlee /
 //                                  qty_non_controlee + lien PV.
 //
+// Les PDF sont stockés dans public/Rapports Contrôles/Imports.
 // Les PV liés à un equipment_control existant sont stockés dans la colonne
 // JSON `control_history.documents` déjà présente (pas d'ALTER nécessaire).
 //
@@ -28,7 +29,7 @@ export function runPvImportsMigrations(db) {
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         file_name       TEXT    NOT NULL,           -- nom stocké sur disque
         original_name   TEXT    NOT NULL,           -- nom upload utilisateur
-        file_path       TEXT    NOT NULL,           -- chemin relatif (pv/xxx.pdf)
+        file_path       TEXT    NOT NULL,           -- chemin relatif depuis public/
         file_size       INTEGER NOT NULL,
         file_hash       TEXT    NOT NULL UNIQUE,    -- SHA-256 anti-doublon
         mime_type       TEXT,

@@ -137,7 +137,7 @@ export default function PvDocumentsSection({ entityType, entityId }) {
           </h4>
           <ul className="pv-docs-list">
             {lots.map((l) => {
-              const url = l.pdf_path ? `/${l.pdf_path}` : null;
+              const url = l.pdf_url || (l.pdf_path ? `/${l.pdf_path}` : null);
               const folderUrl = url ? url.replace(/\/[^/]+$/, '/') : null;
               return (
                 <li key={`lot-${l.id}`} className="pv-doc-item">

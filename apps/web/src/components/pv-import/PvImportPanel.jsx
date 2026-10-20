@@ -162,7 +162,7 @@ export default function PvImportPanel({ open, onClose }) {
   };
 
   // Mapping initial à la sélection d'action.
-  const ensureMapping = (imp) => {
+  const ensureMapping = (imp, parsed = {}) => {
     if (mappings[imp.id]) return mappings[imp.id];
     const init = {
       action: 'lot',
@@ -173,6 +173,9 @@ export default function PvImportPanel({ open, onClose }) {
       control_type_id: '',
       equipment_id: '',
       notes: '',
+      date_done: parsed.dateControle || '',
+      next_due_date: parsed.prochainControle || '',
+      statut: controlOutcome(parsed.statut),
     };
     setMappings((m) => ({ ...m, [imp.id]: init }));
     return init;
@@ -228,7 +231,17 @@ export default function PvImportPanel({ open, onClose }) {
 
   // ── Apply ────────────────────────────────────────────────────────
   const handleApply = async (imp) => {
-    const m = mappings[imp.id] || ensureMapping(imp);
+    const parsed =
+      typeof imp.parsed_data === 'string' ? safeJson(imp.parsed_data) : imp.parsed_data || {};
+    const m = mappings[imp.id] || ensureMapping(imp, parsed);
+    if (m.action !== 'ignore' && !(m.date_done ?? parsed.dateControle)) {
+      toast.error('La date du contrôle est requise');
+      return;
+    }
+    if (m.action !== 'ignore' && !isRecognizedOutcome(m.statut ?? parsed.statut)) {
+      toast.error('Le résultat du rapport doit être confirmé');
+      return;
+    }
     // Validation minimale côté UI.
     if (m.action === 'create_control') {
       if (!m.entity_type || !m.entity_id || !m.control_type_id) {
@@ -236,6 +249,7 @@ export default function PvImportPanel({ open, onClose }) {
         return;
       }
     }
+
     if (m.action === 'lot' && Number(m.quantite_controlee || 0) < 1) {
       toast.error('Quantité contrôlée doit être ≥ 1');
       return;
@@ -333,9 +347,12 @@ export default function PvImportPanel({ open, onClose }) {
                 typeof imp.parsed_data === 'string'
                   ? safeJson(imp.parsed_data)
                   : imp.parsed_data || {};
-              const m = mappings[imp.id] || ensureMapping(imp);
+              const m = mappings[imp.id] || ensureMapping(imp, parsed);
+              const selectedControlType = controlTypes.find(
+                (type) => String(type.id) === String(m.control_type_id),
+              );
               const isPending = imp.status === 'pending_resolution';
-              const pdfUrl = `/${imp.file_path}`;
+              const pdfUrl = imp.file_url || `/${imp.file_path}`;
               return (
                 <div key={imp.id} className="pv-card">
                   <div className="pv-card-header">
@@ -483,11 +500,16 @@ export default function PvImportPanel({ open, onClose }) {
                                 {controlTypes
                                   .filter((t) => t.is_vehicle_specific === 0)
                                   .map((t) => (
-                                    <option key={t.id} value={t.id}>
+                                    <option key={t.id} value={t.id} title={t.description || ''}>
                                       {t.code} · {t.name}
                                     </option>
                                   ))}
                               </Select>
+                              {selectedControlType?.description && (
+                                <span className="pv-legal-description">
+                                  {selectedControlType.description}
+                                </span>
+                              )}
                             </label>
                             <label className="pv-field" style={{ flex: 2 }}>
                               <span className="pv-label">
@@ -524,8 +546,12 @@ export default function PvImportPanel({ open, onClose }) {
                                 {/* Candidats détectés en priorité */}
                                 {(parsed.equipmentCandidates || []).map((c) => (
                                   <option key={`cand-${c.id}`} value={c.id}>
-                                    ★ {c.name || c.reference || c.id}
-                                    {c.serial_number ? ` (SN ${c.serial_number})` : ''}
+                                    {c.ambiguous_serial ? '! ' : '★ '}
+                                    {c.name || c.reference || c.id}
+                                    {c.matched_serial || c.serial_number
+                                      ? ` (SN ${c.matched_serial || c.serial_number})`
+                                      : ''}
+                                    {c.ambiguous_serial ? ' — série en doublon' : ''}
                                   </option>
                                 ))}
                                 {/* Tous les autres équipements */}
@@ -594,27 +620,72 @@ export default function PvImportPanel({ open, onClose }) {
                             >
                               <option value="">— Sélectionner —</option>
                               {controlTypes.map((t) => (
-                                <option key={t.id} value={t.id}>
+                                <option key={t.id} value={t.id} title={t.description || ''}>
                                   {t.code} · {t.name}
                                 </option>
                               ))}
                             </Select>
+                            {selectedControlType?.description && (
+                              <span className="pv-legal-description">
+                                {selectedControlType.description}
+                              </span>
+                            )}
                           </label>
                         </div>
                       )}
 
                       {m.action !== 'ignore' && (
-                        <div className="pv-resolution-row">
-                          <label className="pv-field pv-field-full">
-                            <span className="pv-label">Notes (optionnel)</span>
-                            <Textarea
-                              rows={2}
-                              value={m.notes || ''}
-                              onChange={(e) => updateMapping(imp.id, { notes: e.target.value })}
-                              placeholder="Observations complémentaires…"
-                            />
-                          </label>
-                        </div>
+                        <>
+                          <div className="pv-resolution-row">
+                            <label className="pv-field">
+                              <span className="pv-label">Date du contrôle *</span>
+                              <Input
+                                type="date"
+                                required
+                                value={m.date_done ?? parsed.dateControle ?? ''}
+                                onChange={(e) =>
+                                  updateMapping(imp.id, { date_done: e.target.value })
+                                }
+                              />
+                            </label>
+                            <label className="pv-field">
+                              <span className="pv-label">Résultat *</span>
+                              <Select
+                                size="sm"
+                                required
+                                value={m.statut ?? parsed.statut ?? ''}
+                                onChange={(e) => updateMapping(imp.id, { statut: e.target.value })}
+                              >
+                                <option value="">— Confirmer le résultat —</option>
+                                <option value="CONFORME">Conforme</option>
+                                <option value="NON_CONFORME">Non conforme</option>
+                                <option value="DEFAUT">Défaut</option>
+                                <option value="REBUT">Rebut</option>
+                              </Select>
+                            </label>
+                            <label className="pv-field">
+                              <span className="pv-label">Prochaine échéance (optionnelle)</span>
+                              <Input
+                                type="date"
+                                value={m.next_due_date ?? parsed.prochainControle ?? ''}
+                                onChange={(e) =>
+                                  updateMapping(imp.id, { next_due_date: e.target.value })
+                                }
+                              />
+                            </label>
+                          </div>
+                          <div className="pv-resolution-row">
+                            <label className="pv-field pv-field-full">
+                              <span className="pv-label">Notes (optionnel)</span>
+                              <Textarea
+                                rows={2}
+                                value={m.notes || ''}
+                                onChange={(e) => updateMapping(imp.id, { notes: e.target.value })}
+                                placeholder="Observations complémentaires…"
+                              />
+                            </label>
+                          </div>
+                        </>
                       )}
 
                       <div className="pv-resolution-actions">
@@ -659,4 +730,28 @@ function safeJson(s) {
   } catch {
     return {};
   }
+}
+
+function controlOutcome(value) {
+  const normalized = normalizeOutcome(value);
+  if (['CONFORME', 'FAVORABLE', 'OK', 'AUCUNE_OBSERVATION', 'EFFECTUE'].includes(normalized)) {
+    return 'CONFORME';
+  }
+  if (['NON_CONFORME', 'DEFAVORABLE', 'NOK'].includes(normalized)) return 'NON_CONFORME';
+  if (normalized === 'DEFAUT') return 'DEFAUT';
+  if (['REBUT', 'REBUTE', 'REBUTER'].includes(normalized)) return 'REBUT';
+  return '';
+}
+
+function isRecognizedOutcome(value) {
+  return Boolean(controlOutcome(value));
+}
+
+function normalizeOutcome(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_')
+    .trim();
 }

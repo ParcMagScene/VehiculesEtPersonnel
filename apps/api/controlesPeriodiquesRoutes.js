@@ -353,7 +353,23 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
                CASE
                  WHEN ec.entity_type='vehicle'  THEN v.photo
                  WHEN ec.entity_type='equipment' THEN e.photo
-               END AS entity_photo
+               END AS entity_photo,
+               COALESCE(
+                 (SELECT h.notes
+                    FROM control_history h
+                   WHERE h.equipment_control_id = ec.id
+                     AND h.documents IS NOT NULL
+                     AND COALESCE(TRIM(h.notes), '') != ''
+                   ORDER BY h.performed_at DESC, h.id DESC
+                   LIMIT 1),
+                 ec.notes
+               ) AS observation,
+               (SELECT h.intervention_ticket_id
+                  FROM control_history h
+                 WHERE h.equipment_control_id = ec.id
+                   AND h.intervention_ticket_id IS NOT NULL
+                 ORDER BY h.performed_at DESC, h.id DESC
+                 LIMIT 1) AS intervention_ticket_id
           FROM equipment_controls ec
           JOIN control_types ct ON ct.id = ec.control_type_id
      LEFT JOIN users u  ON u.id = ec.assigned_to

@@ -9,6 +9,8 @@
 //   - recomputeAllStatuses(db)    : appelée par le scheduler
 // ═══════════════════════════════════════════════════════════════
 
+import { createControlInterventionRequest } from './controlInterventionRequests.js';
+
 export const STATUS = {
   A_FAIRE: 'A_FAIRE',
   EN_RETARD: 'EN_RETARD',
@@ -107,34 +109,42 @@ export function performControl(db, controlId, payload, userId = null) {
   }
 
   const performedAt = payload.performed_at;
+  const resultStatus = payload.status === 'MANQUE' ? 'MANQUE' : 'EFFECTUE';
   const periodicity = Number(ctrl.periodicity_days || ctrl.default_periodicity_days || 365);
   const nextDue = payload.next_due_date || addDays(performedAt, periodicity);
   const documents = payload.documents ? JSON.stringify(payload.documents) : null;
 
   const tx = db.transaction(() => {
-    db.prepare(
-      `INSERT INTO control_history
+    const history = db
+      .prepare(
+        `INSERT INTO control_history
         (equipment_control_id, performed_at, performed_by, status,
          previous_due_date, next_due_date, notes, documents)
-       VALUES (?, ?, ?, 'EFFECTUE', ?, ?, ?, ?)`,
-    ).run(
-      controlId,
-      performedAt,
-      userId,
-      ctrl.next_due_date,
-      nextDue,
-      payload.notes || null,
-      documents,
-    );
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        controlId,
+        performedAt,
+        userId,
+        resultStatus,
+        ctrl.next_due_date,
+        nextDue,
+        payload.notes || null,
+        documents,
+      );
+
+    if (resultStatus === 'MANQUE') {
+      createControlInterventionRequest(db, history.lastInsertRowid);
+    }
 
     db.prepare(
       `UPDATE equipment_controls
           SET last_done_date = ?,
               next_due_date  = ?,
-              status         = 'A_FAIRE',
+              status         = ?,
               updated_at     = CURRENT_TIMESTAMP
         WHERE id = ?`,
-    ).run(performedAt, nextDue, controlId);
+    ).run(performedAt, nextDue, resultStatus === 'MANQUE' ? 'MANQUE' : 'A_FAIRE', controlId);
   });
   tx();
 

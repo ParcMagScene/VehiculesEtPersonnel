@@ -133,47 +133,51 @@ const SEED_TYPES = [
   // Sources : Code du travail + arrêtés cités dans le champ "name".
   // ─────────────────────────────────────────────────────────────
   {
-    // Vérification générale périodique des appareils de levage.
-    // Réf : Arrêté du 1er mars 2004, art. 22. Périodicité : 12 mois.
+    // La période doit être confirmée selon la catégorie et l'usage réel.
     code: 'VGP_LEVAGE',
-    name: 'VGP appareils de levage (Arr. 01/03/2004 art. 22)',
+    name: 'VGP appareils de levage',
+    description:
+      "France — Code du travail R.4323-23 et arrêté du 1er mars 2004 relatif aux vérifications des appareils et accessoires de levage. Référence par défaut : 12 mois pour les appareils de levage de charges. Les appareils destinés au levage de personnes et certains usages/catégories ont des périodicités plus courtes : vérifier la classification, la notice fabricant et le rapport de vérification avant de fixer l'échéance.",
     is_vehicle_specific: 0,
     default_periodicity_days: 365,
     missed_after_days: 30,
   },
   {
-    // Vérification générale périodique des accessoires de levage
-    // (élingues chaîne / textile / câble, manilles, anneaux, crochets).
-    // Réf : Arrêté du 1er mars 2004, art. 23. Périodicité : 12 mois.
+    // La période dépend également des conditions d'emploi et de conservation.
     code: 'VGP_ELINGUE',
-    name: 'VGP accessoires de levage / élingues (Arr. 01/03/2004 art. 23)',
+    name: 'VGP accessoires de levage / élingues',
+    description:
+      "France — Code du travail R.4323-23 et arrêté du 1er mars 2004 relatif aux vérifications des appareils et accessoires de levage. Référence générale : VGP au moins annuelle des accessoires de levage (élingues, chaînes, câbles, manilles), à adapter aux conditions d'utilisation, à la notice et aux conclusions du vérificateur.",
     is_vehicle_specific: 0,
     default_periodicity_days: 365,
     missed_after_days: 30,
   },
   {
-    // Pieds de levage / supports de structure : assimilés appareils de levage
-    // pour la VGP annuelle.
+    // Ne pas assimiler automatiquement un support à un appareil de levage.
     code: 'VGP_PIED_LEVAGE',
-    name: 'VGP pieds de levage (Arr. 01/03/2004)',
+    name: 'VGP pieds de levage',
+    description:
+      "France — arrêté du 1er mars 2004 relatif aux vérifications des appareils et accessoires de levage, si le matériel relève bien de cette définition. La catégorie commerciale « pied de levage » ne suffit pas : confirmer la fonction, le mode d'utilisation, la notice et le rapport du vérificateur. Périodicité de référence de 12 mois uniquement lorsque la règle VGP annuelle s'applique.",
     is_vehicle_specific: 0,
     default_periodicity_days: 365,
     missed_after_days: 30,
   },
   {
     // EPI antichute (harnais, longes, stop-chute, casques).
-    // Réf : Code du travail R4323-99 + recommandations fabricant.
     code: 'VGP_EPI_ANTICHUTE',
     name: 'Vérification EPI antichute (CT R4323-99)',
+    description:
+      'France — Code du travail R.4323-99 et arrêté du 19 mars 1993 : vérification périodique des EPI concernés, au moins annuelle. Respecter également les instructions fabricant et les règles de mise au rebut après chute ou détérioration.',
     is_vehicle_specific: 0,
     default_periodicity_days: 365,
     missed_after_days: 30,
   },
   {
-    // Vérification des installations électriques (armoires de distribution).
-    // Réf : Arrêté du 14 décembre 2011 (Q18). Périodicité : 12 mois.
+    // Q18 est un référentiel d'attestation assureur, pas la source de l'obligation.
     code: 'Q18_ELECTRIQUE',
-    name: 'Vérification installations électriques (Arr. 14/12/2011 Q18)',
+    name: 'Vérification périodique des installations électriques',
+    description:
+      "France — Code du travail R.4226-16 et arrêté du 26 décembre 2011 relatif aux vérifications des installations électriques. La périodicité de référence est annuelle, sous réserve des cas réglementaires de prolongation et du rapport. L'obligation porte sur l'installation électrique ; « Q18 » est un référentiel d'attestation, pas à lui seul un texte législatif.",
     is_vehicle_specific: 0,
     default_periodicity_days: 365,
     missed_after_days: 30,
@@ -220,19 +224,41 @@ export function runControlesPeriodiquesMigrations(db) {
     // Seed
     const ins = db.prepare(`
       INSERT OR IGNORE INTO control_types
-        (code, name, default_periodicity_days, missed_after_days, is_vehicle_specific)
-      VALUES (?, ?, ?, ?, ?)
+        (code, name, description, default_periodicity_days, missed_after_days, is_vehicle_specific)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
     let seeded = 0;
     for (const t of SEED_TYPES) {
       const r = ins.run(
         t.code,
         t.name,
+        t.description || null,
         t.default_periodicity_days,
         t.missed_after_days,
         t.is_vehicle_specific,
       );
       if (r.changes > 0) seeded++;
+      if (t.description) {
+        db.prepare(
+          `UPDATE control_types SET description = ?
+            WHERE code = ? AND (description IS NULL OR TRIM(description) = '')`,
+        ).run(t.description, t.code);
+      }
+    }
+    const legacyNames = {
+      VGP_LEVAGE: 'VGP appareils de levage (Arr. 01/03/2004 art. 22)',
+      VGP_ELINGUE: 'VGP accessoires de levage / élingues (Arr. 01/03/2004 art. 23)',
+      VGP_PIED_LEVAGE: 'VGP pieds de levage (Arr. 01/03/2004)',
+      Q18_ELECTRIQUE: 'Vérification installations électriques (Arr. 14/12/2011 Q18)',
+    };
+    for (const type of SEED_TYPES) {
+      if (legacyNames[type.code]) {
+        db.prepare('UPDATE control_types SET name = ? WHERE code = ? AND name = ?').run(
+          type.name,
+          type.code,
+          legacyNames[type.code],
+        );
+      }
     }
     if (seeded > 0) logger.info(`  ✅ Contrôles périodiques: ${seeded} types seedés`);
   } catch (e) {

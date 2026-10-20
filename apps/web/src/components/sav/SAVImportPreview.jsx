@@ -57,7 +57,7 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
   const [tab, setTab] = useState('newTickets');
   const [acceptNew, setAcceptNew] = useState(true);
   const [acceptUpdates, setAcceptUpdates] = useState(true);
-  const [acceptClosures, setAcceptClosures] = useState(false);
+  const [acceptClosures, setAcceptClosures] = useState(true);
   const [collisionDecisions, setCollisionDecisions] = useState({});
   const [confirming, setConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState(null);
@@ -190,6 +190,10 @@ export default function SAVImportPreview({ file, previewResp, onCancel, onDone }
           Clôturer absents ({counts.closed})
         </label>
       </div>
+      <p className="u-text-secondary u-font-xs" style={{ marginTop: -8 }}>
+        Les tickets actifs absents de l’export seront clôturés. Décochez cette option si l’export
+        LocMat est incomplet.
+      </p>
 
       {/* Tableau onglet courant */}
       <div className="u-overflow-auto u-border u-radius-md" style={{ maxHeight: 380 }}>

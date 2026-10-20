@@ -75,6 +75,7 @@ import { setupEshopRoutes } from './eshopRoutes.js';
 import { setupForfaitRoutes } from './forfaitRoutes.js';
 import { setupGaragesRoutes } from './garagesRoutes.js';
 import { setupGoogleRoutes } from './googleRoutes.js';
+import { setupImportFoldersRoutes } from './importFoldersRoutes.js';
 import { setupInventoryRoutes } from './inventoryRoutes.js';
 import { setupLabelsRoutes } from './labelsRoutes.js';
 import { setupLeaveRoutes } from './leaveRoutes.js';
@@ -337,6 +338,15 @@ const pvPath = path.join(__dirname, '..', '..', 'public', 'pv');
 if (!fs.existsSync(pvPath)) fs.mkdirSync(pvPath, { recursive: true });
 app.use('/pv', authenticateToken, express.static(pvPath, { maxAge: '1h' }));
 
+// Rapports de contrôle archivés — accès réservé aux utilisateurs authentifiés.
+const controlReportsPath = path.join(__dirname, '..', '..', 'public', 'Rapports Contrôles');
+if (!fs.existsSync(controlReportsPath)) fs.mkdirSync(controlReportsPath, { recursive: true });
+app.use(
+  '/rapports-controles',
+  authenticateToken,
+  express.static(controlReportsPath, { maxAge: '1h' }),
+);
+
 // Servir les avatars
 const avatarsPath = path.join(__dirname, '..', '..', 'public', 'avatars');
 if (!fs.existsSync(avatarsPath)) fs.mkdirSync(avatarsPath, { recursive: true });
@@ -569,6 +579,7 @@ setupVehicleRoutes(
 );
 setupControlesPeriodiquesRoutes(app, authenticateToken, requireAdmin);
 setupPvImportRoutes(app, authenticateToken, requireAdmin);
+setupImportFoldersRoutes(app, authenticateToken);
 setupAdminRoutes(app, authenticateToken, requireAdmin, { JWT_SECRET, JWT_EXPIRY_DAYS });
 setupTOTPRoutes(app, authenticateToken, requireAdmin);
 setupAffairesRoutes(app, authenticateToken, requireAdmin);

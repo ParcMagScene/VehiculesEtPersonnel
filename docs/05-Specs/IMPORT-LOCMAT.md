@@ -7,16 +7,27 @@
 ## 1. Objectif
 
 Synchroniser de façon **différentielle** le stock eM@g à partir des deux exports
-CSV de Locmat :
+Locmat (`.csv` ou `.txt`, séparés par point-virgule, virgule ou tabulation) :
 
 | Fichier         | Contenu                                                |
 |-----------------|--------------------------------------------------------|
-| `Locations.csv` | Une ligne par référence (code, désignation, qté, prix) |
-| `Serialise.csv` | Une ligne par numéro de série (code + n° série)        |
+| `Locations.csv` / `Locations.txt` | Une ligne par référence (code, désignation, qté, prix) |
+| `Serialise.csv` / `Serialises.txt` | Une ligne par numéro de série (code + n° série)        |
 
 Au moins **un** des deux fichiers est requis ; les deux sont compatibles et se
 complètent (les références présentes uniquement dans `Serialise.csv` sont
 créées comme produits **sérialisés** sans quantité initiale).
+
+Les exports tabulés Locmat en `.txt` sont acceptés directement. Pour importer
+ensuite les interventions SAV, importer d'abord l'export des numéros de série :
+les nouveaux équipements pourront alors être liés aux tickets SAV par numéro
+de série. Les numéros MAG séparés par ` - ` sont normalisés pour ce rapprochement.
+L'import SAV accepte également les exports tabulés à retours chariot seuls,
+la colonne `A` pour le statut et les dates à année sur deux chiffres.
+À la confirmation d'un import SAV, les tickets actifs absents de l'export sont
+clôturés par défaut, car l'export LocMat est traité comme la liste exhaustive
+des interventions en cours. Cette option peut être décochée dans l'aperçu si
+l'export est incomplet.
 
 ## 2. Garanties (cahier des charges §8)
 

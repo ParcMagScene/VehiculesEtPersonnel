@@ -335,6 +335,30 @@
   border: 1px solid transparent;
 }
 
+/* Observations issues des rapports et demandes d'intervention associées. */
+.ctrl-observations-cell {
+  min-width: 220px;
+  max-width: 360px;
+}
+
+.ctrl-observation-text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--theme-text-dark);
+  font-size: var(--font-xs);
+  line-height: 1.4;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.ctrl-intervention-ticket {
+  margin-top: 4px;
+  color: var(--theme-danger-text);
+  font-size: var(--font-xs);
+  font-weight: 700;
+}
+
 /* Colonne Actions */
 .ctrl-actions-cell {
   text-align: right;

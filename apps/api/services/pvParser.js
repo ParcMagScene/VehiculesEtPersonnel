@@ -89,14 +89,14 @@ function toIsoDate(input) {
   return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
 }
 
-function normalizeStatut(s) {
+export function normalizeStatut(s) {
   if (!s) return null;
   const v = s.toLowerCase().replace(/\s+/g, ' ').trim();
-  if (/(^|\s)(conforme|favorable|ok)(\s|$)/.test(v)) return 'CONFORME';
-  if (/aucune\s*observation/.test(v)) return 'CONFORME';
   if (/(non\s*conforme|d[ée]favorable|nok)/.test(v)) return 'NON_CONFORME';
   if (/rebut/.test(v)) return 'REBUT';
   if (/d[ée]faut/.test(v)) return 'DEFAUT';
+  if (/aucune\s*observation/.test(v)) return 'CONFORME';
+  if (/(^|\s)(conforme|favorable|ok)(\s|$)/.test(v)) return 'CONFORME';
   return v.toUpperCase();
 }
 
@@ -122,6 +122,33 @@ function periodiciteToMonths(s) {
   const m = v.match(/(\d+)\s*(mois|ans?)/);
   if (m) return m[2].startsWith('an') ? Number(m[1]) * 12 : Number(m[1]);
   return null;
+}
+
+/**
+ * Retrouve des numéros de série connus dans le texte d'un rapport multi-équipements.
+ * Les correspondances sont limitées à des tokens complets pour éviter les faux positifs
+ * (par exemple un numéro de série court inclus dans une référence de rapport).
+ */
+export function findSerialMatchesInText(rawText, serialEntries) {
+  const normalize = (value) =>
+    String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
+  const text = String(rawText || '').toUpperCase();
+  const tokens = new Set((text.match(/[A-Z0-9]+/g) || []).map(normalize));
+  const separatedSerials = text.match(/[A-Z0-9]+(?:\s*[-./_]\s*[A-Z0-9]+)+/g) || [];
+  for (const serial of separatedSerials) tokens.add(normalize(serial));
+  const found = new Set();
+
+  for (const entry of serialEntries || []) {
+    const serial = typeof entry === 'string' ? entry : entry?.serial;
+    const normalized = normalize(serial);
+    if (normalized.length >= 5 && tokens.has(normalized)) found.add(serial);
+  }
+
+  return [...found];
 }
 
 /**

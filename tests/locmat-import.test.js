@@ -60,6 +60,21 @@ describe('normalizeSerialRow', () => {
     assert.equal(r.serial, '0788770045');
     assert.equal(r.magNumber, 'V12');
   });
+
+  it('accepte les en-têtes de Serialises.txt et conserve les zéros initiaux', () => {
+    const r = normalizeSerialRow({
+      'Code libre générique': 'A5000',
+      Nom: 'Antenne directionnelle',
+      Marque: 'SENNHEISER',
+      'Numéro de série': '003788',
+      L: 'Faux',
+      C: 'Faux',
+    });
+
+    assert.equal(r.code, 'A5000');
+    assert.equal(r.serial, '003788');
+    assert.equal(r.name, 'Antenne directionnelle');
+  });
 });
 
 describe('parseLocmatSerial', () => {

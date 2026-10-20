@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
 import { runAffairesV2SchemaMigration } from './migrations/affaires-v2-schema-v1.js';
+import { runControlInterventionRequestsMigration } from './migrations/control-intervention-requests-v1.js';
 import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
 import { runEquipmentAssignmentHistoryMigration } from './migrations/equipment-assignment-history-v1.js';
 import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-mag-v1.js';
@@ -928,6 +929,7 @@ export function runPostInitMigrations(db) {
 
   // ═══ Module Contrôles Périodiques (équipements + véhicules) ═══
   runControlesPeriodiquesMigrations(db);
+  runControlInterventionRequestsMigration(db);
 
   // ═══ Module Import PV (Procès-Verbaux PDF) ═══
   runPvImportsMigrations(db);

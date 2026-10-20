@@ -395,14 +395,14 @@ export default function LocmatImportModal({ onDone, onClose }) {
             </p>
 
             <FileSlot
-              label="Locations.csv (références produits + quantités)"
+              label="Export des références produits + quantités (CSV ou TXT)"
               icon={<Boxes size={18} />}
               file={locFile}
               inputRef={locInputRef}
               onChange={setLocFile}
             />
             <FileSlot
-              label="Serialise.csv (numéros de série)"
+              label="Export des numéros de série (CSV ou TXT)"
               icon={<Hash size={18} />}
               file={serFile}
               inputRef={serInputRef}
@@ -527,7 +527,7 @@ function FileSlot({ label, icon, file, inputRef, onChange }) {
       <Input
         ref={inputRef}
         type="file"
-        accept=".csv,text/csv"
+        accept=".csv,.txt,text/csv,text/plain"
         onChange={(e) => onChange(e.target.files?.[0] || null)}
       />
       {file && (

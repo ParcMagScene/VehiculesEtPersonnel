@@ -116,10 +116,10 @@ export { createStorage };
 
 /**
  * Upload PV — Procès-Verbaux de contrôle (PDF uniquement)
- * Stockés dans public/pv/ et servis derrière authenticateToken.
+ * Stockés dans le dossier des rapports et servis derrière authenticateToken.
  */
 export const uploadPv = multer({
-  storage: createStorage('pv', 'pv'),
+  storage: createStorage('Rapports Contrôles/Imports', 'pv'),
   limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB
   fileFilter: (_req, file, cb) => {
     const isPdfExt = /\.pdf$/i.test(path.extname(file.originalname));

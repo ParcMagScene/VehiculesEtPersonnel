@@ -3467,6 +3467,21 @@
   color: var(--theme-primary);
 }
 
+.dash-task-vehicle-registration {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-px) 6px;
+  border: 1px solid var(--feedback-success-border);
+  border-radius: var(--radius-md-lg);
+  background: var(--feedback-success-bg);
+  color: var(--feedback-success-text);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
 /* ─── Ligne nom + badge affaire ─── */
 .dash-task-name-row {
   display: flex;

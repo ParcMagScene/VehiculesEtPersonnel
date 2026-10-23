@@ -53,7 +53,7 @@ describe('DashboardTasksSidebar', () => {
     vi.clearAllMocks();
   });
 
-  it('affiche le véhicule d’une tâche lorsque son nom est en camelCase', async () => {
+  it('affiche les badges verts d’immatriculation reçus par l’API', async () => {
     api.getTasks.mockResolvedValue([
       {
         id: 1,
@@ -61,13 +61,16 @@ describe('DashboardTasksSidebar', () => {
         section: 'courses',
         status: 'pending',
         visible: 1,
-        reservationVehicleName: 'Camion Atego',
+        reservation_vehicle_name: 'Camion Atego',
+        reservation_vehicle_reg: 'AB-123-CD',
       },
     ]);
 
     render(<DashboardTasksSidebar />);
 
     expect(await screen.findByText('Camion Atego')).toBeInTheDocument();
-    expect(screen.getByText('Camion Atego').closest('.dash-task-vehicle')).toBeInTheDocument();
+    const registrationBadge = await screen.findByText('AB-123-CD');
+    expect(registrationBadge).toHaveClass('dash-task-vehicle-registration');
+    expect(registrationBadge.closest('.dash-task-meta')).toBeInTheDocument();
   });
 });

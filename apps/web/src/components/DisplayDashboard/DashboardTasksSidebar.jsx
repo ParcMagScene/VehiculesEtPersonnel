@@ -630,6 +630,14 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                                   {task.reservation_vehicle_name || task.reservationVehicleName}
                                 </span>
                               )}
+                              {(task.reservation_vehicle_reg || task.reservationVehicleReg) && (
+                                <span
+                                  className="dash-task-vehicle-registration"
+                                  title={`Immatriculation : ${task.reservation_vehicle_reg || task.reservationVehicleReg}`}
+                                >
+                                  {task.reservation_vehicle_reg || task.reservationVehicleReg}
+                                </span>
+                              )}
                             </div>
                             {task.notes && <div className="dash-task-notes">{task.notes}</div>}
                           </div>

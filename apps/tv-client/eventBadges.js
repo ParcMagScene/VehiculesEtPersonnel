@@ -44,7 +44,7 @@ export function getEventBadges({
     : prettyVehicleReg
       ? `<span class="tv-vehicle-badge" title="${escapeHtml(prettyVehicleReg)}">${escapeHtml(prettyVehicleReg)}</span>`
       : '';
-  const vehicleBadge = section === 'chargement' ? vehicleBadges : '';
+  const vehicleBadge = ['chargement', 'courses'].includes(section) ? vehicleBadges : '';
 
   const badgeColor = AFFAIRE_TYPE_COLORS[affaireType] || '#3b82f6';
   const affaireBadge = affaireNum

@@ -18,7 +18,20 @@ test('affiche le badge véhicule vert avant le badge affaire sur les lignes de c
   assert.match(badges.affaireBadge, /AF-1245/);
 });
 
-test('n affiche pas le badge véhicule hors chargement', () => {
+test('affiche le badge véhicule vert sur les lignes de courses', () => {
+  const badges = getEventBadges({
+    section: 'courses',
+    affaireNum: 'AF-1245',
+    affaireType: 'Location',
+    reservationVehicleReg: 'AB-123-CD',
+  });
+
+  assert.match(badges.vehicleBadge, /tv-vehicle-badge/);
+  assert.match(badges.vehicleBadge, /AB-123-CD/);
+  assert.match(badges.affaireBadge, /AF-1245/);
+});
+
+test('n affiche pas le badge véhicule sur les sections non prévues', () => {
   const badges = getEventBadges({
     section: 'depart',
     affaireNum: 'AF-1245',

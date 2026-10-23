@@ -624,9 +624,10 @@ function DashboardTasksSidebar({ refreshKey, style }) {
                                       ] || task.period}
                                 </span>
                               )}
-                              {task.reservation_vehicle_name && (
+                              {(task.reservation_vehicle_name || task.reservationVehicleName) && (
                                 <span className="dash-task-vehicle">
-                                  <Truck size={9} /> {task.reservation_vehicle_name}
+                                  <Truck size={9} />{' '}
+                                  {task.reservation_vehicle_name || task.reservationVehicleName}
                                 </span>
                               )}
                             </div>

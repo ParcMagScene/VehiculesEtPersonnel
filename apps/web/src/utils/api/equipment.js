@@ -39,6 +39,15 @@ export function registerEquipmentMethods(ApiClient) {
     async serializeEquipment(id) {
       return this.request(`/equipment/${id}/serialize`, { method: 'POST' });
     },
+    async getEquipmentUsageHistory(id) {
+      return this.request(`/equipment/${id}/usage-time`);
+    },
+    async addEquipmentUsageRecord(id, data) {
+      return this.request(`/equipment/${id}/usage-time`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
     async linkEquipmentPhoto(id, photo) {
       return this.request(`/equipment/${id}/photo`, {
         method: 'PATCH',

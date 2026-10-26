@@ -17,6 +17,7 @@ import { runEquipmentNumeroMagMigration } from './migrations/equipment-numero-ma
 import { runEquipmentSerialsMagNumberMigration } from './migrations/equipment-serials-mag-number-v1.js';
 import { runEquipmentSerialsUidMigration } from './migrations/equipment-serials-uid-v1.js';
 import { runEquipmentSerialsUidV2Migration } from './migrations/equipment-serials-uid-v2.js';
+import { runEquipmentUsageHistoryMigration } from './migrations/equipment-usage-history-v1.js';
 import { runIncidentTicketsV2Migration } from './migrations/incident-tickets-v2.js';
 import { runInventoryMigrations } from './migrations/inventory-v1.js';
 import { runLocationsV2SchemaMigration } from './migrations/locations-v2-schema-v1.js';
@@ -940,6 +941,7 @@ export function runPostInitMigrations(db) {
   runEquipmentSerialsMagNumberMigration(db);
   runEquipmentSerialsUidMigration(db);
   runEquipmentSerialsUidV2Migration(db);
+  runEquipmentUsageHistoryMigration(db);
 
   // ═══ Module Surveillance Vidéo ═══
   runVideoMigrations(db);

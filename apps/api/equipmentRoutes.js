@@ -184,6 +184,87 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
 // ============ ÉQUIPEMENTS ============
 
 export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
+  // GET /api/equipment/:id/usage-time — historique des relevés horaires
+  app.get('/api/equipment/:id/usage-time', authenticateToken, (req, res) => {
+    try {
+      const equipment = db
+        .prepare('SELECT id, is_serialized FROM equipment WHERE id = ?')
+        .get(req.params.id);
+      if (!equipment)
+        return res.status(404).json({ success: false, error: 'Équipement non trouvé' });
+      if (!equipment.is_serialized)
+        return res.status(400).json({
+          success: false,
+          error: "Le temps d'utilisation est réservé aux équipements sérialisés",
+        });
+
+      const records = db
+        .prepare(
+          `SELECT h.id, h.usage_date, h.hours, h.created_at, u.name AS recorded_by_name
+           FROM equipment_usage_history h
+           LEFT JOIN users u ON u.id = h.recorded_by
+           WHERE h.equipment_id = ?
+           ORDER BY h.usage_date DESC, h.id DESC`,
+        )
+        .all(req.params.id);
+      res.json({ success: true, data: records });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  // POST /api/equipment/:id/usage-time — enregistrer un relevé manuel
+  app.post('/api/equipment/:id/usage-time', authenticateToken, (req, res) => {
+    try {
+      const equipment = db
+        .prepare('SELECT id, is_serialized FROM equipment WHERE id = ?')
+        .get(req.params.id);
+      if (!equipment)
+        return res.status(404).json({ success: false, error: 'Équipement non trouvé' });
+      if (!equipment.is_serialized)
+        return res.status(400).json({
+          success: false,
+          error: "Le temps d'utilisation est réservé aux équipements sérialisés",
+        });
+
+      const { usage_date, hours } = req.body || {};
+      const dateParts =
+        typeof usage_date === 'string' && usage_date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const parsedDate = dateParts ? new Date(`${usage_date}T00:00:00Z`) : null;
+      const validDate =
+        dateParts &&
+        Number.isFinite(parsedDate.getTime()) &&
+        parsedDate.toISOString().slice(0, 10) === usage_date;
+      if (!validDate)
+        return res.status(400).json({ success: false, error: 'Date de relevé invalide' });
+      if (typeof hours !== 'number' || !Number.isFinite(hours) || hours < 0)
+        return res.status(400).json({
+          success: false,
+          error: 'Le temps d’utilisation doit être un nombre positif ou nul',
+        });
+
+      const result = db
+        .prepare(
+          `INSERT INTO equipment_usage_history (equipment_id, usage_date, hours, recorded_by)
+           VALUES (?, ?, ?, ?)`,
+        )
+        .run(equipment.id, usage_date, hours, req.user.id);
+      const record = db
+        .prepare(
+          `SELECT h.id, h.usage_date, h.hours, h.created_at, u.name AS recorded_by_name
+           FROM equipment_usage_history h
+           LEFT JOIN users u ON u.id = h.recorded_by
+           WHERE h.id = ?`,
+        )
+        .get(result.lastInsertRowid);
+      res.status(201).json({ success: true, data: record });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // GET /api/equipment
   // [S2-3] Cache 60s — clé = query string ; invalidé sur mutations equipment/assignments
   app.get(
@@ -636,7 +717,7 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         if (qty <= 1) {
           const uid = getNextUid(db);
           db.prepare(
-            'UPDATE equipment SET uid = ?, stock_quantity = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            'UPDATE equipment SET uid = ?, stock_quantity = 1, is_serialized = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
           ).run(uid, original.id);
 
           const updated = db
@@ -721,8 +802,8 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
         }
 
         const insertStmt = db.prepare(`
-        INSERT INTO equipment (name, reference, serial_number, category_id, brand, status, location, purchase_date, purchase_price, warranty_end, notes, photo, stock_quantity, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+        INSERT INTO equipment (name, reference, serial_number, category_id, brand, status, location, purchase_date, purchase_price, warranty_end, notes, photo, stock_quantity, is_serialized, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?)
       `);
         const updateUidStmt = db.prepare('UPDATE equipment SET uid = ? WHERE id = ?');
 

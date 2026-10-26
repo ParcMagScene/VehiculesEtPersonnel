@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Star,
   Tag,
+  Timer,
   Trash2,
   Wrench,
 } from 'lucide-react';
@@ -26,6 +27,9 @@ import { useEffect, useState } from 'react';
 import {
   Button,
   Drawer,
+  FormField,
+  InlineAlert,
+  Input,
   Modal,
   ModalBody,
   ModalFooter,
@@ -124,6 +128,140 @@ function EquipmentControlsSection({ equipmentId }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function localTodayIso() {
+  const today = new Date();
+  const offset = today.getTimezoneOffset();
+  return new Date(today.getTime() - offset * 60_000).toISOString().slice(0, 10);
+}
+
+function EquipmentUsageSection({ equipmentId }) {
+  const [items, setItems] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [date, setDate] = useState(localTodayIso);
+  const [hours, setHours] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const loadHistory = async () => {
+    const response = await api.getEquipmentUsageHistory(equipmentId);
+    setItems(response?.data || []);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getEquipmentUsageHistory(equipmentId)
+      .then((response) => {
+        if (!cancelled) setItems(response?.data || []);
+      })
+      .catch((requestError) => {
+        if (!cancelled) setError(requestError.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [equipmentId]);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api.addEquipmentUsageRecord(equipmentId, {
+        usage_date: date,
+        hours: Number(hours),
+      });
+      await loadHistory();
+      setShowForm(false);
+      setDate(localTodayIso());
+      setHours('');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="eq-detail-section">
+      <h3>
+        <Timer size={16} /> Temps d'utilisation ({items?.length || 0})
+      </h3>
+      {error && <InlineAlert variant="error">{error}</InlineAlert>}
+      <Button
+        variant="secondary"
+        onClick={() => {
+          setError(null);
+          setShowForm(true);
+        }}
+      >
+        <Timer size={14} /> Ajouter un relevé
+      </Button>
+      {items === null ? (
+        <p className="eq-detail-empty">Chargement de l'historique…</p>
+      ) : items.length === 0 ? (
+        <p className="eq-detail-empty">Aucun relevé enregistré</p>
+      ) : (
+        <div className="eq-detail-list">
+          {items.map((item) => (
+            <div className="eq-ticket-item" key={item.id}>
+              <div className="eq-ticket-header">
+                <strong>{item.hours} h</strong>
+                <span>{formatDateFR(item.usageDate || item.usage_date)}</span>
+              </div>
+              {item.recordedByName && (
+                <div className="eq-ticket-meta">Saisi par {item.recordedByName}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <Modal open={showForm} onClose={() => !busy && setShowForm(false)} size="sm">
+        <ModalHeader onClose={() => !busy && setShowForm(false)}>
+          Temps d'utilisation — relevé
+        </ModalHeader>
+        <ModalBody>
+          <form id={`equipment-usage-form-${equipmentId}`} onSubmit={submit}>
+            <FormField label="Temps d'utilisation (heures)" required>
+              <Input
+                type="number"
+                min="0"
+                step="any"
+                required
+                value={hours}
+                onChange={(event) => setHours(event.target.value)}
+                autoFocus
+              />
+            </FormField>
+            <FormField label="Date du relevé" required>
+              <Input
+                type="date"
+                required
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+              />
+            </FormField>
+            {error && <InlineAlert variant="error">{error}</InlineAlert>}
+          </form>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setShowForm(false)} disabled={busy}>
+            Annuler
+          </Button>
+          <Button
+            variant="primary"
+            type="submit"
+            form={`equipment-usage-form-${equipmentId}`}
+            disabled={busy || !date || hours === ''}
+          >
+            {busy ? 'Enregistrement…' : 'Enregistrer'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }
@@ -377,6 +515,11 @@ const EquipmentDetailContent = ({
 
       {/* Contrôles périodiques (VGP levage, EPI, Q18 électrique, etc.) */}
       {!isReferenceGroup && <EquipmentControlsSection equipmentId={eq.id} />}
+
+      {/* Relevés manuels réservés aux équipements sérialisés */}
+      {!isReferenceGroup && (eq.isSerialized || eq.is_serialized) && (
+        <EquipmentUsageSection equipmentId={eq.id} />
+      )}
 
       {/* PV de contrôle importés (rapports DEKRA / Apave / Socotec…) */}
       {!isReferenceGroup && <PvDocumentsSection entityType="equipment" entityId={eq.id} />}

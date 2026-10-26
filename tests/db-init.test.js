@@ -21,6 +21,7 @@ const CRITICAL_TABLES = [
   'persons',
   'affaires',
   'equipment',
+  'equipment_usage_history',
   'equipment_categories',
   'bl_imports',
   'bp_items',

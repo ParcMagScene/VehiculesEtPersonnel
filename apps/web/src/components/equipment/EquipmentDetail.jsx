@@ -517,9 +517,11 @@ const EquipmentDetailContent = ({
       {!isReferenceGroup && <EquipmentControlsSection equipmentId={eq.id} />}
 
       {/* Relevés manuels réservés aux équipements sérialisés */}
-      {!isReferenceGroup && (eq.isSerialized || eq.is_serialized) && (
-        <EquipmentUsageSection equipmentId={eq.id} />
-      )}
+      {!isReferenceGroup &&
+        (eq.isSerialized ||
+          eq.is_serialized ||
+          eq.serialNumber?.trim() ||
+          eq.serial_number?.trim()) && <EquipmentUsageSection equipmentId={eq.id} />}
 
       {/* PV de contrôle importés (rapports DEKRA / Apave / Socotec…) */}
       {!isReferenceGroup && <PvDocumentsSection entityType="equipment" entityId={eq.id} />}

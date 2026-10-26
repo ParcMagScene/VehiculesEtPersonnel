@@ -188,11 +188,11 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   app.get('/api/equipment/:id/usage-time', authenticateToken, (req, res) => {
     try {
       const equipment = db
-        .prepare('SELECT id, is_serialized FROM equipment WHERE id = ?')
+        .prepare('SELECT id, is_serialized, serial_number FROM equipment WHERE id = ?')
         .get(req.params.id);
       if (!equipment)
         return res.status(404).json({ success: false, error: 'Équipement non trouvé' });
-      if (!equipment.is_serialized)
+      if (!equipment.is_serialized && !equipment.serial_number?.trim())
         return res.status(400).json({
           success: false,
           error: "Le temps d'utilisation est réservé aux équipements sérialisés",
@@ -218,11 +218,11 @@ export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
   app.post('/api/equipment/:id/usage-time', authenticateToken, (req, res) => {
     try {
       const equipment = db
-        .prepare('SELECT id, is_serialized FROM equipment WHERE id = ?')
+        .prepare('SELECT id, is_serialized, serial_number FROM equipment WHERE id = ?')
         .get(req.params.id);
       if (!equipment)
         return res.status(404).json({ success: false, error: 'Équipement non trouvé' });
-      if (!equipment.is_serialized)
+      if (!equipment.is_serialized && !equipment.serial_number?.trim())
         return res.status(400).json({
           success: false,
           error: "Le temps d'utilisation est réservé aux équipements sérialisés",

@@ -10,6 +10,7 @@ import {
   ArrowUpDown,
   CheckCircle2,
   Clock,
+  Download,
   ExternalLink,
   History,
   Package,
@@ -19,11 +20,14 @@ import {
   Truck,
   Upload,
 } from 'lucide-react';
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   Button,
   EmptyState,
+  Modal,
+  ModalBody,
+  ModalHeader,
   ModuleContent,
   ModuleLayout,
   Select,
@@ -33,6 +37,7 @@ import {
 
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import { useListResource } from '../../hooks/useListResource';
+import { useToast } from '../../hooks/useToast';
 import api from '../../utils/api';
 import { refreshBus } from '../../utils/refresh-bus';
 import { toThumbUrl } from '../equipment/equipmentUtils';
@@ -43,6 +48,9 @@ import { formatDateFR, formatRelativeDays, STATUS_COLORS, STATUS_LABELS } from '
 // Lazy : le panneau d'import PV n'est utile qu'aux admins, on n'embarque pas
 // son bundle (drop-zone, parser, etc.) pour les utilisateurs standards.
 const PvImportPanel = lazy(() => import('../pv-import/PvImportPanel'));
+const EquipmentDetailDialog = lazy(() =>
+  import('../equipment/EquipmentDetail').then((m) => ({ default: m.EquipmentDetailDialog })),
+);
 
 const STATS_CARDS = [
   { key: 'total', label: 'Total', icon: ShieldAlert, color: '#0f172a' },
@@ -53,7 +61,7 @@ const STATS_CARDS = [
   { key: 'within_7', label: 'Sous 7 j', icon: Clock, color: '#b91c1c' },
 ];
 
-export default function ControlsDashboard({ user }) {
+export default function ControlsDashboard({ user, onNavigateToEntity }) {
   const isAdmin = !!user?.isAdmin || !!user?.is_admin || user?.role === 'admin';
   const [types, setTypes] = useState([]);
   const [filters, setFilters] = useState({
@@ -72,8 +80,117 @@ export default function ControlsDashboard({ user }) {
   const [sort, setSort] = useState({ key: 'next_due_date', dir: 'asc' });
   const [history, setHistory] = useState(null);
   const [editor, setEditor] = useState(null); // { control } pour éditer
+  const [entityDialog, setEntityDialog] = useState(null);
   const [pvImportOpen, setPvImportOpen] = useState(false);
+  const [exportingReport, setExportingReport] = useState(false);
+  const entityRequestRef = useRef(0);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
+  const toast = useToast();
+
+  const openEntity = async (control) => {
+    if (control.entity_type !== 'equipment') {
+      onNavigateToEntity?.(control.entity_type, { id: control.entity_id });
+      return;
+    }
+
+    const requestId = ++entityRequestRef.current;
+    setEntityDialog({ equipment: null, loading: true });
+    try {
+      const [equipment, categoryResult, photoResult, listsResult] = await Promise.all([
+        api.getEquipmentById(control.entity_id),
+        api.getEquipmentCategories(),
+        api.getEquipmentPhotos().then(
+          (data) => ({ data }),
+          (error) => ({ error }),
+        ),
+        api.getEquipmentLists().then(
+          (data) => ({ data }),
+          (error) => ({ error }),
+        ),
+      ]);
+      if (entityRequestRef.current === requestId) {
+        const photosData = photoResult.data || { photos: [], logos: [] };
+        const lists = listsResult.data || [];
+        const optionalErrors = [photoResult.error, listsResult.error].filter(Boolean);
+        if (optionalErrors.length) {
+          toast.warning(
+            'La fiche est ouverte, mais certaines informations annexes sont indisponibles.',
+          );
+        }
+        setEntityDialog({
+          equipment,
+          loading: false,
+          categories: categoryResult,
+          photosList: photosData.photos || [],
+          logosList: photosData.logos || [],
+          favoriteIds: new Set(
+            lists
+              .filter(
+                (item) =>
+                  item.list_type === 'favorite' &&
+                  Number(item.equipment_id) === Number(equipment.id),
+              )
+              .map((item) => Number(item.equipment_id)),
+          ),
+          watchIds: new Set(
+            lists
+              .filter(
+                (item) =>
+                  item.list_type === 'watch' && Number(item.equipment_id) === Number(equipment.id),
+              )
+              .map((item) => Number(item.equipment_id)),
+          ),
+        });
+      }
+    } catch (err) {
+      if (entityRequestRef.current === requestId) {
+        toast.error(`Impossible d’ouvrir la fiche équipement : ${err.message}`);
+        setEntityDialog(null);
+      }
+    }
+  };
+
+  const closeEntity = () => {
+    entityRequestRef.current++;
+    setEntityDialog(null);
+  };
+
+  const toggleEntityList = async (equipmentId, listType) => {
+    try {
+      const selected =
+        listType === 'favorite'
+          ? entityDialog.favoriteIds.has(Number(equipmentId))
+          : entityDialog.watchIds.has(Number(equipmentId));
+      if (selected) {
+        await api.removeFromEquipmentList(equipmentId, listType);
+      } else {
+        await api.addToEquipmentList(equipmentId, listType);
+      }
+      const lists = await api.getEquipmentLists();
+      setEntityDialog((current) => {
+        if (!current?.equipment || Number(current.equipment.id) !== Number(equipmentId)) {
+          return current;
+        }
+        const listIds = (type) =>
+          new Set(
+            lists
+              .filter(
+                (item) =>
+                  item.list_type === type &&
+                  Number(item.equipment_id) === Number(current.equipment.id),
+              )
+              .map((item) => Number(item.equipment_id)),
+          );
+        return {
+          ...current,
+          favoriteIds: listIds('favorite'),
+          watchIds: listIds('watch'),
+        };
+      });
+    } catch (error) {
+      toast.error(`Impossible de modifier la liste équipement : ${error.message}`);
+    }
+  };
 
   const fetchDashboard = useCallback(async () => {
     const r = await api.getControlsDashboard(filters);
@@ -231,6 +348,125 @@ export default function ControlsDashboard({ user }) {
     });
   };
 
+  const exportControlsReport = async () => {
+    setExportingReport(true);
+    try {
+      const report = await api.getControlsDashboard(
+        filters.type_id ? { type_id: filters.type_id } : {},
+      );
+      if (!report?.success) throw new Error(report?.error || 'Impossible de charger les contrôles');
+
+      const rows = [...(report.data || [])].sort((a, b) => {
+        const typeCompare = (a.type_name || '').localeCompare(b.type_name || '', 'fr');
+        if (typeCompare) return typeCompare;
+        const dateCompare = (a.next_due_date || '9999').localeCompare(b.next_due_date || '9999');
+        if (dateCompare) return dateCompare;
+        return (a.entity_name || '').localeCompare(b.entity_name || '', 'fr');
+      });
+      if (rows.length === 0) {
+        toast.info('Aucun contrôle à inclure dans ce rapport.');
+        return;
+      }
+
+      const [{ jsPDF }, autoTableModule] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ]);
+      const autoTable = autoTableModule.default;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const selectedType = types.find((type) => String(type.id) === String(filters.type_id));
+      const generatedAt = new Date();
+      const generatedLabel = generatedAt.toLocaleString('fr-FR');
+      const statusCounts = rows.reduce((counts, row) => {
+        counts[row.status] = (counts[row.status] || 0) + 1;
+        return counts;
+      }, {});
+
+      doc.setFontSize(15);
+      doc.text('Rapport des contrôles périodiques', 14, 13);
+      doc.setFontSize(9);
+      doc.text(
+        `Type : ${selectedType ? `${selectedType.code} · ${selectedType.name}` : 'Tous'}  |  Généré le ${generatedLabel}  |  ${rows.length} contrôle(s)`,
+        14,
+        19,
+      );
+      doc.text(
+        `Effectués : ${statusCounts.EFFECTUE || 0}  ·  À faire : ${statusCounts.A_FAIRE || 0}  ·  En retard : ${statusCounts.EN_RETARD || 0}  ·  Manqués : ${statusCounts.MANQUE || 0}`,
+        14,
+        24,
+      );
+
+      autoTable(doc, {
+        startY: 28,
+        head: [
+          [
+            'Type de contrôle',
+            'Entité',
+            'N° série / immatriculation',
+            'Échéance',
+            'Statut',
+            'Dernier contrôle',
+            'Responsable',
+            'Périodicité',
+            'Observations / interventions',
+          ],
+        ],
+        body: rows.map((row) => [
+          `${row.type_code || ''} · ${row.type_name || ''}`,
+          `${row.entity_name || row.entity_id || '—'}${row.entity_subtitle ? `\n${row.entity_subtitle}` : ''}`,
+          row.entity_type === 'vehicle'
+            ? row.entity_registration || '—'
+            : row.entity_serial_numbers || row.entity_uid || '—',
+          formatDateFR(row.next_due_date),
+          STATUS_LABELS[row.status] || row.status || '—',
+          formatDateFR(row.last_done_date),
+          row.assigned_name || '—',
+          row.periodicity_days ? `${row.periodicity_days} j` : '—',
+          [
+            row.observation,
+            row.intervention_ticket_id ? `Demande SAV #${row.intervention_ticket_id}` : '',
+          ]
+            .filter(Boolean)
+            .join('\n') || '—',
+        ]),
+        styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak', valign: 'middle' },
+        headStyles: { fillColor: [17, 24, 39], textColor: 255, fontStyle: 'bold' },
+        columnStyles: {
+          0: { cellWidth: 32 },
+          1: { cellWidth: 36 },
+          2: { cellWidth: 34 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 21 },
+          5: { cellWidth: 23 },
+          6: { cellWidth: 25 },
+          7: { cellWidth: 19 },
+          8: { cellWidth: 'auto' },
+        },
+        didDrawPage: (data) => {
+          const pageHeight = doc.internal.pageSize.getHeight();
+          const pageWidth = doc.internal.pageSize.getWidth();
+          doc.setFontSize(8);
+          doc.text(`Total : ${rows.length} contrôle(s)`, 14, pageHeight - 6);
+          doc.text(`Page ${data.pageNumber}`, pageWidth - 24, pageHeight - 6);
+        },
+      });
+
+      const typeSuffix = selectedType
+        ? `_${String(selectedType.code || selectedType.name)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/gi, '_')
+            .replace(/^_|_$/g, '')}`
+        : '';
+      doc.save(`rapport_controles${typeSuffix}_${generatedAt.toISOString().slice(0, 10)}.pdf`);
+      toast.success('Rapport PDF des contrôles téléchargé.');
+    } catch (err) {
+      console.error('Erreur export rapport contrôles:', err);
+      toast.error(`Impossible de générer le rapport PDF : ${err.message}`);
+    } finally {
+      setExportingReport(false);
+    }
+  };
+
   return (
     <ModuleLayout>
       <ModuleContent>
@@ -299,8 +535,17 @@ export default function ControlsDashboard({ user }) {
               <option value="upcoming">À venir</option>
             </Select>
           </div>
-          {isAdmin && (
-            <div className="ctrl-toolbar-actions">
+          <div className="ctrl-toolbar-actions">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={exportingReport || loading}
+              onClick={exportControlsReport}
+              title="Exporter tous les contrôles au format PDF"
+            >
+              <Download size={14} /> {exportingReport ? 'Export…' : 'Rapport PDF'}
+            </Button>
+            {isAdmin && (
               <Button
                 variant="primary"
                 size="sm"
@@ -309,8 +554,8 @@ export default function ControlsDashboard({ user }) {
               >
                 <Upload size={14} /> Importer PV PDF
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Stats */}
@@ -479,9 +724,14 @@ export default function ControlsDashboard({ user }) {
                             {isVehicle ? <Truck size={18} /> : <Package size={18} />}
                           </div>
                           <div className="ctrl-entity-info">
-                            <div className="ctrl-entity-name" title={c.entity_name || c.entity_id}>
+                            <Button
+                              type="button"
+                              className="ctrl-entity-name ctrl-entity-link"
+                              title={`Ouvrir la fiche ${entityKind.toLowerCase()}`}
+                              onClick={() => openEntity(c)}
+                            >
                               {c.entity_name || c.entity_id}
-                            </div>
+                            </Button>
                             <div className="ctrl-entity-meta">
                               <span className={`ctrl-kind-pill${isVehicle ? ' is-vehicle' : ''}`}>
                                 {entityKind}
@@ -598,6 +848,31 @@ export default function ControlsDashboard({ user }) {
       </ModuleContent>
 
       {history && <ControlHistoryModal control={history} onClose={() => setHistory(null)} />}
+      {entityDialog?.loading && (
+        <Modal open onClose={closeEntity} size="lg" className="eq-dialog">
+          <ModalHeader onClose={closeEntity} className="eq-dialog-header">
+            Fiche équipement
+          </ModalHeader>
+          <ModalBody className="eq-dialog-body">
+            <Spinner />
+          </ModalBody>
+        </Modal>
+      )}
+      {entityDialog?.equipment && (
+        <Suspense fallback={<Spinner />}>
+          <EquipmentDetailDialog
+            equipment={entityDialog.equipment}
+            categories={entityDialog.categories}
+            photosList={entityDialog.photosList}
+            logosList={entityDialog.logosList}
+            favoriteIds={entityDialog.favoriteIds}
+            watchIds={entityDialog.watchIds}
+            onToggleList={toggleEntityList}
+            isAdmin={isAdmin}
+            onClose={closeEntity}
+          />
+        </Suspense>
+      )}
       {editor && (
         <ControlEditorModal
           control={editor.control}

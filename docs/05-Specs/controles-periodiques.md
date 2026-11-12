@@ -207,6 +207,17 @@ Voir `apps/api/services/controlesService.js` :
 - `MobileControlsScreen.jsx` — écran liste + form effectuer.
 - Bouton « Contrôles périodiques » dans le menu de `MobileEquipmentQR.jsx`.
 
+### Rapport PDF
+- Le bouton « Rapport PDF » génère un document unique pour tous les contrôles
+  actifs. Le filtre par type de contrôle est appliqué ; les autres filtres du
+  tableau n’excluent pas d’entités du rapport.
+- Le rapport contient le type, l’entité, son ou ses numéros de série
+  (l’immatriculation pour un véhicule), l’échéance, le statut, la date du
+  dernier contrôle, le responsable, la périodicité et les observations /
+  demandes d’intervention.
+- Les contrôles sont triés par type, échéance puis entité. Le PDF affiche le
+  nombre de contrôles par statut et le numéro de page.
+
 ---
 
 ## 10. Tests

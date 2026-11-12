@@ -324,7 +324,7 @@ function ModuleHost({
       {activeModule === 'controles' && (
         <ErrorBoundary moduleName="Contrôles">
           <Suspense fallback={<LoadingOverlay label="Chargement des contrôles périodiques..." />}>
-            <ControlsDashboard user={currentUser} />
+            <ControlsDashboard user={currentUser} onNavigateToEntity={handleNavigateToEntity} />
           </Suspense>
         </ErrorBoundary>
       )}

@@ -58,12 +58,13 @@ export function subtractOneDayFromDateStr(dateStr) {
 }
 
 /**
- * Vrai si l'instant `now` correspond à la fenêtre de déclenchement
- * du rollover (00:00, première minute après minuit local).
+ * Vrai si le rollover quotidien n'a pas encore été exécuté pour la date locale.
+ * Le contrôle peut ainsi rattraper une exécution manquée à minuit.
  * @param {Date} now
+ * @param {string|null} lastRunDayKey
  * @returns {boolean}
  */
-export function isMidnightTick(now) {
+export function shouldRunDailyRollover(now, lastRunDayKey) {
   if (!(now instanceof Date) || Number.isNaN(now.getTime())) return false;
-  return now.getHours() === 0 && now.getMinutes() === 0;
+  return formatLocalDate(now) !== lastRunDayKey;
 }

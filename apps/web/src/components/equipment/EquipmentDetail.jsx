@@ -772,9 +772,11 @@ const EquipmentDetailDialog = ({
       </ModalBody>
       <ModalFooter className="eq-dialog-footer" align="between">
         <div className="eq-actions-group">
-          <Button variant="primary" onClick={() => onEdit(eq)}>
-            <Edit2 size={14} /> Modifier
-          </Button>
+          {onEdit && (
+            <Button variant="primary" onClick={() => onEdit(eq)}>
+              <Edit2 size={14} /> Modifier
+            </Button>
+          )}
           {onCreateTicket && (
             <Button variant="secondary" onClick={() => onCreateTicket(eq)}>
               <Wrench size={14} /> Ticket SAV

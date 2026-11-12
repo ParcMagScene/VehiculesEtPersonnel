@@ -340,6 +340,25 @@ export function setupControlesPeriodiquesRoutes(app, authenticateToken, requireA
                  WHEN ec.entity_type='equipment' THEN e.uid
                  ELSE NULL
                END AS entity_uid,
+               CASE
+                 WHEN ec.entity_type='equipment' THEN (
+                   SELECT GROUP_CONCAT(serial, ', ')
+                     FROM (
+                       SELECT e.serial_number AS serial
+                        WHERE COALESCE(e.serial_number, '') != ''
+                       UNION
+                       SELECT es.serial
+                         FROM equipment_serials es
+                        WHERE es.equipment_id = e.id
+                          AND es.status = 'active'
+                     )
+                 )
+                 ELSE NULL
+               END AS entity_serial_numbers,
+               CASE
+                 WHEN ec.entity_type='vehicle' THEN v.registration
+                 ELSE NULL
+               END AS entity_registration,
                -- Sous-libellé entité : pour véhicule = "TYPE · BRAND MODEL",
                -- pour équipement = nom de la catégorie feuille.
                CASE

@@ -67,6 +67,7 @@ const EquipmentFlightCaseLabels = lazy(() => import('./EquipmentFlightCaseLabels
 const EquipmentFormModal = lazy(() => import('./EquipmentFormModal'));
 const EquipmentLabelPrint = lazy(() => import('./EquipmentLabelPrint'));
 const EquipmentMediaManager = lazy(() => import('./EquipmentMediaManager'));
+const EquipmentReports = lazy(() => import('./EquipmentReports'));
 const LocmatImportModal = lazy(() => import('./import/LocmatImportModal'));
 
 // ═══ COMPOSANT PRINCIPAL ═══
@@ -228,6 +229,13 @@ const EquipmentPanel = ({
             >
               <Wrench size={14} /> SAV
               {stats.openTickets > 0 && <span className="eq-tab-badge">{stats.openTickets}</span>}
+            </Button>
+            <Button
+              variant="ghost"
+              className={`eq-tab ${subTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setSubTab('reports')}
+            >
+              <FileText size={14} /> Rapports
             </Button>
           </div>
           {onOpenManagement && (
@@ -616,6 +624,12 @@ const EquipmentPanel = ({
                     });
                   }}
                 />
+              </Suspense>
+            )}
+
+            {subTab === 'reports' && (
+              <Suspense fallback={<Spinner size="md" />}>
+                <EquipmentReports equipment={equipment} />
               </Suspense>
             )}
           </div>

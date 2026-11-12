@@ -23,6 +23,11 @@ import {
   recurringTaskCreateSchema,
   recurringTaskUpdateSchema,
 } from './schemas/planning.js';
+import {
+  formatLocalDate,
+  shouldRunDailyRollover,
+  subtractOneDayFromDateStr,
+} from './services/planningRolloverHelpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1340,31 +1345,25 @@ export function setupPlanningRoutes(app, authenticateToken, _requireAdmin) {
 
     const check = () => {
       const now = new Date();
-      // Apres minuit: reporter les taches non faites de J-1 vers J
-      // et generer les recurrentes de J. Garde-fou: une seule execution par jour.
-      if (now.getHours() === 0 && now.getMinutes() === 0) {
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        if (lastRunDayKey === todayStr) return;
-        lastRunDayKey = todayStr;
+      const todayStr = formatLocalDate(now);
+      if (!shouldRunDailyRollover(now, lastRunDayKey)) return;
 
-        const yesterdayD = new Date(now);
-        yesterdayD.setDate(yesterdayD.getDate() - 1);
-        const yesterdayStr = `${yesterdayD.getFullYear()}-${String(yesterdayD.getMonth() + 1).padStart(2, '0')}-${String(yesterdayD.getDate()).padStart(2, '0')}`;
-
-        // 1. Reporter les tâches non terminées de la veille vers aujourd'hui
+      try {
+        const yesterdayStr = subtractOneDayFromDateStr(todayStr);
         const rolled = rolloverPendingTasks(yesterdayStr);
-        logger.info(
-          `⏰ Cron 00h00 : ${rolled} tâche(s) reportée(s) de ${yesterdayStr} vers ${todayStr}`,
-        );
-
-        // 2. Générer les tâches récurrentes d'aujourd'hui
         const generated = generateRecurringTasks(todayStr);
+        lastRunDayKey = todayStr;
         logger.info(
-          `⏰ Cron 00h00 : ${generated} tâche(s) récurrente(s) générée(s) pour ${todayStr}`,
+          `⏰ Rollover quotidien : ${rolled} tâche(s) reportée(s) de ${yesterdayStr} vers ${todayStr}`,
         );
+        logger.info(
+          `⏰ Rollover quotidien : ${generated} tâche(s) récurrente(s) générée(s) pour ${todayStr}`,
+        );
+      } catch (error) {
+        logger.error(`Erreur rollover quotidien pour ${todayStr}:`, error);
       }
     };
-    // Vérifier toutes les 30 secondes (pour capter 18:00 sans timer compliqué)
+    // Vérifier souvent pour rattraper une exécution manquée, même après minuit.
     if (rolloverCronTimer) clearInterval(rolloverCronTimer);
     rolloverCronTimer = setInterval(check, 30000);
     if (typeof rolloverCronTimer.unref === 'function') rolloverCronTimer.unref();

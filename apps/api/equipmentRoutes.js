@@ -184,6 +184,87 @@ export function setupEquipmentCategoriesRoutes(app, authenticateToken, requireAd
 // ============ ÉQUIPEMENTS ============
 
 export function setupEquipmentRoutes(app, authenticateToken, requireAdmin) {
+  // POST /api/equipment/report — détails groupés des équipements sélectionnés
+  app.post('/api/equipment/report', authenticateToken, (req, res) => {
+    try {
+      const ids = req.body?.equipment_ids;
+      if (
+        !Array.isArray(ids) ||
+        ids.length === 0 ||
+        ids.length > 5000 ||
+        ids.some((id) => !Number.isInteger(Number(id)) || Number(id) <= 0)
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'La sélection doit contenir entre 1 et 5000 identifiants valides',
+        });
+      }
+
+      const uniqueIds = [...new Set(ids.map(Number))];
+      const equipment = [];
+      const usageHistory = [];
+      const interventions = [];
+      const chunkSize = 500;
+      for (let index = 0; index < uniqueIds.length; index += chunkSize) {
+        const chunk = uniqueIds.slice(index, index + chunkSize);
+        const placeholders = chunk.map(() => '?').join(',');
+        equipment.push(
+          ...db
+            .prepare(
+              `SELECT id, name, reference, brand, uid, serial_number, numero_mag, stock_quantity
+               FROM equipment WHERE id IN (${placeholders})`,
+            )
+            .all(...chunk),
+        );
+        usageHistory.push(
+          ...db
+            .prepare(
+              `SELECT equipment_id, usage_date, hours
+               FROM equipment_usage_history
+               WHERE equipment_id IN (${placeholders})
+               ORDER BY usage_date DESC, id DESC`,
+            )
+            .all(...chunk),
+        );
+        interventions.push(
+          ...db
+            .prepare(
+              `SELECT equipment_id, title, status, type, created_at, resolved_at, resolution
+               FROM sav_tickets
+               WHERE equipment_id IN (${placeholders})
+               ORDER BY created_at DESC, id DESC`,
+            )
+            .all(...chunk),
+        );
+      }
+
+      const usageByEquipment = new Map();
+      for (const record of usageHistory) {
+        const records = usageByEquipment.get(record.equipment_id) || [];
+        records.push(record);
+        usageByEquipment.set(record.equipment_id, records);
+      }
+      const interventionsByEquipment = new Map();
+      for (const intervention of interventions) {
+        const records = interventionsByEquipment.get(intervention.equipment_id) || [];
+        records.push(intervention);
+        interventionsByEquipment.set(intervention.equipment_id, records);
+      }
+
+      res.json({
+        success: true,
+        data: equipment.map((item) => ({
+          ...item,
+          usage_history: usageByEquipment.get(item.id) || [],
+          interventions: interventionsByEquipment.get(item.id) || [],
+        })),
+      });
+    } catch (error) {
+      logger.error(error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // GET /api/equipment/:id/usage-time — historique des relevés horaires
   app.get('/api/equipment/:id/usage-time', authenticateToken, (req, res) => {
     try {

@@ -27,6 +27,12 @@ export function registerEquipmentMethods(ApiClient) {
     async getEquipmentById(id) {
       return this.request(`/equipment/${id}`);
     },
+    async getEquipmentReportData(ids) {
+      return this.request('/equipment/report', {
+        method: 'POST',
+        body: JSON.stringify({ equipment_ids: ids }),
+      });
+    },
     async createEquipment(data) {
       return this.request('/equipment', { method: 'POST', body: JSON.stringify(data) });
     },

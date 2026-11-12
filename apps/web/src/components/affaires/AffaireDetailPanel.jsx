@@ -298,6 +298,11 @@ const AffaireDetailContent = ({
   const [statusLoading, setStatusLoading] = useState(false);
   const [planningOpen, setPlanningOpen] = useState(false);
   const [annotatingBL, setAnnotatingBL] = useState(null); // bl import object en cours d'annotation
+  const [affaireOperations, setAffaireOperations] = useState([]);
+  const [selectedOperationId, setSelectedOperationId] = useState('');
+  const [newOperationName, setNewOperationName] = useState('');
+  const [newOperationBlId, setNewOperationBlId] = useState('');
+  const [savingOperation, setSavingOperation] = useState(false);
   const { confirm, ConfirmDialogRenderer } = useConfirmDialog();
   const { getFavoriteDisplayName, sortPersonsByFavorites } = usePersonnelFavorites();
   const fileInputRef = useRef(null);
@@ -818,7 +823,10 @@ const AffaireDetailContent = ({
     }
     setIsLoadingTasks(true);
     try {
-      const tasks = await api.getTasks({ affaire_num: affaire.numeroAffaire });
+      const tasks = await api.getTasks({
+        affaire_num: affaire.numeroAffaire,
+        operation_id: selectedOperationId || 0,
+      });
       const list = Array.isArray(tasks) ? tasks : [];
       setAffaireTasks(list);
       // Synchroniser les toggles avec les tâches existantes
@@ -854,7 +862,7 @@ const AffaireDetailContent = ({
       setAffaireTasks([]);
     }
     setIsLoadingTasks(false);
-  }, [affaire.numeroAffaire, affaire.dateDebut]);
+  }, [affaire.numeroAffaire, affaire.dateDebut, selectedOperationId]);
 
   useEffect(() => {
     loadAffaireTasks();
@@ -921,6 +929,7 @@ const AffaireDetailContent = ({
             source_type: 'affaire',
             source_id: affaire.id ? String(affaire.id) : null,
             affaire_num: affaire.numeroAffaire,
+            operation_id: selectedOperationId ? Number(selectedOperationId) : null,
             google_event_title: eventName,
             status: s.status || 'pending',
           });
@@ -935,6 +944,7 @@ const AffaireDetailContent = ({
             all_day: isAllDay ? 1 : 0,
             section: getSectionForStep(step.key),
             title: `${step.emoji} ${step.label}`,
+            operation_id: selectedOperationId ? Number(selectedOperationId) : null,
             google_event_title: eventName,
             notes: s.notes || '',
             status: s.status || 'pending',
@@ -966,7 +976,89 @@ const AffaireDetailContent = ({
     } finally {
       setSavingTasks(false);
     }
-  }, [taskSteps, affaire, getSectionForStep, showFeedback, loadAffaireTasks, onDataChanged]);
+  }, [
+    taskSteps,
+    affaire,
+    selectedOperationId,
+    getSectionForStep,
+    showFeedback,
+    loadAffaireTasks,
+    onDataChanged,
+  ]);
+
+  const loadAffaireOperations = useCallback(async () => {
+    if (!affaire.id) {
+      setAffaireOperations([]);
+      setSelectedOperationId('');
+      return;
+    }
+    try {
+      const operations = await api.getAffaireOperations(affaire.id);
+      setAffaireOperations(Array.isArray(operations) ? operations : []);
+    } catch (error) {
+      console.error("Erreur chargement des opérations de l'affaire:", error);
+      showFeedback({
+        type: 'error',
+        message: "Impossible de charger les opérations de l'affaire.",
+      });
+    }
+  }, [affaire.id, showFeedback]);
+
+  useEffect(() => {
+    setSelectedOperationId('');
+    loadAffaireOperations();
+  }, [loadAffaireOperations]);
+
+  const handleCreateOperation = useCallback(async () => {
+    const name = newOperationName.trim();
+    if (!name || !affaire.id) return;
+    setSavingOperation(true);
+    try {
+      const operation = await api.createAffaireOperation(affaire.id, {
+        name,
+        blImportId: newOperationBlId || null,
+      });
+      await loadAffaireOperations();
+      setSelectedOperationId(String(operation.id));
+      setNewOperationName('');
+      setNewOperationBlId('');
+      showFeedback({ type: 'success', message: 'Opération créée.' });
+    } catch (error) {
+      showFeedback({ type: 'error', message: `Erreur: ${error.message}` }, 4000);
+    } finally {
+      setSavingOperation(false);
+    }
+  }, [affaire.id, newOperationName, newOperationBlId, loadAffaireOperations, showFeedback]);
+
+  const handleDeleteOperation = useCallback(async () => {
+    if (!selectedOperationId || !affaire.id) return;
+    confirm({
+      title: 'Supprimer cette opération ?',
+      message:
+        "Les tâches et réservations liées resteront en place, mais ne seront plus rattachées à l'opération.",
+      variant: 'warning',
+      confirmLabel: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await api.deleteAffaireOperation(affaire.id, selectedOperationId);
+          setSelectedOperationId('');
+          await loadAffaireOperations();
+          await loadAffaireTasks();
+          if (onDataChanged) onDataChanged();
+        } catch (error) {
+          showFeedback({ type: 'error', message: `Erreur: ${error.message}` }, 4000);
+        }
+      },
+    });
+  }, [
+    selectedOperationId,
+    affaire.id,
+    confirm,
+    loadAffaireOperations,
+    loadAffaireTasks,
+    onDataChanged,
+    showFeedback,
+  ]);
 
   // Nombre d'étapes activées (toutes les étapes sont disponibles, indépendamment du type)
   const visibleSteps = useMemo(() => getVisibleSteps(), []);
@@ -2036,6 +2128,70 @@ const AffaireDetailContent = ({
             <p className="detail-empty">Chargement...</p>
           ) : (
             <div className="task-steps-list">
+              <div className="task-step-fields">
+                <div className="tsf-row">
+                  <label className="tsf-label" htmlFor="affaire-operation-select">
+                    Opération
+                  </label>
+                  <Select
+                    id="affaire-operation-select"
+                    aria-label="Opération de la planification"
+                    value={selectedOperationId}
+                    onChange={(event) => setSelectedOperationId(event.target.value)}
+                  >
+                    <option value="">Affaire entière (sans opération)</option>
+                    {affaireOperations.map((operation) => (
+                      <option key={operation.id} value={operation.id}>
+                        {operation.name}
+                        {operation.blFilename ? ` — ${operation.blFilename}` : ''}
+                      </option>
+                    ))}
+                  </Select>
+                  {selectedOperationId && (
+                    <Button variant="ghost" type="button" onClick={handleDeleteOperation}>
+                      <Trash2 size={13} /> Supprimer l'opération
+                    </Button>
+                  )}
+                </div>
+                {editable && (
+                  <>
+                    <div className="tsf-row">
+                      <Input
+                        aria-label="Nom de la nouvelle opération"
+                        value={newOperationName}
+                        onChange={(event) => setNewOperationName(event.target.value)}
+                        maxLength={160}
+                        placeholder="Ex. Prestation principale, location..."
+                      />
+                      <Select
+                        aria-label="Bon de livraison lié à la nouvelle opération"
+                        value={newOperationBlId}
+                        onChange={(event) => setNewOperationBlId(event.target.value)}
+                      >
+                        <option value="">Sans bon de livraison</option>
+                        {linkedBLImports.map((bl) => (
+                          <option key={bl.id} value={bl.id}>
+                            {bl.filename || `BL ${bl.id}`}
+                          </option>
+                        ))}
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        type="button"
+                        onClick={handleCreateOperation}
+                        disabled={savingOperation || !newOperationName.trim() || !affaire.id}
+                      >
+                        {savingOperation ? (
+                          <Loader size={13} className="spin" />
+                        ) : (
+                          <Plus size={13} />
+                        )}
+                        Ajouter une opération
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
               {visibleSteps.map((step) => {
                 const s = taskSteps[step.key];
                 if (!s) return null;
@@ -2889,6 +3045,8 @@ const AffaireDetailContent = ({
           <ReservationModal
             slot={{
               vehicleId: null,
+              affaire: affaire.numeroAffaire,
+              operationId: selectedOperationId || null,
               date: affaire.dateDebut || format(new Date(), 'yyyy-MM-dd'),
               period: 'morning',
               endDate: affaire.dateFin || affaire.dateDebut || format(new Date(), 'yyyy-MM-dd'),
@@ -2899,6 +3057,8 @@ const AffaireDetailContent = ({
             clients={actionData.clients}
             drivers={actionData.drivers}
             locations={actionData.locations}
+            affaireOperations={affaireOperations}
+            affaireOperationsNumber={affaire.numeroAffaire}
             onSave={handleSaveReservation}
             onDelete={() => {}}
             onClose={() => setShowReservationModal(false)}
@@ -2917,6 +3077,8 @@ const AffaireDetailContent = ({
             clients={actionData.clients}
             drivers={actionData.drivers}
             locations={actionData.locations}
+            affaireOperations={affaireOperations}
+            affaireOperationsNumber={affaire.numeroAffaire}
             onSave={async (data) => {
               try {
                 await api.updateReservation(viewedReservation.id, {

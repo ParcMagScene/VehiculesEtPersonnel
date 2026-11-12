@@ -235,6 +235,16 @@ export function setupTaskRoutes(app, authenticateToken) {
         query += ' AND ta.affaire_num = ?';
         params.push(req.query.affaire_num);
       }
+      if (req.query.operation_id !== undefined) {
+        const operationId = Number(req.query.operation_id);
+        if (!Number.isSafeInteger(operationId) || operationId < 0) {
+          return res
+            .status(400)
+            .json({ success: false, error: "Identifiant d'opération invalide" });
+        }
+        query += operationId === 0 ? ' AND ta.operation_id IS NULL' : ' AND ta.operation_id = ?';
+        if (operationId > 0) params.push(operationId);
+      }
 
       query += ' ORDER BY ta.date ASC, ta.period ASC, ta.time ASC';
 
@@ -1618,6 +1628,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         source_id,
         google_event_title,
         affaire_num,
+        operation_id,
         status,
         reservation_id,
         location_address,
@@ -1634,6 +1645,20 @@ export function setupTaskRoutes(app, authenticateToken) {
         return res
           .status(400)
           .json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
+      }
+      if (operation_id != null) {
+        const operation = db
+          .prepare(
+            `SELECT o.id FROM affaire_operations o
+             JOIN affaires a ON a.id = o.affaire_id
+             WHERE o.id = ? AND a.numero_affaire = ?`,
+          )
+          .get(operation_id, affaire_num);
+        if (!operation) {
+          return res
+            .status(400)
+            .json({ success: false, error: "L'opération ne correspond pas à l'affaire" });
+        }
       }
       if (time && !isValidTime(time)) {
         return res
@@ -1654,8 +1679,8 @@ export function setupTaskRoutes(app, authenticateToken) {
       const defaultVisible = EVENT_SECTIONS.includes(effectiveSection) ? 0 : 1;
 
       const stmt = db.prepare(`
-      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, reservation_id, location_address, location_lat, location_lng, all_day, client_name, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, operation_id, status, visible, reservation_id, location_address, location_lat, location_lng, all_day, client_name, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
 
       stmt.run(
@@ -1673,6 +1698,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         source_id || null,
         google_event_title || null,
         affaire_num || null,
+        operation_id || null,
         status || 'pending',
         defaultVisible,
         reservation_id || null,
@@ -1720,12 +1746,27 @@ export function setupTaskRoutes(app, authenticateToken) {
 
         const EVENT_SECTIONS_BATCH = ['rdv', 'evenements'];
         const insertStmt = db.prepare(`
-      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, status, visible, location_address, location_lat, location_lng, all_day, client_name, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      INSERT INTO task_assignments (id, display_event_id, person_id, date, period, time, end_time, section, title, notes, source_type, source_id, google_event_title, affaire_num, operation_id, status, visible, location_address, location_lat, location_lng, all_day, client_name, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
 
         const createdIds = [];
         const skipped = [];
+        for (const task of taskList) {
+          if (task.operation_id == null) continue;
+          const operation = db
+            .prepare(
+              `SELECT o.id FROM affaire_operations o
+               JOIN affaires a ON a.id = o.affaire_id
+               WHERE o.id = ? AND a.numero_affaire = ?`,
+            )
+            .get(task.operation_id, task.affaire_num);
+          if (!operation) {
+            return res
+              .status(400)
+              .json({ success: false, error: "L'opération ne correspond pas à l'affaire" });
+          }
+        }
         const insertMany = db.transaction((items) => {
           for (const t of items) {
             if (!t.date) continue;
@@ -1751,6 +1792,7 @@ export function setupTaskRoutes(app, authenticateToken) {
               t.source_id || null,
               t.google_event_title || null,
               t.affaire_num || null,
+              t.operation_id || null,
               t.status || 'pending',
               vis,
               t.location_address || null,
@@ -1880,6 +1922,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         source_id,
         google_event_title,
         affaire_num,
+        operation_id,
         status,
         reservation_id,
         location_address,
@@ -1894,6 +1937,22 @@ export function setupTaskRoutes(app, authenticateToken) {
           .status(400)
           .json({ success: false, error: 'Format date invalide (attendu YYYY-MM-DD)' });
       }
+      const nextAffaireNum = affaire_num !== undefined ? affaire_num : existing.affaire_num;
+      const nextOperationId = operation_id !== undefined ? operation_id : existing.operation_id;
+      if (nextOperationId != null) {
+        const operation = db
+          .prepare(
+            `SELECT o.id FROM affaire_operations o
+             JOIN affaires a ON a.id = o.affaire_id
+             WHERE o.id = ? AND a.numero_affaire = ?`,
+          )
+          .get(nextOperationId, nextAffaireNum);
+        if (!operation) {
+          return res
+            .status(400)
+            .json({ success: false, error: "L'opération ne correspond pas à l'affaire" });
+        }
+      }
       if (time && !isValidTime(time)) {
         return res
           .status(400)
@@ -1907,7 +1966,7 @@ export function setupTaskRoutes(app, authenticateToken) {
 
       const stmt = db.prepare(`
       UPDATE task_assignments
-      SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, status = ?, reservation_id = ?, location_address = ?, location_lat = ?, location_lng = ?, all_day = ?, client_name = ?, modified_by = ?, modified_at = datetime('now')
+      SET display_event_id = ?, person_id = ?, date = ?, period = ?, time = ?, end_time = ?, section = ?, title = ?, notes = ?, source_type = ?, source_id = ?, google_event_title = ?, affaire_num = ?, operation_id = ?, status = ?, reservation_id = ?, location_address = ?, location_lat = ?, location_lng = ?, all_day = ?, client_name = ?, modified_by = ?, modified_at = datetime('now')
       WHERE id = ?
     `);
 
@@ -1925,6 +1984,7 @@ export function setupTaskRoutes(app, authenticateToken) {
         source_id !== undefined ? source_id : existing.source_id,
         google_event_title !== undefined ? google_event_title : existing.google_event_title,
         affaire_num !== undefined ? affaire_num : existing.affaire_num,
+        operation_id !== undefined ? operation_id : existing.operation_id,
         status || existing.status,
         reservation_id !== undefined ? reservation_id : existing.reservation_id,
         location_address !== undefined ? location_address : existing.location_address,

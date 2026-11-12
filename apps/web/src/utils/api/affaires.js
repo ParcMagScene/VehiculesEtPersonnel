@@ -31,6 +31,24 @@ export function registerAffairesMethods(ApiClient) {
     async updateAffaire(id, affaire) {
       return this.request(`/affaires/${id}`, { method: 'PUT', body: JSON.stringify(affaire) });
     },
+    async getAffaireOperations(id) {
+      return this.request(`/affaires/${id}/operations`);
+    },
+    async createAffaireOperation(id, operation) {
+      return this.request(`/affaires/${id}/operations`, {
+        method: 'POST',
+        body: JSON.stringify(operation),
+      });
+    },
+    async updateAffaireOperation(id, operationId, operation) {
+      return this.request(`/affaires/${id}/operations/${operationId}`, {
+        method: 'PUT',
+        body: JSON.stringify(operation),
+      });
+    },
+    async deleteAffaireOperation(id, operationId) {
+      return this.request(`/affaires/${id}/operations/${operationId}`, { method: 'DELETE' });
+    },
     async deleteAffaire(id) {
       return this.request(`/affaires/${id}`, { method: 'DELETE' });
     },

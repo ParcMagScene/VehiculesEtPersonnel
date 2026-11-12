@@ -50,6 +50,8 @@ const ReservationModal = ({
   googleEvents = [], // Liste de tous les événements Google disponibles
   currentUser,
   onRequestViewEvent, // Callback pour ouvrir l'EventDetailsModal
+  affaireOperations = [],
+  affaireOperationsNumber = '',
 }) => {
   const isEdit = !!reservation;
   const isMultiVehicle = !!googleEvent && !isEdit; // Mode multi-véhicules seulement en création
@@ -117,6 +119,7 @@ const ReservationModal = ({
     googleEventId: reservation?.googleEventId || googleEvent?.id || '', // Pour compatibilité
     linkedEventIds: initLinkedEvents(), // Nouveau tableau pour les événements multiples
     affaires: initAffaires(),
+    operationId: reservation?.operationId || slot?.operationId || '',
     isTournee: reservation?.isTournee || false, // Nouvelle option Tournée
   });
 
@@ -833,7 +836,10 @@ const ReservationModal = ({
     formData.affaires.forEach((affaire) => addAffaire(affaire));
 
     const primaryAffaire = formData.affaires?.[0] || '';
-    const enrichedFormData = fillFromAffaireIfMissing(formData, primaryAffaire);
+    const enrichedFormData = {
+      ...fillFromAffaireIfMissing(formData, primaryAffaire),
+      affaire: primaryAffaire,
+    };
 
     if (isMultiVehicle) {
       // Mode multi-véhicules : créer une réservation par véhicule sélectionné
@@ -1017,7 +1023,13 @@ const ReservationModal = ({
         >
           <Checkbox
             checked={formData.isTournee}
-            onChange={(e) => setFormData((prev) => ({ ...prev, isTournee: e.target.checked }))}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                isTournee: e.target.checked,
+                operationId: e.target.checked ? '' : prev.operationId,
+              }))
+            }
             className={`reservation-tournee-checkbox ${isReadOnly ? 'is-read-only' : ''}`}
             disabled={isReadOnly}
           />
@@ -1106,7 +1118,7 @@ const ReservationModal = ({
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                setFormData((prev) => ({ ...prev, affaires: [] }));
+                                setFormData((prev) => ({ ...prev, affaires: [], operationId: '' }));
                                 setAffaireSearch('');
                               }}
                             >
@@ -1144,6 +1156,7 @@ const ReservationModal = ({
                                           {
                                             ...prev,
                                             affaires: [a.numeroAffaire],
+                                            operationId: '',
                                           },
                                           a.numeroAffaire,
                                         ),
@@ -1168,6 +1181,28 @@ const ReservationModal = ({
                       )}
                     </div>
                   </FormField>
+
+                  {affaireOperations.length > 0 &&
+                    selectedAffaireObj?.numeroAffaire === affaireOperationsNumber &&
+                    !formData.isTournee && (
+                      <FormField className="form-group" label="Opération">
+                        <Select
+                          value={formData.operationId || ''}
+                          onChange={(event) =>
+                            setFormData((prev) => ({ ...prev, operationId: event.target.value }))
+                          }
+                          disabled={isReadOnly}
+                        >
+                          <option value="">Aucune opération</option>
+                          {affaireOperations.map((operation) => (
+                            <option key={operation.id} value={operation.id}>
+                              {operation.name}
+                              {operation.blFilename ? ` — ${operation.blFilename}` : ''}
+                            </option>
+                          ))}
+                        </Select>
+                      </FormField>
+                    )}
 
                   <FormField className="form-group" label="Client" htmlFor="clientName">
                     <Input

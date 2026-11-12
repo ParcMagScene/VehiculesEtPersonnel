@@ -244,6 +244,147 @@ export function setupAffairesRoutes(app, authenticateToken, requireAdmin) {
     },
   );
 
+  // ─── Opérations de planification rattachées à une affaire ───
+  app.get('/api/affaires/:id/operations', authenticateToken, (req, res) => {
+    try {
+      const affaireId = Number(req.params.id);
+      if (!Number.isSafeInteger(affaireId) || affaireId <= 0) {
+        return res.status(400).json({ success: false, error: "Identifiant d'affaire invalide" });
+      }
+      const operations = db
+        .prepare(
+          `SELECT o.*, b.filename AS bl_filename
+           FROM affaire_operations o
+           LEFT JOIN bl_imports b ON b.id = o.bl_import_id
+           WHERE o.affaire_id = ?
+           ORDER BY o.id`,
+        )
+        .all(affaireId);
+      res.json(operations);
+    } catch (error) {
+      logger.error('GET /api/affaires/:id/operations error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  app.post('/api/affaires/:id/operations', authenticateToken, (req, res) => {
+    try {
+      const affaireId = Number(req.params.id);
+      const affaire = Number.isSafeInteger(affaireId)
+        ? db.prepare('SELECT id, numero_affaire FROM affaires WHERE id = ?').get(affaireId)
+        : null;
+      if (!affaire) return res.status(404).json({ success: false, error: 'Affaire introuvable' });
+
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+      if (!name || name.length > 160) {
+        return res
+          .status(400)
+          .json({ success: false, error: "Le nom de l'opération est requis (160 caractères max)" });
+      }
+      const blImportId = req.body?.blImportId || req.body?.bl_import_id || null;
+      if (blImportId) {
+        const linkedBl = db
+          .prepare(
+            `SELECT id FROM bl_imports
+             WHERE id = ? AND (affaire_id = ? OR affaire_ref_id = ?)`,
+          )
+          .get(String(blImportId), affaire.numero_affaire, affaire.id);
+        if (!linkedBl) {
+          return res
+            .status(400)
+            .json({ success: false, error: "Le BL n'appartient pas à cette affaire" });
+        }
+      }
+      const result = db
+        .prepare('INSERT INTO affaire_operations (affaire_id, bl_import_id, name) VALUES (?, ?, ?)')
+        .run(affaire.id, blImportId ? String(blImportId) : null, name);
+      invalidateEntity('affaires');
+      listCache.invalidatePattern(/^planning-affaires/);
+      const operation = db
+        .prepare(
+          `SELECT o.*, b.filename AS bl_filename
+           FROM affaire_operations o LEFT JOIN bl_imports b ON b.id = o.bl_import_id
+           WHERE o.id = ?`,
+        )
+        .get(result.lastInsertRowid);
+      res.status(201).json(operation);
+    } catch (error) {
+      logger.error('POST /api/affaires/:id/operations error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  app.put('/api/affaires/:id/operations/:operationId', authenticateToken, (req, res) => {
+    try {
+      const affaireId = Number(req.params.id);
+      const operationId = Number(req.params.operationId);
+      const affaire = Number.isSafeInteger(affaireId)
+        ? db.prepare('SELECT numero_affaire FROM affaires WHERE id = ?').get(affaireId)
+        : null;
+      if (!affaire) return res.status(404).json({ success: false, error: 'Affaire introuvable' });
+      const operation = db
+        .prepare('SELECT id FROM affaire_operations WHERE id = ? AND affaire_id = ?')
+        .get(operationId, affaireId);
+      if (!operation)
+        return res.status(404).json({ success: false, error: 'Opération introuvable' });
+      const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+      if (!name || name.length > 160) {
+        return res
+          .status(400)
+          .json({ success: false, error: "Le nom de l'opération est requis (160 caractères max)" });
+      }
+      const blImportId = req.body?.blImportId || req.body?.bl_import_id || null;
+      if (blImportId) {
+        const linkedBl = db
+          .prepare(
+            `SELECT id FROM bl_imports
+             WHERE id = ? AND (affaire_id = ? OR affaire_ref_id = ?)`,
+          )
+          .get(String(blImportId), affaire.numero_affaire, affaireId);
+        if (!linkedBl) {
+          return res
+            .status(400)
+            .json({ success: false, error: "Le BL n'appartient pas à cette affaire" });
+        }
+      }
+      db.prepare(
+        `UPDATE affaire_operations
+         SET name = ?, bl_import_id = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ? AND affaire_id = ?`,
+      ).run(name, blImportId ? String(blImportId) : null, operationId, affaireId);
+      const updated = db
+        .prepare(
+          `SELECT o.*, b.filename AS bl_filename
+           FROM affaire_operations o LEFT JOIN bl_imports b ON b.id = o.bl_import_id
+           WHERE o.id = ?`,
+        )
+        .get(operationId);
+      invalidateEntity('affaires');
+      listCache.invalidatePattern(/^planning-affaires/);
+      res.json(updated);
+    } catch (error) {
+      logger.error('PUT /api/affaires/:id/operations/:operationId error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
+  app.delete('/api/affaires/:id/operations/:operationId', authenticateToken, (req, res) => {
+    try {
+      const result = db
+        .prepare('DELETE FROM affaire_operations WHERE id = ? AND affaire_id = ?')
+        .run(Number(req.params.operationId), Number(req.params.id));
+      if (!result.changes)
+        return res.status(404).json({ success: false, error: 'Opération introuvable' });
+      invalidateEntity('affaires');
+      invalidateEntity('reservations');
+      listCache.invalidatePattern(/^planning-affaires/);
+      res.json({ success: true });
+    } catch (error) {
+      logger.error('DELETE /api/affaires/:id/operations/:operationId error:', error);
+      res.status(500).json({ success: false, error: 'Erreur serveur interne' });
+    }
+  });
+
   // GET /api/affaires/personnel-counts — Compter le personnel affecté par affaire (toutes les affaires)
   app.get('/api/affaires/personnel-counts', authenticateToken, (req, res) => {
     try {

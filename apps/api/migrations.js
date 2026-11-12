@@ -9,6 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 import logger from './logger.js';
+import { runAffaireOperationsMigration } from './migrations/affaire-operations-v1.js';
 import { runAffairesV2SchemaMigration } from './migrations/affaires-v2-schema-v1.js';
 import { runControlInterventionRequestsMigration } from './migrations/control-intervention-requests-v1.js';
 import { runControlesPeriodiquesMigrations } from './migrations/controles-periodiques-v1.js';
@@ -961,6 +962,9 @@ export function runPostInitMigrations(db) {
   //     phase de coexistence (sunset TEXT prevu en T-P0-09). Voir
   //     docs/05-Specs/AFFAIRES_V2.md.
   runAffairesV2SchemaMigration(db);
+
+  // Opérations de planification rattachées à une affaire et éventuellement à un BL.
+  runAffaireOperationsMigration(db);
 
   // ═══ [T-P1-07] SAV v2 — table sav_parts (pieces detachees)
   //     Additive, idempotente. Coexiste avec sav_tickets. Voir

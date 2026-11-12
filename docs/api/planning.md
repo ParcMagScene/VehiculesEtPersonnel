@@ -35,13 +35,27 @@
 
 | Méthode | Endpoint | Auth | Description |
 |---------|----------|:----:|-------------|
-| GET | `/api/planning/tasks` | ✅ | Filtres: status, assigned_to, date_from/to (cache-aware) |
-| POST | `/api/planning/tasks` | ✅ | Crée tâche (optionnel récurrence) |
-| PUT | `/api/planning/tasks/:id` | ✅ | MAJ (statut, priorité, assigné, notes) |
+| GET | `/api/planning/tasks` | ✅ | Filtres: status, assigned_to, date_from/to, affaire_num, operation_id |
+| POST | `/api/planning/tasks` | ✅ | Crée tâche; `operation_id` optionnel pour la rattacher à une opération |
+| PUT | `/api/planning/tasks/:id` | ✅ | MAJ tâche, dont `operation_id` |
 | DELETE | `/api/planning/tasks/:id` | ✅ | Supprime tâche |
 | POST | `/api/planning/tasks/batch` | ✅ | Création batch |
 | POST | `/api/planning/tasks/clear-completed` | ✅ | Archive en masse tâches terminées |
 | POST | `/api/planning/tasks/rollover` | ✅ | Reporte tâches incomplètes au lendemain |
+
+---
+
+## Opérations d'affaire
+
+Une opération appartient à une affaire et peut être liée à un BL importé de cette affaire.
+Les tâches et réservations peuvent référencer son identifiant `operation_id`.
+
+| Méthode | Endpoint | Auth | Description |
+|---------|----------|:----:|-------------|
+| GET | `/api/affaires/:id/operations` | ✅ | Liste les opérations et le BL lié |
+| POST | `/api/affaires/:id/operations` | ✅ | Crée une opération (`name`, `blImportId` optionnel) |
+| PUT | `/api/affaires/:id/operations/:operationId` | ✅ | Modifie son nom et son BL |
+| DELETE | `/api/affaires/:id/operations/:operationId` | ✅ | Supprime l'opération et détache ses tâches/réservations |
 
 ---
 

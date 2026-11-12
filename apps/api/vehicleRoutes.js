@@ -32,6 +32,19 @@ function parseDriveLinks(value) {
   }
 }
 
+function operationMatchesAffaire(operationId, affaireNum) {
+  if (operationId == null || operationId === '') return true;
+  return Boolean(
+    db
+      .prepare(
+        `SELECT o.id FROM affaire_operations o
+         JOIN affaires a ON a.id = o.affaire_id
+         WHERE o.id = ? AND a.numero_affaire = ?`,
+      )
+      .get(operationId, affaireNum),
+  );
+}
+
 // Helper : calculer le prix de location d'une réservation
 // Logique : on calcule le nombre de demi-journées, puis on optimise mois > semaines > jours
 function calculateRentalPrice(vehicle, startDate, startPeriod, endDate, endPeriod) {
@@ -372,6 +385,12 @@ export function setupVehicleRoutes(
     async (req, res) => {
       try {
         const reservation = req.body;
+        const operationId = reservation.operation_id ? Number(reservation.operation_id) : null;
+        if (operationId != null && !operationMatchesAffaire(operationId, reservation.affaire)) {
+          return res
+            .status(400)
+            .json({ success: false, error: "L'opération ne correspond pas à l'affaire" });
+        }
 
         // Générer un ID côté serveur si non fourni ou invalide
         if (!reservation.id || reservation.id === 'null' || reservation.id === null) {
@@ -395,8 +414,8 @@ export function setupVehicleRoutes(
       INSERT INTO reservations (id, vehicle_id, start_date, start_period, end_date, end_period, 
                                client_name, driver_name, location_name, prestation_name, 
                                notes, google_event_id, google_drive_link, affaire, is_tournee, linked_event_ids,
-                               rental_price, created_by, modified_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               rental_price, created_by, modified_by, operation_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
         stmt.run(
@@ -419,6 +438,7 @@ export function setupVehicleRoutes(
           rentalPrice,
           req.user.id,
           req.user.id,
+          operationId,
         );
 
         addToHistory(
@@ -470,6 +490,7 @@ export function setupVehicleRoutes(
           notes: createdReservation.notes,
           googleEventId: createdReservation.google_event_id,
           affaire: createdReservation.affaire,
+          operationId: createdReservation.operation_id,
           isTournee: Boolean(createdReservation.is_tournee),
           linkedEventIds: createdReservation.linked_event_ids
             ? JSON.parse(createdReservation.linked_event_ids)
@@ -504,6 +525,23 @@ export function setupVehicleRoutes(
     async (req, res) => {
       try {
         const reservation = req.body;
+        const existingAffaireOperation = db
+          .prepare('SELECT affaire, operation_id FROM reservations WHERE id = ?')
+          .get(req.params.id);
+        if (!existingAffaireOperation) {
+          return res.status(404).json({ success: false, error: 'Réservation introuvable' });
+        }
+        const requestedOperationId =
+          reservation.operation_id !== undefined
+            ? reservation.operation_id
+            : existingAffaireOperation.operation_id;
+        const operationId = requestedOperationId ? Number(requestedOperationId) : null;
+        const affaireNum = reservation.affaire ?? existingAffaireOperation.affaire;
+        if (operationId != null && !operationMatchesAffaire(operationId, affaireNum)) {
+          return res
+            .status(400)
+            .json({ success: false, error: "L'opération ne correspond pas à l'affaire" });
+        }
 
         // Préserver les liens Google Drive existants (gérés uniquement via PATCH depuis EventDetailsModal)
         const existing = db
@@ -527,7 +565,7 @@ export function setupVehicleRoutes(
       SET vehicle_id = ?, start_date = ?, start_period = ?, end_date = ?, end_period = ?,
           client_name = ?, driver_name = ?, location_name = ?, prestation_name = ?,
           notes = ?, google_event_id = ?, google_drive_link = ?, affaire = ?, is_tournee = ?, linked_event_ids = ?,
-          rental_price = ?,
+          rental_price = ?, operation_id = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
@@ -551,6 +589,7 @@ export function setupVehicleRoutes(
             ? JSON.stringify(reservation.linkedEventIds || reservation.linked_event_ids)
             : null,
           rentalPrice,
+          operationId,
           req.user.id,
           req.params.id,
         );

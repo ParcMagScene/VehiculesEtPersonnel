@@ -45,6 +45,7 @@ export function mapReservationRow(r) {
     status: r.status,
     comment: r.comment,
     affaire: r.affaire,
+    operationId: r.operation_id,
     googleEventId: r.google_event_id,
     isTournee: r.is_tournee === 1,
     linkedEventIds: r.linked_event_ids ? safeJsonParse(r.linked_event_ids, null) : null,
@@ -113,8 +114,8 @@ class ReservationsDao extends BaseDao {
         id, vehicle_id, start_date, start_period, end_date, end_period,
         client_name, driver_name, location_name, prestation_name,
         notes, google_event_id, google_drive_link, affaire, is_tournee, linked_event_ids,
-        rental_price, created_by, modified_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        rental_price, created_by, modified_by, operation_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     stmt.run(
       payload.id,
@@ -136,6 +137,7 @@ class ReservationsDao extends BaseDao {
       rentalPrice,
       userId,
       userId,
+      payload.operation_id || null,
     );
     return this.findByIdMapped(payload.id);
   }
@@ -150,7 +152,7 @@ class ReservationsDao extends BaseDao {
       SET vehicle_id = ?, start_date = ?, start_period = ?, end_date = ?, end_period = ?,
           client_name = ?, driver_name = ?, location_name = ?, prestation_name = ?,
           notes = ?, google_event_id = ?, google_drive_link = ?, affaire = ?, is_tournee = ?,
-          linked_event_ids = ?, rental_price = ?,
+          linked_event_ids = ?, rental_price = ?, operation_id = ?,
           modified_by = ?, modified_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
@@ -171,6 +173,7 @@ class ReservationsDao extends BaseDao {
       fields.is_tournee ? 1 : 0,
       fields.linked_event_ids ? JSON.stringify(fields.linked_event_ids) : null,
       rentalPrice,
+      fields.operation_id ?? null,
       userId,
       id,
     );
